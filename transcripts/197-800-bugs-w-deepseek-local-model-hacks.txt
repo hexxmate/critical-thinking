@@ -1,0 +1,651 @@
+Episode 197: 800 Bugs w/ DeepSeek + Local Model Hacks
+Source: https://www.criticalthinkingpodcast.io/800-bugs-w-deepseek-local-model-hacks/
+======================================================================
+
+[00:00:00.61] - Joseph Thacker
+How do you keep agents from all hacking the same thing? But I actually meant resources on your computer. How do you keep them from battling over computer use or browser use over— Oh,
+
+[00:00:08.24] - Brandyn Murtagh
+mate, it's a free-for-all. It is a complete free-for-all.
+
+[00:00:12.50] - Joseph Thacker
+You just make them figure it out, right?
+
+[00:00:36.28] - Justin Gardner
+Alrighty, hackers, check this out. There is a new opportunity in the bug bounty space for those of you that are a little bit heavy in the recon game. Maybe you went down the recon rabbit hole, maybe you got a little stuck, who knows? But, uh, as we all do, uh, but this is Intigriti's Crowd Recon product. Okay. This is an opportunity for hackers and programs to partner, for hackers to give their recon data to the programs so the programs can understand what their attack surface looks like from an attacker's perspective. and for hackers to get paid not for vulnerabilities, but simply for doing asset enumeration for recon. Okay, so this is a cool opportunity. I mean, you might as well, right? If you're going to hack on a target, hack, hack, hack. And then when you've got all your recon data at the end, send it in through CrowdRecon and see if any other bounties come in and get paid for that recon itself. This is a beta project. It is in waitlist right now. If you're interested, we're going to put the link in the description. Join the waitlist and let us know that you did. And we'll see if we can get you bumped. All right, that's it. Let's go back to the show. Peace. Alrighty, hackers, before we jump into this episode, we've got the This Week in Bug Bounty segment. Only one news item this time around, and that is that HackerOne has launched their Researcher Community Hub on Discord. Uh, it's a Discord much like CTBB's own Discord, actually, where we can celebrate, uh, researcher wins and just network with other researchers in the HackerOne community. So, uh, if you want to stay involved with other hackers, Definitely check that out. We'll put the link in the description. Okay, back to the show.
+
+[00:02:00.82] - Joseph Thacker
+All right, what is up guys? I am, uh, extremely grateful to be doing this episode with you guys. We are— I basically view you both as the, uh, the kind of like local hardware boys of the, uh, of the hosts. I also view you both as like in the same bucket of both being like DeepSeek pilled here. Uh, so yeah, for the audience, a couple things. One, obviously in mine and Brandon's last episode, we kind of teased this one about AI hardware. So we are going to talk a little bit about AI hardware, but most all of what we talk about is also just applicable to using DeepSeek either via their subscription or via API. So I think you'll get a ton out of it even if you don't plan to buy any AI hardware. And I'm actually going to give a case for why people should not. Brandon, you sent me a screenshot of someone who was inspired by our episode to go buy a $7,000 DGX Spark. And all of a sudden, I think we both kind of felt bad, like, did we lead this guy down the wrong path? Um, probably not, but...
+
+[00:02:58.28] - Brandyn Murtagh
+I mean, it's— yeah, I mean, my views on it from the last episode were probably quite clear, but I, I'm very much in the boat that it's worthwhile, especially for me. It's now a hobby somehow, than just about bug hunting and things like that. I've just been nerd sniped, so, um...
+
+[00:03:15.75] - Joseph Thacker
+If by hobby you mean like total time sink, then, uh, yeah.
+
+[00:03:19.05] - Brandyn Murtagh
+Yeah, it keeps me involved with Warcraft, so it's the lesser of two evils in my opinion.
+
+[00:03:24.03] - Joseph Thacker
+That's funny. The one thing I did want to say is that about this being super applicable is that our boy @adsdawson here has found like over 800 bugs this year and almost exclusively with DeepSeek v4.1 Flash. And so not only can you run those on the SPARCs, but you can also just run those via API very cheaply. And I'm sure as everyone saw, because I quote tweeted it and it kind of like blew up, you can use DeepSeek v4.1 totally for free if you use it through OpenCode. So you could take a bunch of the stuff we're talking about today and apply it to that, even though none of us use OpenCode. But I do, I do want to stay true to our ourselves and talk about some like super practical stuff. So I'm gonna have each of these guys share one bug that they actually found with DeepSeek V4.1 before we jump into news, and then we'll talk the most about kind of AI hardware, our setup, our harnesses, all the things. So, uh, Ad, you want to go first?
+
+[00:04:16.31] - Ads Dawson
+Yeah, absolutely. So mine is actually pretty boring, but the story behind it I guess is relevant to this. Um, I had DeepSeek V4.1 running I think I probably ran it for about 2, maybe 3 days. Long story short, enumerated a bunch of endpoints in a major healthcare provider, found this random backend function, and was able to toggle and reset any user's MFA, and then chained that with account takeover. And that's ranked, that's a crit right now. Again, super unsexy bug, but like incredibly relevant. I think probably— sorry.
+
+[00:05:00.52] - Joseph Thacker
+No, you're good. Yeah, no, I was just thinking, you know, like, I know that we'll talk about this a little bit later in the episode. I know you kind of use specialized agents rather than like, um, like, like one big large generic agent that runs over and over. And so I'm just curious, like, when you say you ran it for multiple days, are you talking usually about like one session, or you kind of keep like the whole engine going? Like, do you think this popped out because like your JavaScript analysis agents kind of, um, found this endpoint later in those couple of days of running? Or I'm just really curious, more details of what, when you say you kept running it, what that means, what that looks like.
+
+[00:05:34.54] - Ads Dawson
+Yeah, sorry, that's a good point. I apologize. So this one was actually, so it's one of those programs which frustratingly when they invite you to it, it's like a member-only thing. So you can't actually create an actual account. So this is fully black box. So this is a bunch of agents that have run some recon, works through a pipeline, and then there's an execution agent at the end, which is taking all the recon, taking taking everything and then going for like days. So this is a single agent that I'm like prompting, but it does have context from other agents that have been scraping and other stuff. But I will do a lot of that programmatically, which I already have set up in my harness, um, just to conserve tokens and I can use them elsewhere.
+
+[00:06:14.89] - Joseph Thacker
+Cool. That's actually really good to know because later on I'm going to talk a little bit about UniChat. I may have mentioned that, Brandon, in our last episode. I don't remember. But, um, That core execution agent, I think, is a really good example of where you could use an agent with really good memory. Because we mentioned this off air when we talked the other day on Discord, but I think you have some smaller models that are really good at JavaScript analysis, and then they probably just finish up. And so that was done on day 1 and within a couple hours. But then this execution agent is what you kept running and running and running, and it built up its own memory and knowledge and history about where it had looked and where it hadn't. And I'm actually going to I'm gonna put a pin in this, but I wanna come back to what I call coverage queue, where it kind of works over a list, but I wanna cover that in the AI section in a second. So, Brandon, let's go to your bug.
+
+[00:07:05.62] - Brandyn Murtagh
+Yeah, so I would like to start this off with, it was a bit of an emotional rollercoaster. I'd made some changes to my harness, and part of my harness, I was like, right, there's some programs I wanna look at, pull my programs from my programs list in BBScope, and then just have at it. Anyway, my filtering was wrong in the first step, so I've set this off before I go to bed. And this is something that I do, by the way. I get like a backlog of work, and then before I finish for the night, all my agents work through all this so I can wake up and come back to something fairly productive.
+
+[00:07:44.12] - Joseph Thacker
+Dude, it feels like magic. It feels like a time skip. I love this. Not only did I get this now with AI because it's incredible, But I loved this back whenever I would do fuzzing. I would set up a big fuzzing scan and then just wake up to what felt like it was a treasure trove, like panning for gold. But instead of panning, my FFUF was panning for gold, and I would just wake up and get to go through the results. Now I feel even stronger about that today.
+
+[00:08:09.81] - Brandyn Murtagh
+Wake up and find out that you accidentally DoSed a major cloud provider.
+
+[00:08:14.00] - Joseph Thacker
+No, I would wake up and find out that I got cyberblocked.
+
+[00:08:17.33] - Ads Dawson
+There we go. I was going to say, I thought Brandon was going to say he woke up and found out that his agents had hacked Hugging Face again.
+
+[00:08:24.92] - Joseph Thacker
+That would be hilarious. Can
+
+[00:08:26.43] - Brandyn Murtagh
+Can you imagine? That would have been— you could
+
+[00:08:27.72] - Joseph Thacker
+you could cause a global event, Brandon.
+
+[00:08:30.66] - Brandyn Murtagh
+Yeah, I would have turned my laptop off and pretended it didn't happen. But anyway, so I kicked this stuff off. I thought I was good to go. And I come back in the morning and it's like rained some really nice-looking vulnerabilities, which I was really surprised about. And I started looking at some of these vulnerabilities, and the agent, which DeepSeek, um, it was quite a loose agent. I was trialing it in my bigger harness before I deployed a certain agent type, and it was basically tasked just with looking for misconfigurations. And I passed it my— I think it was my proxy, um, like reverse proxy skill and a URL parsing skill, only 2 skills that I had. And it found— first of all, it found a, a couple of paths on this target where it would take of the URL, one path of a whole URL, and forward it to a backend Elasticsearch cluster. Now, I was looking at this, I was like, this is nice, because I haven't actually, like, I gave it look for misconfiguration, I didn't actually tell it to do any of this. And it forwarded this path, and it turns out you could actually get a DSL query execution against this Elasticsearch cluster. cluster, and the PoC it provided, it basically done a POST with a script body and done like a 6 times 7, and then whatever was returned, 40, whatever. I can't do that off the top of my head right now. And I thought, okay, that's really nice. And then the agent had looked for this across all my recon data and found a load of hosts. So I woke up thinking, wow, I found the golden goose again. I'm so back. Then I realized I accidentally ran it against my VDPs, which I don't ever do. So then it was a bit of an up and down. But anyway, my point, this is a bug type which, sort of like DSL query-ish injection, originally from a path, which then gets forwarded to a backend Elasticsearch cluster. And DeepSeek found the path, enumerated the fact that it was being passed to a backend service, and I looked at his chain of thought, and it looked solid. And it actually made a pretty good PoC, and not only identified numerous paths that this existed on, but also found other hosts in my data that this existed on as well. So I've said from day one, I've always been a DeepSeek fan as a view ad, and mine was really bred from being cyber-blocked constantly. Yeah. By some of these bigger providers, and that's when I started getting into the local game. Yeah,
+
+[00:11:13.91] - Joseph Thacker
+for such a stoic person, I was going to say you are quite emotional in the fact that you were talking about how that was up and down for you. And then also, yeah, I was reflecting on the fact that you said that's what initially pushed you towards both hardware and DeepSeek was being constantly cyberblocked.
+
+[00:11:30.99] - Brandyn Murtagh
+Yeah. And funnily enough, a lot of listeners will know that I originally contacted Justin, and that's how I got into bug bounty by doing stuff for the podcast, things like that. A large portion of Justin being like, okay, bug bounty, blah, blah, blah, and getting me into that was basically just not rage quitting at programs constantly, in hindsight. He was just keeping your head straight. Yeah, pretty much, which is quite funny. But the point is, these models now, you can even run DeepSeek 4.1 Flash locally on TP2 across 2 Sparks with certain recipes now. It's not full quant, so you are getting a slight slightly watered-down version of it. But my point is, with proper harnessing, uh, it definitely becomes less just about the model and more about the harness and, um, and how— what you're doing with it as well. And Ads is the perfect— is the poster boy of that.
+
+[00:12:27.94] - Ads Dawson
+Yeah, so you're going— that's one thing I was going to say. So, um, that was an awesome example. And one thing that's really relevant with like harness engineering of like the beauty of things like skills, like they are so lightweight that if people see nuggets of innovation or whatever like that, then it's really easy to bake and distill that into a skill. Because I guess with the open source models or the less frontier models, the behavior, the predictability of behavior like that at a constant level is less than you would be if you were to use SOL or something like really state-of-the-art. So it's important to take those things and have some kind of reflection in your harness where you're baking that into skills. Not so you're just getting other agents to solely focus on that, but you're embedding that knowledge elsewhere, especially in some cool bugs like that.
+
+[00:13:22.99] - Joseph Thacker
+Yeah, I think honestly that's a really good point, Ads. It makes me want to tell an agent, like tell Codex or Claude or something, to basically look at all of our validated findings, or even look through like my HackerOne reports and Google reports, go find the session where it was found, then go derive insights for why it was found. Like, what are some takeaways for why it was found? Like, was there a specific line in a skill file that was like really valuable? Or, you know, like in those traces, did it ignore stuff and that's why it worked? You know, like what happened that made it work? Um, yeah, and I was actually thinking about how, you know, prompting is like out of the limelight. Like prompting was all the rage 2 years ago. I still think there's almost like, if you think about what prompting is, it's really just like a whole bunch of natural language. I feel like there's a, there's like infinite meat on the bone when it comes to prompting. Like just because, just because you don't need good fancy prompts today to get good output for the majority of what humans are doing. It doesn't mean that in novel fields, like the work that we're doing, leading-edge tech fields, that there's not almost infinite meat on the bone for good prompting or good context engineering.
+
+[00:14:43.94] - Ads Dawson
+Yeah. So the first thing, this is optional, but one thing I'd recommend to people that are maybe going from using Codex and Claude Subs into using open-source models, however they're balancing that. You could take a bunch of your reports, anything which you would classify as maybe a sophisticated report or something which is a really cool bug, you can build tasks on that, and then you can benchmark those open-source models on those tasks, if that makes sense. So you're recreating the bug, and then you can see if less capable model is able to solve the bug, and then reverse engineer, and maybe you need a skill. And you'll find that with those kind of models, you need to give it, like Brandon has said, the harness needs to be a bit— you need to put more effort into the harness, which is how you can do that. So you're basically, you're almost like distilling bugs from— yeah.
+
+[00:15:43.16] - Joseph Thacker
+Yeah. Brandon, you go ahead and respond.
+
+[00:15:47.05] - Brandyn Murtagh
+Yeah, no, I, um, I was going to say a lot of the— I made a lot of mistakes early on with my harnesses. I had countless, like, different versions. I just wanted to try everything, see what works, and really understand. As you've got, like, a lot of the brunt on that exploration, I would say, of me just complaining and being like, how would you do this, how do you do that? Um, it's very evident now, and Jason Haddix is said this from the start as well. Um, he, he has harnesses, for example, which literally runs like every model ever under the sun. So everything gets a pass with one model. And I guess the reason for that is you can really tap into the different reasoning levels of each that each model naturally has, and also its weights and its training data. For example, if I was using, I don't know, Opus, it might not have gone down that route of finding this in a, like, a more— okay, just find misconfigurations. Opus will probably find a whole different bunch of misconfigurations, not just this. So I'd say that there is a lot of merit there. And this is actually one of my later points in the spreadsheet, is building harnesses so that you can capitalize off of different models for different use cases. Because there is, like, I can rerun the same thing 4 times with Opus or Sol, and then you can run GLM53 Flash a couple of times and get very different output, which is equally as valuable. It just pursues different avenues.
+
+[00:17:18.16] - Joseph Thacker
+Yeah, I think there's kind of 2 lessons there. One is sometimes you just want to run multiple models just for diversity of thought. And then the other thing that hit me when you were talking, whenever you were talking about Haddix's setup, I'm like, oh man, you know what we need to do? It wouldn't even be that expensive, especially if we pooled funds. We should come up with a good cyber gym. I'm not talking about the literal cyber gym, but come up with something like Juice Shop. and then have a harness where there's specialized agents that are looking for specific things, and then basically have an extremely smart model like Daybreak or something run all of the models in all of the microagent lanes or roles, and then rate their performance across each of them such that you know, oh, when we're doing XSS agent, the 2 best models are GLM and some random open-source thing on Hugging Face that no one's ever heard of. Right. going forward, you then always use those 2 in tandem for that specific role. You know what I mean? Kind of like almost doing like your own form of benchmarking. Specifically, this is on my mind, Ad, because the guy in B Team 6 just came up with that new— Sherpa. Yeah, LLM Sherpa just released like basically a cyber fine-tuned obliterated model that he claims is like really good on CyberBench. And I'm super excited about it, but I'm like, I personally, I'm just like, you know, everyone these days I think is like kind of skeptical. It's like, oh, I want to like make sure it's good and it just, it didn't just like eval, uh, Max. And so if I could just throw that into this like system that I'm just talking about that I just like referenced, um, and it like actually performed quite well in some of those roles, then I would know that I want to like use it and throw it into the system. But without that, I'm like unsure. And I think this kind of comes back to how Brandon said it's like a full-time job or like a full-time hobby, you know, kind of like figuring it, like basically doing your own harness tinkering. Um, but before, anyways, we're kind of, we kind already switched over to the main topic. So let me, let me pull us back and let's talk about news, um, real quick. I have a ton of stuff to talk about, um, so I'll start and then I'll switch over to Ad and you, Brandon, if you all have any new stuff. And then I'll come back to the, to the last little bit of mine. The first thing I wanted to mention is I just like, Kaido to me is just like a mainstay in my harness, but it's not something that I like look at the new upgrades of, like maybe I should be. And so I, and so I was just like, you know, talking with the Kaido team and I was like, what's, what's kind of new? There's so much crazy crazy good stuff in there that our agents can now be using Kaido for. So they have race condition testing possible with a new type of session called a pipeline session type in Replay. And so you can send requests sequentially. You can do that last byte attack that Burp's been able to do for a long time and single packet attack. And I'll have a link in the show notes where you can go look at those. HTTP/2 support is already released experimentally, but they're working to stabilize it. And then they added WebSockets in Replay. which apparently happened back in June. I didn't even know. And I actually think there's a lot of potential for zero days and potential for heavy impact vulnerabilities through WebSockets. I've been telling our friend Kieran Munke, has found some pretty cool WebSocket bugs over the last few months. I've told him to kind of double down on that. I think that that is like a really good area of research, but maybe I'm kind of giving him some competition by mentioning on the podcast. But yeah, if you haven't been looking at WebSocket stuff, and because Kaido didn't have like it in replay, you can definitely now do that. Did you all know about those features yet?
+
+[00:20:51.32] - Brandyn Murtagh
+No, I didn't. And I'll be honest, I have like a split-brain setup for when I'm doing testing like this. If I do want to switch over and use something, it's not smooth at all. But I think we're a step closer to me just sticking to one thing now, which is really nice. Do you know if these are exposed in their SDK at all? Kaido are usually pretty good at that stuff, right?
+
+[00:21:18.05] - Joseph Thacker
+Yeah, they've been— I think that SDK is like a first-tier feature, or what's it called, like a first-party feature now, where almost everything they add has support, uh, through the SDK. And the Kaido Mode skill, um, I know that I referenced this a couple months ago on the podcast, got upgraded significantly. I think it was recently upgraded again. Um, but it's so easy these days to just hand that to your agent and be like, hey, here's the Kaido Mode skill, go, go mine their features for new things, and then just go add it to your own skill. You know, you don't have to It takes like 10 minutes to update it even if they don't.
+
+[00:21:48.09] - Brandyn Murtagh
+Yeah, that's nice. I had no idea. Were you aware of any of these changes? Because I certainly wasn't.
+
+[00:21:54.21] - Ads Dawson
+No, I wasn't. But that's awesome. And it'd be interesting to see because I know for a lot of people that was maybe the reason they were still hanging on to using 2 proxies or not even switching to Kaido. So they've clearly been listening to the demand.
+
+[00:22:10.64] - Joseph Thacker
+Yeah, those are 3 huge features, WebSockets, HTTP/2, and then those kind of pipelining attacks, because I don't know, it feels like as the internet gets more secure, things like last packet attacks, like race conditions, these more niche bugs are the ones that we end up having to exploit, because there's not just blanket IDORs everywhere.
+
+[00:22:30.09] - Ads Dawson
+Yeah. Well, before that, my agents were just using straight up Python for HTTP/2, So yeah, I'll give it a go and see. Yeah.
+
+[00:22:40.02] - Joseph Thacker
+And I honestly still think that we're headed like we're in a world and headed more towards a world where proxies are not as important. You know, I kind of hate to say that for our Kaido bros. And, and I'm also, you know, an advisor for them. But there is like, I still think a really huge use case for manual reproduction. And I also think that your agent often needs a searchable database of all the things that have been tried anyways. And it makes the most sense to have it in a very HTTPQL seems like the perfect language with which to query a whole bunch of HTTP requests. So I feel like it almost makes sense as the default database of requests that have been made for your agents, especially when you're running a swarm or a bunch of agents like you do, Ads. If they're all just proxying all the stuff they're doing, then all of a sudden your execution agent 2 days later that needs to go find that thing or that needs to grep over everything, it can just use HTTPQL in a really clever way to pull those requests. And I haven't done this personally, but I do think that people who are super Kaido-pilled, you can actually use that SDK to pipe findings into Kaido. So all of us have different ways to look at our findings. Some go to Discord, some go to Markdown files, some people get emails or whatever. I think actually having it in a single place in Kaido and the findings tab is also kind of a cool use case, even though I personally haven't set that up yet.
+
+[00:24:01.18] - Brandyn Murtagh
+That's so true. They have put in a shift on functionality that the community wants, which is really nice to see. But I feel like these in particular, the race condition type things, HTTP/2 and WebSockets, is probably going to move the needle quite heavily now for a lot of people. Because for me, for example, they are the 3 reasons why I still have Burp open right now alongside Kaido. So, yeah, that's really good work from the team there.
+
+[00:24:31.77] - Joseph Thacker
+It's often required too for pentesting. And so I think that like any deals that they were like, you know, not able to close because of that, they can now, which is cool. All right. Good stuff. Yeah. So a couple other things. One, people probably saw my tweet, but you can use GLM-53 Flash and DeepSeek V4.1 Flash for free in OpenCode. I think just people are complaining about 200K token context. And I'm like, yo, y'all know until like last week, every Codex and ChatGPT model was at 200K. Like, 200K is still like perfectly reasonable to get almost anything done if you have good memory and good compaction. I still prefer more, Brandon. I still prefer more.
+
+[00:25:11.58] - Brandyn Murtagh
+It's free. It is free. What, like, it's free. Just use it. Like, don't complain about 200K. It's free. Just enjoy it.
+
+[00:25:19.68] - Joseph Thacker
+Yeah. And I think people also said it's slow, but it's like, okay, just like set up a few more accounts. Like, if you want to run 3 parallel hacking agents, Use 3 emails, sign up in 3 ways, and open up 3 open codes and just get them hacking. You know, you can have them write to the same database or whatever, like who cares, and let it run overnight. And, and, you know, obviously I think people who aren't investing a little bit of money— I mean, everyone in every business— actually, let me just say this because I think bug bounty hunters are kind of like woefully under-informed on business things. If you look at any business on the planet, okay, the margins are, are like always like as low as 1 or 2% margins. Okay, when I say margins, guys, that means like they spend 98% of the money they bring in and they get to keep 2% profit, right? That's obviously not a great industry, but there are still lots of those and they're still massively successful. All the way up to like, let's say, 50% gross margins where like, you know, they spend 50% of the money to come in and they get to keep the other 50%. That's, that's it. That would be like tier, like S-tier best possible business you could be in to make 50% profit margins. We in bug bounty, until pre-AI, had like 99.9% margins. Sure, there are people out there like Today Is New that buy an expensive subdomain recon service from— what's the main company that does those? Security Trails or something? What's the— come on, somebody help me out here. What's the subdomain service?
+
+[00:26:41.00] - Ads Dawson
+service? I actually don't know what subdomain service.
+
+[00:26:42.95] - Brandyn Murtagh
+Security Trails is one of them. I
+
+[00:26:44.50] - Ads Dawson
+I think it's Security Trails.
+
+[00:26:45.58] - Joseph Thacker
+Basically, you could invest in some tooling, right? I mean, everyone buys Burp or buys Kaido or whatever. But anyways, my point is now, even with AI spending, even if you bought 2 or 3 of the best subscriptions and you're a low-tier bug bounty hunter who doesn't really make that much, you're still going to be at like 80 or 90% margin on your investments. Like, please invest in your, like, in using AI because it's going to just help you scale up and do better and find more and learn faster. So anyways, I just wanted to say that. But yes. At least for those who still don't want to, you can play with this and mess around with GLM and DeepSeek in open code. I will say they are not zero data retention, so just be careful that you're not doing pen tests with free open code.
+
+[00:27:31.36] - Brandyn Murtagh
+Yeah, there was actually some research on that lately. Did you see someone brought the logs from some sort of inference provider and they found like 20 SSH keys which granted them access to a load of businesses and things like that. Did you see that research?
+
+[00:27:48.32] - Joseph Thacker
+I did not, but it sounds epic.
+
+[00:27:49.44] - Brandyn Murtagh
+Yeah, I'll try and dig it out. It was quite a good read. Ads, did you see it?
+
+[00:27:54.17] - Ads Dawson
+I, I saw the tweet, but I did— I didn't actually read it, but I got the gist from it.
+
+[00:27:58.42] - Brandyn Murtagh
+I need to try and find it. Yeah, I'll try and find that in the background.
+
+[00:28:01.66] - Joseph Thacker
+It's kind of funny. It honestly reminds me of— who are the guys? Um, is it Truffle Security that dug into like the Open source training dataset to like look for like API keys and secrets, and they found like thousands.
+
+[00:28:15.97] - Brandyn Murtagh
+Yeah, they've done a lot of research on that. It's gonna take me a while to find in the background, but I'll keep looking.
+
+[00:28:21.20] - Joseph Thacker
+That's fine, you're good. I have a couple more things I wanna mention. One was this month, October, has basically been like reset month because OpenAI committed to releasing like a big set of features per day, and any day they don't, they're gonna give a reset. And so there's already been a reset like every other day for the last couple weeks, which is perfect timing for me in a live hacking event because I've just been burning them up. But anyways, I wanted to mention that to you all because there's still 2 weeks left. Oh man, by the time this goes out, there'll only be 1 week left. Sorry. Okay, and then the other thing is, so I hate getting cyberblocked. We always talk about that a lot. I was chatting with the OpenAI team and they were like, have you tried logging in and out again? in with your hardware key. And that actually worked for me. It got me completely unblocked for like 2 days. And now I've started randomly getting blocks again. But anyways, in case you are getting blocks and you're annoyed, try logging out. And then when you log in, only use your hardware key to log in. And then if you do get blocked, I've heard from multiple people that you can just resume a goal. So have it set like a durable goal. I always say like, hey, go find these bugs on this thing and set yourself a durable goal so you'll be able to keep running. If it does get cyberblocked, you can just go click resume on the goal if you're in the UI. And if you're on the command line, just /goal resume, I think. And that will allow it to keep going. So those are some pro tips. Ads, I think you had a little bit of news. Actually, yeah, sorry. You can comment on all the stuff I just said, actually.
+
+[00:29:49.77] - Ads Dawson
+No, that's totally cool. So full disclosure, I saw this probably about 20 minutes before we jumped on. But I'm a huge fanboy of Gareth Hayes' work and the CSS injection in general, especially especially for exfiltration. So I can't remember who the individual's name was. I apologize, I've actually forgotten his name. It was Alex, who's a researcher at PortSwigger. And long story short, he was doing some follow-on from Gareth's work, and he did some crazy math and overlapping fragments and reconstructing them offline. And basically the TL;DR is that you can get up to 99% reduction in the CSS injection payload that you actually need to actually exfiltrate data. And then a lot of it is done offline. So smaller payloads, smaller fields. So it just make— just, I guess, if anything, makes CSS injection much more of a primitive now with this technique.
+
+[00:30:50.45] - Joseph Thacker
+All right, gentlemen. So yeah, now the bulk of what we want to talk about, and I'm scrolling through y'all's notes, and Brandon, as usual, you have came extremely well prepared. Also, Yeah, and then the notes that we had from offline are here too. But yeah, so the main thing that I wanna talk about today with everyone is like, one, using smaller models requires more engineering in general. And I think Ads is the perfect person to speak to with this, having used smaller models kind of like to smash out a bajillion bugs this year. Similarly, Brandon at the beginning of the year got so frustrated with getting cyberblocked That then he then just like hard converted and then went on to, to dominate, um, an LHE and some— and just find a bunch of bugs such that he could actually take so much of the middle part of the year to optimize his setup. And, uh, both of these guys have kind of converged on DeepSeek V4.1 as well as on Oh My Pi as like a main harness. Uh, I do want to talk about, um, some other harnesses, but, um, yeah, so I'm gonna actually let you lead this, Brandon, and then I'm gonna just like bring up stuff from mine and Ad's offline talk. Um, Because I think it's extremely interesting and extremely useful for practical purposes for people who, one, have maybe bought hardware over the last couple of months and are now like, how do I use this thing? Or people who are like, I don't really love OpenAI, or I don't love Claude, or I keep getting blocked, or I'm in a country where I can't get Cyber approved, and so I have to use DeepSeek V4. How can I use it more effectively? These types of questions, which I think are super practical to a large swath of our community that that maybe historically did really well manual hacking and now they're suffering because everyone else around them has been leveling up, but they haven't been able to?
+
+[00:32:36.48] - Brandyn Murtagh
+Yeah, so I will say it sounds great when you talk about local models and having your own tokens, unlimited tokens, and things like that, but there are some harsh realities to it, which you'll learn quite quickly when you start getting involved with local models and even just smaller open-source models if you've got a hosted inference provider. Um, what I would say is realistically, if you're running local as well, there's going to be, as of speaking right now, a fair chunk of change you're going to have to invest. I mean, Spark prices, I don't even know how I— like, every time I check the price of Sparks right now, they are just flying every single week. Um, and also the Mac Studios as well is also a good, uh, alternative, but we'll come back to that later. But what I would say is In terms of model capability that you can run locally, I think right now the best bang for buck you can get in terms of performance and general stability and reliability are going to be GLM-5 FreeFlash. And there's some quants available of DeepSeek 4.1. And some of these repos are like, they're taking all of these experts, they're analyzing what experts are used most commonly when you're prompting or performing coding. And then usually when you quantize a model, or historically, you would have like, you would take a 16-bit and then quantize it to 8-bit. What people are now doing is they're only quantizing certain experts in that model. So say, for example, you don't just have a flat 4-bit quant, you'll instead have some experts that are running at 4-bit, some at 8-bit, some normal, and things like that. So to tie all that in, all that nonsense together, what I'm trying to say is mileage may vary on certain tasks with that. Um, but you can run DeepSeek 4.1, um, Flash as well, which is a relatively new, um, recipe which has been released. I'll drop the link in the comments as well as an example of what I'm talking about.
+
+[00:34:47.65] - Joseph Thacker
+Yeah, do you all, uh, at least for me on my Mac Studio, GLM 53 Flash, like the best recipes I can find for it seem to almost perform twice as fast as the DeepSeek recipes I can find. Do you know if DeepSeek V4 OneFlash is twice the size and so that's the issue? Or do you think that the model is just due to its architecture faster because maybe it has less experts or more experts? It's a mixture of experts with smaller sizes. And so then whenever it gets into that, when it actually chooses that expert, it's now actually running at a much smaller— Do either one of you all know why that is? And if— I'm just curious if that's the case on y'all's flashes, or because CUDA is so optimized, DeepSeek actually runs just as fast.
+
+[00:35:34.59] - Brandyn Murtagh
+So DeepSeek 4.1 Flash is a huge model compared to DeepSeek 4.0, which was like 100 or 200 billion parameters. 4.1 Flash sort of put that to bed, and it's like 500-and-something billion parameters, but it's MOE, Mixture of Experts architecture. So comparing that to GLM5 FreeFlash, It is a much bigger— like, if you look at in terms of just weight, not like intelligence, but weight size of the models, uh, 4.1 Flash is like much, much bigger than GLM 5.3 Flash. That is why it's faster to run on local and it's more readily available for people.
+
+[00:36:15.21] - Joseph Thacker
+Yeah, no, but I, for some reason, like, the, the community optimized versions of 5.3 run much faster on my M3 or on my M5 Studio. Rather than the DeepSeek versions. And that may just— like, I don't know if that's because the support is better or the community rallied around it, or maybe it's because v4.1 Flash actually came out more recently, right? Didn't it come out much more recently than 5.3 Flash, like another month early, like another month later? And so maybe the support for it just isn't there yet.
+
+[00:36:40.80] - Brandyn Murtagh
+That's the other thing as well with the local game in terms of hardware choices. I mean, the reality is it's either going to be Sparks or a derivative of a Spark right now. AMD are releasing their new 495 AI Mac series, which is meant to be quite good, which is used in things like the new Framework desktop, the mini desktop, and also a couple of other providers. Oh, that's cool. Yeah, and you get 192 gigabytes of VRAM as well instead of 128, but they are about $7K, so it's a different price point. And you're also going to have Mac Studios, but what I would say is if you are considering getting into local just for the sake of having local models and adapting your harnesses, be aware of what you're getting yourself into. Like, the NVIDIA Spark is the most mature and has the most eyes on in terms of community, so the recipes on the Spark are always going to be much faster in terms of like release. They're going to be more optimized, and they're just going to have more people using them because the community is bigger. Whereas the other options right now, yes, they do have a community. Yes, the software— I mean, I mean, 9 times out of 10 does work okay. But in terms of like speed to new models and overall optimizations, they're going to be— it's just going to be slower because the communities are smaller. So that's something to consider there.
+
+[00:38:05.15] - Joseph Thacker
+Yeah, you just reminded me that why I— that I forgot to circle back and give people my pitch for why they should or shouldn't buy hardware. So I'm going to say that super quickly, is that basically I think that the biggest reasons why people might need hardware there is let's say you have some other use case, like you've got some other business or your family needs it, and so you're able to save costs by not buying some subscriptions for your 10 kids. If you have 10 kids and you want to use a local model for that, right? Also, it gives you full control over it where in that case you can fully control everything about that harness and that AI agent for your family or for your business or for whatever. Similarly, I think if you're going to be trying to use obliterated models, like we're We're members of B Team 6, so we do a lot of AI red teaming. And when you want to use a model to jailbreak another model, that's often quite hard with the models that get released from the frontier providers. There are plenty of models on OpenRouter that will do that. But in general, if you want to run your own obliterated models however you want, doing whatever you want with nobody able to see, perfect privacy, then you need LocalAI. The other thing is maybe if you just have disposable business income that you need for a business expense and you want to basically hedge against these model providers losing subsidized tokens down the road, then you'd want to do that. Or maybe legitimately, the Sparks were kind of a good investment. If you just wanted to diversify your investments, you really could have bought a Spark. I even saw with the new M5 Mac Studio, someone bought one for like $10K and then resold it. Actually, there were multiple people who did this. And then the day it came in, they just resold on eBay for like $3,000 more. So I do think that we're in this kind of little— I don't know if it's a bubble because I think AI really is changing the world, but we're in a hardware bubble a little bit. And so buying it for an investment or something. And then the final thing I will mention, because we do have a lot of listeners who do pen tests on the side and stuff, if you're working with any kind of banking or medical client who's like, nope, you can't use any frontier model provider, you can't put any of our data in anything, if you have a local hardware device, you can be like, nope, that's fine, we have local AI, it will all run and stay on-site, encrypted at rest, or whatever things you want to say to them. But you can actually guarantee that and still get the benefits of using AI during that pen test without to do it all manually by running stuff locally. Now, I will say, you know, I saw a funny tweet that was like, you know, people buying Sparks for 10 years worth of a Claude subscription. And so like, you know, and, you know, kind of similarly, probably 10 years worth of like DeepSeek tokens if you're buying via API too, right? And so it's like, you don't have to buy these. No one really has to, but those are the reasons why you might want to. Okay, sweet.
+
+[00:40:50.86] - Brandyn Murtagh
+I'm sure Justin— sorry, I had to go, mate.
+
+[00:40:54.55] - Ads Dawson
+I was just going to say the one thing to mention is I have seen a lot of people who have bought one Spark. So if you are thinking like these guys I was talking about, 2 Sparks and running DeepSeek or GLM, yesterday I did see that NVIDIA, we'll put a link in the show notes, but NVIDIA did drop Quen 3A FP4 on a single Spark. So, you know, there's something to try as well if you're one of those people.
+
+[00:41:20.84] - Joseph Thacker
+Odds are that's going to be even worse, though, than something like Opus 4.7 or 4.8 or whatever. So, the odds this is going to find bugs in a non-pentest capacity are probably pretty low, just to be upfront with everybody.
+
+[00:41:33.21] - Brandyn Murtagh
+Yeah. So, yes, agreed. But then, one thing I did want to talk about is with your harness, Absolutely, yes, of course, it's a smaller model. You're gonna hit your head against the wall a couple of times. But if you design your harness to be almost modular, for example, when I'm— I do, like, a lot of Android and mobile stuff in general. For file reads, for example, I will offload that all to a smaller model, 'cause I know I can get, like, 300, 400 tokens per second. And you can design your harness to facilitate and capitalize off of that.
+
+[00:42:10.90] - Joseph Thacker
+So when it reads, how does it give that information back to, like, like your smarter hacking models? Does it summarize? Does it grep? What do you mean by offloading file reads?
+
+[00:42:20.28] - Brandyn Murtagh
+Yeah, so it will summarize the file and say, for example, okay, let's just use for example's sake, I have a 200-megabyte APK and I'll offload a lot of the file reads to trace and analyze sources and sinks, for example, in high signal areas. And then if there's any high signal ones which, okay, This sync does have like a semi-reliable source, which could be which could be like a plausible attack vector. It will then feed that to the to the bigger model to go okay. This does look like it's worth the tokens to look at this and pursue this. Let's try and either dynamically look at it or things like that. So the point being is even if you do have these smaller models of one spark or even like a 28 billion parameter model for I think. I think it's Quen 3, one of the Quen somethings. You can still capitalize off of that if you have your harness properly. For example, one of my recon agents for the longest time was just like a DeepSeek 4.0 Flash agent, which I just let run because I could get hundreds of tokens per second on my hardware. And it just made really quick recon decisions constantly. I just left it running all the time, all the time, all the time. I'm saying the same thing over and over again. Basically, TL;DR, your harness can cater for smaller models.
+
+[00:43:49.09] - Joseph Thacker
+Yeah, Adz, you keep nodding along, and I think you said something similar to me about your JavaScript parsing. Can you elaborate on that from our call the other day?
+
+[00:43:56.28] - Ads Dawson
+Yeah, sorry. I apologize. I didn't mean to run that as a single hackbot or anything like that, but I do similar to Brandon, but I will just have— because there's really strong small all capable coding models. What
+
+[00:44:10.34] - Joseph Thacker
+What are your all's favorites?
+
+[00:44:12.73] - Ads Dawson
+So Quen is pretty good at coding. If you want really small, we've talked about it, the OnRiff, which we can put our links to this, but those are really small models if you've got spare space, spare capacity. I'm a big fan of, like Brandon says, I remember I listened to the episode last week and you said about using tokens for your mom, but it's true. Anything that you can use it for, whether that's combing through JavaScript. So I use JX Scout. I'm a big fan. I think agents work really well with it. So constantly, 24/7, I just have small models churning on code, looking for sinks, and then just passing that up to a shared bus, which is then I have DeepSeek or whatever the model's testing it and feeding that back.
+
+[00:45:04.78] - Joseph Thacker
+Okay. So do your prompts basically look something Like, for Brandon, yours would be like, hey, anytime you need to do a local file read, use this model to do it. Or on that specific agent, it would say something like, hey, your job is to look for sources and sinks, go chunk by chunk through this 200-megabyte APK, and anytime that something looks security-relevant or a security issue, or it's an interesting sink or something, then bubble it up to this parent agent.
+
+[00:45:36.11] - Brandyn Murtagh
+Yeah, and this is the exact thing James Kettle was talking about in his blog that we published last week. If he put Opus 4.6 as like the most reliable model to like actually follow through with whatever task you give it, when you can create a harness like that, you can afford to literally say, read every single file line by line, do not skip them, make sure we get 100% coverage in this area, rather than just saying to a bigger model, hey, search for sources and sinks, and make sure you do it this way. You can literally decide—
+
+[00:46:09.50] - Joseph Thacker
+Because they just quit out early.
+
+[00:46:11.30] - Brandyn Murtagh
+Yeah, exactly. You can afford to be as granular as you want, and it will go through. And if your harness says to do that, it will do that. So that's probably the nicest thing that I've discovered from having the local game.
+
+[00:46:26.90] - Ads Dawson
+And one thing as well, when you're doing that, I agree, just don't take take it for granted that they are doing that. And that's whichever model you're using. So have programmatic verifiers in any single way. So there is some way of creating a programmatic verifier, do that. Yeah, I'm going to ask you. So it's test-fail until the model does it. Easy example, right? So let's say you've got an application which has just got basic RBAC, and it has 3 roles, and those have a bunch of permissions. Effectively, you could— so I use a tool called Trailmark, which is from TrailerBits. It's open source on GitHub, where it basically puts the source code into queryable graphs of functions and classes and calls, so the model can use that. So with auth, you can just basically create a test that the model tries this function and this function and this function across all those different roles, and only until it's tested every single permutation across the entire auth N and auth see, then the test pass. That's an easy example of—
+
+[00:47:34.65] - Brandyn Murtagh
+What was the other tool called? Sorry.
+
+[00:47:36.59] - Joseph Thacker
+It's called Trailmark.
+
+[00:47:37.88] - Ads Dawson
+Oh, the tool I use for offline source code is called Trailmark by Trail of Bits.
+
+[00:47:44.05] - Joseph Thacker
+Yeah, shout out Trail of Bits, potentially getting acquired by OpenAI. Go team. But no, I was going to ask you guys actually about this exact thing. It was already on the tip of my tongue. Do you all use, because you're both big on my PyFam Do you all use like the validator or verifier or whatever that's like built into Oh My Pie, or do you all have custom ones?
+
+[00:48:07.61] - Brandyn Murtagh
+I don't, but I've seen really good things.
+
+[00:48:10.86] - Joseph Thacker
+Yeah, so why don't you all tell me like kind of what that looks like, like either like specifically what the code looks like or, you know, what you would tell an agent for a recipe in order to like add a verifier to it. And like, I guess my bigger question is, Ads, we talked a little bit about what you call your reflection agent, and you said it's the same across all of your independent like use cases. Like for each of your different agents that you have, like you know you have your recon agents, you have your access agent, you have your exploitation agent or whatever. And then so I'm curious if Brandon has like a similar setup, and and I'm just curious how you would like describe to someone else's system or agent or whatever how they could set something up. similar, you know, like what kind of prompt you would use to create that?
+
+[00:48:54.67] - Ads Dawson
+Yeah, so I use, um, so I have like prompts, I guess, for each individual vulnerability class or type. So I run like a bunch of agents. So we talked about this the other day. So I'll have like an auth agent, I'll have like an offline source code agent, which we talked about, like a very small model.
+
+[00:49:13.03] - Joseph Thacker
+Do each of those vulnerability agents get like the entire sum of like some sort of like recon dataset that happens
+
+[00:49:19.51] - Ads Dawson
+first. Yeah, which makes sense.
+
+[00:49:20.80] - Joseph Thacker
+So for XSS, you would say, hey, here's all the recon data, here's the big brain of all the data, look across this whole project for any XSS.
+
+[00:49:28.88] - Ads Dawson
+Yes.
+
+[00:49:29.44] - Joseph Thacker
+Okay.
+
+[00:49:31.48] - Ads Dawson
+But I use, we talked about this actually a while ago, open source library called JEPA, which is like a prompt optimize— it's an optimization library where you can improve prompts. So you can run models against a set of tasks, so cross-site scripting tasks, and then effectively you can hill climb your cross-site scripting agent prompt, if that makes sense.
+
+[00:49:51.11] - Joseph Thacker
+Is this like JEPPA?
+
+[00:49:54.15] - Ads Dawson
+GEPA.
+
+[00:49:56.01] - Joseph Thacker
+GEPA, okay.
+
+[00:49:57.28] - Ads Dawson
+Yeah. But there's loads of optimization libraries you can use like that. And I basically settled on— I settled after doing that across different vulnerability classes.
+
+[00:50:11.88] - Brandyn Murtagh
+I would say, following on from a conversation me and Justin had, we were talking about hackbot stuff, and I was like, so how do you benchmark your stuff? If you make a change, how do you verify that the change hasn't regressed your behaviors? And he was like, dude, like, just—
+
+[00:50:28.48] - Joseph Thacker
+I don't.
+
+[00:50:29.61] - Brandyn Murtagh
+Just shut up and hack. Like, just get on with it. But I've come from a spot of being nerd sniped so heavily. Every small change I'd make, it'd be like, right, we have to benchmark this. We have to see where it regressed, how it regressed, exactly if this— And dude, I was burning so many tokens, like, so many tokens, like, 2 Claude subs dedicated for this stuff before I went full local. But the point is, I— that— and I'll probably tie this together in the blog post I'm drafting out right now. But if you are a bug hunter, and you are wondering what to do, and if you should be benchmarking or not, I think there is a small level where it is beneficial, maybe a couple of runs or so. But the real, like, the best thing you can do is just run it on target, see how it does.
+
+[00:51:22.03] - Joseph Thacker
+Yeah.
+
+[00:51:22.23] - Brandyn Murtagh
+Do a bit of co-hacking, like a sparring partner, and then do it that way rather than doing what I'd done. And I was, like, having to know exactly, like, exactly what behavior difference I was introducing and what I wasn't. It was fun, but if you're a bug hunter wanting to find bugs, probably not the best thing to do.
+
+[00:51:41.15] - Joseph Thacker
+Yeah, I'm very much like an 80/20 or 90/10 kind of guy. Give me 90% of the benefit for 10% of the work, and then I'm not going to micro-optimize every line or whatever. I did see an interesting tweet though, I think, like an interesting prompt hack from an engineer at Anthropic. I don't know how much applicability it has to hacking, probably a good bit, but I'll put it in the show notes. But I'm going to read it to you guys now because I thought it was really fascinating. It said, says, I want a deeper version of this task, not a bigger one. Before you rewrite this task, say what a top professional in this field would do here that I'm not asking for. Name the rawest material they would start from instead of what I've already given you to be digested. Name the specific methods and tools they would use. Say what other than you or me would show the result is correct, and then rewrite my prompt to ask for exactly that. And it was like, oh man, that's really good. Like, even, even if that's not necessarily applicable to Where
+
+[00:52:36.42] - Brandyn Murtagh
+are you reading this? Where's the link? Where can we see this?
+
+[00:52:39.90] - Joseph Thacker
+I just put it in the show notes, and we'll give it to the people. I'll put prompt rewriting tweet. But anyways, okay, cool. So a couple things then. If you all don't use the verifier— oh yeah, yeah, actually, sorry, Adz, I don't think you got to talk about your reflection agent. Tell me about this.
+
+[00:52:58.80] - Ads Dawson
+Oh, so reflection agent is a phone-a-friend. So it has a confidence level of whether something that an agent believes is a finding is either a lead, a gadget, or a legitimate finding, which then goes into a report. I have a programmatic verifier for my reports. So every single agent produces, no matter what agent runs it, they have to pass a test. So every single report has the same structure. It has the same summary. Yeah. It starts with a summary, and it starts with a POC. And then it ends with a video and blah, blah, blah. But the reflection agent is a phone a friend to assess that confidence. Like you said, example there, what I would call that is probably like a vibe jepper, but it's totally practical. Anytime you use an agent and you tell it to get a peer review, that itself is such a huge impact and increase. So it's just effectively using using that methodology, especially when you've got long-burning context and things like that. Sometimes models will start to spin out of control, and the reflection agent will put it in its place.
+
+[00:54:10.57] - Joseph Thacker
+Sweet. Yeah. So Brandon, what do you use for verifiers? And what I mean about verifiers, to any of our listeners, especially with models that are smaller, to be honest, with any model besides maybe— I don't actually know. I haven't used Muse Wonder. I haven't used Argon, Gemini 4, but at least for me personally, anything before GPT-5.6 SOL produced false positives, right? So you have to have something in the loop that's gonna be like, nope, that actually isn't a bug, or nope, there's too many preconditions, or nope, you didn't finish hacking everything, go back and do it again. And so I know that Oh My Py has that built in, but I'm curious, since neither one of you all use it, I'm curious what you use for that, Brandon.
+
+[00:54:48.67] - Brandyn Murtagh
+Yeah, I have, As part of the process, there's like a— I've basically generalized it now to like, it's called the triage council. And depending on the vulnerability class or vulnerability, it's quite literally a council. There's some absolutely horrible personalities in there to roast the bugs. But depending on the bug type—
+
+[00:55:11.00] - Joseph Thacker
+Who was that famous HackerOne triager that everyone hated? What was his name?
+
+[00:55:14.36] - Brandyn Murtagh
+I'm not saying any names. Okay, so there was a triager.
+
+[00:55:19.84] - Joseph Thacker
+It's their triage name, it's not their real name. There was a triager who would, like, close everybody's reports, and everybody complained about it years ago on Twitter.
+
+[00:55:26.98] - Brandyn Murtagh
+I'm pretty sure if you search, I think if you search triage, was it triage_something, you can find them pretty quickly.
+
+[00:55:34.59] - Joseph Thacker
+I don't know. But anyways, needless to say, you have that person on your council.
+
+[00:55:39.09] - Brandyn Murtagh
+Yes, essentially. And one of the things that I spent a lot of time figuring out throughout this process is 2 things here. Having a completely external agent, which only gets the context of the finding, whatever you're looking at, to really verify and roast, okay, is this a finding? Is this impact? And also giving the agent, okay, when you're verifying this, let Let's just use SSRF as an example. Just because an agent has said it's had an external callback from something, it doesn't mean it's an SSRF. Give the agent feedback to say, hey, this isn't quite an SSRF yet, it's a lead, but you need to be able to hit an internal network service and demonstrate that you can hit an internal network service. Because that was like a common one that kept coming up for these smaller models. It'd get like an external callback or some form of request inbound, it'd be like, SSRF, SSRF. And it's like, well, no, it isn't. So to tie that together, having a criteria per vulnerability class of, okay, you think you found an XSS, what context is it reflected in? Can you introduce a global window property which you can then read to actually verify you can introduce things? And things like that was really beneficial as well. And I'd done that per vulnerability class. I'm not sure if you've done the same there, Radz, or if you just have a generic This is what impact looks like. I'm not too sure what's best, so I've just done what worked for me at the time.
+
+[00:57:16.30] - Ads Dawson
+Yeah, definitely. So, like you said, a reflection agent, in my use case, sorry, I'm calling it a reflection agent, but effectively, it's just a hook with a sub-agent. That's the raw basic functionality, and that is effectively a judge. And yeah, I do use that too. So, I was going to ask
+
+[00:57:30.88] - Joseph Thacker
+So, I was going to ask you, you said that on our call too. So, what triggers the hook? Is it just an end of turn?
+
+[00:57:36.38] - Ads Dawson
+When an agent calls a tool which is effectively creating a finding. So the agent has a create finding tool, and upon tool call start, the hook then invokes, the agent starts writing its finding, and the judge is like, no, this is a lead, or whatever.
+
+[00:57:54.73] - Joseph Thacker
+It's so interesting because obviously you built the system, so you understand it. As you explained it earlier, when you said phone a friend, I thought there was a custom tool basically called phone a friend. But that wasn't the case. No, it works via hook. But then you could have a hook that basically runs at end of turn that says keep going, and it would basically be like a loop requirement, or you could have a hook at the create a lead, create a gadget, create a finding. And so anyways, it's good to hear you say, so basically anytime it wants to create a finding, there's a hook that's like, reflection agent's going to respond first.
+
+[00:58:24.40] - Ads Dawson
+Yeah. Yeah, sorry, there's a million words. It's like judge, reflection agent, whatever like that. But yeah, honestly, it can be really as simple as And like Brandon said as well, I do verifiers for very granular stuff and everything, like XSS, like ATO. Okay, cool, you got the cookie, but what can you do with it? So one of the criteria of the verifier is make a request on behalf of the victim with the— and then you can verify. It's like a full ATO. Yeah. And then you're trying to keep the bug as concise as possible because a lot of models will do cross-site scripting with JavaScript execution, and they'll call it session takeover or something dumb like that. That's a nice way of keeping it real, so to speak.
+
+[00:59:11.48] - Joseph Thacker
+Yeah. Cool. Yeah. So for anyone who doesn't know, sorry, I referenced Oh My Pie a couple of times without really talking about what it is. Oh My Pie is basically a harness, right? It's like the equivalent of a Claude Code or a or a Codex, but it's like CLI-based, but it's like really pretty, really beautiful. And you have a ton of like really interesting configurations and it works for both subscriptions or API for both closed source and open source models. These guys like it. One thing that sits on top of that that I know a lot of people love these days, I know JD and Justin and Yuji and some other people all use it, it's called Herder. Are either of y'all using Herder right now? Yeah, both of y'all do?
+
+[00:59:52.57] - Ads Dawson
+Yeah. Oh my gosh, I'm behind the times.
+
+[00:59:55.80] - Joseph Thacker
+Basically, Herder is like a tmux alternative, um, that allows you to kind of like view all of your agents that are running across multiple devices. And then there's a mobile app that you can buy. I think you have to pay for it. It's called Mochi. You might even have to have to do a subscription, but I know a lot of people really love it because it just plugs straight into Herder. That allows you to then view all those same sessions on your phone. And when your agents need— like when they stop running and you need to respond to them, or they're asking for extra permissions, or or whatever, it'll pop up as a push notification, even like on your lock screen. And you can just be like, yeah, approve or respond and no. And so I didn't know if you all wanted to mention features you like about those things or things you didn't like or why you use them.
+
+[01:00:35.59] - Ads Dawson
+Yeah, so I use Oh My Pi. It is really pretty and it's very good. So I don't really use a lot of the features, to be honest, because I've customized it more so towards hacking. The things out of the box that I do like about it, it's quick, it's snappy. They push good code every single day. There's always updates, there's always features. They do have a really cool feature which we haven't run an review, so I think it's like share. And think of it as almost like you just basically share a unique link and then you can send it with someone and they can see the full trajectory. Oh, that's really cool. I'm not sure if you can actually then they can resume it with another agent or something like that. Mm-hmm. There's definitely stuff like that, which is cool. And they also have stats, which is quite nice. So if you are using OpenRouter or something like that and you want to keep a tab on spend, but you don't want to be looking at OpenRouter, it does approximation based on the token usage and costs. So you can get cost estimations, see how much you've spent in a day or something like that. So it can definitely just keep you on track to make sure you're getting ROI out of your
+
+[01:01:45.46] - Joseph Thacker
+Does it do the built-in caching, or does that happen in a different layer?
+
+[01:01:50.36] - Brandyn Murtagh
+Prompt caching, do you mean?
+
+[01:01:51.51] - Joseph Thacker
+Yeah.
+
+[01:01:52.73] - Brandyn Murtagh
+I think it does some level. I can't talk about it in extent. But on the note of harnesses, there's other harnesses out there which do a lot of good caching somehow, like the DeepSeek harness. I mean, their caching is good on their API anyway. But all I've seen, and I tried it a little bit, but I didn't use it long enough to get like the, the real, uh, benefits from it. But Deepseek's harness is meant to be incredibly good with the Deepseek API for cost. Um, Pi as well, just Pi, is meant to be a really good harness. And I've also seen a lot of people using Hermes, but I, I haven't gone down that route personally. Um, go on.
+
+[01:02:35.34] - Joseph Thacker
+In my light research, I think the reason why I was leaning towards using Oh My Pi, and it's what I'm using for my local harness for the Mac Studio, is because it's lightweight, right? Like, I don't want something that has like a huge bloated prompt, and I think Oh My Pi is like very streamlined, right?
+
+[01:02:51.86] - Brandyn Murtagh
+Yeah, and like, for me, I spent— before I discovered Oh My Pi and all these different harnesses, before they like got that velocity when people started talking about them a lot, I spent an insane amount of time like trying to bend Claude code to do things like, okay, load and use some inference or a different model through OpenRouter, or like try and use a different model like Codex through Claw Card. I tried to do all these silly things, whereas if you use a different harness which is like, um, provider agnostic, you can just plug it in and not have to worry about anything like that. That's true. Um, so that's another thing to consider as well if you start to use these different harnesses. Look at what works for the models you use. And if you need that flexibility to easily swap between a lot of different providers, like, I mean, I do, but I have a fallback setup to try like ZAI, GLM-53, local GLM-53 Flash, Opus-48, and then fallback to SOL. Like, I have these crazy retries. So if something is running like really long and I leave something overnight, if it hits a quota limit, bang, falls back to the next one. If that's busy or doesn't doesn't have, um, any usage left, it falls back to the next and things like that.
+
+[01:04:08.07] - Ads Dawson
+That's, um, a really good point as well. I think I don't use it personally, but Oh My Pi, uh, actually ships with like OAuth, so you can use your Codex Claude subscription through Oh My Pi as well. And they have a concept of plugins where some people have actually created a plugin where you can actually rotate. So I believe some, some people are Like 3 Codex subs without having to log in and log out and all that kind of stuff.
+
+[01:04:34.78] - Joseph Thacker
+I need that. JD, when you're listening to this, we need that in Singularity. We need that.
+
+[01:04:40.55] - Brandyn Murtagh
+That's what my setup is because I still have numerous subscriptions. And they have a concept of pools now, so you can pool 2 subscriptions logged in.
+
+[01:04:51.55] - Joseph Thacker
+Oh my God.
+
+[01:04:52.11] - Brandyn Murtagh
+And it falls back. So yeah, it's really quite nice. And it's useful if you do have more than one subscription, that's for sure. On the extension note as well, incredibly powerful in harnesses. Different harnesses have a different concept of extensions, but a lot of my Hunt HackBot harnesses now uses— it now operates as an extension as well for like handling auth and things like that across sessions, because I just found it to be quite nice and easy to to develop in.
+
+[01:05:25.96] - Ads Dawson
+And yeah, sorry, one last thing. The goal on OMIPI is actually very good. I've found a lot of success. I think DeepSeek is quite good at using /goal, but for pretty much any model, it's very thorough. I don't want to bash on Claude, but if you use goal with Claude, I feel like it just tries to cheat a lot, whereas it's very thorough. I've had DeepSeek for literally a day without me touching it on a goal, and it's found 4 bugs, and then it stopped.
+
+[01:05:59.98] - Brandyn Murtagh
+Yeah, I would say I've woken up to some absolute car crashes with using goal with Claude overnight. I've woken up and I've been like, okay, well, thanks for nothing, and wasting me another day of work. So I stopped using that quite quickly. It didn't really go well for me. That's a good take. I
+
+[01:06:19.63] - Joseph Thacker
+haven't been using Claude almost at all just because it constantly gets downgraded. And 4.6, while being really excellent, I do actually like using 4.6 subagents. Like, I'll tell Codex, like, hey, you know, whenever you're hacking, use local GLN53, one subagent, use a Codex Daybreak Blue subagent, and use a Claude Opus 4.6 subagent. And I think that diversity is really nice. Um, but I just like hardly ever use Claude, so I can't really speak to the goal of it. But I do use the goal mode in almost every Codex session. You know, I just always say, like, even if I accidentally gave it a prompt to go hack something and I forgot to set up a goal, I'll just then send a second message that's like, oh, and by the way, set yourself up a durable goal to keep this going. That's literally the entire prompt. And it will then infer what I mean from above and then make it like a durable goal. One thing that hit me, I think I wanna mess with ads type setup, 'cause it is hitting me that a lot of times when you have a general hacking agent, They often won't invoke a lot of the skills. There's actually one thing we mentioned on previous podcast episodes that you want to have some way to like do like a metric test on like what skills are being invoked and which ones aren't. And if you basically have an agent per skill that you're automatically invoking on every project, on like every hunt, you know it's going to get invoked. Like it has to, right? It's like you're kicking it off with that skill. It's like that's its one job is to run that skill. And so I feel like that's like a really good way to guarantee that you're getting full skill, uh, activation is by doing that. You know, you can still have generic Generic skills in there, like let's say it needs to get auth. Like all of your agents might need to like re-up their auth or something, right? But but as far as like per vulnerability things, like you know I have an SFDC hacking skill, and at the end of a hunt it may have not you know it may have like not really checked for the fact that two of the subdomains that it saw in the in like when proxying requests were actually like Salesforce instances. And so but if I call this the like the cell. Salesforce skill loaded up into an agent that's like, hey, the first thing you do is go look for Salesforce agents across this whole hunt, or Salesforce domains across this whole hunt, and if you find any, then you use the skill to then, you know, find bugs, then it's like going to be 100% guaranteed that that executes.
+
+[01:08:32.51] - Brandyn Murtagh
+Yeah, so I would say on this one, um, depending on what harness you use, different harnesses have different concepts of like agents in terms of how they actually load up. So for example, in Py and Oh My Py, and I think even Claw Code now you can create an agent type, and, uh, when you specify, it's like tool calls, what tools are allowed, you set the skills that it loads with. So when that agent boots up, straight away it gets loaded with like the agent prompt and the skills alongside it. That's one way I got through that, um, because I was running into historically those problems. But creating specialized agents with those skills that get popped up on load is one way to do that. Ad, you were about to say something.
+
+[01:09:20.47] - Ads Dawson
+No, I was going to say I've also done the same thing. I sound like such an Oh My Py fanboy, but I noticed in the stats dashboard that it comes built in with, it actually has a skills metric. So across all your agent sessions, it'll tell you how many times skills are invoked. So like Arezzo was saying, when you try to get those metrics, it's an easy way to look at the dashboard and get a vibe check.
+
+[01:09:45.26] - Brandyn Murtagh
+Yeah,
+
+[01:09:45.64] - Ads Dawson
+I just noticed that when I was using it.
+
+[01:09:47.82] - Brandyn Murtagh
+I, I started using it and I was like, I could have saved myself weeks if I started with this and like harness, just like messing around with stuff, because it comes with so much built in and so do a lot of other harnesses. But then I become like a salesperson of like just trying to get everyone on board. I was like, Ads, Rezo, Justin, Yuji, like everyone just sending off this thing. But it is, it is good. I was say. Um, not that that's the only harness, people, but it's, it's good.
+
+[01:10:15.27] - Joseph Thacker
+Sure. All right, guys, let's— I'm scrolling down here. We've got about, you know, maybe 10 or 15 minutes left. One adds, I didn't know that Meta dropped a new open-source model. If you know anything about that, tell me about it.
+
+[01:10:25.27] - Ads Dawson
+So this— I got this, this drop this morning, but they've dropped a new open-source model, uh, which— what was it called? Muse Spark Open.
+
+[01:10:36.56] - Joseph Thacker
+So is Muse their new tier of models, and Spark is probably like the smallest
+
+[01:10:41.25] - Ads Dawson
+Yes, I believe
+
+[01:10:42.22] - Joseph Thacker
+so.
+
+[01:10:43.11] - Ads Dawson
+They also have SparkFlash on OpenRouter. They got MuSpark 816 parameter. Sorry. Yeah.
+
+[01:10:52.47] - Joseph Thacker
+That's good and small.
+
+[01:10:54.63] - Ads Dawson
+Yeah. 816B. Oh, they got an FP4 version as well.
+
+[01:11:00.77] - Joseph Thacker
+How big is that?
+
+[01:11:02.93] - Ads Dawson
+That is the same. Oh,
+
+[01:11:03.89] - Joseph Thacker
+interesting.
+
+[01:11:06.93] - Ads Dawson
+Interesting. But I think that literally dropped this morning.
+
+[01:11:10.13] - Joseph Thacker
+That's amazing. Cool. I can't wait for it to get some good recipes for our hardware to test it out.
+
+[01:11:15.27] - Ads Dawson
+Yeah, I must say—
+
+[01:11:18.01] - Joseph Thacker
+You go
+
+[01:11:18.18] - Ads Dawson
+ahead. One thing I was going to say is that I haven't— so I was kind of messing around a bit with some of the Muse models, but one thing, what was the other one? Was it Muse Wonder? I think Muse Wonder is the big one.
+
+[01:11:31.73] - Joseph Thacker
+It's their best one, right?
+
+[01:11:32.77] - Ads Dawson
+Yeah. So I actually have a benchmark called StealthBench, which is a published benchmark. It's more around red teaming, but it's basically a set of tasks that actually, funnily enough, were derived from a lot of my bug bounty reports where agents had done big no-nos. And MuseWonder has actually scored the best, as in the most stealthiest, even beating some of the best agents. So to win, it has to still
+
+[01:11:59.27] - Joseph Thacker
+find the bug, but not be
+
+[01:12:01.57] - Ads Dawson
+Yeah, so let's say, an easy one is like SSRF, but don't set up a listener, use an external callback or something like that.
+
+[01:12:12.89] - Brandyn Murtagh
+So I didn't want to ask you about this. So I've seen a lot about the Stealth Bench, but for whatever reason, I just haven't asked you about it. In terms of this bench, I assume it's a benchmarking. Does it score per vulnerability class, or what's the scoring system? What are the scoring metrics there? And is it just web app, or is it like general red teaming where it's doing like AD recon? And what's it marked on?
+
+[01:12:41.11] - Ads Dawson
+So it's marked on several heuristics across the task. So did it set up a listener locally? Did it exceed rate limiting? So there's different heuristics that are pulled like that. a red teaming outcome because I guess red teams are a lot more sensitive, understandably, about operations than in bug bounty. So the way the benchmark is going, we're creating some more tasks now which are EDR-focused. So can they bypass EDRs and things like that? But right now, the initial version 1 suite of tasks were built pretty much on web app stuff. So where I'd seen agents make really stupid mistakes in my bug reports, or just in general in trajectories, I built tasks from that, and then seeing if other models would make the same mistake.
+
+[01:13:39.77] - Brandyn Murtagh
+So is a higher score better, or is a higher score worse on StealthBench?
+
+[01:13:44.06] - Ads Dawson
+A higher score is better. Highest score is stealthier. Yeah. Okay, cool. Yeah. And then there's a quorum of judges. judges, which is, I think there's like 3 judges, but I was also testing out with Jev as well. Jev is also a great, or even the open source version of Jev is a great way to use as that verifier.
+
+[01:14:06.60] - Brandyn Murtagh
+Nice. Was there a website for this? Did you launch with one of your tools?
+
+[01:14:12.01] - Ads Dawson
+I vaguely remember. Stealthbench. Yeah, stealthbench.com.
+
+[01:14:16.64] - Joseph Thacker
+Oh, you got the best domain. You know, I'm not sure if, uh, the, the alignment researchers are going to be on board with us benchmarking towards being stealthy as they hack things, but, uh, you know, I guess that's fine. I think, I think we're optimizing, we're optimizing for the wrong thing here, Ads.
+
+[01:14:35.43] - Ads Dawson
+Well, but you know, it, it's relevant to my line of work, at least when doing that. We want models that are going to be stealthy and not blow—
+
+[01:14:43.61] - Brandyn Murtagh
+Oh wow.
+
+[01:14:46.46] - Ads Dawson
+Yeah, we haven't uploaded the recent results. It's
+
+[01:14:49.32] - Joseph Thacker
+It's stealthy because it doesn't get anything done, Brandon.
+
+[01:14:51.72] - Brandyn Murtagh
+It does nothing.
+
+[01:14:55.77] - Joseph Thacker
+It's stealthy because it pretends to be doing things while not actually doing anything.
+
+[01:15:01.27] - Brandyn Murtagh
+Oh, nice. Yeah, this is good, mate. Uh, when are you going to update it for myself and the listeners as well? I'm intrigued.
+
+[01:15:06.89] - Ads Dawson
+Probably in the— probably in the next couple of days. We're actually, uh, our talk has accepted an unprompted comment. Which is the reason we're actually getting our butts in gear to do this.
+
+[01:15:15.93] - Joseph Thacker
+We haven't mentioned it. The other thing that you are affiliated with that has a good benchmark is the DREAD Index, right? Do you want to mention that real quick?
+
+[01:15:24.27] - Ads Dawson
+Yeah. So the DREAD Index is a suite of benchmarks, not purely across web. So it's like web reverse engineering, reversing, and effectively it's just a suite of private evals. and run a bunch of models across them. So it's pretty popular, it's very accurate. I would say that I built a lot of the web, well, I built all the web tasks, so I have confidence in them. They are difficult, it took me 3 to 4 days to write one task.
+
+[01:15:57.64] - Joseph Thacker
+So for any of the listeners, it's Dread, D-R-E-A-D, Index. If you Google that, it'll bring it up. But basically it's a, yeah, like you said, a private eval for cybersecurity-related challenges. And the nice thing is there's a toggle at the top for open source versus not. So if you like, you know, on the topic of AI hardware, if you're wondering which one to run, you can switch to that. Last time we checked though, v4.1 wasn't on there yet since it came out recently. Do you know if your coworker got it listed?
+
+[01:16:24.55] - Ads Dawson
+I think he's gonna put it on. He said he was gonna put it on the next couple of days.
+
+[01:16:28.59] - Joseph Thacker
+Cool, that's fine. It doesn't really matter. I mean, people can figure it out or deal without it, but I was just curious. Sweet. Cool, cool, cool. Yeah, like we mentioned earlier, I'm just looking at the show notes. LLM Sherpa uploaded obliterated model that's only 28B that scores 63% on CyberBench, which is really high. If I had to guess, it being a small model and so good at CyberBench, it's probably gonna be like wildly autistic on cyber stuff and like really crappy at other stuff. But, you know, who cares if you're using it as a subagent? And it may be benchmarked, benchmaxed, I'm not sure, but definitely go check it out. The links for all this stuff will be in the show notes. And then we're gonna share a DeepSeek V1 flash recipe for 2 Spark Um, that Brandon and Ad's put in here.
+
+[01:17:18.14] - Ads Dawson
+We should also share, uh, SparkDash, which I will shout out Matt Brown, which I will shout out the person who created, um, SparkDash. She's very good.
+
+[01:17:26.94] - Joseph Thacker
+Matt made it?
+
+[01:17:28.72] - Ads Dawson
+Uh, no, no. So I, I watched Matt's video.
+
+[01:17:31.43] - Joseph Thacker
+Yeah.
+
+[01:17:31.61] - Ads Dawson
+Uh, and I saw he mentioned it, and then the person who made it originally, shout out to them. I, I think it's like Mia Labs or something like that.
+
+[01:17:38.97] - Joseph Thacker
+Oh, it's Mia. Yeah, I've been using SparkDash to view my Mac Studio to like watch throughput and stuff. Yeah. It's not a GPU. So like the main tile on the main dashboard doesn't show anything for me because it's not like a GPU, which is kind of interesting. I feel like it should be more modular and maybe it is. Obviously our agents could just change anything. But yeah, it's really cool to see like your tokens per second and your lifetime tokens for like a local model. I guess you can get something similar from the Oh My Pi stats, but it is cool to have like a UI for managing and viewing all of your like local AI stuff.
+
+[01:18:09.85] - Ads Dawson
+Yeah, I used it when I set up my Sparks initially just to make sure everything's in line, slinging them on Tailscale, making sure I can access them. It's just a great way to do that.
+
+[01:18:21.26] - Joseph Thacker
+Yeah. Oh, I guess another thing to mention. Yeah, if you do buy local hardware and you want to expose it, you definitely want to give it some sort of light LLM API so that all of your other agents and stuff can find it. And this is maybe too obvious, but I'll mention it anyways. I basically gave all of my devices, like all of my other laptops and computers, a skill that says, hey, when you're hacking, always use one GLM53 subagent. We only have one lane, but here it runs on this hardware. Here's the path to it on Tailscale or the IP address through Tailscale for it, and here's the API token, and here's how you call it, as just a skill so that all of your devices kind of know how to use your local model if you need them to. Um, did you guys have anything else before we drop?
+
+[01:19:06.60] - Brandyn Murtagh
+No, I mean, the only thing I was gonna say is, I'm sure he won't mind us mentioning it, but Justin got in on the Spark game, didn't he? And, uh, it sounds like he had some success on— he didn't specify what, but some reverse engineering type thing. So be interested to, to hear about that But yeah, yeah,
+
+[01:19:29.36] - Joseph Thacker
+yeah,
+
+[01:19:29.61] - Brandyn Murtagh
+I guess let's mention really quick.
+
+[01:19:31.78] - Joseph Thacker
+Yeah, let's mention the things real quick. Uh, there are old Mac Minis. If you can get a hold of any Mac Minis, you can use those for hardware hacking. And then obviously Mac Studios are kind of the new thing. Um, I know a couple people who are holding out for the 512GB Mac Studios. I think the dollar per gigabyte of VRAM is going to be like better on that than almost anything if they release it at their initial prices. I think they said like $15K or $16K, which would be like really cheap for that much RAM. Honestly though, I've already told multiple people, like, it's kind of nice having a full-headed desktop. You might be better just to buy 2 256s, um, or like if you can get Mac Minis to buy a couple of those. Because what's interesting is then you can run hacking agents on each of them, hackbots on each of them, and they can like have their own complete ecosystem. Like they can have their own Chrome browsers, they can have their own tools, they can have their own things. Whereas if you only have one device, you're gonna need to either like virtualize or your agents might be fighting. That's actually one thing we, we should bring up in a future episode. I don't know if we have time to talk about it today, but I'd be really curious. Like, uh, for me personally, how I get around this is I just have 2 different MacBook Pros and a Mac Studio all hacking, and that's how I keep them from like battling each other. I think Ads probably keeps them from battling by having like agents doing different things. I'd be curious how you like deal with your agents, uh, battling. Brandon, actually go ahead and mention it. We, we can stay on for a few extra minutes.
+
+[01:20:52.69] - Brandyn Murtagh
+Me or—
+
+[01:20:53.72] - Joseph Thacker
+Oh, Brandon. No, Brandon, sorry. Yeah, Brandon, like, how do you keep them from battling?
+
+[01:20:57.75] - Brandyn Murtagh
+Um, when— it depends on the harness, but like my main harness, for example, um, an agent can claim a— how do I group it? An agent can claim a row, and a row is basically an endpoint, a parameter, uh, whatever, header and things like that. An agent can it can test it, but it can't overwrite the results. It can only append results. So that means you can have 2 agents append the same row of a different type and do things like that.
+
+[01:21:28.52] - Joseph Thacker
+No, I actually meant resources on your computer. What you brought up is actually a really great point. Like, how do you keep agents from all hacking the same thing? But I actually meant resources on your computer. How do you keep them from battling over computer use or browser use over, you know—
+
+[01:21:39.77] - Brandyn Murtagh
+Oh, mate, it's a free-for-all. It's a free-for-all.
+
+[01:21:44.55] - Joseph Thacker
+You just make them figure it out, right? You just say, Hey, you guys figure this out.
+
+[01:21:51.52] - Brandyn Murtagh
+Okay.
+
+[01:21:51.94] - Ads Dawson
+Okay. See, you can fix this with verifiers. So, uh, uh, you can definitely fix that with verifiers. An easy way is if you use Agent Browser from Vercel, it has like an individual session. So when an agent spins up a session, you can have a verifier, which is making sure that they're using a unique session name. So like CSS injection agent is using their own and XS Agent is using their own. One thing I will say—
+
+[01:22:19.13] - Joseph Thacker
+How do you always know the perfect project to use? I feel like in this podcast alone, but even in every other time I talk to you, it's like, well, have you heard of this GitHub project, and this GitHub project, and this GitHub project?
+
+[01:22:30.02] - Ads Dawson
+Because I'm so pilled. Yeah, that's fair. No, so I actually sent this to Munkei, but I haven't used it, full disclaimer, but there is a GitHub repo from NVIDIA called PAIR, which is Personal AI Router. And think of it as like, you can think of some funny pictures that might come of this, but I've seen a bunch of people have like random GPUs and stuff lying around. Effectively, it's a way to pool all your GPUs in your house and create a shared capacity.
+
+[01:23:02.68] - Joseph Thacker
+That's cool.
+
+[01:23:03.89] - Ads Dawson
+Might be useful. Yeah.
+
+[01:23:05.75] - Joseph Thacker
+Well, actually, we didn't talk about it, but I did want like, I do struggle with like how to basically pair up the lanes on my hardware. I'm sure a lot of people, if you get into hardware, it's going to be a big decision. Like, do you want to run just the biggest model that your whole machine can run, one? Or do you want to run something that takes up about half of your VRAM and then a whole bunch of little ones in the other? Or you could like, you know, it's just like, it's like the same problem of like cutting up a pizza. Do you want to, do you want to just eat the whole pizza like it is? Do you want to cut it in half? Do you want to cut it into 8 slices? Like, you know, what kind of slices do you want? It's like kind of a tough decision to make. Um, I don't want to get into it now, but yeah, it's kind of like a tough thing.
+
+[01:23:42.64] - Brandyn Murtagh
+Agreed.
+
+[01:23:43.77] - Joseph Thacker
+All right, boys, anything else, uh, top of mind right before we call it?
+
+[01:23:49.88] - Brandyn Murtagh
+All good here.
+
+[01:23:52.27] - Ads Dawson
+All good. I think we should have like, um, we have a— we have in the CT— in the Discord, we have an AI channel. Like, yeah, I don't know if it would make sense to have like a, like a purely hardware one.
+
+[01:24:05.48] - Brandyn Murtagh
+Oh boy.
+
+[01:24:07.44] - Joseph Thacker
+Yeah, maybe not. I'm a mono-repo, mono-channel kind of guy, but it is hard to keep up with. You know, we could put together maybe like a guide or something.
+
+[01:24:17.47] - Ads Dawson
+That's just a good idea.
+
+[01:24:20.01] - Joseph Thacker
+I wonder if we could come up with like just like a shared Google Doc where like it's like has like a global edit access or something where that could cause problems. But where maybe we just share it with like a few people who we know about hardware, like verified hardware people. Because what I'm imagining is basically people going in and being like, hey, this setup really works for me, or other people saying, oh, this setup really works for me, because it would be really nice to know. I think we all want to stay on top of the game, right? If all of a sudden a model came out tomorrow and it's purportedly really good, we want to know if it's good, right? But if people in our community are like, yeah, I ran it and it found some crazy bugs for me, it actually is good, now all of a sudden we would trust it and update it. And so I don't know how we get that feedback loop going for the critical things.
+
+[01:25:10.64] - Brandyn Murtagh
+Yeah, yeah, it's a tough one. Yeah, cool. Well, guys, I— yeah, I need to go.
+
+[01:25:19.84] - Joseph Thacker
+Um, thanks for staying on. Thanks for hopping on. Syncing up our 3 schedules can be kind of tough, but, uh, it's been incredible getting to tease out all of y'all's wisdom on this, and hopefully it really helps people. And, uh, thanks for having I me. Yeah, thank you. think that's it. Peace.
+
+[01:25:33.43] - Brandyn Murtagh
+Cool. Peace.
+
+[01:25:34.27] - Ads Dawson
+Have a good day, guys.
+
+[01:25:35.89] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more Critical Thinking content, uh, or if you wanna support the show, head over to ctbv.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild if you're, uh, a full-time hunter. It's a great time. Trust me. All right, I'll see you there.

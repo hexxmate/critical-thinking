@@ -1,0 +1,777 @@
+Episode 176: 600+ CVEs on Adobe AEM with Jim Green (GreenJam)
+Source: https://www.criticalthinkingpodcast.io/600-cves-on-adobe-aem-with-jim-green-greenjam/
+======================================================================
+
+[00:00:01.11] - Jim Green
+So you guys were like hacking on Adobe in the Critical Thinkers chat.
+
+[00:00:07.33] - Justin Gardner
+Yeah.
+
+[00:00:07.58] - Jim Green
+And basically both me and J-Rock were in the chat sort of saying, "Get off our land." Critical, critical, critical thinking. The best part of hacking when you can just, you know, critical think, right? Yeah, dude.
+
+[00:00:30.64] - Justin Gardner
+All right, y'all, we've got an awesome episode for today. We're going to bring on Adobe's top hacker, Jim Green, also known as GreenJam. This is an amazing episode that really opened my mind to the power of AEM. That's always been a technology I've kind of had like a little bit of a like, hmm, something's going to be fun here to look at. So this episode really opened up a lot of attack vectors for me, and Jim shares his secrets on how to attack the AEM framework. It's awesome scope. It is in scope for the Adobe Bug Bounty Program. The Adobe team has kindly sponsored this episode and they are one of the best supporters of the pod. So please work on their program. They have really awesome bounties, including a new AI tier on their bounties, which, uh, increased the bounties by 1.5 times, uh, for vulnerabilities relating to their AI products, uh, and their AI functionality. So there's that Tier 3 AI bonus. Um, lows are at $150 to $300, mediums $300 to $1,500, highs $1,500 to $7,500, and crits $7,500 to $15K. Um, so really, really good scope over there. On Adobe's AI program. Also, if you're going to submit to any of these two products, Adobe Stock or Lightroom Web, then use the CTBB063026. So that's June 30th, 2026 to get an additional 10% on valid AI vulnerabilities. Okay, so shout out to Adobe for sponsoring this episode. Go check out their AI scope. It is very, very fast moving. So there's lots of vulnerabilities to be found. All right, let's go to the show. So hackers, got the This Week in Bug Bounty segment, couple items on the docket. Both YesWeHack and Intigriti both have released articles over the past couple days talking about the AI impact on triage in both the code of conduct modification way. Hackers need to be validating their reports, not just trusting AI and submitting a report. And leaving the triage up to the triagers. And also on the triage side, triagers using AI to work more efficiently. The TL;DR of it with the Yes We Hack is they are committing to that their triage team will continue to be high quality. I was really actually impressed by this. Our triage team comprised exclusively of security engineers with mandatory certifications in OSCP, OSWE, and CVSS expertise. And they're going to be using AI to augment those already highly qualified triagers. So if you want to read more about their triage process, you can link in the description. And then over here at Integrity as well, there's some comments on how the AI apocalypse that's happening here is really affecting the, the triage times and how they intend to solve this problem as well. And, you know, once again, making sure that the triagers are reviewing each report rigorously, but also using their AI triage assist to try to make up for some of the triage lapses that have been happening on every platform over the past couple months. So that's exciting to see. Last but not least, we do have an announcement of a bug bounty meetup in Austin, Texas. So if you are listening to this and you want to be a part of that meetup, you can DM Ryan Roll for Combat, um, in the CTBB Discord. He's a mod, uh, or you can reach out to him on X and LinkedIn, um, or Alex from the Integriti team, uh, if you want to be a part of that bug bounty meetup in Austin, Texas. All right. That's it for the TWIB. Back to the show. Alrighty guys, the time has come. Jim, I've wanted to have you on the pod for a long time since we hacked together at that Google event. Um, I'm glad we're finally able to make it happen. But before I tell the people even the rest of your name besides Jim, let's get to the meat. Let's get to the bug. Hit us with what you got.
+
+[00:04:40.56] - Jim Green
+Yeah. I'll share my first bug just because it's close to my heart, first bug. Well, first paid bug actually. The name of the company was .
+
+[00:04:56.37] - Justin Gardner
+But we're going to bleep that out, I think. We will bleep that right now. I'll make a note. Yeah, no worries.
+
+[00:05:03.11] - Jim Green
+So basically, no surprise, the topic of the episode being AEM-related, it was on an AEM instance, and they had Query Builder open. And it wasn't directly open, but there was some simple like Wi-Fi bypass that could be used to actually access it. And from there, you could start digging around in the innards of AEM, looking for some juicy stuff. And one of the locations, like a lot of people will look, is under /etc, so /etc/packages specifically. And within there, there are the installation files for the customer's deployment on on top of AEM. So I nabbed one of those, obviously, just to have a look, just out of curiosity. And yeah, once you just opened that up, it was the full code for the customer's implementation sitting on top of AEM, and also some nice plaintext keys. The ones that I remember, there was an internal one for their MySQL database that they'd hooked up AM to, as well, but as well there were Akamai keys as well. So yeah, so I mean, I didn't actually check at the time. I would've checked nowadays, like check what the scope is on those keys, but I was young and foolish then. So yeah, I presume it could've been used to clear cache and stuff, but who knows what else you could've done with those. So yeah.
+
+[00:06:41.92] - Justin Gardner
+Yeah, you might've actually been able to just write your own WAF rules or something like that. That would've been devastating.
+
+[00:06:47.17] - Jim Green
+Somewhere else, like point the whole AM instance somewhere else. So yeah.
+
+[00:06:51.87] - Justin Gardner
+Very nice, man. So I mean, we'll get into that a little bit more later, but like Query Builder, using that, you can get the actual raw source code back out of there.
+
+[00:07:04.33] - Jim Green
+So it's more like to actually find like juicy things within the AM instance. So it is used just for internal kind of queries. But then you would actually try and hit the path directly once you find it. But the key part there is if you don't know it exists, then you can't hit it directly, right? Yeah. So you're using the search.
+
+[00:07:25.76] - Justin Gardner
+If it was like a JSP file or something like that, if you hit it, it's going to render, right? So did you pull it out with a zip, or what happened there?
+
+[00:07:34.01] - Jim Green
+Yeah, so depending on what type of file you're actually accessing with AM, it will either download or actually render. Um, so if you were to look at like the JSP files, um, if you were accessing them directly, if the access controls were broken on like the libs path, which is where the internal, um, AM like JSPs live, or within the apps folder, which is where the customer's implementation of like JSPs and HTL files, but we'll cover those in a bit. Um, that's where the customer implementation stuff lives. If there was broken access controls there, you could have directly downloaded those files as well, assuming if there was any— you might need to bypass the WAF to get to them as well, but if there were broken access controls there. But these were actually— so the actual deployment of code, so say you're a developer at that company, and you actually want to push your whole build of the code, then you do that through the package manager, or automatically through a CI/CD pipeline. But ultimately, AM places them within the /etc/packages folder. So it was the complete set of a deployment of their code.
+
+[00:08:48.78] - Justin Gardner
+Oh, wow. Okay, nice, dude. That's pretty sick. Yeah, I think there's a—
+
+[00:08:52.75] - Jim Green
+I was hooked after finding that, right?
+
+[00:08:54.45] - Justin Gardner
+So that was fun. Yeah, it's crazy. I've got a couple buddies lately who have landed their first couple vulns, and you can see you could see the addiction start forming. It's like, oh, wow, this is really good. All right. Well done. I'll give you a little round of applause here. I'm sure the community is as well. Very nice for a first bug too. So we'll kind of go into why that was your first bug in a little bit. But yeah, just by way of introduction, we've got GreenJam here, Jim Green, and Yeah, excited to have you on the pod. Met you at the Google Live Hacking events and looked at your, you know, profile and was very impressed. Um, you have a serious expertise in, uh, well, several areas, but specifically in AEM, um, with over— last time I checked, over 600 CVEs, uh, being issued for AEM. So, um, the idea for this episode was to kind of talk through some of your experience with AEM, pass off some of that stuff, and then also look at, um, this Apache Sling selector, uh, blog post that you're going to release in conjunction with this episode and kind of give that out to the community. So thanks for agreeing to come on and do that with us. Um, can you give us a little bit more of a background though, uh, perhaps leading right up to that first, uh, AEM bug that you found, uh, where you leaked all the source code?
+
+[00:10:20.66] - Jim Green
+Yeah, sure. So, I was born on a Tuesday.
+
+[00:10:24.57] - Justin Gardner
+No, I'm joking. Okay. Get you while you're drinking. As soon as I take a sip of water, thank you for that.
+
+[00:10:31.99] - Jim Green
+You're welcome. It was cloudy. Dude, stop.
+
+[00:10:37.26] - Justin Gardner
+No, no, no. So, yeah, I'll start with, like, career backgrounds.
+
+[00:10:43.21] - Jim Green
+My sort of first job out of uni, it was proper, like, legacy coding. So, it was good for the people I met and stuff, but it didn't didn't pay well. I wanted to move to better, more modern tech. So I went to a company that it turned out was actually a partner with Adobe. So I started working there just to get experience with web stuff after 10 years of working with legacy code. And yeah, there was only a few of us that actually worked there when I first started, so it was a bit of a baptism of fire of, like, you have to learn this. Obviously, I just deep-dived, like a lot of people would in that situation. I really enjoyed doing that anyway, so that wasn't a problem. But yeah, the product was AEM, so we were consultants with different companies and sort of managing their implementations of projects on top of AEM. That was kind of like the first exposure to it. From there, I went on to a well-known UK bank for a few years there. And yeah, sort of started as a developer with AEM, because they use AEM for their public-facing websites, and then sort of transitioned into doing solution architecture stuff. And then from there, I went on to another bank. You can see a pattern here, right? Yeah. And yeah, just solution architect there. And then After a few years of that, doing bug bounty at the same time, I realized that actually I don't want to work for anyone else anymore.
+
+[00:12:27.49] - Justin Gardner
+So, I went full-time in October last year. Congratulations, man. It feels so good. It feels so good. I will say, like, I don't know, with the AI apocalypse actively upon us, I have been thinking, you know, I'm not immune to the fears that come along with that. And I'm sitting here thinking like, man, I sure hope that I never have to work for anybody else ever again. You know, cuz it is so nice to be self-employed and it's so nice to do full-time bug bounty. I'm just so grateful that I, I've gotten to experience this for 6 years already. So yeah, I'm glad you, I'm glad you joined us in the full-time hacking, hacking community. So I, I know you also, I think you're like the brand ambassador for H1 for the UK, right?
+
+[00:13:14.12] - Jim Green
+Yeah, so there's me and also Nathan as well. So Nathan Jones, NJCB8, you've met also at the Google events.
+
+[00:13:22.32] - Justin Gardner
+Shout out to Nathan, man. He's a great hacker as well. Yeah, yeah.
+
+[00:13:27.19] - Jim Green
+So yeah, that was the reason actually that I went to the Google event. So he +1'd me for the first one in Tokyo. So yeah.
+
+[00:13:33.75] - Justin Gardner
+Yeah, that was a blast, man. So I think, talk to me about your full-time journey. Since October. So we're recording this in May of '26. So you've been doing this, what, for like 7 months now? How has it been?
+
+[00:13:47.88] - Jim Green
+Any high points, low points? All highs, to be honest. Ankit's— Ankit's— But to be honest, I have been focusing a lot more on that in general. And I do still the, um, like the Adobe program and stuff, but I wanted to kind of like broaden my like horizons in like other areas and stuff. Um, but like sort of transitioned over, like I was looking at, um, um, as well with J-Rock. Um, we collabed on, on that. And I'll tell you a good story actually, like, uh, because it's related to the pod. Um, so actually like our first submission was one of the bugs that J-Rock shared in his interview with you.
+
+[00:14:37.20] - Justin Gardner
+Ah, nice, dude. Nice.
+
+[00:14:39.22] - Jim Green
+So what happened was, you guys were hacking— I'm not going to make you laugh. I'm tempted to.
+
+[00:14:45.87] - Justin Gardner
+Don't do it, man. I just need a little water, okay? No worries.
+
+[00:14:49.41] - Jim Green
+No worries. You'll get your revenge when I go for a sweet pizza. So you guys were hacking on Adobe in the Critical Thinkers chat. Basically, both me and J-Rock were in the chat saying, "Get off our land." Yep, that's exactly right. Yeah, so I was aware then, we just started messaging in DMs and stuff about what we've been hacking on, and I'd done a bit of hacking on that product as well. But fast forward, we actually met in DEF CON, just around the bug bounty. Bug at Bounty Village and decided to collab there. But then when I actually met him, I was like, "Right, I'll see what sort of stuff he was hacking on from the episode." One of the bugs, you know the stuff with the meta tag, the referrer?
+
+[00:15:42.50] - Justin Gardner
+Yeah, that was such a cool thing, man. The meta tag through DOMPurify? Yes. Yeah.
+
+[00:15:48.77] - Jim Green
+I said to him, I was like, "Right." I assumed he was talking about the product we both hack on. "Right." So I was like, "Oh, it's still vulnerable here, so how did they patch it?" He said, "No, that wasn't the product I was talking about." We instantly got a CRIT because he had the rest of the chain and just needed HTML injection with that. Yeah, we got ATO straight away.
+
+[00:16:13.01] - Justin Gardner
+That's pretty cool. That's beautiful, man.
+
+[00:16:14.91] - Jim Green
+Dude, I love that. That was a good start. What I've been doing over the last 7 months or so, that was back at the the beginning of that, and to be honest, like a bit of an instigator for me going like full-time. Um, like we made quite a lot one night and I was like, nope, don't want to, don't want to go to work next week. Yep. Um, and then from there, like, uh, I did an IPC. Um, I can't talk about the details of it, but, um, we did place first in that. So I say we, um, so that was me, Stealthcopter, which is a great hacker. Yeah, yeah. Fantastic Hacker, and Nathan as well. So yeah, like, we placed first in that IPC, which is really good. So that's sort of more this into this year. Since then, like, both me and Matt have been focusing on a target, which I can't say because it's private. But yeah, really liking that, and it's like, yeah, we're getting some like fantastic bugs out there. We had a full, like, max crit out of that as well. Oh, dude, beautiful. Really enjoying that.
+
+[00:17:22.45] - Justin Gardner
+Yeah. That sounds like a great first 7 months of full-time bug bounty, dude. Yeah, I can't complain. You got first in an LHE, some collabs with some hackers you love and respect, you know, got a fresh look at some of your OG programs you've worked on for a while. Yeah. Well done, dude. Well done. All right. Well, let's, let's transition a little bit here to, um, some of the topics we had for this episode. Let's first jump into that article that you're going to publish in, uh, in conjunction with the episode on Apache Sling and how that resulted in a bunch of bugs on, um, on AEM. So I'll go ahead and share my screen here and we can kind of review it together. Um, thanks for giving us early access to that. I appreciate that. First, before we dive too deep into the details, we kind of need to understand a little bit about AEM, the architecture of AEM, and how Sling fits into that picture. Can you walk us through that a little bit here before we jump into the details?
+
+[00:18:25.68] - Jim Green
+Yeah, sure. I was just making sure I wasn't on mute then, but yeah, sure. Okay. What I'll do is I'll start at the very beginning. A lot of people will realize a lot of this stuff, but there's certain nuances that I wanted to point out. Yeah. So when you're attacking IAM, you're either looking at the actual core product itself or the customer's implementation on top of the core product. So these bugs are actually looking at the core product itself, and it resulted in around $75,000 worth of bounties altogether.
+
+[00:19:04.13] - Justin Gardner
+Wow, dude, no way. That's crazy, dude.
+
+[00:19:07.85] - Jim Green
+Yeah, yeah, so it's good. So yeah, like, so with the core product stuff, once Adobe fix it, then they like are fine with me like going to other bug bounty programs to actually use that bug. So that's what I did. So I found a lot of the instances myself, but then I collabed a bit with Naglee and Mikey96. Michael Ness. We sprayed that stuff in as many places as we could find. That was a good experience.
+
+[00:19:46.64] - Justin Gardner
+That's the beauty of attacking enterprise software like that, man. It really is that you get it fixed at the base level, but then everybody's got their own instance, so they need to update. You can continue to spray that around. Some hackers look down on that, guys. I say, guys, What are you talking about, man? Like, like, this is what bug bounty is for, securing these targets, right? Like, and if, and if there's a vulnerability that affects, you know, the target, then you need to let them know about that as soon as possible so that they have ammo to get it fixed with the, you know, with the holders, with the stakeholders in their organization. Because a lot of the time security is sitting there, please fix this, please fix this, please fix this. And people won't do it until there's actually been a bug. On that, right? So I don't know, that's my, that's my take on that. I, I'm really glad you did what you did there with finding the, the bugs in the core product, and then after it gets fixed and you've got a way to tell them how to fix it, spraying it across the bug bounty programs.
+
+[00:20:48.49] - Jim Green
+Yeah, yeah, makes sense. Um, so like going on from what you were just saying there, um, as well, it's important to distinguish the two different types of AM. So like the on-prem instance, I'll refer to like as AMS, Adobe Managed Service. Okay. So that's the on-prem one, and then there's a cloud service version, which is like a SaaS solution, so it's slightly different, right? So if you're— the reason I'm differentiating between those, if you're looking at the core products, there's different code in each, so if you're going to submit bugs, you want to look at both of those as sort of independent targets, although they are from the initial like same codebase. But also, if you're looking to spray them everywhere, then the cloud service instance won't be as fruitful because that will just get patched out straight away.
+
+[00:21:40.28] - Justin Gardner
+Have you— I know that a lot, just looking at your CVs here, I know that you focus on XSS a lot for AEM. I'm wondering if you've ever had any experience looking at how Adobe structures the cloud services version of AEM? If you get an RC and you get in there, is this a shared tenant thing or is it isolated? Do you know anything about that?
+
+[00:22:05.95] - Jim Green
+I've not poked into it much, to be perfectly honest. I would say that it works in a different way, I would say, to sort of word it cautiously. So like, if, um, what you can, like, um, an admin on a cloud instance doesn't have access to be able to write to executable paths. Oh, okay. Yeah.
+
+[00:22:33.43] - Justin Gardner
+So it's more like a true CMS here rather than like a, okay, I see what you're saying.
+
+[00:22:37.50] - Jim Green
+But that's in the cloud service environment. Mm-hmm. And I'll kind of leave the, the other one, uh, unsaid. Yes. Yes. Yeah. Okay.
+
+[00:22:47.24] - Justin Gardner
+Okay. So we've got AMS, Adobe Managed Services. Um, and well, that's a little interesting because it's called Adobe Managed Services, but this is actually not that, right? It's not Adobe Managed Services. It is the, it is AEM being run on local on-prem stuff, right?
+
+[00:23:08.24] - Jim Green
+It can be either. Um, so depending on how you like manage your releases and things. Either Adobe do that for you on, um, like AWS.
+
+[00:23:19.71] - Justin Gardner
+Sure.
+
+[00:23:20.42] - Jim Green
+Um, or you can completely go and run it on your own hardware as well.
+
+[00:23:25.92] - Justin Gardner
+Okay. And then cloud services is more of this like, like 100% managed, uh, for you. You log in, you upload content, but you can't, you know, shell your own AEM instance. By default on cloud services. Yes, that's correct, yeah. Okay, all right, cool. We got those two structures down. What's next?
+
+[00:23:48.00] - Jim Green
+Okay, so I've got a bit of the breakdown of the deployment overview of a typical AM instance. So although a lot of people will look at AM potentially, they won't necessarily know how it's kind of structured. So I've got an image in there. Cheers, Gemini. And yeah, so basically there's like 3 components, at least in an AEM deployment. You've got your author environment, where your internal users will be editing content. Also your devs will be pushing custom code on top of that AEM instance. Mm-hmm. And features like for the authors as well. And then you've got your publish instances, so the content getting pushed out through workflows over to the publishers. And then your publishers, you'll normally have like a few publishers, like to load balance across, and you'll have a dispatcher, which is Apache HTTPD, sitting in front of that, and then usually a WAF on top of AM Dispatcher as well. So people will maybe have come across the dispatcher, but you can use it for caching, for redirects, for load balancing, and also as a security layer for blocking off paths. But yeah. Okay.
+
+[00:25:21.35] - Justin Gardner
+So let me repeat that back to you so I can make sure that I've got it. So we've— When you say author instance and publish instance, are these actual different hosts, or are these different configurations within the same AEM host or domain as we would think about them?
+
+[00:25:40.83] - Jim Green
+So you could host them sort of where you want, sort of thing, but ultimately what I mean by an instance is they start life as a quick start Java file. Okay. If you were running it locally on your computer, you double-click that JAR file, it unpacks everything it needs to run AEM, and it starts up, like, all the web interface and everything, ready to go. Sweet. Not much different to if you're running it on an on-prem instance, like, it's the same JAR file, but with different configurations to not have, like, default content and things like that. And also to set the mode to be either author or publish, that kind of thing.
+
+[00:26:26.08] - Justin Gardner
+Okay. So let me pause you there on the mode. So if you have one instance that's got the author instance, are you pairing that instance with the publish instance so that when you say, okay, all good, from the author instance, then it moves to the published instance? How does content migrate from the author instance to the publish instance?
+
+[00:26:49.20] - Jim Green
+Yeah, they have things called replication agents. Okay. Um, so like when you press publish, you'll have workflows around it for like approval and stuff like that, but ultimately it knows where the publisher sits effectively. You configure that on the author and then it connects over with the credentials configured on the author to actually move that content over. to the publishing instances. Wow.
+
+[00:27:13.76] - Justin Gardner
+That's pretty cool. So if you, I mean, that's just thinking conceptually, that's a pretty interesting host to hit even with like an SSRF or something like that. Like if you could get your hands on, maybe it's living on a different port or you hit it with like vhost, um, uh, routing, right? If you can get over to that author instance and do some, some stuff there, then you could affect the, the content that makes it all the way out to publish.
+
+[00:27:39.96] - Jim Green
+Yeah, very true. Okay. One thing that I did want to point out that I've not really seen mentioned as well in other sort of documentation around this is I mentioned around like AEM being deployed as a JAR, and there's, if you install files, you do it through a thing called Package Manager. So there's a web interface, and you can install packages through there. Also though, there is the crx-quickstart-install folder, which if you put a zip file in there, the same kind of deployment format that you would use for package manager, it will automatically install on the next restart.
+
+[00:28:22.20] - Justin Gardner
+Ooh. Okay, so that's a good LF, or like, uh, like an arbitrary file write location if you can write into that folder. And it'll, and it restarts the server next time, then your plugin's gonna get installed and you get RCE. Correct. Yeah. Wow. Okay. Very nice, man. And yeah, I mean, all of these jar-based systems too, it helps cuz you can just, you can decompile it, you can take a look at it, you can start doing the attack vectors from there. So, um, but that's, that's a really good thing to note. I'm gonna, I'm gonna write that down so I don't forget that is like the CRX package manager, um, is a good place for arbitrary file writes in this. in this environment. Um, so yeah, just one slight thing.
+
+[00:29:00.48] - Jim Green
+It was, it's the crx-quickstart/install is the path that you would need.
+
+[00:29:06.42] - Justin Gardner
+But yeah, like, uh, exactly right. Okay. Very nice. That's great. All right. So then the last piece there that you mentioned before, just kind of swinging back around, is the dispatcher. That's the Apache HTTP reverse proxy that's sitting in front of this. This is also a part of like sort of bundled AEM. Jars, or is this some sort of architectural piece that gets added on, or?
+
+[00:29:31.46] - Jim Green
+It's just Apache HTTPD, uh-huh, with additional configuration files and modules. Okay. Mm-hmm. Yeah.
+
+[00:29:41.49] - Justin Gardner
+And will that get— when you run that quick start that you mentioned before, like, does that get configured by that, or is this a whole different configuration process? Whole different, yeah, whole different configuration. Lovely. Okay. So we've got, we've got a lot of complexity being added in here. We've got the AM dispatcher, we've got the publisher, we've got, uh, the, the author. Very interesting. Okay. And then typically you said there's another layer of WAF. So WAF, dispatcher, publisher. And then if we can sneak our payload through all of that, then, then we're good to go. Yeah. Wow. Okay. All right. What are— so this next section here in the write-up is technology stack. That's where it talks about the Apache Sling piece, where we're going to get to. Quickly run me through that, and then we'll get over to some of the Apache Sling-specific stuff. Yeah, sure.
+
+[00:30:30.39] - Jim Green
+So yeah, there's a lot of Apache technologies used in the technology stack. Apache Felix is what's used as the OSGi container for deployment of JARs. It manages the state of everything running on there. Apache Jackrabbit, so everything in AEM isn't stored in a traditional database like MySQL or anything. It's in a Java Content Repository, so like a JCR, which is probably where the name comes in.
+
+[00:31:01.58] - Justin Gardner
+I've seen that all the time. When you hit Query Builder or something like that, all of the nodes are related to Like they've got like jcr: or something like that, right?
+
+[00:31:12.03] - Jim Green
+Yeah, exactly. Exactly that. Yeah. Okay. Yeah. And the files underneath that are just stored on disk, but you visualize it as like files and folders in AEM. Yeah. The Apache Sling stuff is what like kind of ties the requests into the fetching and rendering of code. And the key part here is like the Sling resource types. The supertypes are kind of used to do that. There's a lot of JSPs, so like the core AEM product has been around for years, and a lot of the kind of more legacy code still exists within AEM, so there's a lot of JSP files still in there. Sort of around maybe like 10 years ago, Adobe introduced a thing called Sightly, also known as HTL. So these are like, they're.html extension files, but they have backend as well as UI code within them. And the whole reason, well, one of the reasons for kind of moving to that is like the XSS safe by default. So yeah, if you, yeah. That can be turned off with @context=unsafe. So if you were looking at HTML files within AEM and they had that annotation, then the guardrails around the XSS stuff would be disabled.
+
+[00:32:44.99] - Justin Gardner
+Okay.
+
+[00:32:45.51] - Jim Green
+Yeah.
+
+[00:32:45.63] - Justin Gardner
+So we got to keep an eye out for those. JSP is a little bit more of the legacy stuff, not safe by default to XSS. So they have to do explicit filtering and sanitization. But HTL, which is the newer version, Those are gonna be XSS safe by default unless they've got that context=unsafe thing.
+
+[00:33:03.31] - Jim Green
+That's it, yeah. Nice. Mm-hmm, and like just the JavaScript and CSS, they're bundled into things called client libs or client libraries. So, you know, if you've got page X and page Y and you just want jQuery on one, but you want jQuery and Bootstrap on the other, you would have like a separate client library to package those up and deploy them.
+
+[00:33:23.75] - Justin Gardner
+Okay.
+
+[00:33:24.57] - Jim Green
+Mm-hmm. Cool. So we've got some stuff there, but I think you wanted to jump to—
+
+[00:33:30.97] - Justin Gardner
+Yeah. Yeah. So I guess, oh man, as I'm looking through this, I was like, ah, you know, we can jump to Sling, but actually all of this stuff is super important as well. So yeah, let's hit me with the nodes in the AEM folder structure and the permission stuff and we'll just kind of take it in, in line here. Sure.
+
+[00:33:47.98] - Jim Green
+I, I'll keep it short though, cuz like, uh, people can refer back to this doc after. So with the nodes, there's different types. So there's JCR primary type, and there's examples within the doc, but for those sort of listening, you've got things like cq-page, which would define like the actual HTML pages that are within your site. You've got other structures like folders, nt-folder, nt-file. They can be used to store like JavaScript, the JSPs, they'll be of type NTFile. And another one that's used everywhere is the NTUnstructured. So that's like a general purpose one used for like, you name it, it's everywhere within AEM. Cool. So then going into the folder structure, so it's important to sort of know which folders are used in AEM. So we've got libs, which is used for— we've touched on, I think, as part of this conversation already, but the actual source code for the core product lives within the libs folder. The apps, which is the customer's implementation over the top of that, we've touched on already. And the etc packages, we mentioned as part of that bug as well. The /content is where all of the content lives, And the content-damn is where all the images and videos and everything live as well. Okay. The reason that I'm pulling a few of those things out is, of course, we care more about libs, apps, etc., packages, but in the content folder, you can find a lot of interesting stuff. So to give you an example of those, I found full lists in Excel spreadsheets of employees with their Social Security numbers, their home addresses. Oh my God. Yeah. What? Yeah. I don't know why this happens. I mean, maybe internally, storing it there is just a very convenient way to transfer files between people or something, but it happens quite a lot. Things like documents marked strictly confidential, just sitting out there, going, please pass. Yeah.
+
+[00:36:04.98] - Justin Gardner
+Just floating in the wind. I probably shouldn't shout this out, but I'm gonna say it anyway. I like, one of the things I, I've, so sometimes people will ask me like, hey, it must be kind of weird to be a hacker because you could just hack stuff and like just make millions of dollars with these bugs that we turn in for thousands every day. And I was like, you know, for, for the longest time I was like, yeah, but you know, I don't know how I would convert some of these things to money. You know, like it, even if I did want to do it. Right? And certainly there are some bugs that I found that would be like very easy to do that with. But one of the things I thought about when I was talking about this was like, if we just were able to get access to earnings reports or something like that for a specific like company before they hit the stock market, you know, before they did the earnings call, that would be insane, you know, insider trading ability, right? And dude, I bet there is some AEM, you know, instance out there that you could hit and just dump all the content out. And they're putting those earnings reports on that website before they are actually public. And it's so crazy because of some of the stuff we're going to talk about later where you can actually just enumerate every single piece of content in the AEM website. So you would easily be able to see those get added whenever they get put onto the website as well. Wow, that's crazy because it's used by so many financial institutions.
+
+[00:37:37.30] - Jim Green
+Yeah, exactly that. Yeah. So there's other stuff I found as well. I found plaintext usernames and passwords, IP addresses for the entire architecture of their website. So they were using it as a document to say how to log in everywhere. That was just in there. Yeah.
+
+[00:37:58.15] - Justin Gardner
+Oh my gosh, dude. Yeah, that's, that seems like really good scope. I'm going to circle back, back to that with you when we get to the, the section on like AEM, like sort of hacking black box AEM stuff, the customer implementations from our side. All right. So let's talk about permissions and then we'll go into Apache Sling resolution.
+
+[00:38:20.13] - Jim Green
+Cool. Yeah. So just a few things I wanted to kind of call out here. So this is more from like attacking black box AEM, like the publisher instance, even if you're not logged in, you're somewhat authenticated. No, you are part of, you're called, referred to as the anonymous user, which is part of the everyone group. So everyone is part of the everyone group, and that has permissions to certain folders, a very limited sets of, like, folders, and the anonymous user has its own set of permissions. The key bits I wanted to kind of call out there are that they are customer, like, configurable. So with that bug that I gave right up front, the anonymous user had far too much access. It should not have had access to the /etc/packages, And that's one of the bugs that was there that has been changed, the permission of that.
+
+[00:39:27.32] - Justin Gardner
+Wow. Okay. So yeah, that is a little bit backwards, right? I feel like everyone, the everyone group, just intuitively thinking here, would be like the group where any authenticated user, any user that has a true identity would live. But then this anonymous user that is just And the generic unauthenticated user is also a part of that everyone group.
+
+[00:39:52.28] - Jim Green
+Yeah. Wow. Yeah.
+
+[00:39:53.90] - Justin Gardner
+That's a foot gun, man.
+
+[00:39:55.88] - Jim Green
+Yeah. I mean, you need some sort of permissions for accessing the content. So if you're hitting the website, you want to be able to view the images and you want to be able to view the actual content. True, true. So you can't just say no access to everything unless you auth in. Like AEM should be used for unauthenticated content, like publicly available. So yeah, then it introduces the need for it and then you need the user. Yeah. Wow. Okay.
+
+[00:40:29.51] - Justin Gardner
+Very nice. So that's definitely one thing to keep in mind as well when looking at these public instances of these.
+
+[00:40:37.40] - Jim Green
+Mm-hmm. Yeah. Should we go down then to— like, uh, the URLs and the patterns there.
+
+[00:40:45.73] - Justin Gardner
+Yeah, let's take a look at that. I really liked this section of the write-up because this is one of the things that we talk about all the time on the podcast, specifically in the few episodes that we've done that have actually been beginners-oriented. Just understanding the structure of a web URL, right? The scheme, the username and password portions, you know, the host and port, the, the path, the matrix parameters, the query parameter, the fragment. All of that understanding at a deep level what the delimiters are for that is such an essential part of web security. And AM, it looks like actually, or maybe this is Apache Sling specifically, sort of extends that and adds two more fields, right? Selectors and suffix. So tell us a little bit about that.
+
+[00:41:28.90] - Jim Green
+Yeah, exactly right. Yeah. So it's an AM thing, but it's Apache Sling that's actually introducing these. So yeah, two new things, the selectors and the suffix. So selectors will appear between the file name and the extension. So if we have a page like page1.html, then you could insert one or more selectors in between that. So page1.cup.html, but any word basically or string. Would be a better way to put it. And also, just to call out, you can put more than one selector in that section.
+
+[00:42:13.69] - Justin Gardner
+Okay? Wow. Very cool. I wonder— huh. Okay. I'm sorry. I'm just— my brain is kind of spinning on this already. So, you're saying if we've got filename, you know, let's say we've got the file x.html or whatever. We could do x., you know, abc.html. Or you could do x.html.json, right? And then that would be x.json, right? But the HTML is the selector. Is there an invalid selector in there that you can do? I'm just thinking the file type, you know, confusion that is happening here has got to be tragic.
+
+[00:42:52.50] - Jim Green
+Yes. So yeah, you've touched on a few things there, but yes, you're right. That would be treated as a selector. Oh my God. Because the actual node, like I say node, like the location within AEM that you're actually hitting, would not have an extension at all. So you are providing the extension for it to use to render up. Interesting.
+
+[00:43:13.98] - Justin Gardner
+Okay, this is giving—
+
+[00:43:14.86] - Jim Green
+HTML.
+
+[00:43:15.65] - Justin Gardner
+This is giving, excuse me, this is giving S3 vibes a little bit here. You know, like how they can have these specific things, these parts of the path, it's actually a key, not an actual file system path. So we've got something similar here. Okay, okay, I'm seeing this now.
+
+[00:43:32.30] - Jim Green
+Yeah. Um, so yeah, that, that's sort of just touching on the selector part. So, um, we'll go into more sort of detail around that, uh, in a bit. Mm-hmm. But this suffix appears after the extension and starts with a slash. So if we have our page1.html example, It could have another slash and then usually a path, although it could be kind of any information that starts with a slash, but it kind of makes sense to have it as a path. Interesting, interesting. I've got examples of those as well, just to maybe bring them a little bit more to life, just a little bit down.
+
+[00:44:11.65] - Justin Gardner
+Mm-hmm, okay, should I scroll down here or?
+
+[00:44:15.42] - Jim Green
+Yeah, so if you just scroll down on yours, I'm I'm looking at my local copy, so I guess with this, are these the examples right here?
+
+[00:44:22.78] - Justin Gardner
+Editor.html. Yeah. Yeah. So you were probably highlighting those anyway.
+
+[00:44:26.13] - Jim Green
+Yeah. Okay, great. Yeah.
+
+[00:44:27.75] - Justin Gardner
+So, so let me, let me repeat this back here. So you have the path, the file name, you can inject a selector right, uh, before the extension on that actual file name. Um, but then after that, after the file name, you've got sort of an additional path that you, um, append onto the end that could be a path to a different file, could be any, any string really that has meaning to the application. Um, but you often see it be a, a path. And the example you gave here was an editor.html file and extension pair. But then after that, there's /content/siteXUZ or XYZ US EN page.html. To specify the exact path of the asset that should be edited with editor.html, right?
+
+[00:45:16.88] - Jim Green
+Correct, yep.
+
+[00:45:17.86] - Justin Gardner
+Wow, okay. Exactly. That is interesting. I can see lots of footguns here, man. Cool, good stuff. That was the idea.
+
+[00:45:27.07] - Jim Green
+So yeah, that's good. Cool, okay then. So I'll go down now into the kind of deciding what renders the content section. So this is a little bit complex, but— I've tried to summarize it in the best way, but you might need to go over this, Ike, for the listeners, like in your own time, like, you know, maybe do some further research around it. But I'll touch on a few of the kind of things we've got within here. So it's like an order of precedence and the sort of like the properties that affect how the request will be processed. Are the path, the primary type, so that was the CQ page and NT folder stuff we were talking around before, the resource type, any selectors and extensions in there would be affecting what was gonna actually render the content.
+
+[00:46:27.63] - Justin Gardner
+Okay. And then— Path?
+
+[00:46:28.67] - Jim Green
+Yeah?
+
+[00:46:29.15] - Justin Gardner
+Path, primary type, resource type, those are things we don't control. So selectors and extensions, those are things we do control.
+
+[00:46:39.40] - Jim Green
+That is correct from an end user. So from an end user perspective, you have control over the path, the selectors, and the extension. Is that what you said, Jack? Yeah, yeah. If also there's a slight nuance here of if you were an AEM author, then you could create nodes with arbitrary resource types, but this isn't the purpose of this document. Okay. But just to call that out for completeness, but yes, you're correct. Yeah. Okay. So then we've got our order of precedence. So we want to find the best match from all of those properties. So if you have registered a Java servlet, by path, then it would hit that, and that would manage the request. Okay. So QueryBuilder, there might be a servlet that has that exact path that handles the querying internally for that. That's why that exists at that specific path. And then it doesn't process the request any further because it doesn't need to. Then if you had our page example, let's say, then we might actually go down to the sort of 3 and 4 part here. So in that case, we're actually looking for, we've given it a page with a.html extension. And because of the internal way that AEM works, it will look at the nodes underneath and the components that you've used to build your page through the Sling resource types defined on the content. And then that will go off, and it will look at your implementation for a page. And your implementation for a page might have a container underneath it. And that might have a button, optional button within it. And then it pulls in all of the code and makes your page render. But the author has created the content representing the nodes under the content folder. So that's very complex, but hopefully kind of makes a bit, bits of sense.
+
+[00:48:53.09] - Justin Gardner
+Yeah. Yeah. Okay. Okay. So I'm kind of processing it a little bit in my brain right now. So it sounds like what we can do is we can define a page using those types that you mentioned before. And those pages, they can have subcomponents that typically point to like JSP or HTL files in /apps or /libs. And then the question then becomes to me, if you have any control over creating any content in AEM, can you just point subcomponents at various files on the file system?
+
+[00:49:34.78] - Jim Green
+Well, you're right, completely right up to the any files on the file system part. So if you can create nodes on AM, on like a publish instance, then you could write the sling resource type to point to anything that you wanted in terms of servlets and like JSP files, etc.
+
+[00:49:57.69] - Justin Gardner
+Okay. But only within these two paths, the /apps or /libs?
+
+[00:50:05.05] - Jim Green
+Also, you can point at servlets. But yeah, broadly speaking, you'd be looking at the stuff in the JS space.
+
+[00:50:14.21] - Justin Gardner
+Is that now, when we're pointing at that, is that being accessed on what side of the dispatcher? Do you understand what I'm saying there? Like, if we're pointing, if I create a resource type and it points to a path, is that being resolved on the publisher instance itself, or is it being resolved at the dispatcher level?
+
+[00:50:37.42] - Jim Green
+It'll be on the publish instance, the AM, it's AM internal, the Sling resolution. Okay. Will look up where that is, and it will look at apps first, because the customer can override the base components that AM provide. Right, right. And then if it doesn't find the implementation there, it would look in the libs folder for the core components and use that. Yeah.
+
+[00:51:07.05] - Justin Gardner
+Okay. And I guess that makes sense also why it can also trigger off of servlets. Okay. Okay. I understand.
+
+[00:51:16.01] - Jim Green
+So just to complete that, if you were able to write nodes to content with an arbitrary resource type and also to either apps or libs, then you would be able to get RCE.
+
+[00:51:29.46] - Justin Gardner
+Oh, wow. Okay. That's very interesting. Because it's arbitrary.
+
+[00:51:34.36] - Jim Green
+What it's actually looking up would be a JSP file and JSP shell. You could have that if you have really broken access controls.
+
+[00:51:42.94] - Justin Gardner
+Very interesting. I'll write that down. I think that'll be a good path to RCE in some of these really hacked up AEM instances. All right. So going back to that order of precedence there, there's the exact path registered with the Java servlet. There's, uh, servlets that are registered explicitly with Sling resource, that resource type, which is kind of what we were talking about with if you're able to control a node. But then if it, if it doesn't match that, then it looks in apps or libs, or is that a part of that, um, uh, Java servlet registered with the Sling resource type?
+
+[00:52:20.73] - Jim Green
+Yeah, so I jumped around a bit. I, I went to 3 and 4, but let's go back to 2. Okay. So this is the area where the bugs that we'll be going on to next actually live. Mm-hmm. So in these cases, like, you can define Java servlets with any of the combinations of the properties that I've said around before. So it could have just the selector, or it could have a combination of the selector and the file extension, or it could have, you know, the resource type plus a selector. It's up to you how you define your serverless. Does that make sense? Sort of.
+
+[00:53:01.44] - Justin Gardner
+We were talking about selectors earlier, which is the thing between the filename and the extension. It is possible for the customer who is configuring their AEM instance to define a selector that handles a request that have that selector inside of it. Is that correct?
+
+[00:53:20.86] - Jim Green
+Correct.
+
+[00:53:21.69] - Justin Gardner
+Okay.
+
+[00:53:21.90] - Jim Green
+And also, neatly bringing us to the bugs, the core product uses selectors as well. So there are out-of-the-box selectors that AEM would respond to.
+
+[00:53:33.32] - Justin Gardner
+Mm, which is why you've got those things that I've seen in the path, like, in the past, like infinity or something like that, which will just recursively dump everything associated with that specific node. Is that accurate? Absolutely.
+
+[00:53:48.32] - Jim Green
+And if you look at point 5 on that list, that's the, the final catch-all, is the default GET servlet. And one of the examples there would be infinity.json to list out the nodes. So if it doesn't match any of the others, then it will go to the default GET servlet. Okay.
+
+[00:54:02.78] - Justin Gardner
+And the default GET servlet has associated with it a bunch of selectors, one of which is infinity. Is that the accurate representation?
+
+[00:54:11.50] - Jim Green
+Yes. And, um, Exactly, yeah. And sort of numbers of nodes deep to go. So the other example there with 2 will go down 2 levels deep.
+
+[00:54:24.34] - Justin Gardner
+Very interesting. And is that specifically tied also to the extension? So, like in this scenario where we have.json, but what if I try to use.infinity with an HTML file? 'Cause that doesn't really make any sense.
+
+[00:54:38.21] - Jim Green
+Yes, so the first part of that Does it matter about the extension? So it will specifically go into the default GET servlet when it recognizes the word infinity, for example, if that hasn't matched anything already. Because it also has the.json extension, there will be code within the default GET servlet to go through and get all nodes underneath that and chuck back the JSON for it. But an additional point there, around this is if you were to give it, say, an XML extension, then you would get a response, I believe. I haven't checked in a while, but legacy, it used to put back the equivalent but in XML, for example.
+
+[00:55:20.19] - Justin Gardner
+Really? Okay. Yeah. Not sure.
+
+[00:55:22.57] - Jim Green
+We'd have to double-check that one. I'll get some comments if that still doesn't do that. But yeah, just to give you an idea.
+
+[00:55:29.73] - Justin Gardner
+Yeah. Well, that's very interesting. I mean, that sounds XSS City, to be honest. If you can just override, if you can mod— throw something in there that's going to modify what's being reflected back and then also specify the content type or the extension, man, there's going to be some problems there. Okay, all right, I'm starting to see this.
+
+[00:55:51.17] - Jim Green
+Potentially, like, um, as a sort of source for, uh, using it elsewhere and stuff, but remember that the nodes that we're listing, say if they were under the content folder and you were an unauthenticated user, you would have no control over what is in those nodes. True, true. So you would just be listing them, but you're thinking obviously in the right vein, so yeah.
+
+[00:56:14.28] - Justin Gardner
+Yeah, but like even thinking about what we were talking about off air before the episode, like there are some paths if the ACLs on the backend are really hacked where you it'll like list the users associated with this AEM instance. So if I was able to like sign up with an XSS payload in my name and then hit one of those endpoints and then, uh, or some selector that would return that content and then force it to the HTML content type, then that's where we would see a problem. Am I thinking about through this correctly, or is there some piece that I'm missing here in the AEM?
+
+[00:56:50.42] - Jim Green
+Like niche world. No, you're correct. I guess the bit that I would kind of add on to it would be the way that would actually look. Say that you had write access within the home path. Mm-hmm. You would create a node with a resource type that points to an existing AM Core component that had an XSS vulnerability in it. Perhaps one of the CVEs that I've found. Right. Yeah. And you would then give it, say, I don't know, the label field that was vulnerable, and then you would get XSS through the resource type that had a vulnerability and the matching it up with the vulnerable property that you added to that node. Okay.
+
+[00:57:42.63] - Justin Gardner
+So, so It, it's actually when we do.html, it's returning more the actual content rather than like the.json extension, which is returning the metadata associated with, okay. Okay. I see what we're saying here. That makes sense. Nice. All right. So that's the toughest bit. Yeah. We, we've got a lot of pre-knowledge in here and just for the sake of the listener and for my own sake, I would, I'm gonna try to reiterate this back to you and you can tell me if, if I've got anything wrong. Okay. So from the top, we've got the architecture of AEM, which is broken out into 3 pieces. The author instance, the publish instance, and the dispatcher. Author is where they're doing their modifying content. Then they're pushing it to the publish instances. That, uh, is where all of that data is being pushed out to the users. Then in front of that, we've got the dispatcher, which is an Apache HTTP reverse proxy. Um, that handles, you know, caching and sometimes some security stuff, which we'll talk about a little bit later. As far as the structure of all of this goes, there's a ton of use of JCR, which is a Java Content Repository, which is a file-based sort of database system associated with Apache Jackrabbit. And then we've got Sling, which handles a lot of the HTTP requests mapping onto the scripts and code in the backend. We're seeing two primary types of, uh, files. You've got JSP and then this slightly HTL sort of thing. One of those is vulnerable to XSS by default unless you explicitly sanitize, and then the other one is not. Um, so looking more at that JSP sort of structure, there's a ton of different nodes which are associated with JCR inside of AEM. that we should be aware of the types. There's the folder structure /libs, which contains stuff written by Adobe, /apps, which contains stuff written by the customer where customizations happen, and then some other paths like Etsy packages, uh, content and content-damn where the actual web pages and assets live. Um, there's the permission structure of AEM. Has a lot of stuff that's granular about it, but one of the footguns that you wanted to call out was the anonymous user is by default a member of the everything group. So if they give permission to everyone to do something, even if you're unauthenticated, you're getting that permission as well. Um, and then inside of Apache Sling, we've got two additional fields that are associated with a URL, selectors and suffix, which affect the way that content is rendered inside of AEM. and, uh, can create various hooks into the, the process. So if you GET request a file like, you know, test.html, and you add, you know, a selector in the middle there, you know,.1 or whatever the, the, um, selector might be, then that selector's, uh, servlet will be processing that response, uh, rather than the default servlet. Um, or maybe in addition to the default servlet if it's a built-in AEM selector.
+
+[01:00:56.19] - Jim Green
+How did I do? You've got the job.
+
+[01:00:59.96] - Justin Gardner
+Excellent, dude. I'm hired. I'm hired as an AEM pentester now. Very good. Great, dude. Okay, I think I got all that down. It really helps me to like sort of talk through all of it. I do that for the listeners a little bit, but to be honest, one of the things I've realized is if I talk it back, like, I, I, that's, you know, seeps deeply into my my brain a lot more.
+
+[01:01:22.53] - Jim Green
+Okay, so now I'm ready for the— Every time I hear you do that, that's really impressive, by the way.
+
+[01:01:27.30] - Justin Gardner
+So yeah, very good. Thanks. It's been a skill that I've worked to develop over the past 3 and a half years of hosting Critical Thinking. So appreciate that. All right, dude, let's get to the bugs. That— this is going to be— I'm very excited for this because I feel like I'm going to be able to technically understand the depth of these bugs now. Cool.
+
+[01:01:48.34] - Jim Green
+Yeah. So, they might seem almost anticlimactic, really. But like the raw content selector, so basically how this was working. So I've put the definition you'll see on the screen there. It was registered to pages with an extension of HTML and raw content. So our test example, test.raw_content.html.
+
+[01:02:12.21] - Justin Gardner
+So is this sort of like a filter for it right here? Cause when I'm looking at the, the servlet resource types here, that's defined in the definition for this selector, it says extensions equals HTML. So this selector is not gonna work if I try to hit it with a.json. Absolutely. Ah, interesting.
+
+[01:02:31.36] - Jim Green
+Okay. Very nice. Yeah. And I, I think like, I, I don't know like, um, what the purpose of this was. I imagine that it would be used for. If you've got your website, but you want to export the content to another app and restyle it, then you want the raw content. You don't want the JS, and you don't want the CSS.
+
+[01:02:52.69] - Justin Gardner
+Ah, okay, interesting.
+
+[01:02:55.05] - Jim Green
+So we spotted it quite early on. This is one of the first bugs that I found on the core product. And I just thought it looked funny. When you remove all the styling from a page and like have no JS, it just looks a little bit weird, right? Yeah, for sure. But because I was testing, um, some XSS payloads on the page that I happened to test it on, the XSS fired. Hmm. So what I then realized was that stored XSS was available straight away, um, because it was spitting out like, um, the HTML without sanitize, even though it sanitized before. Ah. Yeah. It was true.
+
+[01:03:39.92] - Justin Gardner
+Yeah. That is pretty whack. So anything that was maybe even hitting it as ampersand less than, you know, whatever, that was just being— it's almost like you ran.text on it or whatever. Yeah. Okay. I see what you're saying. Okay. So we got stored XSS that way. Yes.
+
+[01:03:57.63] - Jim Green
+So stored XSS is Like, good, but you would have to have some sort of permission to be able to create content, as we've touched on already. So this would have been like a vector for your home example, right? But I wanted to, like, spray this everywhere, so I was looking for reflection. So luckily enough, the default 404 error page would reflect the path that it didn't find. And just by adding in raw content, you would get XSS there as well.
+
+[01:04:31.63] - Justin Gardner
+So it's like the path of the— Oh my gosh, that's great, man.
+
+[01:04:36.98] - Jim Green
+And just to sort of highlight this, that was on every single AM instance out in the wild.
+
+[01:04:41.80] - Justin Gardner
+Oh my gosh, dude, that's yuck.
+
+[01:04:44.92] - Jim Green
+Yeah, the only thing that would stop that from a customer's instance would be dispatcher rules. That are blocking the request for paths that don't exist. And they're, you know, Adobe's advice with that is to put your own custom 404 page in front to show to the users.
+
+[01:05:04.59] - Justin Gardner
+Mm, lovely, lovely. Okay.
+
+[01:05:07.32] - Jim Green
+But that led me on to looking for a slightly different version. So the 404s are very commonly blocked. Well, you have a custom implementation of a 404 page, but the 400 page, not so much. And because we can specify more than one selector, as we touched on before, I then fuzzed for a second selector to pair with this and found the save-search selector. So that triggers a 400 error with the path reflected. And there I could hit more instances with that.
+
+[01:05:45.61] - Justin Gardner
+So— Wow. Okay. So yeah, dude, I think I, you, you mentioned the chaining part before I really understood the power of the selector. So now you can chain the selectors together. And so there's gonna be combinations of those that mutate the actual content before it passes it to the next one. Wow, dude. That is a ripe scope to expose to the hacker, man. That adds a lot of complexity.
+
+[01:06:18.98] - Jim Green
+Yeah. Yeah. An interesting little extra that I've added is that it still actually functions today. The raw content selector exists as far as I'm aware. I've not seen it been removed. If I'm wrong on that, let me know. It still removes the JavaScript and CSS, but it no longer leads to XSS. So they changed out the HTML serializer to use a safe one. I did put in the doc, just for you, it won't be to share, but there's a funny example on a particular website that it just removes all the JavaScript on their homepage.
+
+[01:06:58.71] - Justin Gardner
+Oh dude, I saw that one, and it also mentioned some cybersecurity stuff on that page. So it's like— Oh, yeah, yeah. I picked that page intentionally. Oh my gosh. That's so funny, man. So, but when you say, so the raw content still exists, but you say they fixed it with an HTML serializer. Is it removing all HTML or is it like kind of like DOMPurify where it's like just malicious HTML?
+
+[01:07:23.21] - Jim Green
+Um, so the protection that exists on the page by default is preserved, I'd say. Like that's. If you understand, before it was kind of introducing, removing the sanitization, but now it remains.
+
+[01:07:39.65] - Justin Gardner
+Ah, I see. Yeah. I see. So then we still need some way to trigger. Okay, yeah. Well, that does basically resolve the situation. But interesting primitive though. Wow. Yes.
+
+[01:07:55.07] - Jim Green
+So there's one scenario I actually encountered on a completely different product the other day, where we had injection into a form action, but it was getting overridden by the JavaScript. So if you remove the JavaScript, then you would've had, yeah.
+
+[01:08:16.50] - Justin Gardner
+Oh, that's interesting. But that's an edge case, right? Okay, okay, okay, okay. No, you're right. If you have an HTML injection already, but there's some sort of mutation that's happening with JavaScript. Yeah. That, okay. So you, you will see, yeah, of course you will still see, you know, HTML that gets, yeah. Okay. Yeah. There's, there's some interesting stuff that we can do with that. That is a good premise.
+
+[01:08:41.64] - Jim Green
+It would be an ugly form that you'd be clicking for the XSS there, but you know, it's, it is what it is.
+
+[01:08:47.40] - Justin Gardner
+Do you know, do you know if like, I was just thinking like maybe you could exploit it with like clickjacking, right? If you, if you needed to get a thing on there, but I wonder if where, where the security headers are typically applied in an AEM instance. I imagine that wouldn't, that would have to be applied at the like dispatcher level. So I imagine it would still hit it.
+
+[01:09:14.71] - Jim Green
+Yeah, quite possibly. It depends on the configuration there. But yeah, at least it's got the gears turning there. That's the idea of it all.
+
+[01:09:22.97] - Justin Gardner
+Yeah, that's great. All right, bug number 2, list paragraphs selector. Tell me about this one.
+
+[01:09:28.68] - Jim Green
+Yeah, so this one was a kind of more versatile selector. So again, CQ pages and HTML extensions, much like the raw content selector, but when you specified this selector, you could pass it an item resource type parameter. Yeah, you can tell it's all clicking.
+
+[01:09:53.71] - Justin Gardner
+Okay, it's starting to click, it's starting to click.
+
+[01:09:55.64] - Jim Green
+This is good. Yeah, yeah. So, um, what I used for kind of like enumerating vulnerable instances was really useful. There's like an about page with diversion of AEM, so you could just tag that on with the list paragraphs thing and just run that through Nuclei. I've got a screenshot there. This was actually taken last week. That's taken last week?
+
+[01:10:22.72] - Justin Gardner
+Yeah. Oh my gosh.
+
+[01:10:24.56] - Jim Green
+But that's a little bit deceptive. That's sneaky of me. That's on targets that are not in scope for bug bounty, but just in general are running AEM.
+
+[01:10:33.02] - Justin Gardner
+So yeah, not much we can do about that. Wow. Very, very commonly still out there. Yeah. Wow. And this one's interesting because, yeah, I'm just looking at this. So if you can define the item resource type, then you can just point it at whatever you want on the opposite side of the dispatcher. Exactly, yeah.
+
+[01:10:52.02] - Jim Green
+So internally, I'd imagine the way it was working is setting the resource type and forwarding that request request on, and then outputting the result of that to you. And because your permission, like, to run resources is handled internally, so there's no problem with ACLs there, then it works. So it's kind of like, yeah, a very elaborate kind of dispatcher bypass.
+
+[01:11:18.64] - Justin Gardner
+It's an ACL— is it an ACL bypass too then?
+
+[01:11:22.89] - Jim Green
+I think for me, you can't usually access these resources at all because you would need a node that references it. And any reference to say this about page, the actual node that would reference that lives under libs, which you can't access.
+
+[01:11:43.23] - Justin Gardner
+Interesting. Yeah. So it's gotta be, that's very interesting. Okay. Okay. So this allows you to hit, oh yeah, of course. And then you hit query builder. Right here, which is amazing.
+
+[01:11:54.77] - Jim Green
+Yeah, it's our favorite query builder.
+
+[01:11:56.76] - Justin Gardner
+Oh geez. And then you just dump everything. Oh, look at the total number of items returned back from this. It's like 20,000. Oh my gosh. Definitely something juicy in there.
+
+[01:12:09.69] - Jim Green
+So yeah, a lot to sift through if you get access to that. So yeah, query builder, kind of commonly used. And we've touched on it already, so I won't sort of labor that point.
+
+[01:12:19.81] - Justin Gardner
+Can, can, can you give me a little bit more on QueryBuilder? Like that is, because I know we talked about it a little bit off air before the episode, but QueryBuilder is more of an, an internal servlet, uh, as I understand it, that is used to enumerate the content inside of, uh, AEM. Is that like, is that just it? Or is there, there more to it?
+
+[01:12:44.21] - Jim Green
+Yeah, I mean, on a very bad implementation of AEM, someone might use that for like the site search or something. Which would be crazy, but it's only used for devs and internal. It should only be used for devs, internal use, that kind of thing. You want to search for, I don't know, particular texturing quickly within the JCR. So yes, it's not meant to be exposed publicly.
+
+[01:13:12.18] - Justin Gardner
+Yeah, so it's sort of like a JCR search. It's almost like giving you access to the backend database that powers AEM. Right? Correct, yes. Wow, okay. Yeah, so you can hit that via this sort of internal dispatcher bypass SSRF of sorts using this list paragraph selector. Absolutely, yep. Wow, dang.
+
+[01:13:35.23] - Jim Green
+And then another resource that you could hit was this /libs/cq/statistics/components/queries_by_result.html. So within there, it had a reflected XSS with a query string parameter. Interesting. So although we can't create any nodes, because we could access that and get reflection by an additional query string parameter, in this case, the path, then we were able to get XSS within here as well. Okay.
+
+[01:14:08.97] - Justin Gardner
+Okay. Okay. Okay. Question about this. You couldn't— okay, this was not exposed directly. You couldn't hit this directly because it's under /libs, correct? Ah, okay. So then we use the internal SSRF to hit that, which will dump back, uh, like the results of that JSP file. And it looks like just looking at your construction here, um, you're actually just appending that, that vulnerable, um, query parameter, which is path equals. You're appending that to to actually the, I'll just call it SSRF level call, right? Uh, that is going directly to, um, list paragraphs, right? So it's actually passing the query parameters through to that subresource.
+
+[01:14:56.14] - Jim Green
+That's exactly right.
+
+[01:14:56.93] - Justin Gardner
+Yep. Mm. Yeah. That's not good. That's not good. That's a good one, dude. Very nice, man. Very nice. Okay. Last bug, bug number 3, the form selector, which also apparently resolves in a dispatcher bypass.
+
+[01:15:10.42] - Jim Green
+Correct, yeah. So this one's more of an extra. I think the list paragraphs one is the most impactful there. But this one I've just included. It was a collaboration between myself and a hacker called LPI. So we actually got chatting. He overtook me at one point on the hacker— on the Adobe program leaderboard. So I got in contact with him and just congratulated him, and we got chatting about bugs and stuff. Yeah. And he showed me this, and because of the chaining of the selectors, we were able to sort of do a lot more with it than perhaps he would've realized at the time. So let's get into that a little bit more.
+
+[01:15:58.93] - Justin Gardner
+Yeah, dude, I'm looking at this. Okay, so we've got— this is the form selector. Okay. I mean, I don't know that servlet, it doesn't have any, I'm looking at the servlet definition right now that he put in the blog post. Yeah. Um, there's no extension limitations on that either. Okay. Interesting. Useful, right? Yep.
+
+[01:16:16.85] - Jim Green
+So that means every node, uh, would respond to this.
+
+[01:16:21.09] - Justin Gardner
+Nice. Love that that's the default open. Love that. Mm-hmm. Yeah.
+
+[01:16:25.93] - Jim Green
+Okay. So it's a very powerful gadget and that's why I, I kind of put it in here. Some of the examples we got here are if you had a dispatcher rule blocking the Bing Query Builder path, then you could use the form selector. In my example, I've got /content/damn.form.css because we don't care about the extension, /bingquerybuilder.json. Internally, that would just be processed as BingQueryBuilder.json.
+
+[01:16:56.25] - Justin Gardner
+The suffix? Is that the suffix? There? Yeah, exactly. Yeah. Ah, I understand. Excellent. That's why I needed to introduce the suffix.
+
+[01:17:06.31] - Jim Green
+Up to this point, we hadn't used that, but that's what the form selector internally must have been processing in order to forward on the request.
+
+[01:17:15.72] - Justin Gardner
+Okay. And then you added the.css after.form because you needed something to tank the extension piece. You needed something to consume the extension piece.
+
+[01:17:26.06] - Jim Green
+Yes. And what I was highlighting specifically with the.css one is you could put any extension, and if you had rules blocking things like HTML or JSON with that, then you could bypass that. So more, you know, lesser used extensions were a lot more valuable there because they'd have different rules and maybe less protected.
+
+[01:17:48.73] - Justin Gardner
+Very nice. Okay, so it's just essentially truncating at the suffix then, and then just passing that, sort of proxying that through on the backend. So then you're able to hit QueryBuilder directly. And are, are you able to do things, were you able to pass query parameters through that as well? Or? Yeah. Ah, yeah.
+
+[01:18:07.35] - Jim Green
+So we've got, we've got a nice example that's, uh, leading me on nicely there. Yeah. Justin. Yeah. So I'll skip the one, like there's one where we are just listing out content-damn. Um, but. The one we were just referring to. So this is why I follow it on from the list paragraphs one is, if you had blocked specifically in your path the list paragraph selector, then you could use the form selector to then pass that through in the suffix, and then you could use that gadget again.
+
+[01:18:45.64] - Justin Gardner
+Interesting. Okay. So when— let me ask you a couple questions about this. So what you're doing here is you're chaining the.form selector. I'm gonna— guys, I'm sorry. I'm gonna read this out, uh, for those of you that are listening, try to, try to stick with it. There's a path that is /content/site/us/en/page.form.js. Okay. That's the— that goes up to the extension. So page is the file name. .form is the selector,.js is the extension. Okay. And then after that, we've got the suffix. The suffix is defined as content-site-us-en, right? /page.list-paragraphs.html. So he's chaining in that, that second bug that we mentioned there and then passing in the item resource type so that once again, he can hit, uh, you know, arbitrary JSP files or whatever on the file system. My question to you about that, Jim, is, um, so just looking at this here, it looks like it loops all the way back around to the beginning of the whole dispatcher flow, right? Like, uh, with this form thing. And, and I'm wondering if I was configuring Apache HTTPD, I would probably not be like segmenting out the, the, the suffix, the selector. All of that. So I'm wondering if inside of— I would just be like, if it's in the path at all, like the normal path, like the, uh, you know, path as Apache HTTPD typically sees it, um, then I would apply my restriction there. So is the dispatcher exposing some primitives to the, the, the team that's configuring it to actually set restrictions on these various components that you've they've defined, like the selector, the suffix, all of that, or are you just working with typical Apache HTTPD primitives?
+
+[01:20:40.02] - Jim Green
+It's an excellent question, and I don't know the answer to it. So yeah, in terms of mitigation, I'm not sure. I'm sure, like, I know Adobe have a full document on AM dispatcher, like, configuration, so perhaps, like, that would be one to link with the episode. Yeah. But yes, I think that's where the confusion came in. The rules, and maybe legacy rules, maybe not up-to-date rules, with best practice advice, you know, we're treating it as just a path, where it's more complicated than that.
+
+[01:21:15.53] - Justin Gardner
+Wow, okay. All right, so what we've got here is two XSSs, or I guess three, that can all be chained together to XSS. But to dispatcher bypasses, which are, is extremely valuable because you can hit query builder. So these are, these are just starting to think about it when dealing with AEM, starting to think about it from like a primitive perspective. We should be looking for these things that allow us to bypass the dispatcher and hit these sort of internal XSS vulnerable endpoints. And we can get that from looking through your CVEs and kind of identifying various /libs paths that we could hit that might be vulnerable to XSS, or we can hit things like bin/querybuilder, which just dumps the whole database on the backend, and then we kind of hit those from there. Am I thinking about that correctly? 100%, yeah. Nice. Okay. Very cool, man. I feel a lot more confident about AEM right now. So I, you know, I liked this. I liked this order because we kind of went through a lot of the AEM, you know, primitive stuff. Uh, as sort of a prerequisite for the Apache Selene Selector writeup that you did. But I do have a couple other questions about AEM architecture that I wanted to run by you. Um, so to me, one of the more interesting pieces of what you just explained about there was the dispatcher. And, you know, this is a reverse proxy. Obviously there's a lot of ways you can shoot yourself in the foot with, um, reverse proxy. I, like, I guess, should, in your opinion, is it valid for us to apply security controls for AEM at the dispatcher level? Or do you think that should be done at a WAF? Or I think you've also mentioned that there is also an ACL level within AEM. So to all those people out there configuring AEM, you know, how should they think about applying those security controls?
+
+[01:23:10.60] - Jim Green
+Controls? Well, absolutely at an ACL level if you can, right? So that's the first point there. You should never be relying on the dispatcher for, like, security. Yeah, it's not really kind of its purpose. And then WAF, again, like, if you've got, like, Akamai or something stuck in front of it, then again, that's just another layer of effectively doing doing the same thing. I guess a lot of the time, customers would add in things to block off things more in a kind of reacting to an incident or something. If you quickly need to, then your quickest way to apply any kind of measures to block things will be at, say, an Akamai level. Sure, sure. We did do places that I worked, as these bugs got released, I told our team to specifically block any requests with those paths, with the selectors, sorry. But that's not a complete mitigation, obviously. I guess the real mitigation is to upgrade to a version that's not vulnerable. That's going to be obviously the best thing to do.
+
+[01:24:31.10] - Justin Gardner
+Best way. So just thinking about the Adobe bug bounty program as well, were they accepting vulnerabilities in, like, say you find an XSS in one of the JSP files under /libs, were they accepting those directly even though you didn't have a path to access them? Or, um, like, are there a bunch of XSSs still sitting in libs waiting for us to find a primitive to kick stuff out of there?
+
+[01:24:59.14] - Jim Green
+So the first part there, so they do accept those. So that would be from the point of view as I'm an author with like low-proof user, you're an admin and I XSS you, cross-site scripting you. Yeah, I have trouble with saying that. Yes. Yeah, so that would be the idea there. And that's why they want to protect their product, because it's coming shipped with those files, and they should be secure, right, by default. So yes, and actually, that example that I gave in there, that cruise by results or whatever it was, initially I found that as an authenticated bug from that point of view as a content author. And then I looked through my previous reports when I had this gadget, and found one that required a query string.
+
+[01:25:52.86] - Justin Gardner
+Very nice. Very nice. Okay. I see. Um, so you kind of chained it, chained that together there to access that more internal, internal piece, even from, you know, the perspective of an unauthenticated user. Very nice. Okay. Um, and then I guess, are there other primitives like /bin/querybuilder.json that we should know about? When we've got this sort of dispatcher bypass or access to some of these, or maybe like a poorly configured AEM instance that can kick back some good results?
+
+[01:26:29.85] - Jim Green
+There's some similar ones. So I might have actually, let me just have a quick look in our doc. I might have put it in as an example, but there's a very similarly named example There's like a query builder, an XML version, basically. Oh, wow. Okay. It's been mentioned in other people's— you'll probably find it in, say, like a NuClient template or something like that. But there are other examples of very similar servlets that just return the content in XML format.
+
+[01:27:04.81] - Justin Gardner
+Very nice. Yeah, and I guess also one of the ones you have in your write-up here was like, You dumped the whole content of content DAM, right? Which is just the asset. So if we're looking for like a really, um, you know, not dumping too much sensitive information, but showing that we can, you could hit /content DAM, uh, you know, and then do.infinity.json or something like that to recursively dump it. And then if you wanted to be a little bit more crazy about it, you could hit /content .whatever,.infinity.json, and that would just dump it all, right? You are right in principle.
+
+[01:27:43.18] - Jim Green
+There are mitigations within IAM to prevent you to do that. If it realizes it's going to traverse more than 10,000 nodes, I think it is, then it will actually catch that. Yeah. Okay. Yeah. Okay.
+
+[01:27:55.02] - Justin Gardner
+Well, at that point, if we hit the 10,000 node limit, then we're like, all right, well, we could just submit it.
+
+[01:27:59.40] - Jim Green
+But it's a good point to raise though. So if I was trying to enumerate, then I would start with the selector of 1. So I go 1 level down, it lists out all the folders, and then I look for the folders that look the juiciest. I drill down further and further and further until I find a node that looks interesting, something internal, um, do not publish this, and then like look at the metadata or whatever in there.
+
+[01:28:25.50] - Justin Gardner
+Yeah, nice. Yeah, I think that that's a, um, That's, I'm sure there's a tool out there for that, but that would be an interesting tool to vibe, vibe code up really quick as well.
+
+[01:28:34.35] - Jim Green
+Yeah. Yeah. It's got you covered.
+
+[01:28:36.27] - Justin Gardner
+For sure. For sure. That's, um, that's really awesome. Um, okay. Let me think if there's anything else that I have on this front. I mean, we, we, we know how the selectors work now, like.infinity or whatever. I know why that recursively dumps back the content because that's the selector that's built in for AEM. That was one of my, one of my questions. Like, I don't really understand why this does this. Um, and then the JCR piece, which was always a little bit confusing to me, that is actually just exposing the database essentially to, to whatever API endpoint or like the raw representation and metadata associated with a given resource. Um, hmm. Very good, man. Very good. I, I, I really, uh, I am feeling a lot better about AEM. I want to go hack on some AEM stuff now. Um, I guess last, I'll, I guess I'll close that section with, with this. When you are black box looking at an AEM instance, what are some things that sort of tip you off to that this is not good? You know, obviously if you see like a parameter like resource type or something like that, that you're like, or path, then you kind of poke at that and see if you can point it towards things that it shouldn't. But are there any other telltale signs for you?
+
+[01:29:56.15] - Jim Green
+Yeah, I guess anything that's not kind of best practice sticking out. So they changed the way that client libraries are actually stored within AM a long time ago, like 5 years plus. It used to be under /etc/clientlibs as a path, But they then changed that to /etc.clientlibs, which actually reroutes the request and grabs them internally. And now it will probably make more sense as to why you would do that, because if you are opening up /etc for read, you don't want to do that to just include like JavaScript, and that was what was happening. So I'd imagine that's why They then did this proxying, they call it, for them into the ETC client libs. Interesting.
+
+[01:30:48.18] - Justin Gardner
+Okay, that's a good example of a red flag. Anything else come to mind?
+
+[01:30:56.22] - Jim Green
+Yeah, so basically poor architecture of usage of IAM, I'd sort of say. So I've seen, again, financial institutes that have IAM Box is used directly on their www.domain, but it's also then used for the logged-in authenticated journey for that financial service, which isn't good practice, to say the least.
+
+[01:31:23.73] - Justin Gardner
+Oh, so then you do get access to some of those authenticated primitives?
+
+[01:31:29.27] - Jim Green
+Well, I've not actually experienced it like that. So, like, although it's kind of sitting on the same domain, I'd imagine it's a path-based thing.
+
+[01:31:36.81] - Justin Gardner
+Oh, okay. Whatever. So they're not using it for auth?
+
+[01:31:39.63] - Jim Green
+No, that would be completely—
+
+[01:31:41.64] - Justin Gardner
+that would— Jim's like, no, that would be completely insane. Yeah, there is someone doing that for sure. Oh yeah, for sure.
+
+[01:31:49.22] - Jim Green
+Yeah, yeah, I've not encountered it yet, but that would be a great day for bug bounty hunters when you find that one.
+
+[01:31:55.52] - Justin Gardner
+Oh yeah, absolutely. Um, okay, I did— we did have one little note here at the end. I want to hit some of your other XSS stuff that looks really good before we close out. Um, do you have time to continue?
+
+[01:32:05.72] - Jim Green
+I know we're a little over time. Yeah, we're good.
+
+[01:32:07.27] - Justin Gardner
+Okay, good. Um, so there's also this component of post-auth XSSs and having gadgets to sort of get those, um, uh, exploited. Um, I was hoping we could take a second now and run through some of those, uh, and kind of explain the way that that whole attack vector works. Um, can you, can you hydrate that a little bit for me?
+
+[01:32:34.22] - Jim Green
+Absolutely, yeah. So, in general, just speaking in sort of general terms, if you're building as a developer now, so we're working as developers on an AM environment. So AM provides a bunch of core components for buttons and images, because why would you reinvent the wheel All customers are going to implement something quite similar, sort of in there. And because of that, they need to be very generic. So, if I'm configuring my button, I want to add classes to it, I want to add IDs to it, I want to add data attributes to it. So, that needs to be a feature of those core components, right? Mm. Because they need to be highly versatile for customers' use case, right? But if you are a malicious author on that instance and you've got those, they're all gadgets, you know, the features become gadgets, right?
+
+[01:33:39.36] - Justin Gardner
+Mm, okay.
+
+[01:33:40.90] - Jim Green
+So we also have the ability to include whatever JavaScript we like on a page. So we've got this button, we can set any attribute we want on it. We've got client libraries that we can pull from anywhere within the core product.
+
+[01:33:58.56] - Justin Gardner
+So not arbitrary JavaScript, but like—
+
+[01:34:01.22] - Jim Green
+No, not external JavaScript or JavaScript within the content path. It would not pull that in. Client libraries have to be defined either at the libs or app level. Mm. And then they get bundled together, and you could insert those bundles. But because you can insert any JavaScript within that, you could then look for JavaScript that has sinks in it. That exposes— And because you control so many things. Yes. Okay. Yeah. So that's probably, you know, you can imagine— Is that the depth?
+
+[01:34:40.68] - Justin Gardner
+Okay, we'll stop there for the depth. Okay, I understand.
+
+[01:34:42.93] - Jim Green
+Well, I'd say like other things as well, like gadgets, Additional gadgets, like, you know, if there were like redirects and things like that, you know, those gadgets might exist as well.
+
+[01:34:52.64] - Justin Gardner
+Okay, okay. So to anybody who's thinking about, you know, hacking on AEM from a post-auth perspective, um, which Adobe does pay for those bugs if you're doing like a low-privilege author to administrator sort of attack, then creating and compiling sort of a list of primitives by looking at the built-in components that are, uh, as a built-in, as a part of AEM, you can start piecing together almost like, um, I don't know if you've seen the episode or, or, uh, seen the content by Johan Carlsson about like highly CSP'd environments where, where you sometimes you need like, you know, add this HTML. And as soon as an HTML element with this attribute hits the DOM, then this thing, this mutation happens. So sort of like compiling a list of those within the AEM environment to, to reach XSS when chained together. Exactly. Yep. Very nice, man. Very nice. I love it. All right. Let's move from AEM stuff as much as I love it. That's really great. And I just did want to also give a shout out to the Adobe program for, for dealing with Jim's shit for the past, like forever. Like they are very patient and consistent. I think that's really great. But I did want to go into some of these XSSs that you appended at the end of the doc. We're going to link some of these in the description that will contain Jim's CTFs. Then if you can just walk us through each one of these, because I think each one of these reveals a pretty useful XSS primitive. That can be applied in multiple different places. So let's start with just the Just a Moment POC that you prepped.
+
+[01:36:39.97] - Jim Green
+Yeah, sure. So I don't know if you want to—
+
+[01:36:41.88] - Justin Gardner
+I'll share my screen.
+
+[01:36:43.72] - Jim Green
+Yeah, sure. Yeah. Yeah. So these are just little things that I've encountered on my travels around different various bug bounty platforms. But yeah, so basically, You might have encountered, have you seen moment.js anywhere?
+
+[01:37:01.21] - Justin Gardner
+I have, yeah, yeah, I've seen moment.js, yeah.
+
+[01:37:04.02] - Jim Green
+So, although I think it's actually deprecated now, but it's a very common JavaScript library just for formatting dates for people that don't know. But what I didn't realize, so this is actually good old Claude, employee of the month and year.
+
+[01:37:17.07] - Justin Gardner
+Yeah, yeah, for sure.
+
+[01:37:21.97] - Jim Green
+It was insisting that this was, XSS. So what actually happens in here, just for people listening, is the value taken from the— you could look at the source as well for people looking on YouTube. Yeah. So it takes the value that the user has provided in the query string parameter, and all it does with it is pass it The format is also user-controlled. So we give it a date, we give it a format, and we use Moment.js to get a formatted date, and we put that into innerHTML. I'd seen this and rejected it numerous times, because it's just a date. Right. You can have a quick play around with the formats and stuff, and it just churns out some garbage or tells you, like, "Not a date," or whatever, whatever the default kind of messaging is. But Claude was so insistent, bless him. And then I said, like, make me a POC then, you know? Yeah. And it popped. So yeah, I won't spoil it. I think, you know, if people want to do the lab, I mean, I can spoil it if you like, Justin.
+
+[01:38:37.75] - Justin Gardner
+It's up to you. No, dude, I'm looking at this. Well, yeah, let's do it this way. For anybody who wants to do it, skip forward, you know, quite a bit now, uh, and then we'll, we'll, uh, we will talk through the solution. So, so what I'm seeing here is that it is actually pulling the format from the query parameter as well. So the prerequisite for this bug is that we need to control the format that the data is represented in and the raw date itself.
+
+[01:39:06.00] - Jim Green
+Um, actually the, the definitely the format, but if it had a valid date and you were controlling the format, it would still be okay, I think.
+
+[01:39:14.56] - Justin Gardner
+Okay, okay, so date format injection in Moment.js is kind of like what we're working with here. Yeah.
+
+[01:39:20.98] - Jim Green
+Okay. Yeah, so spoilers, the long and short of it is there is some syntax in Moment.js, if you look at the documentation, for adding in a label into the format as well as the actual date formatting. Using square brackets, you can put in arbitrary strings, including a JS payload. Like that? Like scripting payload.
+
+[01:39:48.11] - Justin Gardner
+Oh, look at that. Yeah. Okay. Then is it literally just— If I just put— At the end of the format, just for the listeners, I just put in square brackets and then you can just do an arbitrary XSS payload inside of that square bracket. And that's a valid note format, just adding, or, um, date format is just adding in those square brackets for a note. Yep. Correct. Yep. Very interesting, man. All right. Moment.js. I gotta, I gotta specifically, you know, I, I like definitely would be more impactful if we could figure out some way to do this with just the date control itself. But, um, but if we can control the format of a date. Any date, then that is a good, a good injection primitive here. Very nice. All right. Um, what is this? Uh, what is this next one? You've got text-xss. Okay. We are moving to the next one now. Uh, you know, Richard, if you can timestamp it here so that people can jump ahead to the, to this point, if they didn't have the, didn't want to see the other solution. So we've got another XSS, challenge here by Jim. Why don't you set this one up for us?
+
+[01:41:05.56] - Jim Green
+Yeah, so if you could have a look at the source code there. So again, similar sorts of idea with the parameters, like in the URL, we're taking those and we've got some user-controlled content. And I've rejected this one as well, but Claude didn't find me this one. I found this one myself. DOMPurify, if you were to sanitize using that, and it puts it into an element, then if you run jQuery.text, like, parenthesis, to call the actual function. Yeah, text function call, okay. Yes. It actually returns— so— Yeah, I'm just gonna also see some of this here. You can do it in the console.
+
+[01:41:50.28] - Justin Gardner
+That's the best way to do it. So if we've got— Okay. Interesting. If you've got clean and then you call clean specifically on that and you get.text, I think, I wonder if this will also work like this. If I do like, um, something like, uh, let me come in here directly into my elements and I just grab one of these elements that already exists, edit. And then if I put, um, I guess I need to edit that as HTML. Okay. So let me, or edit as text here. Uh, let me see if there's a good way to do that. Okay, so say we're inside here and we do something like, uh, less than, correct, image source equals x onload or onError equals alert. Like that, right?
+
+[01:42:37.68] - Jim Green
+There might be a, um, it might be my screen. I don't know if there was a typo there with the equals, but it might just be my screen.
+
+[01:42:43.68] - Justin Gardner
+Okay. Yeah. I didn't know if there were dashes or. Yeah, let me just go ahead and add this. I, I think that works. So then this is gonna give you the raw content. So if I grab this specific element right here, sorry, I know, uh, audio people, I know this is that we're going a little bit, um, video heavy closing tag there as well. Sorry. Yeah, I am. Yeah. But okay. So the, yeah, so the same thing works if you do.textContent. So it's not even just, um, it's not even just jQuery. It's right. Anything that. That will take the text content of something and convert it, you know, represent it back as text, those HTML encoded attributes will be turned into their, you know, text or their actual ASCII equivalent, right? So then if I were to do this document.write on top of that text content, will this, will this actually render or no?
+
+[01:43:34.01] - Jim Green
+Let's see. We were missing our closing, um, tag.
+
+[01:43:38.60] - Justin Gardner
+That shouldn't matter, I don't think. Oh, avoid using document. Oh, okay, the document.write is freaking out. Uh, let's see, so what if I do like, uh, document.body.innerHTML?
+
+[01:43:56.68] - Jim Green
+You could also use the payload that I put in for the POC as well. Yeah, yeah.
+
+[01:44:03.90] - Justin Gardner
+So is document.body not even defined at this point? Cause I overrode it. It is. That's funny. Okay. And then that's going to be gone. Yeah. Okay. I see. So anything that actually results in, I guess, re-abstracting it back out, anything that's going to result in the text representation of a previously escaped XSS payload is going to re— and then that gets reinserted back into the DOM. That will result in XSS, correct?
+
+[01:44:33.14] - Jim Green
+Correct, yeah. And also val. Hmm. So if you get the value from a field. Ah, yeah.
+
+[01:44:39.71] - Justin Gardner
+Oh, oh, like an attribute. Mm-hmm.
+
+[01:44:42.35] - Jim Green
+And so if you had an input with a value stored within it, then you then got the value from that, that would also be the kind of unescaped version.
+
+[01:44:54.42] - Justin Gardner
+Okay, gotcha. Okay. So then, you know, I guess we'll, we'll provide the spoiler alert a little bit, uh, late here for this one. But if you don't want to, if you guys don't want to mess with this one too much, or if you want to do it yourself, then, uh, skip ahead. But the solution for this one should simply be, um, it just, what does it just work directly straight away or should do if you, if, so if you type in what you did before the Um, <, um, stuff.
+
+[01:45:26.31] - Jim Green
+And then submit after. Uh, well, I would put the right hand, yeah, just in case I don't add the greater than. Yeah. Yeah.
+
+[01:45:36.52] - Justin Gardner
+Ah, there we go. Okay. Very nice. Very interesting. So it'll just automatically decode the HTML elements or HTML encoded entities. Very nice. Okay. Last but not least, we've got the, uh, URL XSS challenge that you have. Okay. So, um, this one is essentially taking a URL from the user, from a query param. It is processing it as a, uh, URL. It is checking whether the hostname is example.com and the pathname starts with /anything, and then it's running window.open on that value. That's right. Yeah. I think I see this one. Yeah.
+
+[01:46:23.56] - Jim Green
+Yeah. So it has been mentioned on the podcast before around the hostname specifically as the result of running it through a nuded URL. But the only thing I just wanted to call out as I was coming on the pod anyway was It does have a pathname as well, which is like even stranger. So if you have a JavaScript URI, you can specify the hostname and you can specify a path. So if there are any checks expecting the window.open to be from a particular domain and specific path, then because of the colon slash slash, that is a comment in JavaScript context. So if we have a path, um, that, um, within there, we can then add on a %a to break into a new line, and then we can get XSS through, through that as well. Yeah, dude, look at this.
+
+[01:47:20.21] - Justin Gardner
+I'm, I'm just using a new, new URL constructor here to build it out, right? And we can see with javascript://test.com/test, looking at that resulting, uh, URL object. The host and the hostname both are test.com and the pathname is actually set to /test. That's, that is interesting. So they, they've got full, almost URL, like, you know, primitive here as far as, and I wonder like, geez, does it, does it parse out like the port too? Like if I go like this, 443, like port. Yeah, it does. So it's parse, it's, I mean, it's parsing this like a normal URL. Yeah. Very interesting, man. Yeah. Yeah. I, I definitely heard of the hostname piece, but some of this other stuff like, um, here, let me clear this out. Um, some of this other stuff like the hash and the, and, um, the fragment and, and the path and the port, all of those are, are interesting as well. Huh. Ah, yeah, dude. It even populates search params. That's cool. Okay. All right. I'm not gonna get nerd sniped on that too much. So the solution, the solution for this one should just be JavaScript://example.com/anything. And then we can do like a %OA or something like that. Alert 1, like that. Is that kind of what we're— yeah, there we go. That's what we're dealing with. Okay. Very nice. So that whole URL, um, object gets populated when those, when a JavaScript URI is being parsed. Very nice, man. Thank you for taking the time to build out those challenges. We'll, we'll link them. We'll link them in the description. Sorry, we didn't give a spoiler for that last one. You guys are gonna have to like just have it spoiled. Um, but all right, man. Um, I think that's a wrap on this week's episode. Did you have anything else you wanted to shout out? You got like some socials, uh, that you wanna, wanna drop?
+
+[01:49:17.81] - Jim Green
+Yeah. Um, so my website, like greenjam.co.uk, you'll see the CVEs that that we've mentioned, there's a list of those there. Also, like, contact as well. And I'm available, like, for consultancy. Like, if you have an AEM instance, it would make sense, right, to have a person like me to have a look at your code and check out your implementation. So yeah, get in touch if that's you.
+
+[01:49:42.17] - Justin Gardner
+Absolutely, man. Yeah, I was actually— it's funny you mentioned that because I was going to ask you that, just kind of set you up like that at the end of this episode anyway. Like, if you want an S-tier you know, best in the world AEM hacker to look at your AEM instance, this would be the guy. So I know that there's quite a few of you out there that work for, you know, these financial institutions, and you can be damn sure you have an AEM instance on your, on your attack surface. So hit up Jim to, to get that assessed. Dude, thanks so much for coming on to the pod today, man. I learned a ton about AEM, and I'm excited to go hack on this Adobe scope.
+
+[01:50:16.68] - Jim Green
+This is pretty sick. Nice one. Thank you. Yep. All right.
+
+[01:50:20.86] - Justin Gardner
+Peace. That's the pod. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of the masterclasses, hackalongs, exclusive content, and of Full Time Hunters Guild if you're a full-time hunter. It's a great time, trust me. I'll see you there.

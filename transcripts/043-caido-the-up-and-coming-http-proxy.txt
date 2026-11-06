@@ -1,0 +1,1360 @@
+Episode 43: Caido - The Up-And-Coming HTTP Proxy
+Source: https://www.criticalthinkingpodcast.io/critical-thinking-bug-bounty-podcast/episode-43-caido-the-up-and-coming-http-proxy/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:00.098)
+started.
+
+Justin Gardner (@rhynorater) (00:04.438)
+Alright, we're rolling and today we have Emil from Kaida with us. Welcome dude. And we've also got the Grinch apparently. Uh Joel, tell, show the people your voice right now man.
+
+Emile Fugulin (Sytten (00:09.399)
+Hello, hello?
+
+Emile Fugulin (Sytten (00:14.251)
+Ha ha ha!
+
+Joel Margolis (teknogeek) (00:17.602)
+Okay, so a child coughed on me on an airplane and it was funny because in the group chat, like I was like, witnessed it happen. Like I was like sitting there, this child just like open mouth coughed like right next to me. And I was like in the group chat, I was like, Oh, some kid just coughed on me like GG. And then like four days later, it's like it all hit me. So yeah. No. Yeah.
+
+Emile Fugulin (Sytten (00:19.663)
+Ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha
+
+Justin Gardner (@rhynorater) (00:25.859)
+God.
+
+Oh no.
+
+Oh no.
+
+Emile Fugulin (Sytten (00:35.516)
+Oh yeah. Yeah.
+
+Justin Gardner (@rhynorater) (00:38.946)
+Dude, I saw that message too and I was like, oh gosh, Joel is being a germaphobe or something like that. And here we are with the voice. Well, all right, Joel, hang in there, man. If you wanna say something, you can say something. Or feel free to like just message me on Discord or something like that if you want me to say something instead and spare the listener's ears. But yeah, we'll figure it out. Yeah, well, that's true, that as well. But we'll figure it out one way or another.
+
+Emile Fugulin (Sytten (00:40.308)
+Yeah.
+
+Emile Fugulin (Sytten (00:46.101)
+No, yeah.
+
+Joel Margolis (teknogeek) (00:55.842)
+Cool. Yeah, it's bare my throat as well. Awesome.
+
+Emile Fugulin (Sytten (01:03.044)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:07.39)
+Amil, man, so I've had the pleasure of meeting you a couple times, but never in person, just visual or over the chat. And so, and I'm actually more familiar with Caido through Ian, because I've worked with him at the live hacking events before. So why don't you give me a little bit of an intro to you and how you ended up in this crazy world of writing an HTTP proxy for a very, you know, specific set of customers.
+
+Emile Fugulin (Sytten (01:13.943)
+That's true.
+
+Emile Fugulin (Sytten (01:25.665)
+Yeah.
+
+Emile Fugulin (Sytten (01:30.575)
+Hahaha
+
+Emile Fugulin (Sytten (01:34.129)
+Yeah.
+
+Yeah, that's a pretty crazy adventure. So basically, Jan is my friend from high school. We went kind of our separate ways after high school. He went to a different university than me. So I did a bunch of during university and after that, I did a bunch more on the development side, so infrastructure work for AWS, mainly a bit of GCP. I did development work also.
+
+Justin Gardner (@rhynorater) (02:03.596)
+Mm.
+
+Emile Fugulin (Sytten (02:06.219)
+And then I was in between contracts like two years and a half ago. And then he just asked me basically, I'm working on this cool new projects. Do you want to, do you want to participate on it? Like, and I always wanted to like start a company personally. Like I was doing consulting, but starting a business is different from, from just the service work. So I jumped on the idea and here we are two years later.
+
+Justin Gardner (@rhynorater) (02:32.694)
+Wow dude, okay so Ian just says, you know, hey man, you up? You know, and says, hey you wanna start a company? And it just happened like that, huh? Wow.
+
+Emile Fugulin (Sytten (02:37.5)
+Yeah.
+
+Emile Fugulin (Sytten (02:42.135)
+Yeah, yeah, yeah. And at some point I'm gonna share like the screenshots of what it looked like and I'm, you would not believe it like, it was the light team so I don't know.
+
+Justin Gardner (@rhynorater) (02:51.183)
+Oh my gosh, man, that's crazy. Well.
+
+Oh my gosh, light theme, the eyes. Ah, no, but that's really cool, man, that you jumped on that opportunity. And I know just from talking to Ian, Ian is the other co-founder of Caido, for those of you that are not familiar with the company. Well, you will be familiar with the company by the end of this episode, so hang in there. But yeah, man, Ian has always said it's been a pleasure working with you, and I'm glad he's got a partner in this challenge, because...
+
+Emile Fugulin (Sytten (03:12.704)
+Yeah, after that.
+
+Justin Gardner (@rhynorater) (03:23.218)
+I've been talking with him a little bit and I've seen Y'all's company develop over the past couple years and it's a lot of work, man. There's a lot of feet. In the beginning when we were all just kind of at the live hacking events being like, man, I really don't like burp. And we have this conversation at the live hacking events a lot because you're on your laptop, right? And when you're at home, you've got your desktop and the desktops are a little bit more chunky and they can handle it.
+
+Emile Fugulin (Sytten (03:29.613)
+Yeah.
+
+Emile Fugulin (Sytten (03:40.173)
+Yeah.
+
+Yeah.
+
+Emile Fugulin (Sytten (03:47.328)
+Mm-hmm, yeah.
+
+Justin Gardner (@rhynorater) (03:48.482)
+But when you're at the live hacking event and you're like on the verge of finding a cool bug or something like that And then you burp just kind of craps out on you. It's the worst So, you know, we were always talking about you know what it would look like to build another HTTP proxy tool But as you guys are taking it on there are a lot of features that all that we've all sort of taken for granted, right?
+
+Emile Fugulin (Sytten (04:02.037)
+Mm-hmm.
+
+Emile Fugulin (Sytten (04:11.127)
+Definitely. Yeah, definitely. I think like the basic we got pretty fast. But then after that it's all the settings and all the small things that one person uses, but like not everybody else that kind of piles up on top of it. So, and yeah.
+
+Justin Gardner (@rhynorater) (04:24.926)
+So yeah, have you guys, let me ask this. Have you guys, have you guys been, how have you balanced trying to get everyone able to use the product for their basic needs, just basic HTTP proxy versus implementing some of these nice to haves that we are used to using in burp or other HTTP proxy tools?
+
+Emile Fugulin (Sytten (04:37.653)
+Yeah.
+
+Emile Fugulin (Sytten (04:44.035)
+Mm-hmm.
+
+Yeah, I think it goes a lot with the GitHub issues. We've relied a lot on that to determine which features is really important. We also have like obviously business priorities and all of that, but we do lean a lot on that based on like upvotes and how much people talk about them in general. So it's been kind of our strategy. It's not.
+
+Justin Gardner (@rhynorater) (04:52.064)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (04:58.908)
+Mm-hmm, sure.
+
+Justin Gardner (@rhynorater) (05:06.413)
+Mm.
+
+Emile Fugulin (Sytten (05:08.891)
+easy because there are some stuff that we know people want for a long time, like plugins, and we can come back to that. But they are harder also, so we have to balance also with how much we can ship and we want to do a release almost every month or something like that. So to respect that timeline, we also have to choose, pick and choose what we work on.
+
+Justin Gardner (@rhynorater) (05:25.802)
+Yeah, no, absolutely. That makes sense. Yeah. And that's one of the things, you know, we've talked about Caido plenty of times. And every time we talk about Caido on this podcast, for some reason, somebody comes under the video and even though it's in the description, they say, and they add a comment, Hey, how do you spell Caido? I can't find it. It's C-A-I-D-O everyone. Just, I'm just going to go ahead and just put that out there right now. So C-A-I-D-O, Google it. Um, it's an awesome tool. And one of the main things that I've really appreciated about.
+
+Emile Fugulin (Sytten (05:43.085)
+Hahaha! Hey, hi, yo! Yeah. Yeah, yeah.
+
+Justin Gardner (@rhynorater) (05:54.934)
+the past couple years of using this tool, is that you guys have been working off of those GitHub issues, right? Just like you said. So we have a lot of ability to influence the development of the tool. So if you have some really great feature that you would really like, you can, you know, if you and a bunch of other people agree that this is a really great feature, you can get that implemented. Or if a bug is happening, it gets fixed very quickly. So I've benefited firsthand from that process. So thanks for sticking to that.
+
+Emile Fugulin (Sytten (06:16.436)
+Mm-hmm. Yeah.
+
+Emile Fugulin (Sytten (06:21.389)
+Yeah.
+
+We have some of our special users that we like to please more, but you know, you know. Yeah, yeah, yeah.
+
+Justin Gardner (@rhynorater) (06:24.272)
+And um
+
+Justin Gardner (@rhynorater) (06:27.65)
+You know, you know, I just it warms the heart. It warms the heart. But yeah, so I guess we sort of jumped the gun because I got excited. But tell me a little bit about for those of you that haven't heard of Caido, you should go back and listen to the other episodes of Critical Thinking where we talk about all the time. Yeah. Oh, thanks, man. But give the give the listeners a quick summary of what the primary goals of the software is and what Caido is in general.
+
+Emile Fugulin (Sytten (06:43.667)
+Obviously, it's a great broadcast
+
+Emile Fugulin (Sytten (06:54.239)
+Yeah. So like you said, it's a proxy. So the goal is to intercept HTTP traffic between your browser and your targets.
+
+try to find vulnerabilities, just give you the most tools we can to help you find the vulnerabilities and then replay the traffic, do some brute forcing if you need to, and then we are starting to integrate more and more tools as we go along, so just analyze the traffic and all that. We, or if you want to modify stuff on the fly, we have the matching the replays rule. So we try to get as much tool as you're used to from Burp Suite or Zap.
+
+Justin Gardner (@rhynorater) (07:29.055)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (07:32.918)
+Mm.
+
+Mm.
+
+Emile Fugulin (Sytten (07:36.379)
+into this new project. And one of the features that we have that is kind of unique is this client server architecture, where you don't need to run Caido on your laptop. You can run it remotely. That's, I think it's a bit of an education because people are not used to doing that. So it's like, yeah.
+
+Justin Gardner (@rhynorater) (07:45.037)
+Mm.
+
+Justin Gardner (@rhynorater) (07:48.127)
+I love it, man.
+
+Justin Gardner (@rhynorater) (07:55.914)
+Yeah, yeah, tell the people about that. Tell them how you can set that up.
+
+Emile Fugulin (Sytten (07:59.855)
+So Caido is a server and a client. It's completely separate. You can run them on the same machine, but it's a Rust server. So we made it run like on almost every platform you can imagine from Raspberry Pis to your VPS in the cloud. So you run this small CLI on the server and then you connect to it via your browser or we also have a small desktop app that's quite a lightweight.
+
+Justin Gardner (@rhynorater) (08:11.447)
+Mm.
+
+Justin Gardner (@rhynorater) (08:23.749)
+Mmm. Yeah.
+
+Emile Fugulin (Sytten (08:24.599)
+but it's basically a web view to the server. And then you connect to that, and then after that you proxy your traffic through it. It's super easy to do. And what I like about this architecture is we're not tied to a per license model. For us, it's like you install Caido on any device you want. Like it doesn't matter how many, and you just pay once for that. So, yeah.
+
+Justin Gardner (@rhynorater) (08:42.389)
+Mm.
+
+Justin Gardner (@rhynorater) (08:47.873)
+Mm. Wow, yeah. That's awesome, man. And I love how that also just very artfully solves the problem. And you guys are solving it in multiple ways, as you mentioned, because.
+
+the server is actually coded in Rust, which is a far more efficient language than Java is for these sort of processing tasks. So you've solved the overhead problem in that way, but you've also solved it with this client server architecture. And I've personally benefited from this a lot because I have a Chromebook, and I really like having this little Chromebook around. It's very light, it's really easy to use, and I have a way to run Caido on my server and then connect it up to my Chromebook and proxy the traffic
+
+Emile Fugulin (Sytten (09:11.424)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (09:27.628)
+Chromebook through the Caido server and then interact with the Caido UI on the Chromebook itself and it works great. And so that was really... Dude, I love it so much. It's amazing.
+
+Emile Fugulin (Sytten (09:35.939)
+Mm-hmm.
+
+Emile Fugulin (Sytten (09:43.undefined)
+Yeah, yeah we've seen some pretty crazy stuff like people run it on like Android devices like tablets and stuff like that so we've seen that. People like, one guy was trying to set it up the other day on like, he had the iPad for the front end and he has his VPS and was like camping or what not and he was doing hacking on his iPad remotely. Yeah so.
+
+Justin Gardner (@rhynorater) (09:50.58)
+Whoa.
+
+Justin Gardner (@rhynorater) (10:01.29)
+What the heck? He's hacking from his iPad.
+
+Jeez, man, yeah, before you'd, like, I've done that a couple times, and the ways that I've had to do it was, I'd have to connect, you know, before Caido, I'd have to just use like TeamView or something like that to connect back to my main computer, and then I'm like slowly dragging the cursor around, and it's like, no, please. So that's really cool, man. Yeah, and it seems like it's been a great project so far. So let me ask you this. There's...
+
+Emile Fugulin (Sytten (10:16.403)
+Yeah, yeah. Hmm. Yeah. They cursor around, yeah. Yeah, yeah.
+
+Justin Gardner (@rhynorater) (10:34.666)
+You guys have developed it to the point now where you have a lot of the base features. You've got the HTTP proxy in place. You guys have WebSocket history in place. You've got the match and replace stuff. What? Yeah. I'll automate. So what are the... You mentioned the client and server thing already.
+
+Emile Fugulin (Sytten (10:46.739)
+Automate so like intruder and all that. Yeah
+
+Justin Gardner (@rhynorater) (10:56.643)
+Let's give you four other things you want to shout out in this app that people should be aware of as far as features go that could help their day-to-day testing life.
+
+Emile Fugulin (Sytten (11:05.631)
+Yeah, like we discussed that a bit internally also, like what we wanted to discuss with people. And I think the overall team is we wanna make people more efficient and that goes into many small sections of the app. So just from like changing projects, like changing, I don't know if you use more projects because of it, but like, because like it's, yeah.
+
+Justin Gardner (@rhynorater) (11:11.541)
+Mm-hmm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (11:20.13)
+Yeah.
+
+Justin Gardner (@rhynorater) (11:28.885)
+Yeah dude, I do. I use a lot of projects.
+
+Emile Fugulin (Sytten (11:32.359)
+Yeah, because it's just a drop down and you just select it and boom, it's there. You don't need to restart anything. It's, it's in the app. Uh, and we try to also keep people more organized. We have this concept of collections and we're going to expand it more with notes related to collections and all of that. So that's another thing we, we try to like, it was a nightmare for just keeping your replay collections or. Yeah.
+
+Justin Gardner (@rhynorater) (11:37.367)
+Yeah.
+
+Justin Gardner (@rhynorater) (11:52.31)
+So yeah, tell me about, okay, so the collections, I've got Caido open here. Is that if I go here into replay and then I've got, okay, I can add various things, and this allows me to group my various sort of logical entities of the HTTP requests, is that correct? Nice.
+
+Emile Fugulin (Sytten (12:07.138)
+Yep.
+
+Emile Fugulin (Sytten (12:11.507)
+Exactly. Yeah, that's the goal. And what we found is like people were like, ah, it's annoying. You have to like put it in a collection and whatnot. But at the end of the day, like once you go back to your stuff, it's interesting because like it is more organized and you can find stuff faster than you used to. So that's our premise. We try to push, gently push our users to like be more organized. And I think we're gonna add more features like eventually with reporting and that's the same philosophy we're gonna.
+
+Justin Gardner (@rhynorater) (12:30.349)
+Yeah.
+
+Emile Fugulin (Sytten (12:40.911)
+we're gonna take in terms of like keeping you organized as much as possible.
+
+Justin Gardner (@rhynorater) (12:44.502)
+Yeah, no, that's great. Any tools that will help me along the way with that, I'm very grateful for. We talk about it on the podcast all the time, but if you talk to all of the top hackers, and you ask them, hey, what is your organization flow, or your note-taking flow look like? Well, they're all like.
+
+Well, I've got this scratch pad next to my desk and like sometimes I write down every third letter of a request or something, you know, it's like, or like, I've got like notes.txt and then I just literally cat everything into that, you know, like, um, and so, you know, we're by nature, we're a very, it seems we're a very disorganized bunch. Um, and so this.
+
+Emile Fugulin (Sytten (13:03.336)
+Yeah.
+
+Hehehehe
+
+Emile Fugulin (Sytten (13:10.572)
+Yeah, yeah.
+
+Emile Fugulin (Sytten (13:14.348)
+Yeah.
+
+Emile Fugulin (Sytten (13:21.995)
+I mean, it goes part of the creativity you need for this kind of work, right? So it's like, usually, I'm a bit like that also, but yeah, it's a question of keeping you organized. Like, you need tools, you need strategies for that. So I think that's kind of our philosophy in terms of that.
+
+Justin Gardner (@rhynorater) (13:26.242)
+Yeah.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (13:38.39)
+Yeah, I remember very clearly the first time I found out that you could rename burp tabs. And I was like, oh, this is amazing. And I think they've implemented, maybe, I think you guys actually implemented collections first. So maybe this was a response to that in burp, but they've added groups now. And so, this is definitely where the industry is moving. And I think you guys made it, took a great step with that.
+
+Emile Fugulin (Sytten (13:45.483)
+Yeah
+
+Emile Fugulin (Sytten (13:52.981)
+Yeah.
+
+Yeah, I know. Yeah.
+
+Justin Gardner (@rhynorater) (14:04.743)
+And so it definitely takes a second to get used to with the adding and that sort of thing, but that extra layer of organization will really help, I think, in the long run.
+
+Emile Fugulin (Sytten (14:09.72)
+Mm-hmm.
+
+Emile Fugulin (Sytten (14:17.063)
+Yeah, yeah, definitely. And I think we're, as we build more stuff into it, like that's gonna be more present as we add notes and things like that. Yeah.
+
+Justin Gardner (@rhynorater) (14:26.362)
+Yeah, so then you can take notes specifically on individual requests or individual collections or what.
+
+Emile Fugulin (Sytten (14:32.499)
+Yeah, that's one of the next goal for next year. Like we wanna do the whole reporting and just note taking and everything, trying to go further than what you currently have. So, Burp is giving you a bit of pressure on the notes. Like I've seen they release some stuff. So it's gonna move up the timeline.
+
+Justin Gardner (@rhynorater) (14:36.804)
+Mm.
+
+Justin Gardner (@rhynorater) (14:44.766)
+Nice. Yeah.
+
+Justin Gardner (@rhynorater) (14:52.414)
+Yeah, I think it would also really be interesting because you guys have this assistant functionality as well that utilizes ChatGPT, right? Yeah, and so, you know, if I right click on a request and I, let me see if I do it from replay, and I hit assistant, there's explain and there's generate CSRPC. It would be really interesting, I think, if there was a piece of functionality which was like,
+
+Emile Fugulin (Sytten (14:56.941)
+Yep.
+
+Emile Fugulin (Sytten (15:00.191)
+Yeah, we already have that integrated too.
+
+Emile Fugulin (Sytten (15:12.035)
+Mm-hmm.
+
+Emile Fugulin (Sytten (15:18.167)
+Take my scrappy notes and make it beautiful.
+
+Justin Gardner (@rhynorater) (15:20.59)
+Yeah, well, absolutely that, like 100% that. But also, hey, write a report surrounding this HTTP request, right? And then maybe you get to give like a little like two sentence blob, right? On it that says, okay, this is the primary request that is vulnerable to IDOR. And then, you know, the LLM just looks at the full request and says, okay, this is probably what the, and maybe you could even outline like template structures for reports and then the LLM would just build it all out. I think that would be amazing.
+
+Emile Fugulin (Sytten (15:25.715)
+Yeah. Mm-hmm.
+
+Emile Fugulin (Sytten (15:35.819)
+Yeah. Mm-hmm.
+
+Emile Fugulin (Sytten (15:44.468)
+Yeah, yeah, yeah.
+
+Emile Fugulin (Sytten (15:48.831)
+Yeah, that's definitely in the work, in our head at least. And I think it's going to come like more next year. We want to expand a lot the reporting more also. Everything that is from you to like an Acre One, like doing that connection faster and everything like that. And then from them.
+
+Justin Gardner (@rhynorater) (15:55.17)
+Yeah.
+
+Justin Gardner (@rhynorater) (16:07.307)
+Hmm.
+
+Emile Fugulin (Sytten (16:10.227)
+Eventually, I also want to be on the other side. As a business owner, I would like to be on the other side so they don't have like, when you submit a report, it's super easy for them to retest. And if it's with Guido, it's even faster or something like that. So that's, yeah.
+
+Justin Gardner (@rhynorater) (16:12.747)
+Mm-mm.
+
+Justin Gardner (@rhynorater) (16:19.497)
+Yeah.
+
+Okay, okay, so you're thinking about like creating some sort of, ah, that would be super helpful because like maybe, oh dude, I think I'm seeing the vision now. I'm seeing the vision. Okay. So like now I have my, you know, my, my setup here in Caido and I like, maybe I could generate or take a collection and say, you know, okay, there's this specific flow of requests in the, in the collection, right? And, and then I export it maybe in the person on their side just clicks a link.
+
+Emile Fugulin (Sytten (16:30.846)
+You're seeing the vision right? Yeah, yeah.
+
+Emile Fugulin (Sytten (16:41.57)
+Yep.
+
+Emile Fugulin (Sytten (16:46.136)
+Mm-hmm.
+
+Emile Fugulin (Sytten (16:50.933)
+Yep.
+
+Justin Gardner (@rhynorater) (16:51.046)
+And they see, you know, Caido in their browser for a moment or something like that. And it walks them through the flow of the request. Dude. Okay. What the heck? I'm so hyped for that. That would, that's going to be amazing.
+
+Emile Fugulin (Sytten (16:57.367)
+That's kind of the idea, yeah. Yeah, yeah.
+
+Emile Fugulin (Sytten (17:05.425)
+Yeah, yeah, we have a whole lot of those ideas. It's just a matter of like we're three people. I mentioned like I don't think you met Chris before it's our third parter. So he's part time on it right now. So we're only three people and we do our best. We ship a lot of stuff for three people, but we still have our limit.
+
+Justin Gardner (@rhynorater) (17:10.974)
+Yeah. No, I haven't. Yeah.
+
+Justin Gardner (@rhynorater) (17:22.794)
+Yeah, you do. Now, Chris, I actually haven't heard you mention Chris before. Is Chris a new partner, or has he been along from the beginning?
+
+Emile Fugulin (Sytten (17:30.359)
+No, he's been there since the beginning, it's just that he has another job also and he's working on...
+
+Justin Gardner (@rhynorater) (17:35.326)
+Sure. And what kind of, so Ian I know is doing, well, why don't you tell me a little bit about the division of duties a little bit here.
+
+Emile Fugulin (Sytten (17:40.203)
+Yeah. Yeah, yeah, yeah. So Ian is doing all the front-end. So if you like the front-end, that's entirely him. Like, I find that crazy that he went from like a hacker to... Yeah. Yeah, and we don't even have a designer, so it's kind of crazy because he does all the design also. So I'm doing a lot of the back-end, so all the Rust code I've taken over a lot. I sometimes ask the other guys to jump on it.
+
+Justin Gardner (@rhynorater) (17:48.827)
+Awesome, okay.
+
+Bless his heart, man. Bless his freaking heart.
+
+Justin Gardner (@rhynorater) (17:59.33)
+That is tricky. Mm.
+
+Justin Gardner (@rhynorater) (18:10.345)
+Mm.
+
+Emile Fugulin (Sytten (18:10.591)
+for especially like larger tasks. We have a larger task of like rewriting a bunch of like our ingestion of requests and all of that. So that's gonna take a lot of manpower. And then Chris is kind of going over the backend and frontend doing a smaller task because he has less time. So we try to balance the work. And I do a lot of the administration of the business as a general idea. Yeah.
+
+Justin Gardner (@rhynorater) (18:19.075)
+Mm-hmm. Yeah.
+
+Justin Gardner (@rhynorater) (18:28.586)
+Hmm.
+
+Justin Gardner (@rhynorater) (18:33.574)
+Yeah, that's what I was gonna ask was like, does that normally fall to, I mean, and you're doing, both you and Ian are doing this full time, right? Okay, and so that, a lot of that business stuff is falling to you as well.
+
+Emile Fugulin (Sytten (18:40.732)
+Yeah, yeah, yeah.
+
+Emile Fugulin (Sytten (18:45.343)
+Yeah, yeah, so I do a lot of just administration things and then I'm happy also to do interviews and all that so Yeah, yeah, yeah
+
+Justin Gardner (@rhynorater) (18:53.502)
+Man, yeah, right, right. And thus we have you here. Dude, that's a lot, man. And I think a lot of the hackers that are in this community, I don't know what it is, but it seems like there is an entrepreneurial itch in more of us than not. So it's always cool to hear about various companies that hackers have started and that sort of thing. So thanks for sharing some insight into that. I've got a couple other things I wanted to talk to you about within Caido.
+
+Emile Fugulin (Sytten (19:08.129)
+Mm-hmm.
+
+Emile Fugulin (Sytten (19:22.912)
+Yeah, yeah, yeah.
+
+Justin Gardner (@rhynorater) (19:23.094)
+But actually, I wanna jump, I wanna scrap that for a second and just have some personal beef that I need to discuss with you. Dude, where is the search bar, man? Where is the freaking search bar?
+
+Emile Fugulin (Sytten (19:27.455)
+Go ahead.
+
+Emile Fugulin (Sytten (19:33.639)
+Alright.
+
+Emile Fugulin (Sytten (19:38.051)
+for like searching everything or like...
+
+Justin Gardner (@rhynorater) (19:40.33)
+Yeah, for searching requests and stuff like that. So I hit search, right? And I'm here. And so I've had this discussion with you guys before, right? You know, and for those of you that are listening audio, I'm sorry, I'll try to describe as much as I can, but also we will have my screen on YouTube. So check that out there if you're able to. So I go to search and I go to filters applied, and then I'm able to...
+
+Emile Fugulin (Sytten (19:44.578)
+Yep.
+
+Emile Fugulin (Sytten (19:49.143)
+Okay. Yeah, yeah, yeah.
+
+Justin Gardner (@rhynorater) (20:08.202)
+you know, specify various filters here. But I feel like one of the core things I do in Burp Suite or any other HTTP proxy is I go up to the top little menu of the top left and I click, you know, file or whatever it is, and then I click search, right? And then it just pops down and there's like a little search bar that I can just type whatever I want into, a regex or whatever, and I can select, okay, I want to search the response bodies or the request bodies and that sort of thing.
+
+Emile Fugulin (Sytten (20:09.496)
+Mm-hmm.
+
+Emile Fugulin (Sytten (20:25.454)
+Mm-hmm.
+
+Emile Fugulin (Sytten (20:35.948)
+Yeah.
+
+Justin Gardner (@rhynorater) (20:36.25)
+And I feel like that has been, that sort of search bar like experience has been missing from Caido for a little while. And I'm wondering if that's because of, because it's very difficult to implement or because it hasn't been a priority on the list. Talk to me about why that is.
+
+Emile Fugulin (Sytten (20:42.87)
+Mm-hmm. Yeah, I agree. Yeah.
+
+Emile Fugulin (Sytten (20:52.083)
+Yeah, yeah, yeah. No, I agree with that. I think filters in general are kind of an older part of the design. Like it was done more than a year and a half ago now. I think, yeah, we know it's due for like a makeover. We want to... Our objective is to make something similar to Wireshark in terms of like for power user. Yeah. So like a small core language, we'll see how much we can make it.
+
+Justin Gardner (@rhynorater) (21:03.799)
+Okay.
+
+Justin Gardner (@rhynorater) (21:08.078)
+Mm.
+
+Justin Gardner (@rhynorater) (21:15.798)
+Hmm. Due to query language?
+
+Emile Fugulin (Sytten (21:21.979)
+powerful, but the idea is like under the hood, when you look at the API, because basically this frontend uses our own API, so it's pretty powerful. It's more powerful than the UI currently exposes. So we still have room for like improving the UI and what we still want to keep a version that is like click-based just because some user, like more beginner users, they don't necessarily like want to...
+
+Justin Gardner (@rhynorater) (21:28.062)
+Mm-hmm. Right.
+
+Mm-hmm.
+
+Okay.
+
+Emile Fugulin (Sytten (21:49.935)
+to learn the query language at first, like use it. So we wanna keep both, but also teach you how to use the language like at the same time. So probably when you add stuff visually, it's gonna generate the string that you could have written. So that's kind of like the idea of where we're going. I don't know in terms of timeline, I know it's a big pain point. So yeah, yeah. No, I know, yeah.
+
+Justin Gardner (@rhynorater) (21:52.91)
+Sure.
+
+Justin Gardner (@rhynorater) (22:03.682)
+Dude, yeah.
+
+Justin Gardner (@rhynorater) (22:10.622)
+Emil shot to the heart. And then, uh, no, um, no, that's awesome, man. I can see the vision. And, and I think it's, um, to me, for me personally, and I, and I use the, um, I use the, you know, filter based search system on a regular basis and it works, it just causes a little bit of extra friction to my, to my
+
+Emile Fugulin (Sytten (22:26.295)
+Yeah.
+
+Emile Fugulin (Sytten (22:32.235)
+Yeah, and it's also not fast enough. Like I don't, I'm not like, and I want people to be able to like save filters. So if it's text-based, it's super easy. You just copy and paste it somewhere. So yeah, yeah.
+
+Justin Gardner (@rhynorater) (22:41.705)
+Mm-hmm. Yeah. The speed thing I haven't experienced too much of an issue with, you know? Like, when we hit search in burp, it's like you hit search and then you go get a coffee and then you come back and maybe it's done, you know?
+
+Emile Fugulin (Sytten (22:46.599)
+Okay, okay.
+
+Emile Fugulin (Sytten (22:53.808)
+No, I was thinking more in terms of how much time it takes for you to create a filter more than like... Yeah, yeah. So, yeah. Yeah.
+
+Justin Gardner (@rhynorater) (22:59.366)
+Oh yeah, no, that definitely takes some time, but we can still get the result that we need to get. It does work at this point, which is helpful. And I think that's my primary, yeah.
+
+Emile Fugulin (Sytten (23:08.663)
+But yeah, no, it's a... Yeah, it's in like the top-ish of our roadmap. Like I would say like, right now I'm doing the upstream proxies. So that's gonna be done for ideally next release. We're gonna try. Yeah.
+
+Justin Gardner (@rhynorater) (23:19.366)
+Mm-hmm. Oh, nice.
+
+Dude, that would be awesome. So let me ask you a little bit about that too, because there's a lot of features people need and there's a lot of, you know, and like you said, you're one guy, or maybe one and a half guys sometimes, you know, when your people come over and work on the Rust stuff. How are you feeling about the decision to go with Rust? Because I know, I've talked to a couple people that have written software in Rust and they said, it's great, I love it, but.
+
+Emile Fugulin (Sytten (23:30.177)
+Mm.
+
+Emile Fugulin (Sytten (23:38.85)
+Yep.
+
+Emile Fugulin (Sytten (23:48.132)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (23:53.534)
+it takes a long ass time to develop stuff. So, I mean, how are you feeling about that?
+
+Emile Fugulin (Sytten (23:56.643)
+Yeah, I agree with that statement. I think yes, definitely it takes longer to build And just to reason about trying to find the right architecture where like you're taking You have to think a lot about the data ownership and how it interacts and all that so that's a bit more annoying I Feel that this stability you gain once it's written is
+
+Justin Gardner (@rhynorater) (23:59.788)
+Yeah.
+
+Justin Gardner (@rhynorater) (24:16.106)
+Mm.
+
+Emile Fugulin (Sytten (24:22.911)
+is worth the time if you can spend it. Like if you don't have the time initially, it's like, ah, it's annoying, but once you've written it, it's stable. Like stuff we've written like two and a half years ago, we never had problems with to this day. So it's like, yeah. And when you break something, usually the compilers help a lot more than other languages I found. That doesn't mean you don't need tests. We have like a lot of tests in the backend.
+
+Justin Gardner (@rhynorater) (24:35.862)
+Wow, that's cool.
+
+Justin Gardner (@rhynorater) (24:45.125)
+Mm-mm.
+
+Justin Gardner (@rhynorater) (24:49.518)
+Mm-hmm, sure.
+
+Emile Fugulin (Sytten (24:51.831)
+but still helps a lot on just like basic mistakes that you would make, so yeah.
+
+Justin Gardner (@rhynorater) (24:58.794)
+So I guess the rubber meets the road with this question. Would you do it again, you know, in Rust? Or would you, or do you think that this type of project lends itself to a little bit more of a high speed development environment that you might be able to get with Go and not get as, you know, the performance, you know, and sacrificing a little bit of the performance trade off.
+
+Emile Fugulin (Sytten (25:18.27)
+Yeah.
+
+Emile Fugulin (Sytten (25:23.071)
+Yeah that's true, I'm not sure exactly, I'm not sure, it's a hard question, it's a hard question. Yeah, yeah. No, no, that's fair. Yeah.
+
+Justin Gardner (@rhynorater) (25:28.158)
+I know, I know, it's a hard question man, but we don't shy away from the hard questions here. And I'm not sure it's a perfectly valid answer, but I just wanted to get your thoughts on
+
+Emile Fugulin (Sytten (25:39.775)
+No, that's true. You tend to go faster with Golang. I think for a long time I was like, oh man, we should have done that in Golang. But the more you, I like the language way better than Golang. It's, in my opinion, it's a way better design language. The only thing is like the async part that we use. Like if you've used a bit of Rust, you've seen a bit like async Rust is not as nice to use with. It's honestly, some of the stuff I've...
+
+Justin Gardner (@rhynorater) (25:43.245)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (25:48.023)
+Yeah.
+
+Justin Gardner (@rhynorater) (25:52.477)
+Mm-mm.
+
+Justin Gardner (@rhynorater) (25:55.92)
+Mmm.
+
+Justin Gardner (@rhynorater) (25:59.42)
+Ah.
+
+Justin Gardner (@rhynorater) (26:03.593)
+Mm-hmm.
+
+Emile Fugulin (Sytten (26:09.111)
+written and or read from libraries, this is like the most difficult stuff I've seen in programming languages, like honestly. So because of the async part, that is different. So yeah.
+
+Justin Gardner (@rhynorater) (26:16.534)
+Wow, geez man, that's intense.
+
+Justin Gardner (@rhynorater) (26:23.014)
+That makes sense. All right. Well, well, thanks for being honest with that I know I know that it's a little bit It's a little bit tricky and maybe the grass always seems greener on the other side, you know when you're any here like dealing with these AC garbage and rust but um
+
+Emile Fugulin (Sytten (26:31.611)
+It is always a bit greener.
+
+But on the other side, I have zero, if I need to go to a C library, I don't have any penalty. A lot of stuff you gain from that. So it's always a trade-off. It's everything in engineering is. Yeah, yeah.
+
+Justin Gardner (@rhynorater) (26:38.722)
+Yeah.
+
+Justin Gardner (@rhynorater) (26:42.83)
+Dude.
+
+Justin Gardner (@rhynorater) (26:48.35)
+Yeah, I'm just going to give a shout out to Donut as well right now who listens to this podcast. I know that is, you know, Donut, if I said anything negative about Rust that I shouldn't have said, I'm sorry, man. Please don't, you know, DM me afterwards being like, you bloody, bloody blah. No, but yeah, and it's definitely, you know, I think it's a... So from my very uneducated perspective and an inexperienced perspective on this sort of thing,
+
+Emile Fugulin (Sytten (27:03.719)
+Yeah. No, I think it's fair. It's fair.
+
+Justin Gardner (@rhynorater) (27:18.982)
+You guys played the long game with that. In the long run, once you get all of the base features and all of your, and even most of your nice-to-haves out there and you're really just working on listening to the user voice and product improvement, which is where you guys are approaching now, I think that it will really serve you well. I know that it...
+
+Emile Fugulin (Sytten (27:29.517)
+Mm-hmm.
+
+Emile Fugulin (Sytten (27:39.789)
+Yeah.
+
+Justin Gardner (@rhynorater) (27:44.294)
+it's painful to have it take so much time to get some of the stuff out that you've wanted to get out quicker, and we've talked about this off air as well plenty of times before. So that's awesome, man. So all right, now that I've solved that curiosity, let me swing back around to the topic at hand. We've talked a little bit about the client server architecture, the project organization, and stuff like that. Tell me a little bit about workflows and what kind of stuff I can do with workflows.
+
+Emile Fugulin (Sytten (27:47.819)
+Yeah, yeah. Yeah, yeah, yeah. No, but...
+
+Emile Fugulin (Sytten (27:57.731)
+Hahaha
+
+Emile Fugulin (Sytten (28:11.268)
+Yeah. Workflows is a new idea we came up with, I'd say like four months, five months ago now. The idea of workflows is we want you to be able to do almost everything you can do in plugins right now, but without having to write code or with just minimal scripts. That's kind of the idea behind it. We started with convert workflows, which are similar to...
+
+Justin Gardner (@rhynorater) (28:17.995)
+Mm, mm.
+
+Justin Gardner (@rhynorater) (28:29.88)
+Wow.
+
+Emile Fugulin (Sytten (28:38.547)
+cyber chef style. That's kind of like, yeah. So in terms of like how we thought about it, it was similar to cyber chef for sure. And then, so I don't know, like people on the visual, you can see that it's a node-based system. So you drag nodes into your canvas and then you connect them and that creates like the equivalent of a script. You have if-else right now.
+
+Justin Gardner (@rhynorater) (28:40.03)
+Hmm, right. I like that design.
+
+Justin Gardner (@rhynorater) (28:53.337)
+Mm, yeah.
+
+Emile Fugulin (Sytten (29:06.904)
+That where you can run a bit of JavaScript to do your if else statement
+
+Justin Gardner (@rhynorater) (29:10.162)
+Oh wow, okay so that's in branch right here. And if I bring that on, I'm sorry, can you, yeah. No, you're good. I'm not sure exactly, but yeah. Okay, so this right here you can write the code to.
+
+Emile Fugulin (Sytten (29:13.927)
+Yeah, uh... Yeah. Yeah, it's a bit small for my screen, sorry. Yeah, too.
+
+Emile Fugulin (Sytten (29:25.639)
+Yeah, so you write a code, a small script, and then depending on if it returns to a false, it's going to take a different branch.
+
+Justin Gardner (@rhynorater) (29:32.738)
+Dude, this is extremely advanced. You've got all these little, you can, and I love, I think you guys hit the nail on the head with this, I guess, knowing your audience, because one of the things I always tell to people that are writing anything that is oriented towards bug bounty hunters or hackers in general is we don't trust you guys. If you're trying to write some piece of code to collect subdomains for me,
+
+Emile Fugulin (Sytten (29:35.808)
+Yeah.
+
+Emile Fugulin (Sytten (29:54.863)
+Hahaha.
+
+Emile Fugulin (Sytten (30:01.152)
+Yeah.
+
+Justin Gardner (@rhynorater) (30:01.302)
+I'm gonna be like, nah, I need to write that myself because I'm gonna do something a little bit differently than you're gonna do it. And the next person's gonna do it a little bit differently than me, and that's what makes this uniqueness in the hackers that will give you the wide varying results that you get from hacker to hacker, even people that have similar experience levels. So something like this, giving us the ability to customize a little bit more.
+
+Emile Fugulin (Sytten (30:05.839)
+Mm-hmm.
+
+Emile Fugulin (Sytten (30:12.751)
+Yeah.
+
+Justin Gardner (@rhynorater) (30:27.582)
+Writing our own code into this and having it run, you know, JavaScript and output, just sort of the bare essentials that you need to control the workflow. I love that.
+
+Emile Fugulin (Sytten (30:35.471)
+Exactly. Yeah, so we also have, we added the last release, the shell notes so you can like call programs on your computer. So this is like, so those are like for conversion. People have been abusing them a bit, we found, to do other stuff. Well...
+
+Justin Gardner (@rhynorater) (30:45.662)
+Oh, sick.
+
+Justin Gardner (@rhynorater) (30:53.606)
+Oh really? What have people done with them?
+
+Emile Fugulin (Sytten (30:58.575)
+I don't know, for example, you can trigger a run from another tool from some stuff that is in the app. That's why I say it's a bit of an abuse, but it's not really.
+
+Justin Gardner (@rhynorater) (31:06.228)
+Oh for sure.
+
+Justin Gardner (@rhynorater) (31:09.946)
+Yeah, yeah, yeah. No, for sure. Okay, so they're there. It's meant for just allowing you to do stuff like maybe there's like this white space in this weird area that you can't get rid of so you like
+
+Emile Fugulin (Sytten (31:16.015)
+It's exactly or like you have to do like a bit an authentication where it's like a base 64 with I don't know a hash or something like that. Stuff like that you can do pretty easily with convert. And it was meant that way. I think we want to add the next step of that is that we want to add passive workflows where it's going to react to events in the system and then eventually active workflows where it's more of a scanner type of things where you actively...
+
+Justin Gardner (@rhynorater) (31:26.199)
+Yeah.
+
+Justin Gardner (@rhynorater) (31:45.442)
+Ah, okay, so what we're looking at now is convert workflows specifically designed to help expedite your sort of text testing process when you're working on something and you're like, all right, every single time I have to, you know, take this JSON blob format or like minify it and then base64 encode it, then URL encode it, then stick it in the request and send it, right? And this sort of allows you to do set up that once.
+
+Emile Fugulin (Sytten (31:45.839)
+attacks or like send requests and stuff like that. Yep.
+
+Emile Fugulin (Sytten (32:04.335)
+Yep.
+
+Emile Fugulin (Sytten (32:08.271)
+Exactly, yeah.
+
+Justin Gardner (@rhynorater) (32:12.786)
+and then you can kind of paste it in. It'll just take it from there and produce that result.
+
+Emile Fugulin (Sytten (32:15.311)
+Yeah. The next step is to have a system like AgVertor, where you can put brackets and then say, this input, I always want you to convert it. So that's like the next logical step with the convert workflows, and with integration into other tools. So, yeah.
+
+Justin Gardner (@rhynorater) (32:28.878)
+to you.
+
+This is so exciting, man, because I can see the possibilities of how my testing is going to change so much. And I talk about this a good bit in Joel as well. We kind of talked about his setup as well. But we both have our unique setups for doing this sort of thing on the fly without relying on tooling. So I've got a various set of key bindings that use... What is this?
+
+Emile Fugulin (Sytten (32:36.079)
+Yeah. Yeah.
+
+Emile Fugulin (Sytten (32:45.295)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (32:58.174)
+a span a span so right now it's not a span so for me it's auto hotkey, right? So I have auto hotkey running in on Windows and I will you know Hit a certain hotkey and what it'll do is it'll grab what's in my clipboard and then it'll do something to it and then Save the result to the clipboard, right? So I can you know, if I need to like do base 64 encoding or something like that, then I'll just grab it I'll hit the key binding for base 64 encoding and then it's base 64 to my in my in my you know Clipboard and Joel's got the same thing. So she's got a bunch of like
+
+Emile Fugulin (Sytten (33:02.479)
+Okay, yeah.
+
+Emile Fugulin (Sytten (33:08.239)
+Uh huh.
+
+Emile Fugulin (Sytten (33:13.743)
+That makes sense, yeah.
+
+Emile Fugulin (Sytten (33:22.351)
+Mm-hmm. Mm-hmm.
+
+Justin Gardner (@rhynorater) (33:27.03)
+he's got a Python library that he's been building out for the past like 10 years that has just literally every sort of thing imaginable. And somehow in his genius brain, he remembers the name of them every single time. Cause I do this, I like, I write the aliases all the time where I'm like, ah, you know, I should write an alias for this. And then I like write it and I stick it in my bash profile or whatever. And then when I, and then I forget it exists and then I do the exact same thing next time. So sometimes somehow he remembers it. And.
+
+Emile Fugulin (Sytten (33:28.463)
+Oh nice.
+
+Emile Fugulin (Sytten (33:39.791)
+Hahaha Yeah
+
+Emile Fugulin (Sytten (33:48.559)
+Yeah, and you forget it exists. Ha ha ha. Ha ha. Yeah.
+
+Justin Gardner (@rhynorater) (33:56.57)
+And so we've all, all the hackers have different solutions for this, but now it's all built into Caido.
+
+Emile Fugulin (Sytten (33:58.767)
+Yeah. This is something built in, yeah. Yeah. And the shortcuts are coming soon for like executing automatically without doing a right click and everything. We know like from...
+
+The way we work is we try to do an MVP of every new idea we have and we put it out there as fast as possible. We try to get feedback and then improve on it. The problem is sometimes we get to another MVP and then we don't have a lot of time to continue improving on it. So that's that's us problem. But yeah, otherwise, that's how we kind of work.
+
+Justin Gardner (@rhynorater) (34:14.86)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (34:23.718)
+Oh yeah, no, I feel it.
+
+Justin Gardner (@rhynorater) (34:30.026)
+Well, you know, just speaking as a member of the community, you know, we all know that this is a work in progress. And you guys have so many features that are, you know.
+
+right where they need to be. And as these new features come out, we don't expect them all to be perfect. And I even personally like the amount of ability to influence how these features actually work via the Discord and that community. So for any of you listening, we'll do a whole spiel about this at the end. Go use our code or whatever. But really, if you sign up for Caido at this point and you are...
+
+Emile Fugulin (Sytten (34:56.847)
+Yeah. Yeah.
+
+Emile Fugulin (Sytten (35:03.311)
+Yeah, yeah, yeah, yeah.
+
+Justin Gardner (@rhynorater) (35:08.882)
+a part of this process as they're building out these features from the beginning, this product is going to work a lot better for you in the future when it's becoming the premier HTTP proxy. So definitely go and get involved in the process now and get acclimated to it as it's growing.
+
+Emile Fugulin (Sytten (35:27.279)
+Yeah, yeah, yeah. And yeah, like you said, the best way is to also participate in the GitHub issues and everything like that. The Discord, we try to be as honest as possible. I think we, I'm not sure how much it's gonna scale. Like if we scale 10x the number of people in it, not sure it's gonna, we're gonna need some help. But yeah.
+
+Justin Gardner (@rhynorater) (35:42.935)
+Hmm.
+
+Justin Gardner (@rhynorater) (35:48.09)
+Yeah, dude, I don't know how you do it already, man. Like running a Discord and doing the business side and writing the Rust code and like, man, that's a lot for three guys. And wow, that's crazy. So you guys have been putting in the work and we can definitely see the results here. It's really cool to see. So that covered most of the, I think, topics that we wanted to cover in, just highlighting some of the features. Did you have anything else you wanted to add in there?
+
+Emile Fugulin (Sytten (35:58.031)
+Yeah, yeah, yeah.
+
+Emile Fugulin (Sytten (36:16.655)
+I don't know, I think that everybody talks to me about that is a bit silly is the intercept where he can view all the intercepts. I don't know if you're set up for that.
+
+Justin Gardner (@rhynorater) (36:23.986)
+Oh, oh my gosh dude. Okay, so it's already become like just, all right, let me just, hold on. I actually have my, let me just go ahead and intercept it and I've actually got my here tab up and I'll just go ahead and look at this guys. Look at this beautiful thing that has happened here. No longer do we have to click forward, forward in order to forward a request. We can just click on a random request down the line.
+
+and click forward and it's sent. And how beautiful is that? Like I have already like this feature, every time I use burp, it pains me, you know, like that it doesn't have this feature, you know? And so this is an amazing, amazing thing that you've got here.
+
+Emile Fugulin (Sytten (37:08.751)
+A small thing that makes a great difference.
+
+Justin Gardner (@rhynorater) (37:11.758)
+Yeah, man, it makes a huge, huge difference. And it allows for the testing to be so much more... It's like, you know, when you're, you feel like you're pressing forward, and then you accidentally forward the thing you wanted to modify or something like that. And it's like, ah, this is so annoying. And then especially if that has any reps to it, you know, you gotta go back and like reset something. It's the worst. And so this really solves that problem and is one of my favorite features.
+
+Emile Fugulin (Sytten (37:21.679)
+Yeah, yeah, yeah. Yeah, yeah. Mm-hmm.
+
+Emile Fugulin (Sytten (37:36.175)
+Yeah, I don't know if you also, so we added the responses like last, yeah. So you have to enable the options on the top, but like, yeah, once you enable it, top left. Yeah, options here. Yeah, yeah, yeah.
+
+Justin Gardner (@rhynorater) (37:41.01)
+Oh, check that out. Oh, nice.
+
+Justin Gardner (@rhynorater) (37:48.15)
+Top left, oh here we go, options, intercept responses. Dude, check that out. So you can modify the response on the way back as well. I've been waiting for that. That one was a big one. For the time being, I was just kinda using match and replace to fix it, but it's nice that you have that now. That's amazing.
+
+Emile Fugulin (Sytten (37:54.127)
+Yeah, yeah. Yeah, I know, I know. Yeah, yeah, yeah.
+
+Emile Fugulin (Sytten (38:01.103)
+Yeah, yeah.
+
+Emile Fugulin (Sytten (38:05.103)
+Yeah, small improvement over time and now we're almost set up to do the WebSocket, so that's going to be much easier to do.
+
+Justin Gardner (@rhynorater) (38:13.314)
+Wow, man, exciting stuff, exciting stuff in the Caido world. So we discussed a lot of these awesome features. Let's talk a little bit about the roadmap. We've talked a lot about the roadmap already, but coming back to the roadmap, in some dark corner of the Caido Discord, there were whispers of a command palette. When do I get a command palette?
+
+Emile Fugulin (Sytten (38:24.463)
+Yep. Yeah, yeah, yeah. But it's okay.
+
+Emile Fugulin (Sytten (38:33.391)
+Ha ha!
+
+I know, I know. You have to bug Jan about that. I know it's not out of my hands, you know, it's like, client side stuff, but yeah, I'd say it's less of a priority. We have a lot of stuff in the workflows for like the end of the year. That's like.
+
+Justin Gardner (@rhynorater) (38:43.204)
+Oh, okay. That's true, it's client-side stuff.
+
+Justin Gardner (@rhynorater) (38:58.167)
+Mmm.
+
+Emile Fugulin (Sytten (38:58.575)
+kind of a, we kind of took a detour because like side note, we were launching soon a team's offering for if you're like more in the enterprise side or business side. So we are launching a team offering. So we take it, we took a detour of like a month that wasn't planned to work on that because we had a client ask for it. So then we're going back to the workflows.
+
+Justin Gardner (@rhynorater) (39:05.334)
+Mm.
+
+Justin Gardner (@rhynorater) (39:09.377)
+Nice.
+
+Emile Fugulin (Sytten (39:27.695)
+So that's coming, but I don't know. It depends on the comment palette. I don't know if Jan like... Sometimes he pulls up like he has a bubble and he codes that in like two days and he ships it. I'm like, okay, whatever. All right.
+
+Justin Gardner (@rhynorater) (39:39.274)
+All right, guys, let's make that Ian's next project. Okay, let's go to the, for any of you that love a good command palette, and I know you're out there, let's head over to GitHub, let's go to the issues and upvote the command palette feature. Okay, awesome. Yeah, dude, I just, I don't know, man, there's something great about a command palette, and I haven't quite fully replicated this in Windows, but I had this system a while back on my laptop.
+
+Emile Fugulin (Sytten (39:50.863)
+Yeah, yeah, for sure if it's in the top of Vogue we're gonna get it done. That's okay. Hahaha. I agree, yeah.
+
+Justin Gardner (@rhynorater) (40:08.502)
+And it was awesome and I could just, I could press a key binding and a little box would pop up and I forget the name of the technology that I used for this, but it would pop up and you could program all sorts of stuff to go in there and it would have all your applications and stuff. And I just feel like that's what I used for everything, you know, was like, I just hit that and then it just, it's...
+
+Emile Fugulin (Sytten (40:15.311)
+Yeah.
+
+Emile Fugulin (Sytten (40:22.287)
+Yeah.
+
+Emile Fugulin (Sytten (40:27.599)
+Yeah, and VS Code also is, has that also works through the hell. Yeah. Yeah, no, it's yeah, definitely. But, uh, he's going to aid me for that, but it's okay.
+
+Justin Gardner (@rhynorater) (40:30.954)
+Yes, VS Code rocks it. So I think command pallets.
+
+Justin Gardner (@rhynorater) (40:39.699)
+All right, sorry, Ian, you know, who mentioned it in the Discord? Who knows? But yeah, definitely high on my priority list. Another thing that I know is really, well, actually, this one's a little bit controversial, okay? So I have in my notes to ask you about the collaborator functionality. And as I was prepping for this episode, I was like, hmm, collaborator, that is an interesting
+
+Emile Fugulin (Sytten (40:44.559)
+I don't know.
+
+Emile Fugulin (Sytten (40:48.815)
+Yeah.
+
+Emile Fugulin (Sytten (40:56.271)
+Mm-hmm.
+
+Emile Fugulin (Sytten (41:01.743)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (41:08.15)
+tool because it doesn't really seem like something that should be integrated into an HTTP proxy. So on one hand, I'm a little bit in favor of not having that feature around and forcing people to set up their own VPS and then get a little bit more dynamic access to something like this. But for those people that don't have, I rarely ever use Collaborator.
+
+Emile Fugulin (Sytten (41:23.023)
+Mm-hmm.
+
+Emile Fugulin (Sytten (41:33.167)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (41:33.206)
+because I'm mostly using my server for callbacks and I've got a whole system that just dumps it right into like a Discord webhook.
+
+Emile Fugulin (Sytten (41:36.527)
+Mm-hmm.
+
+Do you use indirect SSH or do you use... Okay, okay, okay, okay.
+
+Justin Gardner (@rhynorater) (41:42.686)
+No, no, I've got a custom thing. Way before any of this stuff came out, I had my own system and being the old hacker curmudgeon that I am, it's hard to make me change my ways. So what are your thoughts on Collaborator? Is that something you guys have on your roadmap in the future or are you planning on leaving that out?
+
+Emile Fugulin (Sytten (41:49.455)
+Yeah, it's alright. Yeah, yeah.
+
+Emile Fugulin (Sytten (41:56.751)
+Yeah, yeah, yeah.
+
+Emile Fugulin (Sytten (42:04.655)
+I mean, we're gonna have some version of it at some point for sure. It's just not on the short-term roadmap at all. Because like you said, it's like people...
+
+Once, like, if you use an hosted services, it's you have to trust that the hosted services is doing not reading your stuff, right? So it's like, it's always this trust issue. We understand that. So we need to create something that is also self-hostable. And we found like, interaction slash exists. So we're like, eh, maybe we can integrate with that. So I don't know, I'm gonna talk to the project discovery guys and we're gonna see what we can do.
+
+Justin Gardner (@rhynorater) (42:29.804)
+Yeah.
+
+Justin Gardner (@rhynorater) (42:35.319)
+Hmm.
+
+Justin Gardner (@rhynorater) (42:44.842)
+Yeah, that would be really cool, man. I think HTTP callback is not necessary as much, I don't think, personally, because I think most people that are...
+
+Emile Fugulin (Sytten (42:54.927)
+Yeah.
+
+Justin Gardner (@rhynorater) (43:00.31)
+Well, this is very, very like a personal opinion thing, but I think most people have access to, that do web testing seriously, have access to a server where they can host POCs or try to write exploits and that sort of thing, right? But what most people do not have access to is their own DNS server that has a bunch of these features, right? So if there was some sort of infrastructure in place that allowed for DNS ping backs and that sort of thing, that would be really helpful.
+
+Emile Fugulin (Sytten (43:18.991)
+Yeah, yeah.
+
+Emile Fugulin (Sytten (43:25.775)
+mm-hmm that's interesting okay dns dns i'm gonna take note of that because uh yeah dns pings uh it's a pain to set up i agree uh versus other uh other types of ping yeah no yeah
+
+Justin Gardner (@rhynorater) (43:35.326)
+It is, it is. And it's not actually that much of a pain for any of you that are sitting out there thinking, yeah, that's a pain. You can set it up very easily with DNS Chef and some of the other stuff. You just gotta go and modify your DNS configuration and it's good to go. But it's not as...
+
+Emile Fugulin (Sytten (43:52.143)
+Yeah.
+
+Justin Gardner (@rhynorater) (43:57.002)
+It's not as easy to like hook into like a, like a web service, you know, hook it up into like a web hook that sends you like a Slack ping or a Discord ping or something like that. So, um, definitely, uh, definitely check out DNS chef if you're interested in that, um, but yeah, if that makes it onto the roadmap, I definitely wouldn't complain, but, and I also want to challenge the listeners to get that stuff set up theirself because as you, when you do.
+
+Emile Fugulin (Sytten (44:02.543)
+Yeah, yeah.
+
+Justin Gardner (@rhynorater) (44:22.714)
+you'll start noticing things that are a little bit different that you may not be able to do with collaborator and you'll be able to set up redirects, you'll be able to automate some of your workflow, and I think it's better in general.
+
+Emile Fugulin (Sytten (44:31.407)
+And people block the collaborator domain also. So like, even if we do it, yeah, likelihood of our domain being blocked is very high, even if we give you like a sub domain for everything. So that's also another case. I'd say also like from a business perspective, for us to, that's always a discussion we had because we would like to offer like stuff to have that hosted for you and then host.
+
+Justin Gardner (@rhynorater) (44:35.415)
+They do.
+
+Justin Gardner (@rhynorater) (44:43.967)
+Yeah.
+
+Emile Fugulin (Sytten (44:59.407)
+payloads and everything but from a liability perspective it's very hard to take that on especially when you're talking about sharing payloads and stuff like that it's very legally grey
+
+Justin Gardner (@rhynorater) (45:03.515)
+Oh yeah, oh for sure, yeah.
+
+Justin Gardner (@rhynorater) (45:12.958)
+Yeah, that's a great point. And like you said, hackers are in general a big fan of the decentralized approach. And sometimes that is at the cost of convenience and that's the price we pay. But yeah.
+
+Emile Fugulin (Sytten (45:20.655)
+Mm-hmm.
+
+Emile Fugulin (Sytten (45:26.287)
+But at the same time, like when you go in the other side corporate world, they ask for that. They have their checklist. So you kind of need to offer some basic things to get past that checklist.
+
+Justin Gardner (@rhynorater) (45:31.436)
+Oh yeah.
+
+Justin Gardner (@rhynorater) (45:37.27)
+Yeah, and I imagine for you guys, you know, just real talk here, you know, it's hard to get a product off the ground with just hackers being your clientele, you know? You need to also cater to other revenue streams. And so, yeah, I could definitely see why that would be something that you guys would integrate in the future. All right, so I've got a couple more places I can go, but it looks like I'm looking at the doc, that you've got like some questions for me, it looks like.
+
+Emile Fugulin (Sytten (45:46.607)
+Definitely, definitely, yeah.
+
+Emile Fugulin (Sytten (45:57.647)
+Yeah.
+
+Emile Fugulin (Sytten (46:06.991)
+Yeah, well, I just threw up some questions because I wanted to have your thoughts on a bunch of stuff around a lot of the things we plan to do. We talked a bit about the integration with bug bounty platforms and things like that. So that's kind of like, we already touched a bit about that question. But in terms of reporting, collaborations, and everything, we are starting to think about what we want to do.
+
+Justin Gardner (@rhynorater) (46:07.252)
+Uh...
+
+Justin Gardner (@rhynorater) (46:25.366)
+Sure. Yeah, yeah.
+
+Mm.
+
+Emile Fugulin (Sytten (46:36.111)
+do in that space. One of our goals as a business is to eliminate PDF reports. That's a stated goal in the company. Anything like how you collaborate with other people to build your reports and how you see that in a tool like Caido.
+
+Justin Gardner (@rhynorater) (46:44.278)
+Ah, mm, I love it, close to the heart.
+
+Justin Gardner (@rhynorater) (46:54.911)
+Mmm.
+
+Justin Gardner (@rhynorater) (46:58.278)
+Yeah. So, so I guess for me, when it comes to reporting collaboration, a lot of the times when I'm collaborating with other hackers, you've kind of got this like person that has, you know, sometimes you have 50-50 contribution, but sometimes it's like 60-40 or like 70-30, right? And so one of the things that I always volunteer to do to even it out if I'm on the 30 side is I'll say, Hey man, why don't you just let me write the report? Cause it takes time and no one really feels like doing it and that sort of thing. Right.
+
+Emile Fugulin (Sytten (47:13.871)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (47:28.682)
+And I actually very rarely see, and you do see it with very monstrously large reports where you'll actually collab and be in a Google Doc writing it at the same time sort of vibes. But most of the time I see us writing separately. So if you just had something like we talked about before where LLM assisted report writing, that would be an absolute game changer.
+
+Emile Fugulin (Sytten (47:47.727)
+Okay.
+
+Emile Fugulin (Sytten (47:54.319)
+Yep.
+
+Justin Gardner (@rhynorater) (47:58.386)
+And some place to store the report inside of Caido would be really cool as well. And then, you know, we can write the report directly within Caido, and we don't have to worry about, like, okay, and to Hacker One and Bug Crowd and Integrity's defense, they've fixed the stuff now where, like, it automatically saves, like, every, like, two seconds, that's great, you know? But I'm traumatized from my past of, like,
+
+Emile Fugulin (Sytten (48:01.199)
+Mm-hmm.
+
+Emile Fugulin (Sytten (48:20.751)
+Oh yeah, yeah, yeah.
+
+Emile Fugulin (Sytten (48:25.455)
+edits and yeah, yeah.
+
+Justin Gardner (@rhynorater) (48:26.966)
+Yeah, where I wrote like a whole report and then I like click something and it deleted it all and I'm like, no. So I always try to do that offline and then paste it into, you know, whatever platform I'm working with. So if you had something like that in Caido, I think that would be amazing.
+
+Emile Fugulin (Sytten (48:31.791)
+Yeah, yeah, yeah. No, yeah.
+
+Emile Fugulin (Sytten (48:43.119)
+Yeah, yeah, we were thinking of like, how, okay, do we make it collaborative over an encrypt, like if we do an end-to-end encrypted system where like you each have their own report and then we can do collaborative editing over end-to-end encryption? That's something we are considering and then seeing like, do we export in issues like, or do we export in PDFs and all of that stuff. So it's a...
+
+Justin Gardner (@rhynorater) (48:51.031)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (49:01.855)
+Yeah.
+
+Justin Gardner (@rhynorater) (49:08.906)
+Yeah, that's an interesting collaboration. There's a lot of stuff that could go into collaboration there. Personally, I feel like I would be more comfortable if the report stayed local. Even if there wasn't, even with end-to-end encryption or whatever, having the report just stay local makes more sense to me, because there's no need for that to be anywhere else.
+
+Emile Fugulin (Sytten (49:22.639)
+Mm-hmm.
+
+Emile Fugulin (Sytten (49:29.007)
+Yeah, yeah, yeah.
+
+Justin Gardner (@rhynorater) (49:36.634)
+I guess if you are doing some collaboration, you could use a software like hackmd.io or something like that. That's a great software for writing. Also, of course, I'm sure you know this, but we live and breathe and write Markdown. So please, please use Markdown as the primary thing. None of those other fancy HTML editors. Yeah. So, yeah, that's kind of where I'm at with that. And then as far as collaboration features go.
+
+Emile Fugulin (Sytten (49:43.151)
+Mmm.
+
+Emile Fugulin (Sytten (49:51.343)
+Yeah.
+
+Emile Fugulin (Sytten (49:58.895)
+Interesting. Yeah.
+
+Justin Gardner (@rhynorater) (50:05.834)
+I don't know. Do you guys have any thoughts on like actually collaborating like on the HTTP requests or like on the actual hacking part within Kydo?
+
+Emile Fugulin (Sytten (50:15.247)
+Uh, that's up to debate. Uh, we are planning to allow people to connect to the same instance at the same time, like that's coming. Um, we still have a bunch of bugs to fix, uh, for that, but yes. Yeah.
+
+Justin Gardner (@rhynorater) (50:18.712)
+Mm-mm.
+
+Justin Gardner (@rhynorater) (50:23.787)
+Yeah.
+
+Justin Gardner (@rhynorater) (50:31.054)
+I feel like that'd be really tricky to implement, but maybe, maybe not, yeah.
+
+Emile Fugulin (Sytten (50:35.055)
+It's not perfect, but it works because it's similar to you having two tabs and then just having two different views. So it's not that different. There are some actions that are a bit annoying because it changes for the whole application because it's not segmented per user. It's not like a per tenant thing or whatever. So I'd say this is going to happen. In terms of reporting, we are planning to use...
+
+Justin Gardner (@rhynorater) (50:42.091)
+Sure, sure.
+
+Justin Gardner (@rhynorater) (50:50.275)
+Mmm.
+
+Emile Fugulin (Sytten (51:01.967)
+I think it's going to be able to stay local anyway, but mostly allowing people to collaborate over CRDT or things like that. CRDT is if people want to learn about that. It's conflict free replication data type, something like that. I'm not sure exactly, but the idea is like you can be offline, both of you on each side, and then you sync. And then it
+
+Justin Gardner (@rhynorater) (51:10.346)
+Yeah, what is CRDT? I don't know that.
+
+Justin Gardner (@rhynorater) (51:16.607)
+Okay, something like that, okay.
+
+Emile Fugulin (Sytten (51:24.527)
+it resolves the conflict automatically a bit like Git does for code and things like that. But you can build the whole application on top of that system. So that's kind of what we're going for probably for everything collaboration-wise over the network with two instances or multiple instances.
+
+Justin Gardner (@rhynorater) (51:29.206)
+Wow, yeah.
+
+Justin Gardner (@rhynorater) (51:42.022)
+And would that be over the internet or would that be over a local network or what? Okay, good. Yeah.
+
+Emile Fugulin (Sytten (51:46.703)
+That would be over the internet. So that's kind of the idea is like you can have a lot of instances and be completely separate and then still share some stuff and yeah. So yeah, but it's good.
+
+Justin Gardner (@rhynorater) (51:56.842)
+Yeah, man, this would be a really interesting feature, you know, because I was thinking like, all right, how do we aid collaboration without making it too an interdependent on each other, right? And one of the things that came to mind was like, man, it would be really cool if I could just right click on a replay tab and be like, copy link to that, you know? And it like takes the replay tab, encapsulates it in like, you know, some sort of object.
+
+Emile Fugulin (Sytten (52:04.783)
+Mm-hmm.
+
+Emile Fugulin (Sytten (52:14.255)
+Yep.
+
+Emile Fugulin (Sytten (52:21.679)
+A format, yeah.
+
+Justin Gardner (@rhynorater) (52:23.174)
+and then you can send it to your friend and they can open it up in their Caido instance and now they have that same request. You know, that would be super amazing. And I think in general, just more access to being able to very quickly share links. You know, if you have, I guess you'd have to do like a, you know, time-bound link share service or something like that. Or even that's something you guys would wanna host. I don't know if you wanna even host that.
+
+Emile Fugulin (Sytten (52:26.447)
+Yeah, yeah. Yep. That's interesting. Yeah, yeah.
+
+Emile Fugulin (Sytten (52:37.071)
+Mm-hmm.
+
+Emile Fugulin (Sytten (52:43.919)
+Yeah, you can do that.
+
+Emile Fugulin (Sytten (52:49.135)
+But we don't mind hosting it if it's encrypted. Like if I can't decrypt it, for me it's just a blob of binary data. So I don't really care, I can host it, it's not no big deal. So that's kind of where we're going with that. I don't know if like reporting, we had an idea of a timeline at some point where you could just like drop things like that, notes and things like that and create just an...
+
+Justin Gardner (@rhynorater) (52:52.087)
+Sure.
+
+Justin Gardner (@rhynorater) (52:56.843)
+Yeah.
+
+Right.
+
+Emile Fugulin (Sytten (53:12.815)
+versus like a markdown where like it's text-based. So you kind of, it's kind of annoying for us to, to insert custom image, like custom objects, cause it's not made for that. So it's, I'd say like something like a notion would be easier for us to implement because you can create custom. I don't know if you've used notion in the past, but like, okay. So it's kind of the idea of like boxes where box can be an image, can be anything basically they can code. Yeah. And every like text is in the box,
+
+Justin Gardner (@rhynorater) (53:22.396)
+Mm-mm.
+
+Justin Gardner (@rhynorater) (53:30.794)
+Yeah, I haven't used Notion very much, yeah.
+
+Justin Gardner (@rhynorater) (53:38.226)
+and you can encapsulate different stuff. Okay. Mm-hmm.
+
+Emile Fugulin (Sytten (53:42.671)
+Inside the box is its Markdown, let's say, but you can mix and match with other types of objects that are not easily addressable in Markdown. So, yeah.
+
+Justin Gardner (@rhynorater) (53:45.951)
+Sure.
+
+Justin Gardner (@rhynorater) (53:52.662)
+Huh, that's interesting. Yeah, how would we wanna, because if the end result needs to be marked down for compatibility with the reporting platforms, you know, and that sort of thing, then it would be a little bit tricky. But I mean, to be honest, you only really have, maybe, you really only have one major object you need to integrate. Well, no, requests and responses, you know, like you need to have requests and responses. So,
+
+Emile Fugulin (Sytten (53:58.127)
+Mm-hmm.
+
+Emile Fugulin (Sytten (54:04.463)
+Yep.
+
+Emile Fugulin (Sytten (54:12.111)
+Yeah. Yeah.
+
+Yeah. But eventually we'll have like, okay, you have multiple steps or you have a workflow and all like, you see like, yeah, yeah, yeah. Yeah. So, so that's why we're asked to think a bit of a head, like what we plan to do. And so some, sometimes the decisions we make, they are not super obvious for like right now what we offer, but we kind of have to think about.
+
+Justin Gardner (@rhynorater) (54:23.31)
+Oh right, with the whole workflow, you sharing the exploit workflow. True, it gets tricky man, it gets tricky.
+
+Emile Fugulin (Sytten (54:41.935)
+like six months or a year in advance where we're going to be when we design a new system in place.
+
+Justin Gardner (@rhynorater) (54:47.274)
+Yeah, no, that's tricky, man. I would not be great at that. It's definitely a lot of work for you guys. I'm thinking as well, you know, okay, so let's say we were gonna integrate this into a report on a platform, right? We have, the end result needs to be marked down. So when we export it to markdown or create the final output, maybe like your workflows become an image wrapped in a link and then they click the image and it...
+
+Emile Fugulin (Sytten (54:59.279)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (55:15.846)
+opens up a Caido workflow in their browser or something like that. But I'm not sure if the platforms even really allow you to embed external images.
+
+Emile Fugulin (Sytten (55:16.783)
+Yeah.
+
+Emile Fugulin (Sytten (55:21.999)
+But that's kind of on us to negotiate something with like AckerOne and BugCrawl and things like that. It's not impossible. So to make them change eventually, like we can define a standard for the industry that is bit more mix of Markdown and other stuff. So everything's possible. It's just like, yeah, how we, yeah.
+
+Justin Gardner (@rhynorater) (55:28.426)
+Yeah.
+
+Justin Gardner (@rhynorater) (55:40.947)
+Yeah, that's a good point.
+
+Yeah, so, but I mean, HackerOne and Bugcrowd and Integrity, they're all great and they are our primary platforms, but we also wanna be able to use this Markdown reports in lots of other areas too. So I'm thinking, if there was some way to be, like for example, I think actually you can do...
+
+Emile Fugulin (Sytten (55:54.351)
+Mm.
+
+Justin Gardner (@rhynorater) (56:03.266)
+I don't know, I feel like I've seen it on some of the platforms where you embed the data in a base64 encoded blob inside your report, right? And it's really ugly to look at, but it works just fine if you're looking at the markdown view, it's kind of ugly to look at, but if you look at the rendered view, it's fine. So you could even do something like that with a link wrapped around that picture, and that would sort of create the nice branding effect and smooth report effect while still staying compatible with native.
+
+Emile Fugulin (Sytten (56:08.559)
+Yeah. Mm-hmm. Yep.
+
+Emile Fugulin (Sytten (56:30.735)
+Mm-hmm Yeah, no, definitely markdown export is is needed no matter how what we do basically so
+
+Justin Gardner (@rhynorater) (56:33.142)
+you know, markdown.
+
+Yeah. 100% man, wow. There's so many ways that this could be revolutionary, man. I'm thinking in my head right now that...
+
+Emile Fugulin (Sytten (56:45.967)
+Yeah, yeah. But my goal like long longer term is eventually like if we get rid of this markdown step and we have like another format it is interesting that companies on the other side can also import in their system. That's kind of like you you cut down on the tech space system and and you have format where it's more appropriate to you know.
+
+Justin Gardner (@rhynorater) (56:53.382)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (56:58.842)
+Mmm.
+
+Justin Gardner (@rhynorater) (57:02.73)
+Yeah.
+
+Well, I guess the other thing is, you said a part of your company mission statement is to delete PDF reports. But I mean, you also have that sort of compatibility issue when it comes into dealing with some of these bigger companies that need to attach a report to like a JIRA ticket or something.
+
+Emile Fugulin (Sytten (57:12.623)
+Yeah.
+
+Emile Fugulin (Sytten (57:16.943)
+Mm-hmm.
+
+Emile Fugulin (Sytten (57:23.951)
+Yeah, no, for sure, for sure. It's an ongoing problem, but the problem also on the enterprise side is they don't have a lot of good software to manage their vulnerabilities. And then that understands like real, like for me, if it's in general, it's a bit weird. So it's like, they should have something more specialized. I don't know if we're going to go in that direction, but yeah.
+
+Justin Gardner (@rhynorater) (57:35.172)
+Mm.
+
+Justin Gardner (@rhynorater) (57:41.902)
+Yeah. Well, but they need to have that, they need to have that to give the developers, you know, the developers are using Jira.
+
+Emile Fugulin (Sytten (57:47.471)
+Yeah, yeah, it needs to be integrated in Jira, but they should have like, uh, something else on top of it. Like that syncs with Jira. Yeah.
+
+Justin Gardner (@rhynorater) (57:53.93)
+some other step. Maybe Caido, you know, Enterprise Vulnerability Management Platform. Who knows?
+
+Emile Fugulin (Sytten (57:57.487)
+Yeah, we're thinking about it, yeah.
+
+Yeah, yeah, yeah, that indicates like that's kind of our idea, but we'll see how much we can develop. And but it's kind of the idea of like building this whole ecosystem where you can have like the hackers and the hackers are happy. And then the other side of the enterprise, it's like they're all savvy because they can manage your stuff that they receive. So, yeah.
+
+Justin Gardner (@rhynorater) (58:22.006)
+Absolutely. Yeah, man. I'm looking at the I'm looking at the doc here. I think we covered pretty much everything I guess do you I imagine Kaito is the thing you want to shout out at the end of the pod?
+
+Emile Fugulin (Sytten (58:26.639)
+Yep.
+
+Emile Fugulin (Sytten (58:34.479)
+Yeah, well, I just wanted to do also a small shout out because we made the Cadeau Pro free for students. So I just wanted to mention it. I try to mention it every time I have the chance. So just there's like a small procedure for you to apply for that. It's on our website. So otherwise, yeah, just look at what we're doing. Join the community if you can. Yeah. Yeah. Yeah.
+
+Justin Gardner (@rhynorater) (58:42.27)
+Oh nice.
+
+Justin Gardner (@rhynorater) (58:59.766)
+Yeah, get in the Discord, guys. It's pretty nice. Yeah.
+
+Emile Fugulin (Sytten (59:03.823)
+Yeah, we try to be there as much as possible and if you can, you can support the project also. That's always appreciated. At the end of the day, everybody needs to eat, so that's the reality of it. So yeah.
+
+Justin Gardner (@rhynorater) (59:12.422)
+Yeah, exactly. Yeah. Including the, you know, CTP podcast host here. So make sure you're using your discount code, CTP podcast at checkout and getting yourself an extra 10% off the annual license and take food from a meal's pocket and put it into my, you know, take money from a meal, put it to me. No.
+
+Emile Fugulin (Sytten (59:19.983)
+Yes, exactly. Yeah.
+
+Emile Fugulin (Sytten (59:26.703)
+Yep.
+
+Yeah.
+
+That's the real... yeah that's okay. Yeah we have annual and monthly so right now our referral program only works for annual.
+
+Justin Gardner (@rhynorater) (59:40.224)
+Mm.
+
+Justin Gardner (@rhynorater) (59:43.966)
+Okay. Gotcha. Very nice. Good to know, man. Thank you so much for coming on the pod. I'm really looking forward to the future of Caido and yeah, I'll be using it on a regular basis.
+
+Emile Fugulin (Sytten (59:52.783)
+Yeah, happy to be here and let's do something again at some point in the future. Yeah, thanks a lot.
+
+Justin Gardner (@rhynorater) (59:56.682)
+Yeah, for sure, man. We're definitely keeping an eye on you guys. All right, that's the pod.

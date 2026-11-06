@@ -1,0 +1,995 @@
+Episode 193: Browser Logic Errors & XS-Leaks with Jorian Woltjer
+Source: https://www.criticalthinkingpodcast.io/browser-logic-errors-xs-leaks-with-jorian-woltjer/
+======================================================================
+
+Title: Transcript - Thu, 24 Sep 2026 15:36:29 GMT
+Date: Thu, 24 Sep 2026 15:36:29 GMT, Duration: [01:46:45.64]
+[00:00:00.90] - Justin Gardner
+Yeah, I love that motivation. It's like, I knew that there was a way because there has to be. It's like, because I was going to make it.
+
+[00:00:31.19] - Justin Gardner
+All righty, hackers. Before we jump into the episode, we've got the This Week in Bug Browning segment. And to be clear about what that is, this is supposed to be a rapid fire segment where I point you to research that is interesting that you should go and check out or just give you quick pieces of information that make your life better as a hacker. However, today, YesWeHack handed me this bad boy, cache key injection, which is research done by Bruhmans at Defcon, and it is amazing. So I'm gonna take a little bit longer than I normally do in this segment and tell you about it. So as soon as I heard the concept, cash key injection, I was like, of course, duh, we can create cash keys that represent two different requests, but have the same cash key, and then we can collide them. Of course, and I think that's such a brilliant piece of research when you read the title and you're like, frick, frick, frick, I should have come up with that, right? Like, so shout out to Brumans and the whole team for that, but that is the concept, okay, is that you can create multiple pages that have the same cache key that represent different requests. The example that he gives here is when your cache key is comprised of the scheme next to the host next to the request URI. So if you were to request HTTPS dummy site slash whatever request you would like, that actually has the same cache key as if you requested it, HTTP, S dummy site, right? So you move the S into the host header, brilliant. And then you can create a response that overrides the cache key and injects into it that has a different request body than what was intended and then serve that cache page to vulnerable victims resulting in cache poisoning. Brilliant, brilliant, brilliant. I love it And we will link it in the description. You should go read it further because this is a really cool technique and people cleaned up with cash poisoning. Really? I know many hackers that really cleaned up with it. It made a lot of money. So this could be a cash cow. So get after it guys. All right, that's it. That's it for this Week in Bug Bounty segment. Let's get to the episode. Alrighty, my guy, the time has come. I feel like with all of the research that you've done in the CTV Discord and how much you've been involved there, I feel like we should have already had you on the pod. But I realized the other day that we hadn't. So now the time has come. I'm sorry for the delay. Welcome to the pod.
+
+[00:03:16.69] - Jorian Woltjer
+Very excited. Thanks for inviting me.
+
+[00:03:19.19] - Justin Gardner
+Of course, man. Of course. Yeah, like I said, I just want to start off this episode by saying thank you so much for the way that you've contributed to the CTV community, both in the research, you know, lab side, but also in the in the Discord. I just think, you know, every time I see your name pop up in the Discord, I'm like, oh man, something's happening now. So if you guys are listening to the podcast and you're not in the Discord, you're definitely going to want to do that and pay extra attention to Jorian's responses there because a big part of what he does is, if I understood correctly from what you said, Jorian, is look through the CTBB Discord and try to find questions that people have that you don't know the answer to off the top of your head and then kind of get nerd sniped into solving those, right?
+
+[00:04:05.40] - Jorian Woltjer
+Exactly, yeah. It's like a bunch of small little CTF challenges that might or may not have a solution.
+
+[00:04:11.19] - Justin Gardner
+Yeah, yeah. No, so that, and we're gonna cover some of the research that actually came as a part of that first later on as we progress in the podcast. But first, we've got to do what we always do, which is you've got to prove your technicality with a bug. And Yeah, it's a great one, man. I read about it here in the doc and I'm excited for you to share it with the people. So hit us.
+
+[00:04:38.10] - Jorian Woltjer
+Yeah, so I don't really do much bug bounty per se, but I did like hack a pretty interesting application in this case. And it started basically with how I got started with hacking in general through a lot of CTFs. It's like in my opinion the best way to learn the deep technical stuff of hacking and I did that a lot with a friend just learning the basic CTF techniques. Eventually I got pretty good at CTF and there's this single platform called CTFd, which is very popular used in pretty much every CTF back then. So I knew it like in and out. And then I kind of got focused into this web hacking scene like three years ago and wanted to learn about access leaks, which is like some kind of boolean response from a website that's detectable through whatever means to eventually leak strings by searching through yes and no questions, like 20 questions basically in the browser.
+
+[00:05:50.89] - Justin Gardner
+Very interesting vulnerability class.
+
+[00:05:52.69] - Jorian Woltjer
+Yeah, I really like the idea of it because there's so many different ways to leak stuff, so many creative ways. And to kind of practice that, I just decided to look into this application CTFD because I knew the features. And I was curious if there was any way to leak some data in there. And quite quickly, I kind of accidentally found a way to search for flags as an admin and get a status code 404 if a page wasn't found. And that was specifically on this paginated response. If you put in the parameter page equals two, it would either give a 404 if the page was found, so there's more than like 50 items, so it overflows onto the next page. But if there's less than 50 items, it would return like a 200 with those items. So that was kind of an interesting gadget. I knew there might be some way to leak that. And so during the learning of Access Leaks, I discovered this website called accessleaks.dev. Amazing website, definitely check it out if you want to learn more
+
+[00:07:06.00] - Justin Gardner
+about it.
+
+[00:07:07.00] - Jorian Woltjer
+It's amazing. Very well written.
+
+[00:07:08.69] - Justin Gardner
+We'll put it in the description.
+
+[00:07:10.30] - Jorian Woltjer
+Yeah. There was a technique where you could use a script tag on some URL, and if it returned a 200 response code it would trigger the unload event because it was trying to execute the JavaScript in there and if it was a 404 response it would trigger an error because it's not like a successful script load So I tried to use that in the CDFD case. But unfortunately, the cookies were same-site lags.
+
+[00:07:41.00] - Justin Gardner
+Yeah.
+
+[00:07:42.39] - Jorian Woltjer
+So of course, with same-site lags, that means in background requests from your attacker's website, the cookies won't be sent, so no authentication of the admin would get through to actually leak interesting flags. So that was kind of a roadblock in that case. But I was still very convinced that there was some way to leak this status code because there just had to be. It was such a big difference in my head. There just had to be some way to leak this.
+
+[00:08:12.60] - Justin Gardner
+Yeah, I love that motivation. It's like, I knew that there was a way because there has to be. Yeah. It's like, because I was going to make it. Yeah.
+
+[00:08:22.89] - Jorian Woltjer
+Exactly. And so basically, I did. I eventually remembered that there was this weird fact in the history of your navigations in the browser, 404 responses just don't show up
+
+[00:08:36.29] - Justin Gardner
+there.
+
+[00:08:37.39] - Jorian Woltjer
+I think I remembered it from finding one of those pages, trying to find it at some point and just not being able to, and then eventually finding out, oh, 404s aren't in there. And then I looked a bit into the history API and eventually found this technique which I thought would be impossible. It's this visited selector. You might know it. It's like when you click a link on Google, it'll show a purple the next time you see that link. And that's like the styling from CSS saying how those links should look. By default it's purple, but you can actually just change it to whatever color you want. You can make it some different font size, for example. Actually, you can't really do that. You can do a few very specific stylings, But they intend on making it so you can't leak the results of that. So for example, font size is not allowed in that case because using CSS or like JavaScript computations, you can measure the width of elements and you'd know if a user has visited a link before or not. So that's how Chrome tries to prevent that. But there's, of course, in such a weird, hard to sanitize thing such as CSS, there has to be ways to bypass that. And there was just like some proof of concepts online and in Chromebooks publicly, that showed just unpatched ways to, through performance, leak the result of such a selector.
+
+[00:10:19.70] - Justin Gardner
+Through performance.
+
+[00:10:20.89] - Jorian Woltjer
+Right. So I think they put a bunch of Chinese characters, which are computationally heavy to render and very small widths. So you have to compute the length of a lot of things and like blinking stuff in and out very quickly.
+
+[00:10:37.20] - Justin Gardner
+Oh my gosh, dude, this
+
+[00:10:38.60] - Jorian Woltjer
+is like
+
+[00:10:39.00] - Justin Gardner
+crazy shit. You're just gonna see like, you know, it's gonna start raining Chinese characters.
+
+[00:10:44.10] - Jorian Woltjer
+Basically like the matrix rain. It's It's
+
+[00:10:45.00] - Justin Gardner
+It's It's like, I know
+
+[00:10:45.79] - Jorian Woltjer
+the answer! So that's pretty much what the page does in the background. It just does such a super heavy computation. And if the link was visited, it will do a lot more computation than if it wasn't visited. So you could just use that to, first of all, you take that URL that you want to probe. You want to see if that's 200 or 404. You open that in a new tab. So the user has to have visited that. And as we know, if it's a 200, it'll be stored in the history. But if it's a 404, it will be ignored. So the links will turn purple for 200 and won't turn purple for the 404. So we use our matrix Chinese character, Madness, to detect the performance of a bunch of links. And eventually we get one of those links measured as more than the others. And so we know that link was visited, that link returns 200. So that must have been the correct flag in my case.
+
+[00:11:54.89] - Justin Gardner
+Okay, so let me just get this straight here. So we're on CTFD and there's like some sort of functionality that allows you to search for flags, is that correct, in admin?
+
+[00:12:04.60] - Jorian Woltjer
+Yeah, the specific feature is actually the submissions of flags. So as an admin, you can kind of look up what other people have submitted to check if there's something wrong maybe.
+
+[00:12:15.10] - Justin Gardner
+And is a prerequisite of this that there have been over 50 submissions so that it's paginated?
+
+[00:12:19.89] - Jorian Woltjer
+Exactly. That's kind of the initial requirement. But the funny thing is, I thought that was a requirement, but eventually I found a way to skip that requirement because as a user you can also submit flags. So you can just submit the prefix that you're searching for to pad it with like 49. And so the 50th real flag, that's the one that overflows it.
+
+[00:12:44.20] - Justin Gardner
+That's amazing. That is absolutely amazing. Nice work, dude. Okay, so from there, we have the search functionality. We've got the Boolean 204. You pop open a new tab, you show something distracting to the user or whatever. Then in the opener, you redirect that to your search, right? And then that gives you either an item in the history or not an item in the history. And then you create dynamically a link with all the crazy computationally heavy characters, believing on the screen, all the Chinese characters, and then you measure the performance, that gives you a yes or no answer.
+
+[00:13:24.20] - Jorian Woltjer
+Exactly.
+
+[00:13:25.10] - Justin Gardner
+And then you do that again for every character of the flag.
+
+[00:13:27.20] - Jorian Woltjer
+Exactly. So it was a partial search, you could like character by character, slowly leak all the flags in the CTF.
+
+[00:13:33.70] - Justin Gardner
+Oh my gosh, dude, that is amazing. Good, fine, man. The POC for that must have been so beautiful. You must have, that just, there's something that just like, I get a goosebumps even talking about it right now. Like When you see a character leak, character by, you know, oh my gosh, I love a leak, bro.
+
+[00:13:51.10] - Jorian Woltjer
+I love it. It just works without any interaction.
+
+[00:13:53.00] - Justin Gardner
+Oh, it's the best. Beautiful. It's so freaking good. So when you're mentioning, and so This technique, it still works today, yeah?
+
+[00:14:03.29] - Jorian Woltjer
+Yeah, that's actually an interesting question because it does, but it's actually kind of close to not working.
+
+[00:14:11.00] - Justin Gardner
+Oh,
+
+[00:14:11.10] - Jorian Woltjer
+really? Because there is this new feature Chrome has added, I think like a year ago, called, what is it called?
+
+[00:14:20.29] - Justin Gardner
+Like... History partitioning?
+
+[00:14:22.10] - Jorian Woltjer
+Yeah, history partitioning. Chrome added history partitioning.
+
+[00:14:27.00] - Justin Gardner
+Dude, they link your blog in
+
+[00:14:29.10] - Jorian Woltjer
+this. That's the funny thing.
+
+[00:14:30.20] - Justin Gardner
+That's funny, dude. I I
+
+[00:14:31.20] - Jorian Woltjer
+I I wanted to show. So one of the issues of that feature that they added is that my technique still works. Yeah. Because they intended on making like a privacy change and they did that pretty well. Because as you might know, using the visited selector, you can like leak which URLs have been visited before. That's quite a privacy risk. Right. So now they make it so that only the original opener of that URL. So on Google you click a link but then on Bing it won't show up in purple.
+
+[00:15:06.00] - Justin Gardner
+Oh so it's linked to the... Okay interesting.
+
+[00:15:09.10] - Jorian Woltjer
+Yeah so the opener of whatever wherever you opened it that's the one who gets to leak it as well. But luckily for us, we're the ones opening it and we're the ones leaking it. So it just works out still.
+
+[00:15:22.39] - Justin Gardner
+No, that's so bad. Why would they do that? Oh my gosh. Yeah. Yeah. I mean, especially when you can force navigate something that just doesn't make any sense at all.
+
+[00:15:32.79] - Jorian Woltjer
+Exactly. And so I think the trade-off they made was, of course, you can require a real user click to only show it in that case. But some, I think like tracking services, they will actually first put their own URL into the new tab and then they redirect to the real URL. So I think for example Twitter does this and so The thing in that case is they won't be saved in that case because it's not like a trusted click.
+
+[00:16:07.29] - Justin Gardner
+Yeah, that does make it a little bit more complicated.
+
+[00:16:09.89] - Jorian Woltjer
+Difficult dilemma for Chrome, yeah.
+
+[00:16:12.29] - Justin Gardner
+So when you were talking about the history piece, it made me think of another cross site leak that I've seen before, which is checking the length of the history as well. That is, yeah, the whole not putting the 404 in, you know, in the history, that does cause problems And I think there's probably other vulnerabilities that can be found there that utilize that functionality.
+
+[00:16:37.29] - Jorian Woltjer
+Yeah, the history of length is like a whole other subject. It's such a weird property that probably not a single website uses legitimately. But in a lot of excess leaks, it's a useful component.
+
+[00:16:50.70] - Justin Gardner
+Very useful. I think we covered one on the pod. I will have to go dig up that afterwards and bring it back to our memory. But definitely a useful primitive. And Anything like that that just sort of taking this principle up a level here. Anything like the history.length or even the visited selector there that is... The visited selector is a little bit interesting because technically it is cross origin, right? Like if you open up another page, then it is cross origin. But specifically, the history length component and window.name and stuff like that, Those are particularly interesting as they can be accessed across origin and are variables that stay populated when cross origin navigations occur, which is the meat of cross site leaks there I think in at least one category of them. Very cool, man. Well, congratulations on that find. That is sick. And yeah, dude, I absolutely love seeing the characters leak one by one. So I'm glad you brought that one up for this episode. And I guess now we'll go ahead and pivot now that you've earned your introduction. Can you tell me, by the way, how to pronounce your last name? Is it Walter? Woltcher. Woltcher.
+
+[00:18:18.09] - Jorian Woltjer
+Good luck. Yeah, Woltcher. Pretty good.
+
+[00:18:20.59] - Justin Gardner
+OK, all right. This is Jorian Woltcher.
+
+[00:18:24.59] - Jorian Woltjer
+Close enough. OK, thanks man. You work for for
+
+[00:18:25.20] - Justin Gardner
+for for Aikido. CTF is a big part of your experience, as you said. And can you give us a little bit more of an introduction and a history into how you landed at your role at Aikido now and what your hacking journey has been like as you transition from CTF to continuing to do CTF, but also bug bounty in the, in the pen test world as well. Cause I've seen some write-ups from you recently, particularly at Aikido, showing some of your pen test process as well.
+
+[00:18:58.00] - Jorian Woltjer
+Yeah. So I started off doing pen testing at a company called WarpNet, just in the Netherlands. That was super fun. I still had a lot of, met a lot of good people there, had a lot of cool bugs. But of course all of that stuff kind of stays private. So you can't really talk about that publicly. Right. And eventually, after like two years of doing that, last year I got an invitation by Philip, another very good CTF player. He was working on his AI startup called Hiker, which was this like AI pen testing thing. I kind of showed me some some demos of it. And then he at some point invited me to actually join with him Akido, which acquired him back then. So I was a bit hesitant at first, because I have a very fun pen testing job. And it's like a big step to just go into like this broad company suddenly. Yeah. But I knew this was like once in a lifetime opportunity, had to take it and really enjoying my state right now. Joined beginning of this year as a security researcher. So now I'm not really doing pen testing per se, but I'm working a lot with the AI pen testing, improving that, using it to find CVEs, do research on all kinds of big applications.
+
+[00:20:29.59] - Justin Gardner
+Nice, Okay, so you've got one of those security researcher jobs now. Like I've always thought, you know, I did traditional pen testing back in the day and obviously I'm a full-time bug bounty hunter right now. But if I was gonna go back to any job, I think it would be a security researcher job, you know? Because A lot of you guys have pretty sick gigs where you're like, do research and write it up. I don't know if that's your thing.
+
+[00:20:53.70] - Jorian Woltjer
+But yeah, it's like essentially what I've been doing on my own blog, just researching random things I find fun and then writing them up and now it's my job.
+
+[00:21:01.29] - Justin Gardner
+Exactly, dude. Frick, that's the dream. That's really awesome, man. Well, I'm glad to hear you found that. And congrats on Aikido on snagging you. That's a great add to the roster there. So I do want to actually, we'll go and potentially talk about some of your I Kido posts a little bit later But for now, let's jump over to the CTPB research lab stuff that you did here specifically solving this ORB mystery that came up in the podcast discord. Can you explain how you landed on that mystery and how you ended up solving it? And also I'll say, as I was at the coffee shop this morning, Turbo actually posted a review, I think, of this research that I saw. I haven't had the chance to watch it yet, but I freaking love Turbo's research reviews. So we're going to link that in the description as well, if you guys want to hear more about this specific phone. So, hit us.
+
+[00:22:01.09] - Jorian Woltjer
+So the kind of introduction is someone, of course, sent a message in the CTPB Discord. They just had some weird behavior they found while learning about access leaks because they found this document on accessleaks.dev that explained kind of the exact access leak I explained earlier with CTFD, where you use a script tag and you put the source as the URL that you want to probe. If it's a 200 response code, it will trigger the unload. And if it's a 404, it will trigger the on error. So that way you could, in like a background request, detect the status code. So they tried that in the DevTools and it worked on accessleaks.dev, but then they opened example.com. They tried it again in the DevTools and it didn't work. So there was something really weird where on one origin it worked, and another origin it didn't work, and they were just probing like Google, just like a random other address. So there's like no obvious reason why it would work on accessibility.dev, but it wouldn't work on example.com. So that was like this weird weird question from them.
+
+[00:23:14.20] - Justin Gardner
+That is, that is, Yeah, I'm just trying to parse through that in my head a little bit. Like, yeah, my first inclination would be like, is there something weird with like, like HSTS or like some sort of segmentation? But example.com isn't like on the public. I don't know. That's weird, man. That's definitely
+
+[00:23:36.59] - Jorian Woltjer
+very curious, isn't it? Yeah.
+
+[00:23:38.59] - Justin Gardner
+And
+
+[00:23:38.70] - Jorian Woltjer
+I was also thinking about maybe there's some stored state, maybe like some cookies or some other extension stuff that's messing with it.
+
+[00:23:47.29] - Justin Gardner
+Yeah. Oh, extensions. That's That's
+
+[00:23:48.59] - Jorian Woltjer
+That's That's a good dog. Yeah. It's A pretty common cause of weird behavior.
+
+[00:23:50.90] - Justin Gardner
+Yeah.
+
+[00:23:51.20] - Jorian Woltjer
+So definitely if you encounter something weird, try it without extensions and you might see why.
+
+[00:23:55.90] - Justin Gardner
+Right, pop up in that guest profile or something like that. Yeah.
+
+[00:24:00.20] - Jorian Woltjer
+And so I asked them to do exactly that. And curiously, they were able to reproduce it on a private Firefox window. So I knew immediately it wasn't something stored, because in an incognito, you lose all your browser state. But it also didn't work in Chrome, they said, and it didn't work in some other situation in Firefox. So there was this kind of almost random feeling of it where it worked in very specific situations and not specific other situations. So that really caught my attention. Like I knew I had to find out the reason why this happened. But step one, of course, in that process is reproducing.
+
+[00:24:46.79] - Justin Gardner
+I just pop open the research lab right up and the first thing that I see is, what the fuck is going on? Like,
+
+[00:24:56.20] - Jorian Woltjer
+that's so funny.
+
+[00:24:57.90] - Justin Gardner
+Or as Wiper nicely put it, what the fuck is going on? Yeah. I love those moments, man. I'm sorry, go ahead, continue.
+
+[00:25:06.29] - Jorian Woltjer
+Yeah, no, so like step one of that is trying to reproduce the behavior locally so I can like test when it does and doesn't work. But the problem with that is I wasn't able to reproduce it. Like I went to Accessly.dev, opened my dev tools, did the same script as he did, and it just didn't work. So that was kind of a bummer. I wasn't able to reproduce it. Like I went to Accessly.dev, opened my DevTools, did the same script as he did, and it just didn't work. So that was kind of a bummer. I wasn't able to reproduce it. And I was quite convinced that there was something on his machine acting weird. And after this response of him saying that it didn't work in some situations, didn't work in other situations, I just tried again on my Chrome and Firefox instance. And actually, I was able to reproduce it now. And the weird thing is, also on Chrome. So he wasn't able to reproduce it on Chrome, and I was, with the exact same test. And a few minutes earlier, I wasn't able to. So again, kind of breaking my mind, like what's this random behavior? And then the first clue I noticed was in some of his screenshots of the network tab I requested. It showed in the transferred column, it showed service worker. My alarm bells were kind of going off. Oh, service workers, that's got to be something because they act pretty weird sometimes. And they have this feature where they can intercept requests using this fetch event. And so I knew there might be something that the service worker's doing that's making it so it does work on something and doesn't work on another thing. But that's still kind of weird because service workers shouldn't be able to kind of make something that's impossible work again. But I took a look at service worker code for accessleaks.dev and They did have a service worker, but it wasn't a no-op. It just intercepted the fetch request, then fetched it, and then returned to response. That's all it did. Very weird.
+
+[00:27:16.00] - Justin Gardner
+I wonder why they even had that.
+
+[00:27:18.00] - Jorian Woltjer
+Yeah, I thought that shouldn't be able to affect anything. One weird fact to know about a service worker is, even though they have this fetch request, they can actually also fetch intercept cross-origin requests. So it's not only your same origin. They do this safely where they give you an opaque response that you can't actually read. You can replace it, but you can't edit it or something. So they do that in a kind of secure way. But this should be a no-op. It should just proxy the request back and forth. Then I took a look at the burp suite, like the HTTP proxy request that's actually sent from accessleaks.dev and example.com. And they looked identical except for one single header. It was the sec fetch desk header. It's one of those headers that you probably always ignore because it's just one of those random browser things that doesn't look important. But in this case, it was the only difference. So There's something with that header that has to be the culprit. And what header actually means if you look it up, is it's like the destination of the request, so where the response is going to end up in. And on AccessLeaks.dev, it was empty, and on example.com, it was script. And so because we're loading a script, it makes sense that it's a destination into a script. But for some reason in AccessLeaks.dev, the destination was being replaced by empty. And so if we look into how this fetch works from the service worker, it's not a perfect proxy. It replaces this destination actually with what fetch normally does, which is empty, because you don't know where the fetch response is going to be used. Very interesting. That was the difference.
+
+[00:29:24.90] - Justin Gardner
+That's got to be what they're using in the Chrome source code to determine.
+
+[00:29:29.09] - Jorian Woltjer
+Yeah. Still we have this weird behavior where how does the destination of a request matter if we get an error or not? But then the nil in the coffin, as I put it, was in the Chrome source code. They literally check if the destination of the request is not equal to empty, which is the case for script, then we return network error. And otherwise we return an empty response, which is like status code 200 equivalent. And empty response that will trigger the script on load as it normally should. But the network error that will always error. So even though we got a successful response, it will always network error. And so on example.com, this background request would fail due to ORB and then always fail even if it was a successful 200 response. So you couldn't detect the difference but using the service worker it was able to trigger this edge case in ORB where it replaced the response with an empty response, like a successful response. So the onload actually triggered, which was different from the onerror you would get with a different status code.
+
+[00:30:49.90] - Justin Gardner
+Wow dude, that is sick. That is super, super awesome. And now that I'm thinking about it, you can register that service worker, right? So This just completely revives the whole technique, right?
+
+[00:31:04.29] - Jorian Woltjer
+Yeah, you can totally just do what accessleaks.dev did by accident and just install the service worker that intercepts and practices everything. And then suddenly your AccessLeaks starts working.
+
+[00:31:16.59] - Justin Gardner
+Dude, accessleaks.dev is doing that on purpose, man. They knew about it from ancient history. And they're like, we're just going to add this service worker. And maybe somebody will figure it out someday. That's amazing.
+
+[00:31:32.00] - Jorian Woltjer
+I'm also very much surprised that this was even found, because it's such a coincidence where, first of all, you have to find this really edge case behavior. Nobody expected this single if conditioning Chrome, the ORB specs matter for anything. But This guy just randomly found, happened to be testing XSSLeaks, happened to be testing it on XSSLeaks.dev, which happened to have a
+
+[00:31:57.70] - Justin Gardner
+service worker. Service worker, dude. Dang. Such Such
+
+[00:32:00.90] - Jorian Woltjer
+Such Such a coincidence.
+
+[00:32:01.79] - Justin Gardner
+That is, Well, also shout out to xssleaks.dev for like, having the attacks pocked on those pages. That helps so much, you know? It makes it so much easier to like go in there and see how that works.
+
+[00:32:16.29] - Jorian Woltjer
+Yeah, the XSenator website with all the examples. Yeah. Such a
+
+[00:32:20.70] - Justin Gardner
+useful thing. It is, it is. Yeah, and also shout out to Wipr as well for asking questions. I see down at the bottom of the right up here you said, and that is why you ask questions for us because now we just got a brilliant new, you know, revived cross-site leak technique back in our pockets. So yeah, dude, and shout out to you, man, for putting on your investigator cap and like diving deep into that, because like that is one of those scenarios where I'd be like, it's got to be like homies browser, you know, or like weird extension. Like yeah, you like compiled your own version of Chrome or something like, something like that is going on. But you're like, let's iron out the variables. And I'm sure that there's been plenty of times where you have gone down the rabbit hole and it's been something benign, right? And then one of these times, or more, it's not, it's something really cool.
+
+[00:33:13.79] - Jorian Woltjer
+Yeah, I've had it like multiple times now. We also made a post with with
+
+[00:33:16.70] - Justin Gardner
+with with Mike,
+
+[00:33:19.50] - Jorian Woltjer
+or Mian. He made a post where he found a Chrome vulnerability out of some random bug finding he was confused by. Yeah,
+
+[00:33:34.59] - Justin Gardner
+It's happened many times in the Discord, you know, in the CTBB Discord as well. Actually, dude, now that I think about it, so there's this other blog post that you did on the CTBB research that we should pop up now. So I'll pull that up here. This is stopping redirects, which is such a stupid niche like, you know, part of security, but actually becomes really, It's actually very common that this is something that you need to do. You outline four or five different scenarios in this write-up. Also, let me just say, dude, this just makes my heart so happy because this is exactly what I wanted with the CTBB Research Lab is to have like a, you know, corpus of write-ups on super mega niche hacking scenarios. And this is the perfectly exemplifies that. So thank you so much for that. I guess let's go ahead and are you down to walk through each one of these?
+
+[00:34:38.30] - Jorian Woltjer
+Yeah, sounds good.
+
+[00:34:39.09] - Justin Gardner
+All right, yeah, let's do it really quick. So if I remember correctly, this was started by a conversation in the discord that somebody was trying to trigger an XSS that was in a button that was being displayed after location.href was being assigned to a different HTTPS URL. Is that right? Do I remember that correctly?
+
+[00:35:03.90] - Jorian Woltjer
+Yeah, it was like this JavaScript colon redirect, which should normally work. But the page right afterwards did like an HTTPS redirect, which kind of overrode the in-progress redirect.
+
+[00:35:17.80] - Justin Gardner
+That's right. The JavaScript one was actually before it. And then it was, you know, know,
+
+[00:35:23.40] - Jorian Woltjer
+know, know, it was. It looks like it should work if you follow the code, but it just overrode it while in progress and somehow that makes it not work.
+
+[00:35:31.90] - Justin Gardner
+Weird, man. Very weird. Yeah. All right. Well, let's, So let's go back up to the beginning, and let's walk through each one of these. You mentioned here one of the main cases for this is OAuth dirty dancing. And there's a bunch of other cases for this as well. But certainly, when you need it to stop it from consuming a code from an OAuth flow, right? That's one of the main situations where you can use these primitives here of learning how to stop these redirects. So let's walk through the techniques that you and the rest of the team in the Discord here came up with. I think the first one is from kyer-dev-hats. Which one was that?
+
+[00:36:18.09] - Jorian Woltjer
+Yeah, so they shared a pretty interesting fact in the research channel, where if your URL contains some HTML-like characters, Chrome actually has a feature where it blocks kind of this dangling markup attacks where you put HTML after some URL to try and leak that HTML but The cool thing they found was you can intentionally use this protection to stop or block certain URLs from being requested. And so all that really requires is having an unescaped angle bracket in the URL and also an unescaped tab or new line, some like white space character. And Chrome detects that as like an attack and it will not let you request that URL. And sometimes that just helps you stop some URL that's getting in the way from actually being visited.
+
+[00:37:21.59] - Justin Gardner
+Ah, interesting. OK, so if you have something like partial control over the URL that it is being redirected to, then you could inject these characters potentially, right, depending on what character set you're working with, and then trigger the navigation to stop.
+
+[00:37:41.40] - Jorian Woltjer
+Yeah, so that's kind of a requirement that you have control in this case. And another technique, actually, if you have control of the URL, quite a simple idea, but you can just make a very long URL, like 2 million characters, and the browser will stop you at that point. It will not let you visit the URL more than two megabytes, which kind of makes sense.
+
+[00:38:11.00] - Justin Gardner
+I'm sorry, I'm losing it right now, because it just popped into my head. It's the stupid videos where people are searching for dumb shit on Google and Google's like, oh, all right, now I've got to, now I've got to deal with this like, super weird like Google search. And I could just see the browser being like, and here we go again. Jorian is requesting a three megabyte URL. No, Jorian, you can't do that. No.
+
+[00:38:42.59] - Jorian Woltjer
+Unfortunately.
+
+[00:38:43.50] - Justin Gardner
+Oh my gosh. Okay, yeah, so that would definitely stop the navigation there.
+
+[00:38:48.59] - Jorian Woltjer
+Yeah, and actually some Backend servers stop you before that
+
+[00:38:53.80] - Justin Gardner
+Right
+
+[00:38:54.09] - Jorian Woltjer
+because they have their own limits of like how big a request maybe And the funny thing is you can actually use this pretty cleverly for reconnaissance, too because different layers of the processing your request have different limits. So you can, for example, find, like, add maybe 100 characters, like 1, 000 characters, you find an error from some backend saying the request is too long. And if you increase it, you may get an earlier error. And if you increase it again, you may get an even earlier error. And so you can kind of probe at least what the limits are and also get different error pages back that you might recognize.
+
+[00:39:35.09] - Justin Gardner
+That is very interesting. Huh, it can help fingerprinting there. I'm also looking at this one dude right here. Gosh, dude, Jordan, I gotta give you props, man. This writeup is just chock full of amazing client-side quirks because he puts right at the end of this next section is that, you know, going back to that hard limit on URL length, fun fact, this limit even includes the hash fragment, which is kept across same origin navigations. So this can be useful for cross-site leaks as well. And I'm just thinking, wow, you can really do a lot with that. You can determine the length of what's coming after. And I also think, so you mentioned here that it's across same site navigation or same origin navigations. Do you know whether it's kept, if I do something like an explicit define of like location.pathName equals, or like location, or even if I did it from my own page, is there any way to do like a host name based navigation without affecting like the path?
+
+[00:40:46.09] - Jorian Woltjer
+I think so, yeah.
+
+[00:40:47.09] - Justin Gardner
+Yeah, I wonder if you would keep it in those scenarios.
+
+[00:40:50.00] - Jorian Woltjer
+It'll keep the other attributes, yeah.
+
+[00:40:51.80] - Justin Gardner
+Yeah, very interesting. Yeah, there's so much good cross-site. But that is definitely interesting that it includes the fragment. I would have thought that that would have been segmented a little bit differently, but it's
+
+[00:41:01.69] - Jorian Woltjer
+not. Yeah, I think it's specifically that high because of the fragment. People just put a lot of garbage into that fragment. Yeah, I do. So two megabytes, some sites might even
+
+[00:41:12.30] - Justin Gardner
+hit that. Yeah, Google, some of those stuff that I've done hacking Google actually, man, they just like, abuse the crap out of the fragment. They'll just like, take some massive protobuf like, object and encode it and stick it in the fragment. And I'm like, what are you doing, man? Like, this is not- Like your Google, yeah. Yeah, it's like, it's crazy. But yeah, I mean, I guess you're offloading it to the client side. Now you don't have to deal with it server side, I suppose. Yeah. All right, so we've got that one. What else do we have in here? Oh, dude, this next one's crazy. This is the one. So This is actually an alternative to doing cookie bombing for pulling out some data that would allow you to grab the code off the end of an OAuth flow.
+
+[00:42:00.09] - Jorian Woltjer
+Yeah, right. So this was another situation from the Discord. And so someone was trying to do the cookie bomb attack, I think. But they got this error page, which they were looking for. And now they wanted to get the URL of that error page. But the problem is that error page didn't have a body. So what Chrome does in that case is it shows this like built-in error page of like this site can't be reached. But that's in its own little origin of like Chrome error, colon, and it has the origin of null. So that's not actually, even though the URL looks the same, it's not actually same origin with maybe the opener or any other URL on that site.
+
+[00:42:44.80] - Justin Gardner
+Right,
+
+[00:42:45.00] - Jorian Woltjer
+right. So in case you have like the XSS with which you wanna leak the URL of that, it'll actually block reading location.href. So even though you have the page open, you can't read its URL, which was our initial goal to leak the OAuth secret.
+
+[00:43:04.00] - Justin Gardner
+Let's say I'm doing this on poc.riderader.com. I pop it open in a new tab. Now, I'm poc.riderader.com. Or even if I'm on, let's say, victim.com, and I instantiate the OAuth flow from there, The resulting page is not going to be victim.com. It's going to be a null origin page. So when I try to go grab the code, it doesn't work.
+
+[00:43:24.30] - Jorian Woltjer
+Yeah. So that was kind of the difficult situation there. But luckily, we have some more browser APIs to help us out, because we're not actually looking to get full access to that page. We're just trying to get its URL. And there's actually another API to get previous URLs of tabs, and that's through the navigation.entries function. I think it was recently also added to Firefox, so it should work there as well. But what it does is it gives from the current tab all the previous URLs that kind of your back button would go through otherwise and it just gives you the full URL strings if they're same origin of course.
+
+[00:44:13.90] - Justin Gardner
+That's so weird dude.
+
+[00:44:15.40] - Jorian Woltjer
+In this case yeah it doesn't care about the null origin because it just looks at the URL itself. So you're still allowed to read this. Otherwise, it's impossible to read URL just by checking the history of that basically.
+
+[00:44:31.19] - Justin Gardner
+Okay. So I'm looking at the code here. What you do is you do like a window.open, say you're on victim.com you got an XSS, you do a window.open to the Oauth flow. It pops a code back out. You stuff it with a big state. And when it hits the callback, it is too long and triggers the error, right? And then what happens is you redirect that same page to an about blank page, which is origin null.
+
+[00:45:04.09] - Jorian Woltjer
+Then you- That's same origin again. The about blank is to get it back to your own origin, so you can read things like window.navigation.
+
+[00:45:15.59] - Justin Gardner
+Well, maybe I'm misunderstanding. But then window.navigation, doesn't that just show you stuff from the same origin?
+
+[00:45:25.09] - Jorian Woltjer
+Kind of. The weird thing is the page, kind of the document was no origin, but the URL, that was still same origin. And navigation.entries, it looks at the URLs and not actually the page.
+
+[00:45:42.59] - Justin Gardner
+Interesting, interesting. Okay, okay, okay, okay. It's null origin, So that's why we can't affect the body, which is why we can't access the location at href property. Okay, but then we redirect it. So in this scenario, you put it to about blank, but we could have also just redirected it to victim.site.com or whatever.
+
+[00:46:02.30] - Jorian Woltjer
+Whatever, Same origin with your XSS.
+
+[00:46:04.00] - Justin Gardner
+And then you hit the navigation entries to grab that.
+
+[00:46:07.30] - Jorian Woltjer
+Exactly.
+
+[00:46:08.30] - Justin Gardner
+Now it's clicking. Now it's clicking. Okay. Thank you. Thank you for explaining that. Yeah. And then actually that makes me think of a different situation. And we may have to cut this segment. I don't know. I got to talk to Monka, the guy who built this. So Richard, check with me before you ship this. But he actually found a very interesting way to weaponize this, if I remember correctly, which is Let's say you've got a situation where you have a XSS on a file upload in an S3 bucket. And you've just got your own signed URL for that XSS. If you can figure out a way to get somebody else's object, either via redirect or whatever, opened up in that same frame, then you can hit navigation.entries to go back and grab the URL with the signed piece out of there. I forget how he actually put that together in a situation, but I remember him having to use navigation.entries to go back and grab the signed URL out of there. That is such an interesting
+
+[00:47:16.00] - Jorian Woltjer
+API. Yeah, it's a redirect destination. Very nice.
+
+[00:47:18.69] - Justin Gardner
+Yeah, yeah. So I don't know. Definitely That's another area where there's a lot of research that I think could be very valuable to do in the navigation entries department. Very nice, man. So let me ask you this though. I guess my go-to for snagging an OAuth cookie would be cookie bombing, right? Or an OAuth code, I mean, not OAuth cookie. So why in this specific situation are we not just cookie bombing the page? Triggering a server-side error. And then,
+
+[00:47:55.59] - Jorian Woltjer
+yeah. We kind of actually are. Because The server-side error in the example I gave above was just like a very long URI, but we can trigger the same error by a big cookie. It just depends on what the page returns. So in case you're cookie bombing, the server can return a status code without a body. In that case, you'll also hit the built-in error page by Chrome. So you also normally wouldn't be able to get the URL that way.
+
+[00:48:32.30] - Justin Gardner
+Okay. So all this is, is whether or not the server returns a body. So, okay, I'm feeling really thick now. I'm under, which you've said like four times. So the whole thing is that this, the response from the server, if it has a body, it doesn't matter. We can use cookie bombing, we can use whatever, because it's going to be, there will be a body, which means it will be same origin, which means we can jump into that window, grab the document location href, right? Because it's the same action. Otherwise, if there's no body, it's origin null, so we redirect and then grab it from entries.
+
+[00:49:07.80] - Jorian Woltjer
+Yeah, that's a
+
+[00:49:08.80] - Justin Gardner
+good one. I see, I see. I wonder, that does beg the question though, is there a primitive that allows us to do this without server, without the server at all. Is there some way that we can trigger a client side in the browser, lack of navigation from just client-side primitives, And then that leaves an object available, you know, a frame reference that we could then redirect and grab from entries. Because then regardless of whether the server returns anything, you know, cause it never even hits the server, we can still grab the code. Do you, Does that ring any bells for you?
+
+[00:49:48.80] - Jorian Woltjer
+It's kind of exactly one of the techniques that was discovered during this research. So it wasn't discovered by me but by Ruffox during another CTBB bug. And this was actually like a very mind-blowing bug. I think.
+
+[00:50:05.80] - Justin Gardner
+Oh shit, it's this one bro.
+
+[00:50:07.69] - Jorian Woltjer
+One of the greatest stories of the CQB Discord.
+
+[00:50:11.09] - Justin Gardner
+Holy crap. Yeah, this was such a beautiful... Okay, okay. I'm sorry. Go ahead.
+
+[00:50:15.19] - Jorian Woltjer
+Yeah. And so they had a similar situation where it's not exactly trying to leak OAuth codes, but you could repurpose it to do that.
+
+[00:50:25.09] - Justin Gardner
+Yeah, yeah.
+
+[00:50:26.50] - Jorian Woltjer
+They had this JavaScript navigation, but there was another navigation after it going to HTTPS. Normally you would think the JavaScript navigation goes first, so we get XSS, and then whatever happens, doesn't matter. But this actually overrode the, like in progress JavaScript's redirection. So the XSS wouldn't pop.
+
+[00:50:50.69] - Justin Gardner
+And it's kind kind
+
+[00:50:51.30] - Jorian Woltjer
+kind kind of- Okay, so Okay, so
+
+[00:50:51.69] - Justin Gardner
+Okay, so Okay, so location.href, JavaScript colon, and then immediately after that, location.href, HTTPS site.com, and for some reason, it wasn't popping.
+
+[00:51:01.00] - Jorian Woltjer
+Exactly. In that way, it's similar to how a redirect works, where you have the correct URLs at one point, but then it gets quickly redirected to some URL that you don't want. Right, right, right. And in that case, how they solved it was they used the fact that in both Chrome and Firefox, there's this navigation throttling feature where after 200 navigations in 10 seconds, You have to very quickly navigate. They will think, okay, something's going wrong. So they just stop all navigations at that point. They just try and recover from there. But we can kind of abuse that fact because we... On Firefox, this actually also happens on same site navigations. So on one site, you can do all these navigations in 10 seconds, and then you go to another site, which is still same site Different origin but same side. Okay, and it will keep the count of the previous Page so if you do like 199 Navigation someone then go to the other it only has one navigation to work with. In that case, that was exactly what they needed because they wanted one navigation to be allowed for the JavaScript redirect, But then the moment it got to the HTTPS, that would normally ruin it, it didn't have any navigations allowed left. So it like throttled and only the JavaScript was able to execute.
+
+[00:52:42.00] - Justin Gardner
+Frick dude, that is beautiful. And I remember, I mean, you've got it linked here in the write up that you did, like where we talked about this on the podcast. But it's crazy to me, man. I feel so spoiled because as a part of being a podcaster, you're a storyteller, right? You tell the stories of these amazing vulnerabilities. And because we're churning through so many of them, like whenever I get to go back and relive them as well, I'm like, wow, this is like, you know, this is amazing. And so, yeah, I remember being in the moment with this as well. And man, what a beautiful, what a freaking beautiful finding. Raffex is such a legend, man.
+
+[00:53:21.50] - Jorian Woltjer
+Absolutely.
+
+[00:53:22.59] - Justin Gardner
+Yeah, wow. And yeah, this could be, like you said, depending on the configuration, this could be repurposed for definitely intercepting the code from an OAuth dirty dancing flow. Yeah. Very interesting. Very interesting indeed. Dude.
+
+[00:53:44.59] - Jorian Woltjer
+Oh, I I
+
+[00:53:44.80] - Justin Gardner
+I I was about
+
+[00:53:45.30] - Jorian Woltjer
+to say thank thank
+
+[00:53:46.09] - Justin Gardner
+thank thank you so much, but there's actually more. So please tell us the last one here. This is crazy.
+
+[00:53:49.90] - Jorian Woltjer
+One last
+
+[00:53:50.09] - Justin Gardner
+little trick.
+
+[00:53:51.90] - Jorian Woltjer
+And this was actually one I found during a pen test while I was still working there. And it was kind of a weird situation where you had this redirect to, sorry, you had a form that was auto-submitting. So it was this login flow which pretty often has this post form that automatically submits to do something.
+
+[00:54:17.09] - Justin Gardner
+Yeah, very common.
+
+[00:54:18.80] - Jorian Woltjer
+And there was an XSS inside of that page, but the problem is it redirected away using the form before that XSS could trigger. And it was one of those XSSes where you had to click, click a link, because it was like JavaScript colon, something on Ahrefs. So you saw the page for like a split second, and then immediately it went away. So this was like perfect situation for somehow stopping that redirect, being able to help stay on that previous page and being able to convince the user to click that link and access themselves.
+
+[00:54:56.19] - Justin Gardner
+Yeah, dude, this is such a crazy thing. So The allow form sandbox, you've got it here in an iFrame, right? A sandbox iFrame. Okay, no, you are doing, I see what you're doing here. Because it will inherit it, right? When you open up a new window.
+
+[00:55:15.50] - Jorian Woltjer
+Yes. There's this weird factor. Because it's a form, you have the sandbox features of the browser you can use. It has this allow form, which is disabled by default. You can use that to block the form navigation the website is doing. You'd think you can't sandbox another document, but you actually can using an iframe normally. But even better than that, if you open a window from inside an iframe, That new window will retain the sandbox that it originally had. So that's a very useful one for different attacks too. Like you can block
+
+[00:55:54.40] - Justin Gardner
+scripts on
+
+[00:55:55.09] - Jorian Woltjer
+a different host and you can block forms in this case. It's a very useful one for all kinds of obscure clients.
+
+[00:56:05.59] - Justin Gardner
+Dude, yeah, the fact that you can apply sandbox properties to another origin's page is just so weird to me.
+
+[00:56:15.00] - Jorian Woltjer
+It feels like it shouldn't be
+
+[00:56:16.19] - Justin Gardner
+able to. Yeah, that's definitely not a good design, in my opinion. Because, yeah, I mean, you gave a great example there about how you can do that with pop-ups. But one of the other things that I've seen is that you can do that to prevent JavaScript from loading it as well. Right. Yeah, that's right. And so you can remove allow scripts. And then let's say you have a reflected XSS type of situation here. Obviously, you aren't going to be able to run scripts because the, the, you know, allow scripts
+
+[00:56:52.50] - Jorian Woltjer
+is going on.
+
+[00:56:53.69] - Justin Gardner
+But, but you can use that HTML injection primitive to leak things, right? From that, that page that may perhaps have been prevented by JavaScript navigation, JavaScript sandboxing, you know, whatever sort of JavaScript is getting injected into that page. Very weird, man. And it actually makes me think a little bit of like some of the pages that have to support no JavaScript enabled functionality, you can force that functionality by doing this pop-up. And if there's any sort of security vulnerability, it's a little bit hard because you don't have a lot to work with when you don't have JavaScript. But if you can do stuff with CSS injection or HTML injection, then that gives you a lot of power.
+
+[00:57:41.59] - Jorian Woltjer
+Yeah, basically exactly what this situation also was. Like this fallback link, if you don't get redirected, you click this. So yeah, those things definitely happen.
+
+[00:57:51.19] - Justin Gardner
+Yeah. And as I'm talking through
+
+[00:57:52.59] - Jorian Woltjer
+it, who'd
+
+[00:57:52.80] - Justin Gardner
+have thought Justin's an external processor as being a podcaster but as I'm talking through it I'm yeah I'm thinking man yeah it's overpowered because you still have CSS, you know? You can disable JavaScript, but then still keep your own CSS control from the HTML injection, right? And man, you can do so much with CSS nowadays. We're gonna have an episode on that coming up soon on the pod. So dude, thank you so much for writing this up. Like I feel like you have done a really good job here in this situation. Also just kind of being a historian of what is happening here in the Discord as well. And logging all of this stuff and then adding additional context and perspective from what we were learning in that time period. Yeah, dude, I'm so grateful. We need to get you... We're gonna get you some additional CTBV stuff. We're gonna send you some additional swag or something because that is extraordinary. All right, dude, we still, so we had this whole doc and we had a plan and then I got derailed. So I'm sorry about that. But let's go back because the next, we're only two sections in. The next item that we had on the list here to talk about was DNS rebinding in the browser. And this is an interesting moment class, because it's had a lot of ups and downs. There's been a lot of fighting with it from the browser development perspective. There's been people trying to prevent this from happening for a long time. And recently, you have found yet another bypass that is just beautifully simple and does not seem to be addressed by Chrome since January of this year. So can you tell us about how that works?
+
+[00:59:44.30] - Jorian Woltjer
+Yeah. So first, a kind of introduction on DNS rebinding if you don't really know how that works, especially in the browser, because I feel like most people know DNS rebinding, where you have a DNS record at one point in time, you can change what that points to, so that the second time when you request it, it returns something different. And that's useful in bypassing SSRI filters, for example. But in the browser, it actually has a second very useful purpose. And the first time I learned about this, I was like mind-blown that this even was a thing that worked. But the kind of idea is like this. You navigate to some DNS that you control. You navigate to like your own attacker's website with the DNS that you make up. So first, you have that record point to your attacker's IP. So you can return anything you want, any JavaScript that keeps running for a period of time. Then that JavaScript just fetches itself, like fetch slash repeatedly, until something changes. And that's going to change because you're now going to change the DNS of your own website to points to localhost. And then that fetch that keeps running eventually loses its DNS cache after like 60 seconds. And then the new DNS points to localhost. So the fetch will not go to the attacker anymore. It will fetch from localhost. And because that you're still requesting the same origin URL, of course it's just gonna happily allow you to read the response of that. And now suddenly you have access to localhost, which normally you definitely should not have.
+
+[01:01:31.59] - Justin Gardner
+Yeah, and not only can you send requests, but you can read the response.
+
+[01:01:36.80] - Jorian Woltjer
+Exactly, yeah. The whole course is just bypassed.
+
+[01:01:39.90] - Justin Gardner
+Yeah, dude. This is such a beautiful thing. And I'm confused as well. I wanted to ask, obviously, you're using this for 127.0.0.1. Does this also work for like 192.168 IPs and stuff like that? Is it complete local network access, you know, circumvention
+
+[01:02:01.40] - Jorian Woltjer
+here? Exactly. So normally you wouldn't be able to access any of that, but now you can access like, for example, the company internal addresses and things like that.
+
+[01:02:13.50] - Justin Gardner
+Did you, when you were researching this, did you look into at all the way to like evacuate the cache faster than waiting for 60 seconds like this? Because I want to say that I remember that there is a way of doing that.
+
+[01:02:32.19] - Jorian Woltjer
+Yeah, there have been various ways. I think with IPv6, there's some ways. I haven't dug deep into that myself, but they are trying to prevent things like that. Like the cache expiring, that's just something that will remain to work, I assume. Wow, very
+
+[01:02:50.50] - Justin Gardner
+cool, man.
+
+[01:02:51.00] - Jorian Woltjer
+Yeah, there were some things also with multiple DNS records at the same time, one falls back to the local host. That stuff has been fixed now, but there might be more, definitely.
+
+[01:03:03.09] - Justin Gardner
+Yeah, dude, Very odd that this Chrome write-up here is not that there hasn't been any movement on this in
+
+[01:03:12.80] - Jorian Woltjer
+Chrome. So to continue the story, So we have this denatural binding technique that works. But over the past year, they have actually started fixing this with a feature called Local Network Access, LNA. It's kind of a secondary layer, of course, where even if you fetch the same origin URL, it'll still try and check if the IP that's behind it, is the same localness of the one that's requesting it. So in our case, we have the public attacker.com, which is requesting attacker.com, but now pointing to localhost, which is more local than the public IP of the attacker. So it will actually block it in that case, even though it's the same origin.
+
+[01:04:05.40] - Justin Gardner
+Very interesting.
+
+[01:04:05.80] - Jorian Woltjer
+So of course, it gets in the way there. So it's no longer possible with Fetch. Even on Firefox, they recently added this protection. But now comes the good news, because even though Chrome kind of blocked this way of doing it, there's a second way to achieve the same effect by actually using the fact that now Fetch is blocked, but navigations to local host, they're not. So that doesn't use course at all. It just uses like the same origin policy, right? Reading the window reference. So that's kind of another way to get access. Wow. Technique is very similar. You just repeatedly navigate the same page in a pop-up, in this case, until it becomes different. And then you can use your window reference, because it's still same origin, to use even the window reference.fetch to request what you want and read the responses because now you're suddenly requesting from an actual local address in that other tab.
+
+[01:05:15.09] - Justin Gardner
+Very interesting. Yeah, dude. I'm not, you know, just to, I guess, rat on myself a little bit here. I'm not the most like, like security conscious guy, despite being a hacker, you know, don't don't hack me guys. But like, you know, I don't know, I just feel like, who gives a shit? It's like, okay, sure, you can pop my little network device or whatever, but this is one of the things that is a little bit concerning. I don't normally care about stuff on my local network because I'm like if anyone's on my local network you know they can sure my buddy can hop in and be like I own your router blah blah blah but this is a little bit tricky right because it's like somebody can use my browser as a pivot point and and send you know a full browser compliant post request that pones me to my router IoT device sitting on my local network.
+
+[01:06:11.19] - Jorian Woltjer
+And there's even so many local host running services, kind of invisibly, things like VS Code and all these other applications that just run stuff in the background. All these websites can just access it whenever they want. The one caveat behind that is how most applications also prevent it. It's the fact that when you request such URL through DNS rebinding, your host header has to be this weird attacker URL that you can dynamically change the DNS of. So the host header is untrusted. It will show blah, blah, blah, that attacker.com So it won't show the local host that it might expect. So a lot of these applications check the host header. And if it's not local host, it'll just block it. And that's what you have to do to prevent this.
+
+[01:07:02.59] - Justin Gardner
+Trying to think if there's any way to deal with that. If they're processing an X host header override, you could potentially set that with a navigation.
+
+[01:07:21.90] - Jorian Woltjer
+Yeah, not anymore. You probably used to be able to with fetch, but now not anymore.
+
+[01:07:27.40] - Justin Gardner
+Oh really?
+
+[01:07:27.90] - Jorian Woltjer
+Because it's, yeah, you can't set headers on a navigation.
+
+[01:07:32.90] - Justin Gardner
+Oh yeah, not on a navigation. If the fetch thing would work.
+
+[01:07:36.50] - Jorian Woltjer
+It probably used to be possible in that way.
+
+[01:07:38.59] - Justin Gardner
+Yeah. Interesting. Yeah. There's no,
+
+[01:07:40.59] - Jorian Woltjer
+there's also maybe a situation where it checks the hosts with like starts with, So you can put like the localhost.attacker.com or something.
+
+[01:07:49.40] - Justin Gardner
+Yeah, yeah. Anything else in there? Not that I can think of. Yeah. Think on that a little bit more. If you're using HTTP, it does give you a little bit more flexibility, but yeah, interesting. Okay, well, very cool, man. I'm glad to see that that attack is live and well, and I think that that is something that we can use definitely, like you said, in this era of setting up a bunch of local hosts, like MCP nonsense and configuring all these AI apps and stuff like
+
+[01:08:26.39] - Jorian Woltjer
+that. Definitely One thing to check is whenever you have some of your common programs open, just check out what ports are listening locally. Even if they're listening on localhost, you're visiting localhost, so you can still request it from the browser.
+
+[01:08:43.50] - Justin Gardner
+It
+
+[01:08:43.60] - Jorian Woltjer
+doesn't have to be like 0.0.0.0. Fine.
+
+[01:08:47.60] - Justin Gardner
+Right, right. Absolutely. All right. Let's Let's
+
+[01:08:50.50] - Jorian Woltjer
+Let's Let's hop into the next next
+
+[01:08:50.69] - Justin Gardner
+next next section here, which is pop under, using a specific weak password prompt. Tell us about that. I'm gonna pop open this POC in the other window as you're talking.
+
+[01:09:01.39] - Jorian Woltjer
+Yeah, so this was a very fun find. It kind of started with another bug story of Palos Jubello. He found this really awesome technique called double click jacking, where you can kind of have two tabs open, one with some sensitive button you can press, and another which is the attackers page. You can convince a user to click a button on your attackers page twice in rapid succession. Then actually before the second click happens, you use that first click to close the attackers window. So they fall back to the target page and they click whatever's behind that. So that's this really clever technique of pressing, for example, like an OAuth authorize or allow page button, where you just suddenly give your account away in a single click. Like you delete an account without confirmation. Yeah. These like very impactful clicks you can trick the user into doing cross-site.
+
+[01:10:06.89] - Justin Gardner
+I feel like those are extremely underrated, man. Especially in this world where we've programmed people to click, capture, and accept cookies. They They
+
+[01:10:17.89] - Jorian Woltjer
+They They don't do anything.
+
+[01:10:19.10] - Justin Gardner
+Clicks are free, bro. Like, if they're there, they're going to click, you know?
+
+[01:10:24.39] - Jorian Woltjer
+This is so nice for box. You can just make anything a capture and the user will just do it. Yeah.
+
+[01:10:30.00] - Justin Gardner
+Yeah, exactly. I'll never forget this one POC where Inti did this back in the day. I've seen it a couple times now, but shout out to Inti for coming up with this in the first place where he was able to iframe every character of a secret and then swap it around and apply filters on it so it looked like a captcha and then get the user to type their own cap, their own, like, secret back to the people in a captcha. And dude, he did it for a live hack event, show and tell. It was so clean, bro. He got the POC so beautiful that it was like, wow, this is just, he's filling out a captcha. And it was actually the password. It was beautiful. But yeah, I mean, certainly in these situations, pop-unders can really increase the advocacy of those exploits, right?
+
+[01:11:17.89] - Jorian Woltjer
+Yeah. So I was thinking you have this, the kind of problem with this sometimes is if you open a new tab on the attacker, you have to click at a very specific spot. So it's like wherever the button renders on the previous page, that's where you have to press the button. But I wanted to try and find a technique to not have it matter where you click, so anywhere you click that will work. And you can kind of do that with pop-ups. So if you have a pop-up, you can kind of position it anywhere you want.
+
+[01:11:56.89] - Justin Gardner
+Right,
+
+[01:11:57.50] - Jorian Woltjer
+right. You can move it with the move to function. And the thing with that is you can only move it when it's same origin. Once it's cross-origin, you're not allowed to move it anymore. And the kind of weird thing is you're kind of in a catch-22 situation where you have the user on your fake page where you want to have them click anywhere a couple of times. But once they're there, you know their cursor position, but you already have to have the target page behind it at some position that you kind of predicted where they would be. So that's hard to kind of do. How do you get the pop-up behind that other window that you are trying to convince the user on. If that makes sense, you have like the target page, the OAuth thing that's like a pop-up that you can move anywhere. But you don't want to see that because the user's gonna obviously click that away.
+
+[01:13:03.89] - Justin Gardner
+Yeah, and this makes you, I see why you need this because if you were just doing a tab, you could just do click here to open a new tab and then it would be there.
+
+[01:13:11.89] - Jorian Woltjer
+Yeah, you hide it immediately.
+
+[01:13:12.89] - Justin Gardner
+But you can't because you're not, you want it to be disjointed from the current tab group so that you can position it where you want it to be so that it will intercept the click correctly. I see, I
+
+[01:13:23.30] - Jorian Woltjer
+see. Yeah, so that's kind of a hard thing. And this problem is specifically called a pop under, which is kind of a pretty popular thing back in the day that advertisers used to annoy you. True. So they would, whenever you click, they would be able to create a pop-up and also hide it behind your current window. So you wouldn't even know an ad appeared, Only when you close your browser, that thing pops up because it's still there from like hours ago whenever they opened it in the background. So that's a sneaky way they could get away with that. And Chrome kind of fixed those. At least they fixed a few and added this like pop-up preventer, pass under source code. So they're attempting to at least but it seems like they don't really care about the security aspect of it that much. So there exists quite a few different pop-unders, any amount of time during Chrome's lifetime. When I made that first post about double-click checking, the idea of it, I was thinking like, I'm missing a pop-under that would make this attack better. And then legend Renwa.
+
+[01:14:39.10] - Justin Gardner
+Renwa's got a couple of those in his pocket.
+
+[01:14:41.10] - Jorian Woltjer
+Yeah, reached out and said like, oh, in like a Twitter reply, oh, here's a pop under. And there's links working pop under. It's the, such an awesome, awesome
+
+[01:14:54.19] - Justin Gardner
+direction. I love that. I love just dropping the POC on Twitter like that. That's great.
+
+[01:14:59.80] - Jorian Woltjer
+And so I kind of integrated that with the original idea and it worked great. So that idea was using the Google sign-in thing you might see on the top right, when you visit some popular website, that is actually built into your browser. It'll use your browser's account. So that's a special pop-up that the browser makes appear. And because of that, whenever there's a window in front of it, when that pop-up appears, it tries to actually focus that window where the pop-up appeared, or like this notification. So it really wants you to see that notification. And the fun thing with that trick by Renwa is you can open first like pop-up and then trigger that Google login thing so it refocuses the main window and now in a single click you have this original pop-up behind the main window. That's like the original trick. Very clever. And a lot of pop-up, pop-unders work that way, where you open a pop-up first and then somehow regain focus via some weird browser feature that forces the focus to go back without interaction. The fun thing I found was, well, first of all, that Google prompt thing that got fixed a few months ago. So I had to search for a new one and found just another different kind of pop-up, which is the compromised password notification. So you might know whenever you log into some website, you fill in this form and you input maybe like admin admin. When you go through, it'll say like, oh, this password is compromised, please change it or whatever. That notification is actually one of those that forces the focus back again. In a single click, what you can actually do is both open a pop-up, which is gonna go in front of it, in front of your face, and then in the background also submit that form with like admin admin. And the funny thing is that notification of the bad credentials will bring back the focus, put that pop-up behind the main window pretty easily.
+
+[01:17:30.30] - Justin Gardner
+Dude, this is super clean. Now what I'm wondering is why is it when I click this that it doesn't, why do I not see the pop-up? Did you figure out some way
+
+[01:17:44.39] - Jorian Woltjer
+to close it? Yeah, that was actually a very interesting part of it, because the first example I made was just what I just explained. But then you're on the main window and you have this compromised password notification and it's not very clean. So you somehow have to get rid of that notification. Quite a simple way to do that is just navigating away. You can just navigate to a different origin, and then it just clears that notification. But then that came with another edge case where if you, Because you don't really know when that notification appears, right? It just happens in the browser. So you can set maybe like a timer for two seconds. That might be enough. But then you see the notification for two seconds and then it goes away, which is also not very clean. Yeah. And so the quite simple fix eventually was you can't detect it on the main window, but you can actually detect going away from the pop-up because it has like this on blur event, which triggers when of course it's blurred when it's behind something else. That was the trigger to navigate away and clean up the notification.
+
+[01:18:56.69] - Justin Gardner
+It's so clean. I wish I could show you guys a representation of it, but for some reason the sharing that we're using on this recording software is not letting me like do it well but it's very clean and dude this is such a beautiful thing of client side right it's like okay so you submit a form that right in that form You know or you open a new window submit a form then the on blur triggers the other thing It's just the hand off that combination actually your same origin again that triggers the it's like, oh my gosh Okay, so I want to I want to keep some rigorous requirements for myself here so that I can make sure I fully understand what's happening. So you come to a page, you click a button, right? Which is that what pops up, the window.open when you submit that form?
+
+[01:19:55.10] - Jorian Woltjer
+Yeah, because that's required to open a pop-up.
+
+[01:19:57.60] - Justin Gardner
+So then you open up the pop-up window, and that pop-up window is your same origin. So you can detect the on blur. That immediately gets focus, that new window gets focus. And then the browser said, oh no, they just submitted admin admin, we gotta let
+
+[01:20:17.10] - Jorian Woltjer
+them know.
+
+[01:20:18.50] - Justin Gardner
+And then so it pulls focus back to the other page, right, which you detect with the on blur. And then because that same origin, you can redirect the, or actually, I guess you can do it even without being same origin, if it's window.opener, and then you redirect window.opener to a different page or to a different page that maybe you own or maybe you don't, depending on the exploit. And then now the other page that we triggered on blur is in the background. Exactly. Freaking beautiful, man. I love the back and forth, the hand off, the swapping of origins, the manipulation of the browser piece. And then what eventually you do, which is sort of extrapolating on what you said earlier, is you redirect that popped under page to a specific, you know, a lot of authorization or whatever, and you shrink it down and you, well, first you shrink it down and get it to the right spot. And then you redirect it to an authorization page so that the button is centered wherever you want it to be. And then you send it, right?
+
+[01:21:26.30] - Jorian Woltjer
+Exactly. And then you can do the whole, whatever you want to do if you pop under, it's just useful in a bunch of different attacks.
+
+[01:21:34.50] - Justin Gardner
+So let me ask you this. I'm just trying to think through the full piece of it. So once your original tab is in the foreground again, if the background tab is still on your origin, you can move it. And it doesn't refocus.
+
+[01:21:51.50] - Jorian Woltjer
+Yeah, that's kind of a funny fact as well.
+
+[01:21:53.69] - Justin Gardner
+That is weird.
+
+[01:21:54.69] - Jorian Woltjer
+You can just move
+
+[01:21:55.39] - Justin Gardner
+it behind another window. And resize it.
+
+[01:21:57.80] - Jorian Woltjer
+Yeah, if it's same origin,
+
+[01:21:59.39] - Justin Gardner
+yeah. If it's same origin, okay. So you move, resize. Now, what happens if... What happens if the authorization button is down at the bottom and like Surely I can't trigger a scroll.
+
+[01:22:17.60] - Jorian Woltjer
+Well, that's funny you ask because there's actually a specific feature that allows you to scroll a page. It's used in the hash fragment.
+
+[01:22:24.89] - Justin Gardner
+Right, right, right.
+
+[01:22:26.30] - Jorian Woltjer
+Okay. So it's a perfect use case
+
+[01:22:29.19] - Justin Gardner
+again. But you need an ID,
+
+[01:22:30.60] - Jorian Woltjer
+right? Yeah. You need an ID in that case. Wow. But then with- If you have like an ID that's kind of near, you can make it big enough to fit in whatever window you happen to have.
+
+[01:22:44.89] - Justin Gardner
+Okay. All right. So then you focus it. And can you take it? Let's say I was going to harvest a click from the victim in the top left-hand corner of my browser, right? With a double click jacket, call it that. Can I shove it up in that corner? And like the top part of the page is going out of my screen? Or do I have to resize it?
+
+[01:23:18.39] - Jorian Woltjer
+Yeah, you can't make it overflow two screens. That's, they prevent against that. I'm not sure how Firefox does that, but at least Chrome kind of stops you from doing that. Very interesting. It's too big, yeah.
+
+[01:23:32.50] - Justin Gardner
+Okay, So we would have to, in that case, we would have to sort of make it small, throw it up at the top right-hand corner or top left-hand corner, and then scroll it to where the button's on the screen. Exactly. Can we horizontal scroll? We can't, right?
+
+[01:23:48.19] - Jorian Woltjer
+Don't think so, no. I don't think so.
+
+[01:23:49.00] - Justin Gardner
+I don't think so. I don't think so. Interesting. Yeah. Definitely lots of, I mean, but that makes the attack way better, you know, in general, is just being able to have it repositionable. So you don't have to like click it down at the bottom right-hand corner. When we covered double-click checking on the podcast when it first came out, I did like the general remediation, which was the page has to be focused for a second before you can click any buttons or anything, which is pretty cool. I like that.
+
+[01:24:22.10] - Jorian Woltjer
+Very simple.
+
+[01:24:23.10] - Justin Gardner
+Yeah, remediation. It's low cost to the user, right? They're not immediately clicking unless you're getting click-jacked. Very nice, man. Well, this has already turned into quite a lengthy episode. So thank you for giving me so much of your time. I do want to cover one area because this area is really going to definitely result in a bunch of vulnerabilities. So tell us about declarative partial updates and what kind of potential you see in that change to the HTML spec that might cause some problems.
+
+[01:24:58.30] - Jorian Woltjer
+Yeah, so this was a few months ago. Chrome released a new feature out of nowhere, which changes how HTML is processed. It's a really interesting feature where how it works is you can put certain placeholders and then fill them in later. So you have these special processing instructions called marker or starts and end, and you type them with like opening angle brackets, question mark, and then marker, and you can put like a sort of placeholder in HTML. And then later when you go further down in HTML, you can use a template tag.
+
+[01:25:42.60] - Justin Gardner
+I'm sorry to interrupt you. I just, you know, because I read over this in advance and we talked about it even before we got on the pod. But now I'm thinking like, isn't that like a, this is going to cause some problems with the famous ASP XSS prevention framework where it says, Oh, no, no, no. Cause it only does, it only does, It has to be a character. No, no, no, because it blocks angle bracket plus a character, right? But if you could do an alpha numeric character, but if you do angle bracket question mark, then that would allow you to inject with this, right? Is there any prerequisites that this needs to be placed on before you...
+
+[01:26:23.00] - Jorian Woltjer
+Yeah, the thing is you can definitely create a placeholder, but to actually fill it in, you have to create a real template tag.
+
+[01:26:29.80] - Justin Gardner
+A real tag. So you would need an attribute injection somewhere else.
+
+[01:26:34.19] - Jorian Woltjer
+Well, kind of a HTML injection, really, because it's how you sort of...
+
+[01:26:40.10] - Justin Gardner
+You need to use the template. Okay, okay. I'm sorry. Good. Keep rolling. I interrupted your explanation, but I was like, my brain was melting for a second. So we've got, I'll pick you up where you left off. So you've got the angle bracket question mark marker or angle bracket question mark start and end that allows you to provide these variables that you can you know sub in right?
+
+[01:26:58.50] - Jorian Woltjer
+Yeah and how you can actually set those values that get subbed in. As you use a template tag, which is normally kind of unused, maybe some JavaScript, but now that it's used in HTML, with the for attribute, you can point it at the same name that the processing instruction had, it's like placeholder, and it will fill that name in. So with the content inside of the template tag. So you can imagine like a template tag with like a script tag inside of it. It will, after parsing, not actually show up where the template was, but it'll show up where the placeholder originally was. Weird. The feature that they wanted to make was out of order streaming. So you can first send the whole skeleton of the HTML and then put in the data. But yeah, it makes for quite a few weird cases that all these sanitizers and parsers have to kind of deal with now or at least be careful of. I got two ideas I thought of. The thing is I haven't researched this super much. I'm sure there's like months of research into this single feature that you can do. And just now, one idea I had was, you know, like server side parsers, they don't support this feature yet, of course. And pretty often they try to also sanitize CSS. So if you have like the style tag, it'll take the content, parse it as CSS, check if there's any weird properties that you shouldn't be able to set, and then either allow it or block it. And this feature allows you to kind of put a placeholder in the CSS. So that's the thing that it scans, and then later fill it in with actual malicious content. And this isn't actually possible in HTML only, because these placeholders, these processing instructions, They only work in HTML kind of context, not in CSS. But using SVGs, they have this weird fact where their style tags are actually, they support XML for some reason. So you can just put tags inside of the style tag in SVG, including these processing instructions, these like templates, these like placeholders in an SVG and later fill them in. And I feel like there might be some kind of sanitizer, at least a CSS sanitizer, that tries to block malicious properties. I'm sure there's some parser that supports SVG, supports styles, tries to sanitize CSS, and is vulnerable this way using the template to active fill it in later.
+
+[01:29:55.19] - Justin Gardner
+Dude, Richard, put the image one for declarative partials on the screen. I'm just staring at this. This is so weird. And I'm sorry, guys, I'm totally cooked on trying to explain this in the audio format. And, you know, Joanne just tried his best as well. But even as I'm sitting here staring at it, I'm having a hard time wrapping my head around it. But yeah, this is really weird because he's defining a marker inside of a nested SVG style tag. And then he's substituting in the values via the template into the content of the style tag, which is rewriting the CSS that's in there. He's able to put a dangling quote and curly bracket to define arbitrary. Very, very weird, dude. This is a great find. Yeah. So I'm, you know, I'm so sorry for all of you guys that are doing audio, but for those of you on YouTube, just stare at that image that he put on the screen of DOM parser until you figure it out, because very weird how it allows for string concatenation there into the content of the CSS and dynamically change what rules are being applied.
+
+[01:31:14.80] - Jorian Woltjer
+Yeah, And the interesting thing is this allows plain text concatenation. And important to note, during this parsing, it actually only allows you to put nodes in some weird places. So you can't open half a tag and then fill it out, finish it later. You can't have like dangling markup there. Right. But this way you can like combine two text nodes into one big CSS string.
+
+[01:31:43.89] - Justin Gardner
+Super weird, dude. What other kind of stuff is inside of? Oh, dude, what if there's like a hijacking scenario? Like, hold on.
+
+[01:31:58.00] - Jorian Woltjer
+So you've done,
+
+[01:31:59.50] - Justin Gardner
+you know what I'm saying? Like, let's say I've got injection inside of like a script tag. And then I can do these, you know, I can do angle bracket question mark, but I can't do, you know, angle bracket slash or something, right? That's very common with the, you know, server-side rendering frameworks that we have nowadays. And then somewhere else, they're using this template, then it could write in. It It
+
+[01:32:23.60] - Jorian Woltjer
+It It can probably even bypass the nonce if the script is a nonce. Yeah. So it's just parsing the same stuff.
+
+[01:32:30.60] - Justin Gardner
+But there's no way.
+
+[01:32:31.89] - Jorian Woltjer
+I'm very confused that this
+
+[01:32:32.80] - Justin Gardner
+works in a style tag though. There's no way that this works in a script tag, right? I I
+
+[01:32:37.10] - Jorian Woltjer
+I I think it should in SVG, but the thing is in HTML, it will just be JavaScript. So it won't allow the processing instructions. For SVG, they always do XML stuff.
+
+[01:32:51.39] - Justin Gardner
+Is there any difference in capability that we get from putting it nested inside of an SVG or no? I mean, obviously we would encounter that situation never, you know, in the real world, right? Where they've got like a script tag inside of, or a style tag inside of an SVG.
+
+[01:33:06.50] - Jorian Woltjer
+Probably some website somewhere.
+
+[01:33:07.89] - Justin Gardner
+Yeah, it's like, never say never. But is there, like, do I get nerfed in any way? Do I get any less strong if I'm inside of a style tag inside of an SVG? Or Kinect still has full access to the DOM to style the DOM?
+
+[01:33:24.00] - Jorian Woltjer
+No, it still has everything.
+
+[01:33:27.00] - Justin Gardner
+Yeah. Very weird, man. This is one of the ones that I'm staring at. I don't know that I've been this perplexed on a podcast live before. This is a real weird one.
+
+[01:33:39.30] - Jorian Woltjer
+There's going to be
+
+[01:33:40.39] - Justin Gardner
+an insane amount of bugs with this.
+
+[01:33:42.39] - Jorian Woltjer
+One more thing I just came up with was if you have like a script tag somewhere that you have partial injection into. Yeah. You can maybe dangle an SVG at the top. If you have like injection somewhere to make the scripts in SVG namespace. Oh,
+
+[01:34:00.69] - Justin Gardner
+Yeah.
+
+[01:34:01.30] - Jorian Woltjer
+Maybe.
+
+[01:34:02.89] - Justin Gardner
+Huh. And you wouldn't need necessarily a closing. That's interesting because you can hijack one of the other ones.
+
+[01:34:11.60] - Jorian Woltjer
+Yeah.
+
+[01:34:14.00] - Justin Gardner
+Yeah, that's like a, I mean, it's a perfect storm situation, you know, it's a, you're going to need a lot of primitives in a lot of different spots.
+
+[01:34:21.19] - Jorian Woltjer
+But yeah, just could see the F challenge material.
+
+[01:34:23.50] - Justin Gardner
+Yeah. So interesting. I wonder what other situations. So you found the SVG style, you know, nest here. But I wonder what other kind of situations there are where you might be able to sub marker in like that.
+
+[01:34:37.39] - Jorian Woltjer
+Yeah, math is another one. It's like the exact same idea that just forces XML.
+
+[01:34:44.00] - Justin Gardner
+Okay, so this, it requires XML namespace? Yeah, it's
+
+[01:34:50.30] - Jorian Woltjer
+not kind of parsing. Yeah, because normally you wouldn't be able to put these processing instructions inside of CSS.
+
+[01:34:57.69] - Justin Gardner
+Right.
+
+[01:34:58.30] - Jorian Woltjer
+But for some reason in Malfur SVG it does allow you to.
+
+[01:35:03.50] - Justin Gardner
+Very interesting. Very interesting. Yeah, the gears are turning. Actually, I think this has made me understand how XML related, because I know that this is used to bypass DOM purify all the time, but I don't know that I had it as concreted in my head as I do now, like understanding, and I'm sure it's not even there fully there yet, but I definitely understand a little bit further what's going on here. Because If there's more, if the environment allows you to have some XML primitives inside of this, it just gets so much more complex.
+
+[01:35:37.30] - Jorian Woltjer
+Absolutely.
+
+[01:35:38.30] - Justin Gardner
+Very interesting. Well, thank you for bringing that on. What else is there on here that you think was weird?
+
+[01:35:45.39] - Jorian Woltjer
+This feature, definitely go look at it, see if you can find more research ideas out of it. There's actually one coming up, which is interesting. Because we talked about the template for attribute, which is in stable pro now. There's also documentation in the same document for template SRC, the source, and it's this really weird feature where basically like an XSS gadget, you can point the source at some same origin URL, and it'll pull HTML from that body and insert it where it was. It's one of those gadgets you might find useful on a like down-collaboring situation. Now it's just built into the browser.
+
+[01:36:31.00] - Justin Gardner
+That's weird. They're like taking shots at at htmx here or whatever.
+
+[01:36:36.30] - Jorian Woltjer
+Exactly yeah exactly it's the same idea.
+
+[01:36:39.00] - Justin Gardner
+Very interesting so you're loading html from another page even though it's more URL.
+
+[01:36:44.89] - Jorian Woltjer
+Same URL
+
+[01:36:45.50] - Justin Gardner
+yeah yeah And it has to be same site?
+
+[01:36:48.89] - Jorian Woltjer
+Yeah. Same origin, I think.
+
+[01:36:51.19] - Justin Gardner
+Okay. I wonder...
+
+[01:36:53.50] - Jorian Woltjer
+One funny thing about it is it is sanitized by default. So they try and remove all JavaScript. But there's just an attribute called sanitize equals false. And now it just disables sanitization. So that's a nice way to still get XSS if that ever gets through to stable.
+
+[01:37:12.00] - Justin Gardner
+Yeah. I hope that I hope that gets through to stable, dude. That'll be an interesting primitive. Is there a, it has to be on a template tag?
+
+[01:37:19.60] - Jorian Woltjer
+Yeah. Okay. Well, yeah. Normally, of course, template tags are kind of benign. Yeah. So hopefully some sanitizers missed
+
+[01:37:27.30] - Justin Gardner
+out. Yeah, absolutely. That would be Very interesting. I'm trying to think. Yeah, the other possibilities here. Dom clobbering, like you said, is an interesting one. Sorry guys, a lot of dead space in this podcast episode because I'm just staring at these screenshots and trying to, my brain is just.
+
+[01:37:49.69] - Jorian Woltjer
+All the ideas.
+
+[01:37:50.80] - Justin Gardner
+Yeah, Very cool, man. Well, thank you for bringing that on. That definitely tickles the brain. Did you have anything else here you wanted to mention under this declarative partial section? Yeah.
+
+[01:38:02.39] - Jorian Woltjer
+One kind of similar feature that I wanted to mention that's already in the browser as well, is this weird element called selected content. It's a very specific use case because these select elements, which are these dropdowns, they render the currently selected option in the tag itself, when you haven't clicked it yet. And previously there was this very restrictive built-in styling, so websites couldn't really change how it looks Which was annoying for developers. So now they added a feature where you have this new HTML element. That's fully styleable Which is how it looks before you click it But the cool thing is it's not just text. It's actually full HTML that can be inside of that little preview. And the even weirder thing, or like the most useful thing about it for us is how that works in the background. You have all these options that you can choose from. Whenever you choose one of those, it'll clone that option node into the selected content node. So It copies whatever HTML was in there. That can cause quite a few weird situations because cloning a node, that's normally only something JavaScript can do. Now, suddenly, HTML is able to. That causes a lot of problems. I know people who found some Chromebooks with that. And one case I wanted to highlight was actually Dumpurify had a bypass using selected content. I think a few hours after Dumpurify added support for it, someone made an advisory and it got fixed like a few hours later. So Don't Purify was bypassable in default configuration for maybe like four hours and then they fixed it. So very cool, cool situation.
+
+[01:40:04.50] - Justin Gardner
+Oh my gosh dude.
+
+[01:40:05.89] - Jorian Woltjer
+Shows to the person who found this.
+
+[01:40:08.10] - Justin Gardner
+Immediately, you know this person was like sitting there waiting, they're like,
+
+[01:40:13.60] - Jorian Woltjer
+they're gonna support it.
+
+[01:40:15.89] - Justin Gardner
+Wow, that's crazy. Yeah, cloning. Cloning I think is very, I've seen that trend across some of these that will often result in mutation XSS type situations.
+
+[01:40:30.10] - Jorian Woltjer
+And this one's actually really clever. I wanted to kind of go through how it works.
+
+[01:40:33.69] - Justin Gardner
+Yeah,
+
+[01:40:33.89] - Jorian Woltjer
+please. It's a very clever one. So if you look at the code of the HTML, they first do open a select element. And they have the selected content inside of that, which is empty at first, like a placeholder. Then they have a single option which has an obvious XSS payload inside of it. Any sanitizer will remove that. But inside of the attributes of that option, they have this selected attribute set to a value. Normally it doesn't have a value, but they set it to a value of JavaScript colon, which doesn't really make any sense. But if we become Don't Purify, we turn like go through this code. When we first kind of parse this, it'll have this only option selected. So it'll clone that node into the selected option node. So it's already in there. And Don't Purify goes and looks at this selected option. It'll see the XSS payload and remove the XSS payload of course, does its job. Then it continues, goes down to the option, and then it looks at the attributes of option. And so one of those attributes is a selected attribute equal to JavaScript colon. And Don't Purify doesn't like that JavaScript stuff, so it removes that attribute. But actually the removing of that attribute is kind of a trigger for the browser to, oh, something with selected happens, I need to re-evaluate which element is actually selected now. So it looks at all the options, finds only the single option one. So it's the first, so it must be the selected, like auto selected thing. And it copies again the node into selected content. But don't Purify has already passed that. It's already way ahead. So now don't purify continuous goes into the option tag, removes the obvious XSS payload. It thinks it's done. But now during its parsing, during its sanitization, the obvious XSS payload made its way into somewhere before it's sanitized.
+
+[01:42:50.50] - Justin Gardner
+Right, right. Into something that has already been sanitized, right?
+
+[01:42:54.89] - Jorian Woltjer
+Oh yeah, exactly.
+
+[01:42:55.80] - Justin Gardner
+Yeah, and then it reinserts it back in there.
+
+[01:42:58.80] - Jorian Woltjer
+Yeah, right in time. Very cool, man. A very
+
+[01:43:01.50] - Justin Gardner
+clever way
+
+[01:43:02.19] - Jorian Woltjer
+to exploit that.
+
+[01:43:03.10] - Justin Gardner
+Yeah, it's like weaponizing the base functionality of the browser into a race condition with DOM Purify. Yeah, exactly.
+
+[01:43:09.89] - Jorian Woltjer
+Very cool. Like sneakily getting it past the cursor of DOM Purify.
+
+[01:43:13.60] - Justin Gardner
+Yeah, yeah. Wow, that is a, I'm trying to think if that is a generalizable principle. So what they're doing there is the sanitizer works from top to bottom there. It grabs that. It feels like it's already modified that top piece, you know, or sanitize that top piece. And then later on it gets reinserted back into the already sanitized element. Okay. Interesting. Yeah, I'll have to think about that as running to similar challenges because a lot of times these are cross applicable. Very nice dude. Well, Jorian, I so appreciate your time, man. This was a really fun episode. And yeah, I love this is the kind of stuff I really, I really like. I find myself a lot of times nowadays, like feeling like I've got to use AI to do a bunch of stuff and, and, but man, there's something beautiful about chaining together stuff in the browser on the client side and finding all these weird quirks and, and, you know, syntax things that are hacked up, and working through them. So thanks for, for bringing me back into that.
+
+[01:44:28.00] - Jorian Woltjer
+Yeah. And again, thanks for having me.
+
+[01:44:29.80] - Justin Gardner
+Yeah. All right, guys, make sure you check out, Jordan stuff on the research lab. We'll link his, Twitter handle as well in the, in the description. Dude, thanks so much for coming on. Guys, actually, wait, wait, wait, wait, wait, before we go, There is one more thing that I wanted to share here, which is while I was stalking Jorian in prep for this episode, there's this ethical hacker, Grow Up Netherland. Is my attempt at pronouncing this, but this is a course of like, what is this? 22 different client-side hacking videos by Jorian in Dutch, right? Yeah. Yeah, and shit, I wish I spoke Dutch right now dude because
+
+[01:45:20.10] - Jorian Woltjer
+this is peak.
+
+[01:45:22.80] - Justin Gardner
+So maybe there's like some, you know, crappy YouTube auto translation you can use to get at this. But I mean each one of these are like an hour long, hour and a half long. So if you speak Dutch, this is your homework assignment now for the next 25 hours. If you don't speak Dutch, figure out how to consume this still, because I'm sure that this is just chock full of amazing content. So yeah, I just wanted to make sure you all are aware of that.
+
+[01:45:52.80] - Jorian Woltjer
+I try to go through like the beginner steps at first and then go into like actual advanced like research level stuff.
+
+[01:46:01.60] - Justin Gardner
+Yeah, dude. Cross site leaks, web cache poisoning, CSPT, CSP bypasses, dangling markup, math.random. Are you kidding me? That's crazy.
+
+[01:46:13.19] - Jorian Woltjer
+One of my favorites.
+
+[01:46:14.50] - Justin Gardner
+That's amazing. All right. Well, check it out. All right. That's it. Peace. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more Critical Thinking content, or if you want to support the show, head over to ctpb.show.discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of master classes, hack alongs, exclusive content, and a full-time hunter's guild if you're a full-time hunter. It's a great time. Trust me. I'll see you there

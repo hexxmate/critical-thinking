@@ -1,0 +1,675 @@
+Episode 132: Archive Testing Methodology with Mathias Karlsson
+Source: https://www.criticalthinkingpodcast.io/episode-132-archive-testing-methodology-with-mathias-karlsson/
+======================================================================
+
+[00:00:00.00] -  Justin Gardner
+There's going to be a lot of bugs found because of this episode, dude. And they're going to be crits too.
+
+[00:00:30.57] - Justin Gardner
+So when you're running an enterprise security program, there are quite a few things you need to nail before you even consider doing something like running a bug bounty program, right? The these are kind of like the ABCs of enterprise security. Obviously you need some sort of phishing prevention system. You need an edr, you need some introspection into your environment with logging. And of course, you need some sort of patch management system to make sure that your software is constantly up to date. And not gonna lie, guys, that last one is a little bit of a pain in the butt, right? I know you guys know what I'm talking about with that. It's a lot. And whenever there is something that's a pain in the butt in security, what happens? Well, Threat Locker always comes up with an innovative solution. And that's exactly what they've done with Threat Locker Patch management. Their team is working constantly to ensure the software updates for software in your ecosystem are audited. Categorize. So if there's like a super severe zero day, you'll definitely know about it. And then check for conflicts with other software on your system before enabling the enterprise admin to automatically update or schedule an update in the future. And I'll just read this little snippet from their website really quick, which I loved. It says, we'll even dare to say install Threat Locker patch management and forget about patch management. We've got it covered. That is what you love to hear. That is what you love to hear, right? Okay, so definitely check it out guys. Threatlocker.com platform or just go to threadlocker.com and look for the patch management software. All right, that's a wrap. Let's go back to the show. All right, hackers, we got this week's this Week in Bug Bounty segment and it is stacked with a bunch of news. We've got a bunch of interviews coming up on critical thinking in the upcoming future and we're not going to be able to cover as much news. So you guys are kind of going to be on your own. But I wanted to draw your attention to some of the news pieces that came across my desk. So first up is, yes, we Hack has just announced the save the date for the 2025 Public Intrusion Test on Swiss Post Evoting system. Okay. And this is up to $230,000 in rewards with max reward at €40,000. I'm sorry, these are euros. And a 3k bonus on the first three confirmed reports. Pretty freaking awesome opportunity. And these bounties are top tier. And in addition to that, check this out guys. Here's the policy page right here. They are giving you source code. Check this out. They dropped the whole source code for this voting card print system. So this is looking like a S tier opportunity on yes, we hack right now. I'm definitely going to go check this out, see if I can pop something. You guys should too. It's cool to hack voting systems for one, but also the bounties are here for this one. So kind of a no brainer. So shout out to yes, wehack for that awesome opportunity. Next up is a little quick announcement from Integrity. They launched the Nvidia program, you know, one of the biggest companies in the world at this point, just starting a vdp, starting with a vdp, but they are also going to move into bug bounties eventually with a private bug bounty package that they've got running on Integrity. So very cool to see that. Definitely try to get your hands on that opportunity. Nvidia is a massive company and there's lots of attack surface there and they're running a private bug bounty as well as the vdp. So maybe you report some stuff to the vdp, you get into the bug bounty program. Could be pretty awesome. Oh yeah. So not just AI stuff but also a private bug bounty program where a variety of assets will be examined focusing on Nvidia products. Sweet. Next up is from bugcrowd. We've got the announcement of the Bug Crowd Ingenuity Awards. Okay, so Bug Crowd is going to start giving out some awards for some various talents. We've got the Breakthrough Hacker. This award recognizes rising stars with exceptional promise and ethical hacking. They've got the top P1 hackers, the community leader, the top pen tester in the Global Security Impact Award. So if you guys are looking to, you know, buffer the resume a little bit, get some of these awards, this could be a great opportunity for you to go poke at bugcrowd to try to land some of these. Next we've got a hacker series by Insider PhD with Bugcrowd. There's a. This was released on my SEC TV. It's entitled Hack the Hacker Series. AI vulnerabilities and bug bounty. Definitely going to want to check that one out. Katie always has great insights and she's been sort of working on this machine learning AI stuff for a long time. Even before it kind of all blew up. So she's got some great insights there. We'll link that down below. All right, last we've got two articles from Searchlight Cyber. Okay, we've got, you know, they were doing their Christmas in July sort of series that they've been doing and then they also just released a random novel technique for SQL injections just on the fly in the middle of Christmas for July. Like they weren't even putting out enough content. So definitely go read this article how we accidentally discovered a remote code execution vulnerability in ETQ Reliance. This one's going to be very interesting. And then also this one off article that wasn't a part of the Christmas for July regarding the downunder CTF methodology of a novel technique for SQL injection in PDOs. Prepared statements. Amazing. Very high quality stuff from the Asset Node team as we always see. All right, that's the quick news summary for this week. Let's get back to the show. Matthias, welcome back, man. This is your third episode of Critical Thinking. You are on episode 50, episode 68. And now whatever episode number this becomes, you'll be on that one too. And we were joking before this episode of like, all right, three times the charm. We are going to buy and send you a mic now so that we have some good quality audio coming through and can hear all of your excellent techniques in full HD audio. So I guess before we started recording here we were just saying I kind of wanted to catch up with you a little bit because we used to see each other a good bit at live hacking events and stuff like that, but the live hacking event scene has been a little bit lacking lately. Or at least we haven't been going to the same ones. So how is the book Bounty Life treating you lately?
+
+[00:07:06.01] -  Mathias Karlsson
+It's been pretty good. It's basically the same as last time. I still mostly do collabs with friends on one or maybe a few programs, to be honest. Mostly one. Uh, lately we've also been teaming up with Shano and Jonathan Bowman. We did some teaming with Shabs as well on another program, but it's been mostly focused on like digging deep on specific programs more than more than anything. So not that many events except for those specific programs. So I guess that's why we haven't seen each other that much. And also we've mostly been doing like a remote if it has been live events. But I'm actually going to one next week.
+
+[00:07:49.19] - Justin Gardner
+Are you really? Oh shit. Where at?
+
+[00:07:51.75] -  Mathias Karlsson
+In Italy. I don't know if the client is public or like that, but yeah, Speaking.
+
+[00:07:59.27] - Justin Gardner
+Of nice, have you been like grinding pretty hard on that right now? Is it like one of those pre prep sort of things or is it like mostly on site?
+
+[00:08:07.68] -  Mathias Karlsson
+Yeah, so this time around it's mostly on site. Usually we take like a month to prepare, but both of us have been busy or we've been cocky, I guess. So now we only had like this week to prepare. Hopefully we have something to show for it next week. Otherwise it's going to be a little embarrassing.
+
+[00:08:25.82] - Justin Gardner
+That'll be fun, man. That'll be fun. Well, I think that either way it'll turn out and I'm very curious to know the target. Can you tell me? And we'll bleep it?
+
+[00:08:38.74] -  Mathias Karlsson
+Yeah, we complete it.
+
+[00:08:42.41] - Justin Gardner
+Oh, is it really okay? They've been running their own sort of things lately. Huh?
+
+[00:08:47.94] -  Mathias Karlsson
+I think like some clients are testing out like not full on live hacking events, but like smaller kind of thing.
+
+[00:08:56.89] - Justin Gardner
+Wow, Exciting, man. The bug bounty world is changing a little bit. It is changing a little bit. My next live hacking event on the docket is, is Vegas, Google's bug SWAT event there. I'd love to see you and Franz and the whole collab team kind of come over to the Google world too and show us how it's done. Because I think Google is, I know that you guys hacked a little bit on Google, I think at one point, but Google is definitely a different beast. The way that they structure their architecture and stuff like that is definitely challenging. So yeah, I'd love to have you guys come to those as well sometime.
+
+[00:09:33.48] -  Mathias Karlsson
+Yeah, maybe we'll collab someday. I think that a lot of our experience with other Google like companies can maybe translate, so.
+
+[00:09:42.44] - Justin Gardner
+Yeah, exactly. Have you. So you're still doing Bug Bounty full time and stuff like that, or do you have other things you're doing?
+
+[00:09:49.48] -  Mathias Karlsson
+I mean, yeah, yeah, that's as your primary income. Yeah, but I also spend like a bunch of time just doing research for fun. So it's not. When I say full time, it's like some months it's full time. Some months I'm just sticking around with. With archives, for example.
+
+[00:10:07.34] - Justin Gardner
+Exactly, exactly. Speaking of dicking around with archives, let's, let's, let's talk about that, man. So, you know, every, every couple months, you know, maybe six months or so, I ping you and say, hey, Matthias, got any, any crazy shit you're working on right now that you want to share with the world? And this time around you have a new tool, Archive Alchemist, that's been out for a little bit, but actually kind of Slid under the radar. We've been trying to get this episode in forever to kind of bring more publicity to it and show the awesome work that you did here. So that's kind of what we're focusing on for this episode is archives. What was the impetus for this research? Was this like a bug you're working on live or did you just get interested in archives?
+
+[00:10:55.25] -  Mathias Karlsson
+Well, it was kind of split in two. I found multiple archive related bugs or bugs that require you to build an archive throughout the years. And recently there's been like four or five of them. But it's such a pain I felt to remember all the like archive utility parameters and stuff like that. I'm like, okay, now I'm repackaging this zip archive or Tor whatever. And then it's like, oh, you forget this file. And so I just decided I'm gonna make a tool for this. And then I never have to like read the man page or unzip again. And so that was kind of the reason why I. Why made the tool. Yes, to make testing for archive based vulnerabilities faster and maybe more thoroughly as well. Because I also like cut my second slacking. Like, I touched two things and then it's like, oh, it's a pain to like repackage this or change open it to next editor and stuff. So I'm like, it's probably not vulnerable, but like, I don't know if I only had a tool. And so that's where this was.
+
+[00:12:08.48] - Justin Gardner
+Yeah, I think that's the beauty of this sort of automation. Right. Is like, you know, it is very hard to be thorough with these sort of things. And one of the big takeaways, there's been a lot of takeaways over the years of doing critical thinking, but one of the ones that stands out was an episode with Bowman, actually, where he was really sort of telling the listener, hey, guys, you've got to build systems for yourself as a hacker that allow you to be more thorough and allow you to reduce friction in high friction areas of testing. Right. And you know, I think in his scenario he was talking about having a solution for iOS SSL pinning bypass. Right. Because that just seems like a pain in the butt to like do in order to, you know, get the, get the prize of being able to see that HTTP traffic. But if you spend a lot of time upfront and invest, and now you've got a system for that, then it becomes really quick. And this is kind of what you did here with archives as well, which, which allows us to have a tool that, that very quickly and easily allows us to generate the kind of test payloads we need and make deductions about the target architecture without a lot of friction. And that allows us to be more thorough testers, right?
+
+[00:13:15.98] -  Mathias Karlsson
+Yeah, yeah, exactly. I think it's a good point. And I've always been wondering, even for like regular testing, not like some specific bug about coverage. I would love to, if someone's listening, if someone could build like a coverage tool for like verbal mercado, that would be awesome. If you could just like, this is the target, like, show me the parameters I didn't change, or you know, stuff like that. Because sometimes I feel like I get like target fatigue, like there's nothing more to test on this target. But then two days later you go back and it's like, this is a part I didn't even consider testing. So I think it would be awesome to get like an overview. Um, now it's kind of just in your memory, right?
+
+[00:14:02.77] - Justin Gardner
+Yeah. For the coverage tool, let's brainstorm that a little bit. Let's double click that and then we'll, we'll, we'll go back into archives. So I've often thought the same thing, right. And I think how I would architect this is, you know, you would provide to the, the extension some regex or something like that, right? Where it would say, okay, this is the main API where, you know, the stuff I'm mostly interested in is happening. And then it would look at all of your Replay tabs, right? And all of the sort of entries in your Replay tab where you can click back and forth, right? And see whether you've modified a specific parameter, whether you've sent a specific request to Replay, right? And then a highlight maybe in your HTTP history or in some sort of representation of all that. Maybe sitemap. Maybe it would be good in sitemap, actually, where you know which one of these you still haven't spent a lot of time testing. Is that kind of what you're envisioning? Do you have any other things to build on for that?
+
+[00:15:09.97] -  Mathias Karlsson
+That's it, I guess. But. But also, like, I read this blog post and I'm sure you read it too from, from Expo, when they talked about some XSS they found in freaking Aura.
+
+[00:15:25.74] - Justin Gardner
+Salesforce Aura.
+
+[00:15:27.10] -  Mathias Karlsson
+No, not Salesforce Aura. It was in something else. Some VPN apply, I think. Yeah. Maybe Global Protect.
+
+[00:15:32.58] - Justin Gardner
+Global Protect, Yeah.
+
+[00:15:33.70] -  Mathias Karlsson
+And they had a section where their tool would attempt to find similar bugs in other parameters. Stuff like that would also be interesting because sometimes you find a bug in like one param, and it's like, maybe that's a sign that it's some systemic problem with the programmers. And this exact same thing might exist in some other param that I saw but didn't test, like, five hours ago.
+
+[00:16:03.14] - Justin Gardner
+Absolutely, man. That's the exact same thing I tell to a lot of my mentees that are like, really trying to get their stride in bug bounty, because, like, they. There are a couple people that I know right now that are, like, finding bugs here and there, but are like, struggling to really, like, crank them out. And I was telling them, you know, one of the biggest things that differentiates people that find bugs here and there and then from people that are just like, cranking out vulnerabilities constantly is this pattern thing, right? Where you say, okay, this was vulnerable here, which means they were making an assumption about this, which applies to this endpoint as well, and this endpoint and this endpoint and this endpoint. Right. And really spending time trying to enumerate more, you know, endpoints in a specific microservice or a specific, you know, subsection of the application that is just going to be more vulnerable than the other subsets. So it's huge to look at the trends of vulnerabilities and try to uncover more, you know, discrepancies like that across a whole app.
+
+[00:17:04.05] -  Mathias Karlsson
+Yeah, yeah, no, for sure, sure. So that's. But yeah, let's get back to archives.
+
+[00:17:09.64] - Justin Gardner
+Okay. All right, let's swing back around somebody from the community build that. I think that would be really cool. And I'm trying to map it out in my head from a Kaido perspective. I believe we have all of the tools that you would need to build something like that. There's even a tool, DataGrep, that was released by BevX for Kaido that allows you to just specify regex and it, you know, populates all the requests and stuff like that. So you could use that as a template and then just, you know, parse all of the replay entries and sessions that. That they have and then just compare between the two and then that's our. That's our. Our checker for. For coverage. So, anyway, very cool idea. I like. I like that. Matthias. All right, going. Going back to archives, you said that there's, you know, you've been finding some stuff with that recently, obviously, archives. This is something that sort of predates a lot of security stuff, right? This is like kind of OG vulnerability types here. What kind of stuff should we be looking at? Looking for. With archives? And how have you automated that with Archive Alchemist?
+
+[00:18:15.00] -  Mathias Karlsson
+Yeah, I think so. Top level. And it's good note too that it's old. So let's preface this with saying that like number this that I'm going to talk about is novel in any way. In fact, it's so old that it's like biting SQL injection or XSS and stuff. But the bugs still exist and it's, in my opinion, kind of annoying to test for them, but this tool can help. So in my view, there's essentially three types of bugs that you can identify. And there are somewhat common with the archive extractions, where the user or potential attacker provides an archive and the server extracts it somehow. So the first one is path traversals or having like dot, slash or exact or, sorry, absolute paths inside of the archives. So a.k.a. cIP slip. But it's very old. Before it was called the zip slip. That's like one of the things you can make it. So the goal would be to extract a file outside of the intended directory, where it extracts files on the server. The second type of is pretty similar. It tries to extract or affect files outside of the directory inside the directory by using links, usually symlinks, but I guess it's possible with hard links, also in tar. So that's like number two. And let's talk about, like, why links might lead to RCE directly later. But then the third one. Okay, all right, we'll get into that.
+
+[00:20:14.40] - Justin Gardner
+That sounds good. I'm excited for that.
+
+[00:20:16.96] -  Mathias Karlsson
+Yeah, we'll talk about one like later where I busted my ass for several days and then I realized something and it was like I could have gotten RC on the system without knowing anything. No, dude, Crazy Catherine, some. What do you say? Some things that needs to be true. And if that's true, you can just like blindly upload a archive and get a shell. But the third type would be like parser differential problems where like one parser or program does the validation and then another one does the extraction to the file system. And they might disagree on how. What files are in the archive or what their file names are and stuff like this. That's like the three big one. And then there's like a bunch of small special stuff.
+
+[00:21:11.19] - Justin Gardner
+We like the small ones too, so I definitely want to hear about those. But just to review, we've got symbolic links, we've got like path traversals, and then you've got confusions or differentials between various parsers that are, you know, looking at these archives, you know, maybe programmatically inside the programming language, it, you know, Tries to read the archive, check something, and then it actually extracts it with like a command line utility or something like that. Those are the. Those are the three main attacks. And then we've got some other smaller attacks that we're. We'll talk about as well.
+
+[00:21:43.35] -  Mathias Karlsson
+Yeah, yes, yes, exactly. Sweet. And so for all of these types of attacks, you can use the tool, but it also has some helper functions in the tool. So one of the things that I wanted to do was make like listing files, adding file, removing files, and extracting files more easy and like, for dumb people like me, so you don't have to remember something. So for example, the list files in an archive, you can just do like Archive Alchemist or put an alias to it, call it whatever, then archive, and then ls, because I assume most people will remember ls.
+
+[00:22:32.43] - Justin Gardner
+I love it, man. I freaking love it.
+
+[00:22:34.82] -  Mathias Karlsson
+Or you can do like dash L and stuff or list, but to read a file, you can just do Alchemist file, like archive and then catch whatever path. And you can use this like, and just like read one file from the archive and pipe it to something else, just like cat. And you can do RM as well, or add. So that was like something that I didn't intend to put into the tool, but after a while I just thought that was a lot easier than to remember the, like I said the specific flags for like SIP or seven, SIP or TAR or whatever.
+
+[00:23:16.13] - Justin Gardner
+And this works whatever type of archive you have, like a zip or a TAR or, you know, tar, GZ or whatever. Like, does it work with some of those compression algorithms as well? Or is it mostly just the core types?
+
+[00:23:30.84] -  Mathias Karlsson
+Yeah, so currently it supports zip and it supports TAR and then like compressed tar, like GC or bzip. Tar. I might.
+
+[00:23:41.85] - Justin Gardner
+Dude, I love you, man. That is that. Like, I was talking to Franz and he was like, yeah, I actually only use this to interact with archives now. And I'm like, I need that, I need that. Because I always forget as well.
+
+[00:23:55.46] -  Mathias Karlsson
+Yeah, no, it's really handy to be able to use and like, you can't specify exactly what kind of archive it is, otherwise it tries to do some smart magic byte sniffing or check the extension. But yeah, so that's how that works.
+
+[00:24:17.20] - Justin Gardner
+Very cool, man. So I guess just jumping off of that. So we made it easy to actually interact with these. We can replace specific files with the replace command. We can CAT specific files with the CAT command. Very nice. What kind of functionality did you bake in surrounding generating attacks with this command line utility?
+
+[00:24:41.23] -  Mathias Karlsson
+Yeah, so one last note. On the general functionality of the tool, you can also do replace without directory, and if you do empty directory, you will essentially sync a local working directory into the orcam. So you can have the entire archive open in your favorite editor, Just change stuff and then sync and then send the payload and then change something. Because sometimes you're not looking for like specific bug types for like archive extraction, you're looking for like maybe some injection inside of the sip, inside of a JSON, inside of this, you know, like this.
+
+[00:25:17.94] - Justin Gardner
+Right, exactly. Yeah.
+
+[00:25:21.29] -  Mathias Karlsson
+So, yeah, that's that. But in terms of the attack patterns, so first with the patch traversal, you just add an entry or like a file name. Because file names are essentially a string. There's no difference between like a directory or a file. Actually, technically it is, but most parsers just check like if it ends with a slash, it's a directory, and if the file size is 0. Yeah, but in any case you can just do like archivealcules, zip, add, etc, and you'll have one there. And you can have content in it too. Just like content, hello. And for the links, you just do like add and then the file JSON or whatever dash a SIM link, etc.
+
+[00:26:22.56] - Justin Gardner
+Okay, so then I don't have to like create the local SIM link on my machine and then try to force it into the zip. I can just say specifically, here's the zip add. Give it, give it, you know, whatever file name I want and then say, ah, just kidding. This is a SIM link. Point it to Etsy, password or whatever. There you go.
+
+[00:26:38.73] -  Mathias Karlsson
+Exactly. I mean, you can if you want to. Like, if you have a SIM link in that you're like working directory and you do the replace, it will add it.
+
+[00:26:45.88] - Justin Gardner
+Okay, nice. Nice.
+
+[00:26:48.44] -  Mathias Karlsson
+Yeah, so it's, I think it's pretty nice to work with.
+
+[00:26:52.92] - Justin Gardner
+Yeah, I really like that whole whole directory sync command as well. That, that's super helpful because like oftentimes with trying to deal with these, it'll like trying to get it to build that whole thing again is such a pain. And you know, like, I've had literally done it to the point where I've built like a build script for all of this stuff before, where I'm just like, all right, I gotta, every single time, I gotta run this, I gotta run this, I gotta run this to get it back to the right format. And this just makes it one quick and easy command. I like that a lot.
+
+[00:27:23.19] -  Mathias Karlsson
+Yeah. So one more thing that I forgot about, it also has like a polyglot command. So let's say you Know, it will parse it as a zip, but you're only allowed to upload PNGs or something. Then you can prepend the archive while still maintaining the authenticity of the archive by using the polygon. So for zip files it will change all the offsets. Because a SIP is just like a database of pointers to where is the file inside of this zip archive. It's not like a top down parsing thing. And for tar, it will just add it to the end and then pad it so that it's like aligned to 512 byte chunks, which would be like a valid tar file. So that can be helpful too when you have one place where you can upload a file and then you have some other bug or some other thing somewhere else where it's like specify zip file on the disk.
+
+[00:28:31.82] - Justin Gardner
+Yeah, yeah. Or on the server. On the server somewhere, you know. Okay, gotcha.
+
+[00:28:36.63] -  Mathias Karlsson
+Cool. And oh, last thing I also want to note. So the add command will add something, the replace command will replace something. And the reason why I say it like that is because entries in archives are just that. You can have two entries that has the same name. So if you do like add a. Txt and then again you do add a. Txt, you will have two a. Txts in the. Org app. Because that's just how it works.
+
+[00:29:08.40] - Justin Gardner
+Okay, gotcha. And sometimes I imagine you would want that because maybe diving in a little bit to the differential, maybe one parser will look at the first one, the second one, the other one will extract it all, and the second one will overwrite the first one. Or something like that.
+
+[00:29:23.25] -  Mathias Karlsson
+That, exactly. Yeah, that's a good point. And sometimes you can get like a partial differential in one implementation. So if it's just one parser and it like loops over all of the file names, imagine you have like a map and the key is the file name and the value is whatever the file, and it keeps feeding this map, but then it will overwrite, you know, in the code itself. So implementation wise you can have a problem. So let's say it loops through all of the files, checks the contents and then extracts all, and then the other file will be extracted.
+
+[00:30:11.16] - Justin Gardner
+Yeah, that makes sense. So let's maybe double click into that a little bit. Like. So you said that's how archives work, where we can have multiple files with the same name. How is that actually implemented in the various file types in zip and tar, etc.
+
+[00:30:34.38] -  Mathias Karlsson
+So I don't know if this is the case for all kinds of archives, but at least for HIP and tar, it works like this. And how does that work? Okay, so let's take the SIP example.
+
+[00:30:48.07] - Justin Gardner
+I'm putting you on the spot here. I know you wrote this tool a while back, so I hope it's still fresh in your brain how all this works.
+
+[00:30:54.00] -  Mathias Karlsson
+Yeah, yeah. I'm just thinking how I should explain this because there's surprisingly a lot of ways to specify like a file name in a zip forecast. You can take think of a zip file with just. It has like a directory which is like an array of all the files or all the entries. It can be files or directories. So it's just a list of them. And in the other column let's say it's a pointer to where in the file the actual file contents are. And so one funny thing is that actually in this database, let's say which called the central directory, those are a bunch of central directory file headers also. So they have the file name and then they point to somewhere else in the file where you have the local file header which also contains the file name. And then after the file header is the actual data. And depending on the attributes in the local file header, it might be tripped, it might be compressed somehow. There's nothing stopping the format to just have two entries with the exact same entry name. It's just two chunks, let's say two entries in the, in the archive. And there are some other ways you can specify it. File names actually in zip also. So one of the problems with zip is that these pointers internally are just I believe 32 bit, so like 4 bytes. Which means that if you have a SIP archive and you want it to be bigger than what is it, like four point something gigabytes, you overflow the pointers. And so what they did was they implemented a SIP extension called SIP 64. And so how that works is that you have an additional database or a Central directory for SIP 64. And it's supposed to work like this. Like, okay, if the last, if there's a file header somewhere with like a max pointer, then you should use the SIP 64 instead, which is, okay, basically the same thing, but it uses 64 bit pointers instead.
+
+[00:33:38.03] - Justin Gardner
+Dude, this is so convoluted. So there's like an entry so I'm going to try to repeat back. So there's like an entry with a pointer, right? That entry contains the file name and then there's like a local file. So you go to the pointer and then it's got sort of localized file metadata, right where it's like it has the name again and then it's got, you know, whether it's encrypted or compressed or whatever, and then it's got the actual file. But if the file is too big, then in that and it contains the max pointer, then instead it goes to the Zip64 extension. And then I assume it has the file name again there. So there's like three or four different spots inside the zip where you can specify the file name, which may be causing problems across different parsers. Is that accurate?
+
+[00:34:28.63] -  Mathias Karlsson
+Yeah, yeah, essentially. But it's like if there's one pointer with the max value somewhere, then you should not use the normal director. You should use the 64 bit one. So that will essentially be a duplicate, but with 64 bit pointers.
+
+[00:34:41.76] - Justin Gardner
+Duplicate triggered, man. Freaking triggered.
+
+[00:34:46.71] -  Mathias Karlsson
+Yeah, but yeah, then there is also all SIP parsers and stuff doesn't have necessarily have support for 64 extension because, you know, the format grows and maybe the utilities doesn't and stuff like this. What else? Oh yeah, there's also another zip extension that might be the wrong word for it, but whatever. Essentially you can have a bunch of extensions in zip and so in these local file headers, right? So not in the main directory, but where they point and there's some metadata and then the real file there's an extra field and there's a specification of these extra fields. Essentially they are also extensions to the zip file format. And one of them is called Unicode path, because different operating systems and parsers and stuff might use different encoding when it comes to file names. And so they invented this extension that says like, okay, if this is in the extra data, then you should use that instead, if you understand UTF8. And so there's like a third place where you can put it. And it's pretty funny when it comes to Unicode paths, because from my tests it's like 5050 if parser supports it. So that's like a really good.
+
+[00:36:31.98] - Justin Gardner
+That is a great odds for us.
+
+[00:36:34.07] -  Mathias Karlsson
+Yeah, that's a great thing to test for like an oracle. If there is one of these partial differentials, just like, okay, try Unicode path with like a different file name and see if that works. But it's also funny because even within the same operating system, it can be different. So how it works is that this extra data has like a specific ID that says like, okay, this ID means Unicode path extension. And then the next field is a crc. So it's supposed to check the file name in the local file header and do a CRC checksum just so it's not corrupt or there has been. There hasn't been any changes to this archive by something that didn't understand Unicode. And then there's actually Unicode name, but there's nothing checking that the Unicode name like translates to the file name or something like that. So you can have completely different. And here's the fun thing about the crc. So if you're on Windows, so the Windows Explorer has like built in compressed archives or compressed folder, I think it's called, called Widget zips. And if you make a Unicode path with an invalid CRC, then the Windows File Explorer will ignore the invalid CRC, but PowerShell Extract Archive will not ignore it.
+
+[00:37:59.26] - Justin Gardner
+Oh my gosh, dude.
+
+[00:38:00.98] -  Mathias Karlsson
+Yeah. So you can have a zip file and depending on if you extract it with PowerShell or like the Windows Explorer, you'll get a different file name.
+
+[00:38:10.17] - Justin Gardner
+Dude, that feels like a problem. That feels like a pretty serious problem with archives. Have you thought about reporting that to Windows? Because I feel like you could investigate something in Explorer and be like, okay, this is just going to write the specific file and then you extract it with PowerShell. Because lately I actually found a bug recently where there's a specific file that we, you know, we could specify any files in an archive except for this one file. Right. Because this run one file was going to, you know, be the file that executes the contents of the archive. And we found a way to, you know, include a file in the archive that would bypass their checks to make sure that we didn't have that file. And when it, when it was extracted, it would actually overwrite that file that we weren't supposed to be able to overwrite. And so I feel like that's kind of similar to this in this scenario, but it's happening at the operating system level with Windows.
+
+[00:39:13.61] -  Mathias Karlsson
+Yeah, I assume it's just like two different parsers, one in. Net and one in whatever Explorer is using. But yeah, it's super common. I was thinking about actually making a release package for Alchemist and as a sip. And if you extract it on like Linux, you get the Linux version. Windows, you get the Windows version.
+
+[00:39:39.51] - Justin Gardner
+But yeah, dude, that would be hilarious. That would be the most badass thing to release ever. That's great.
+
+[00:39:48.00] -  Mathias Karlsson
+Would be funny. And I think that, I think that like, manwe stuff can probably abuse this type of bugs too.
+
+[00:39:58.23] - Justin Gardner
+Totally. I mean, like GitHub releases maybe. I mean we need to. You need to be trying this shit against GitHub too because like, you know, they, whenever you do releases and stuff, like that they generate these zip files. Wow. Yeah. Crazy, dude. That's so on top of, you know, the initial entry and the local file header and the Zip 64, you've also got the Unicode path. And then you can also trigger, you know, false Unicode paths with the CRC invalidation. That's pretty. That is a lot of ways to mess this up.
+
+[00:40:35.96] -  Mathias Karlsson
+Yeah, I think that. Are we able to put like links? Yeah, yeah, I will. I want to link like a talk that I watched also while researching this. It's from Ginwell. I think he's from Poland. Otherwise I hope he like Polish paper. Sorry if that's not true, but he had a really good talk about the zip file formats and he spoke about this type of confusion attacks too. But not with Unicode path specifically, but with the. I believe at least. But with the confusing actual zip parser. Like where should it find this main central directory by going top down, should it go bottom up? And something else. So we'll make sure to link to that as well.
+
+[00:41:22.19] - Justin Gardner
+Yeah, I just added that to the notes. We'll find it and we'll put it in the description.
+
+[00:41:26.11] -  Mathias Karlsson
+But I also want to say, in terms of weird quirks, so now we shipped a little bit on Windows, but let's talk about Unzip. So Unzip is very interesting too. Especially like if there's some programming language that does some validation or whatever, and then it calls the Unzip utility because it works. It has some specific things that I only find that it does. So one of the things that it does. Yeah, so on Linux systems you have this max path setting or whatever you should call it. And usually it's 4096 or 4K. And so you might ask what should happen if you try to extract an entry that is longer than that. And most programming languages and stuff under the hood just get like an operating system error because, like the path is too long. But unzip actually will truncate. So if you extract, if you want a file name called like hello Exe, you can do like dot, slash, slash, slash, slash, slash to 4k and then hello exe txt and when unzipping it with unzip, okay, exe is bad example because it's unzipped, but ssh, then sure, then we'll truncate that so the file name it will actually extract will be exe.
+
+[00:42:59.65] - Justin Gardner
+Yeah, dude, that is. Okay, guys, that is a crazy tip. Okay? Listen to what Matthias just said. Anytime we hear truncation, my heart skips a beat a little bit because that Allows us to bypass so many, you know, naive restrictions that are implemented by developers. Right, where it's just like an ends with, you know, dot, dot, zip or whatever. Right, or ends with whatever. Wow, that's pretty crazy. So you run. Let me get this straight. You run unzip on a zip file that has an entry that has a super long name. And if unzip is the one doing the unzipping, then the file that is generated will be cut at 4,000 and what is it, 4,096 characters, and then everything trailing that will just be ignored.
+
+[00:43:53.98] -  Mathias Karlsson
+Yeah, exactly.
+
+[00:43:55.01] - Justin Gardner
+Frick. Dude, that is exciting. That is very exciting. That is very exciting.
+
+[00:43:59.63] -  Mathias Karlsson
+Yeah, it's pretty interesting. I forgot I was gonna say also about this Unicode path stuff. There is like a dash dash Unicode path parameter to Alchemist. So you don't actually have to like try to build this stuff. Yeah, but yeah, let's talk more about unzip, actually. So unzip and standard Python zip file, I believe, at least that's what my notes say. They will also truncate on nullbyte because, well, null byte is invalid, like character in finalists, and most will just give always error, like invalid, finally. But those will also truncate like that. So classic null byte.
+
+[00:44:45.40] - Justin Gardner
+Wow. Dude, dude, I've been sleeping. I've been sleeping on these so long, man. Like, there's so many cool things you can do here that I didn't know about. All right. Null byte truncation, path path length, truncation. Wow. Yeah, there's going to be a lot of bugs found because of this episode, dude. And they're going to be crits too, because that's the kind of thing these are.
+
+[00:45:10.75] -  Mathias Karlsson
+And PHP will replace null byte with space, which is also kind of weird. But if you at some point need a space and this very specific scenario, then yeah, you cannot null by.
+
+[00:45:22.21] - Justin Gardner
+Wow.
+
+[00:45:22.86] -  Mathias Karlsson
+But yeah, speaking of file paths and links, there's one more thing we can actually use. Use this as like an information oracle to get some information about the target. I've just assumed everything is blind. But yeah, if it is, you can use like a 4096 path. And if that gives an error 4096, 94, 93, etc. And when it stopped giving an error, then you know how long the path is that is prepended so you know the length of the path to the like, extraction directory. And based on that you might be able to do some assumptions, like if it's very short, maybe it's just like in temp. If it's pretty Long like. Oh, maybe it's in web road somewhere.
+
+[00:46:09.46] - Justin Gardner
+Yeah. Some like, asset or whatever folder or. Wow, dude. Frick. That's such valuable information. That's such valuable information.
+
+[00:46:20.17] -  Mathias Karlsson
+You can also do, like, I guess that it's not true only for, like, archive stuff, but, like file stuff in general. But like, if you can use like, less than or greater than, this is what I do, at least then I assume it's not a Windows system because that's invalid on like, NTFS and fat.
+
+[00:46:38.57] - Justin Gardner
+Oh, really?
+
+[00:46:39.57] -  Mathias Karlsson
+Yeah, but in like ext, then it works. And so that's also like a small tip if, like, knowing the operating system or target doesn't help a lot. But, you know, you never know.
+
+[00:46:51.57] - Justin Gardner
+Everything we can get does allow you. It does allow you to craft some of these more intricate exploits. Right? Like the, like the, the CRC and Unicode path piece here. Right. You know, like, maybe they're doing something. Windows does something different, you know, with, with that Unicode CRC thing. And then we know to try that attack because we created a file that has, you know, an oracle in it that says, okay, yes, this is Windows. Yes, this is Linux. That sort of thing.
+
+[00:47:17.88] -  Mathias Karlsson
+Yeah, exactly. Okay, one more thing about.
+
+[00:47:24.84] - Justin Gardner
+Keep them coming, man. All day. Let's go.
+
+[00:47:27.40] -  Mathias Karlsson
+So you know about. I don't even know what, what the. What it's called, but like over long UTF8 normalization. Yeah, I think. I think sometimes people call it like Unicode normalization, but it's a little bit confusing with that versus, like homoglyph attacks. But the thing is, Unzip will Normalize over long utff 8 characters in file names in Unicode path as well. So that's very interesting because that means you can have like a bunch of binary blobs, which is like overlong UTF8 encoded, whatever slash or whatever you would like. And the parser will see that as just like binary characters, but when it extracts it, it will become like a slash or a. Or whatever. Yeah. So if you do. Okay, so UTF 8, it's. I shall explain this how to. How to convert it if you have like 0x41 or. Let's talk about this and that. So let's talk about character set first. So a character set is.
+
+[00:48:53.42] - Justin Gardner
+How do we always end up talking about character sets?
+
+[00:48:58.53] -  Mathias Karlsson
+I think it's just so interesting how like, a representation of the same thing can just become something else.
+
+[00:49:05.17] - Justin Gardner
+Absolutely.
+
+[00:49:05.73] -  Mathias Karlsson
+If you. By accident.
+
+[00:49:08.30] - Justin Gardner
+I love it. It's fascinating. Yeah, Talk to me about character sets, Matthias.
+
+[00:49:13.09] -  Mathias Karlsson
+Yeah, it's like the. It's like the computer version of Like Trip translating a page and it says like something really stupid. Yeah, but yeah. So character sets are essentially just like a list of symbols and a given ID. And so ASCII would be 127 most common ones from like the English language, I believe. And some arithmetics, like numbers and stuff. And there's a bunch of different character sets. But these days, most people use Unicode, which I think aims to be like whole. How should you say whole? It should contain like all the symbols that you might need. Yeah, including. And it also starts with ascii, but also like, if you want to print a poop emoji to the screen, you take that number, you go to Unicode and see like, okay, this number means the poop emoji symbol. And then you print it and it might be hex 41, 42 or whatever.
+
+[00:50:18.84] - Justin Gardner
+Right?
+
+[00:50:20.28] -  Mathias Karlsson
+So character set is just like a database of numbers versus symbol. And encoding is something that allows you to represent these numbers in binary bytes. Usually it's supposed to be like a smart way so that when you have a text, you want it as small as possible. And so how UTF8 works is that for all common characters, like in the ASCII character sets, it's just represented with one byte and the first bit in the byte, if that's zero, then you know it's a one byte value. And that also means that the rest of the seven bits is possible to represent entire ASCII characters. So for everything above that in Unicode, you start the first bit as a 1, 1, 0. That means it's a start of a multi byte sequence. And so if it's a 2 byte sequence, you do 1 1, 0. 3 bytes is like 1 1, 1 0, 111 0, etc. So if you have 1, 1, 0, then you have 5 bits, and then you have 1 0, which means continuation bytes. And then you have 6 bits for the 2 bytes. You take the 5 bits, you add the 6 bits, convert it to a number, you take that number, you go to Unicode and add, what is this? Unicode says, oh, it's poop emoji. And there you go. But the problem with this is that you cannot represent large numbers, right? In small byte sequences. Like you can't represent 5000 in a 1 byte sequence because you can only fit 127 until you have to overflow or something.
+
+[00:52:05.51] - Justin Gardner
+Right?
+
+[00:52:06.88] -  Mathias Karlsson
+But the reverse is not true. You can represent small numbers with many bytes. So if you do, if the first byte is just 1, 1, 0 and then 0, 0, 000, next byte is 1 00, 0. And then like x 41. And then you take that, convert that to the number, you get hex 41, you go to Unicode and Unicode says, oh, that's capital A. Yeah. And so that's how you do overlong UTF8 representation of some character.
+
+[00:52:42.75] - Justin Gardner
+That's interesting because, like, I'll say I don't often get to that depth with Unicode. I know that. For example, in JavaScript, where you've got the backslash U notation, you can definitely represent uppercase a with backslash u0041. Right. And that's just got those first bytes zeroed out. And then you've got 4, 1, which is the ASCII compatibility piece of Unicode. But what you're saying here is that you can tell whatever's processing it, hey, this is a Unicode. This is a Unicode sequence that's happening here. And then provide it with an ASCII hex value for the actual letter correlation. And then the system will sort of read it, oh, hey, this is Unicode for sure. But then when it goes to actually utilize it, it's going to actually just spit out a normal ASCII character.
+
+[00:53:45.30] -  Mathias Karlsson
+Yeah, exactly. So it will say like, oh, this is a multibyte UTF8 sequence. And then do that. But what it's supposed to do is it's supposed to say like, oh, you're not allowed to have like, all zeros. So it should use this unicode. No, sorry, UTF8 replacement character. Yeah, exactly. The question mark. Yeah, which is also funny because that will sometimes homoglyph into an actual question mark, which is special meaning in URL.
+
+[00:54:12.51] - Justin Gardner
+Which I love it. I freaking love it, dude. I've used that many times. It's amazing.
+
+[00:54:19.07] -  Mathias Karlsson
+Yeah, no, but that's right. But when parsing Unicode path in zip with unzip utility, it will actually be nice to you and say like, oh, you're stupid. Why are you using two bytes for hex 41? I'm replacing it with one hex 41 byte. So, yeah, that was my entire point. So you can make a file name which has like a bunch of directories in the entry name in the Unicode path, but the actual bytes will never be hexed to it, if that makes sense.
+
+[00:54:53.53] - Justin Gardner
+Yeah, I understand how that works now, and I'm just going to try to repeat it back and validate that and try to also make it clear for the listeners. So, you know what we want to do with this Unicode path is we will take a given character that we want to be a slash, and we'll represent it As a multi byte Unicode. I don't know blob. I don't know what the term is there, but sequence, right? And we'll say, hey, this is. This is a multibyte Unicode blob by specifying the continuation bytes. Hey, this is going to be a multibyte thing. And then at the end we just provide percent or we provide 2F as the slash. And when specific utilities are parsing that Unicode path, it will say, oh, this is dumb, let me just put a slash in here instead. And that is what will allow us to do path traversals and you know, add additional slashes into a path that the other parsers may not represent. Right. When they're parsing it. Is that accurate?
+
+[00:56:03.00] -  Mathias Karlsson
+Exactly, that's exactly right. Also, this isn't like SIP specific or something. It really applies to everything that utilizes UTF8.
+
+[00:56:12.51] - Justin Gardner
+Frick. Dude, I need to be. Yeah, this needs to be. Because all I've been doing, right. All I've been doing is checking for homoglyph. But it's homoglyph, right? Is that the term? Yeah, I've been just sort of checking for those where I'll use my full. I'll switch my keyboard into Japanese and I'll do the full width or the full width less than or greater than or whatever and try to get that to go through. But yeah, I should be checking for that too. I'm wondering is there a way to. My brain's just going to web. Is there a way to represent this in. In web with like a URL encoded version with the continuation bytes and stuff like that or.
+
+[00:56:55.84] -  Mathias Karlsson
+Yeah, yeah, it's just like. So when you calculate one of these like two byte sequences, it will be like C percent C 0% A2 for example. Yeah, you have to convert it and then you just take the first byte and then percent whatever it becomes second byte, percent whatever it becomes. That's how you would do it. But in. In like JSON or JavaScript it wouldn't you. I mean you could put two bytes. But like JavaScript string encoding is a different encoding. So you. Where you can do for example backslash U something to represent the.
+
+[00:57:37.88] - Justin Gardner
+Yeah, so I'm going to share my screen really quickly here just to kind of. I'm trying to think about this from a sort of Unicode or like a JavaScript perspective here because that's how my brain is working with web stuff. So if I pass in this full width less than sign right. When a URL encodes, it goes to percent EFBC 9C. Now some of these are these continuation bytes that you're talking about, right?
+
+[00:58:09.11] -  Mathias Karlsson
+Yeah. So the first one will say like, this is a 3 byte sequence and then it has the start of the number. Second one will be like, this is a continuation byte which is 10, and then some of the number. And the third one will be, this is a continuation byte and the rest of the number and then they will concatenate or like add those, go to Unicode and see like, oh, that's this weird dust.
+
+[00:58:36.71] - Justin Gardner
+So can we modify this representation right here to do that over long?
+
+[00:58:43.19] -  Mathias Karlsson
+Yeah, you can do like, you can represent this character with 4 bytes instead.
+
+[00:58:50.55] - Justin Gardner
+How do we do that?
+
+[00:58:52.88] -  Mathias Karlsson
+Well, then you have to convert CRX EF into binary and you need to add another one to it. So it's gonna be like 1, 1, 1, not 1, 1, 1, 1, 0, 1, 1, 1, 1 0. Yeah. And then the next byte will be like 10 and then all zeros, and then it's gonna be the same. Does that make sense?
+
+[00:59:22.38] - Justin Gardner
+Not really. I'm trying to think about it in Unicode or in URL encoded format here. Right here we've got three URL encoded chunks here. This is what you're talking about with that. Every 1, 1, 1, 1, 1 0, right?
+
+[00:59:42.78] -  Mathias Karlsson
+Yep.
+
+[00:59:43.98] - Justin Gardner
+And so in order to do the overlong representation of just the basic ASCII character, we would need to add another. Another byte to this three, three, you know, chunk sequence or.
+
+[01:00:00.26] -  Mathias Karlsson
+No. So this is not an ASCII character, and that's a valid UTF8 multipyte sequence for this specific character points, which would be some high number that requires 3 bytes. If you want to represent like less than ASCII less than with multiple bytes, we start with the less than and then we take that number and store it somewhere. And then we start a two byte, for example, multi byte sequence, which will be 1, 1000000. And then you would do 1 0, and then whatever that number was in binary. But that's how you would do.
+
+[01:00:38.42] - Justin Gardner
+This is crazy, man. Okay, I got to spend. I'm not going to spend the rest of this podcast live troubleshooting that with you, but that is definitely interesting. I need to sit down and try to figure that out a little bit more because I don't think I fully understand that yet. And I think that's something you probably get a better understanding of when you're working with all of this data at a lower level than URL encoding and JavaScript. Code point. Unicode code point notation.
+
+[01:01:05.38] -  Mathias Karlsson
+Yeah, for sure. There might be some tool already for It. But yeah, no, I am confused a little bit about it also. So I'm not doing a good job at explaining.
+
+[01:01:18.51] - Justin Gardner
+It's definitely a cool thing to be aware of nonetheless. Right. That you can actually represent that exact character in ASCII and they don't really have. The only two options they've got are show that ASCII character or show the question mark. I think that's a really cool piece nonetheless. We spent a lot of time on Unicode related stuff there. Do you have any other cool Unicode tricks that you wanted to talk about in this section?
+
+[01:01:52.86] -  Mathias Karlsson
+No, but I have more weird stuff that I would like to mention with SIP archives. So let's go back to that.
+
+[01:01:59.23] - Justin Gardner
+Yeah, let's do it. Let's do it.
+
+[01:02:00.98] -  Mathias Karlsson
+So like 7 sip is extremely interesting in one specific way, maybe more, but the one that I know. So let me ask you a question. If I have a zip file or whatever, an archive with an entry and the entry name is empty, what should the resulting file name be?
+
+[01:02:27.46] - Justin Gardner
+Okay, so the entry name is empty. I imagine it would look at the local file metadata and try to grab the file name from there. Is that also empty?
+
+[01:02:39.55] -  Mathias Karlsson
+It's empty everywhere.
+
+[01:02:40.67] - Justin Gardner
+Oh, geez. I don't know, man.
+
+[01:02:44.26] -  Mathias Karlsson
+Or like several languages maybe.
+
+[01:02:46.55] - Justin Gardner
+It's like. Yeah, I have no idea. What does it do?
+
+[01:02:51.80] -  Mathias Karlsson
+Well, most parsers just takes it as empty. So it will like treat the current working directory as the file name and it will say like you can't do file operations on a directory, dude.
+
+[01:03:04.28] - Justin Gardner
+Right.
+
+[01:03:05.32] -  Mathias Karlsson
+But not 7 zip. Because 7 zip. What it will do, it will take the archive file name. So let's say you have like Justin zip, then the entry which essentially will convert to Justin. So if you have like Justin PHP SIP and you have an entry which is empty, it will extract us. Justin php.
+
+[01:03:30.09] - Justin Gardner
+No way. Wow, that's very interesting.
+
+[01:03:34.17] -  Mathias Karlsson
+Yeah. I have not seen any other problems or exploit primitives where the name of the archive file like affect something. But in this case it does.
+
+[01:03:45.96] - Justin Gardner
+That's really interesting too because let's say you don't know the name of the archive. Right. And you want to know, you know how these archives are being named maybe for the purpose of being able to overwrite them or to be able to. That is actually a primitive that can be used to leak the file name itself. You know, assuming you have access to that directory where the thing is being extracted into. Yeah. Wow, that's super interesting.
+
+[01:04:15.13] -  Mathias Karlsson
+Yeah. So just a note, I don't know how common like 7 zip usage is, but I'm sure there's a bug out there somewhere.
+
+[01:04:23.13] - Justin Gardner
+I'm sure there is. Yeah, man. It makes me think, you know, when you were assessing some of this stuff and you were looking at, I'm not sure how much time you spent looking at various implementations. It sounds like you at least looked at Python and PHP's programming level language. Programming language level implementations. Do they utilize the command line utilities at all or are they mostly trying to implement that whole spec inside of a Python module or something like that?
+
+[01:04:54.26] -  Mathias Karlsson
+Now most of them have their own parsers. So like from scratch, like take this binary and then start parsing it and stuff. But. But yeah, not everyone uses them or like, usually they have like extraction stuff, but a lot of them don't have like extract all. So I have seen a bunch of cases where people will use trigger like unzip or something just to be able to like extract this whole archive instead of like looping through extract one by one like this.
+
+[01:05:32.26] - Justin Gardner
+Or maybe they run some assessment on it in the programming language and then they say, all right, this looks good. And then they pass it to like a build script or something like that, which stands up some process with it because that build script is sort of done in Bash or whatever. It just makes the most sense to utilize whatever command line utility they have in that environment.
+
+[01:05:57.98] -  Mathias Karlsson
+Yep. Yeah, exactly. So that's when. When the fun happens.
+
+[01:06:01.67] - Justin Gardner
+Dude, this is so freaking sketchy, man. I love this. Any, anytime, anytime there's an archive, I swear, moving forward, I'm going to spend a significant amount of time implementing these tricks that you've talked about on this episode. I'm gonna go freaking Brandon or Yuji, whoever's writing the hacker notes for this episode, you must do a good job on these hacker notes because I'm going to come back to these hacker notes very often to reference what's going on here. So, dude, I'm very excited about this. Okay. All right, keep them coming, man. What else we got? So that was a lot of talking about the parser confusions and stuff like that. Do we want to talk more about that or do we want to move to symlinks or patch traversals or where do you want to go?
+
+[01:06:50.15] -  Mathias Karlsson
+Go back to a little bit more high level but like techniques that you can use to identify these bugs blindly. So for pat traversals, it's. If it's completely blind, you just upload something and you don't get any response or even not in like later requests, obviously it's difficult. If something is 100% blind you, you can't really use it as an oracle, right, to deduce anything. But usually there's some error, like if the file name is wrong, or like it tries to overwrite the file that already exists and stuff. So what I usually do is that I try to create a directory and then I make an entry which is like directory and then file name. Right. Let's say I know that the backend will parse a file called file name. So I do like directory file name. And if that works the same way as just having file name plain, then probably it's vulnerable to one of these patch reversals. Of course, the next thing to test would be, you know, traversing outside of the extraction directory, because sometimes people allow these dot slash shenanigans, but they have some extra check to make sure you don't traverse outside of the intended directory.
+
+[01:08:19.27] - Justin Gardner
+So you manufacture your own path traversal there. You know, you create a directory, then you create a path traversal sequence that, you know, for a file that's in that directory, so to speak, but is actually pointing to a pivotal file out of that directory. And if that works, then you know that the path traversal occurred and the system processed that. That's good. Yeah. This is very similar, similar methodology to what we'll often do with secondary context path traversals in a web environment, right. Where you've got an ID or something like that in the request body and you put a slash in there and it still does the same thing. And you're like, oh, this is definitely ending up in the path somewhere on some backend API. So you do like ABC/, dot, dot, slash, right? And then delete your own directory that you kind of put in there. And if that also works, then you know for sure. Okay, I've got some sort of path traversal sequence occurring here in this environment.
+
+[01:09:16.60] -  Mathias Karlsson
+Yes, yes, exactly. So that's what I always start with the test for, like symlings is pretty similar. It's just like, okay, if you make a happy case like it just called file name, then you know how it's supposed to look like when it works. And then the second one, you have like a file called hello, and then you make that a SIM link to file name. And if that gives the same, then you have two happy cases. And then you test a third time, but the SIM link is to like file name X. And if that fails, you can deduce that it supports symlinks.
+
+[01:09:58.09] - Justin Gardner
+Okay, okay, this is good. So we've got. This is like how you. This is your methodology for testing these sort of Uploads. This is great. This segment is very good. So you mentioned before, okay, we do the less than and greater than sign to check whether it's like Windows or Linux. You do, you know, you create your own directory and then manufacture your own path traversal to check whether you have path traversal primitives. And then from there you go to can I traverse outside of the document or the place where it's actually being extracted? And then you also do this symlink piece where you say, okay, I know I've got this pivotal file and I'm going to create another file. Well, okay, let me ask about that then, because maybe this is my knowledge of symlinks, but I know weird shit happens when I try to use LN in Linux systems where I do like relative paths and stuff like that. Can you do relative paths with symlinks inside of an archive? Like that where you say, okay, important file. Txt is a symlink to in the same directory, other file. Txt, Right. And if it tries to read important file and actually reads other file and it processes fine, then we know we've got a symlink or primitive. Is that. I mean, you can do relative paths like that?
+
+[01:11:16.36] -  Mathias Karlsson
+Yeah, for sure.
+
+[01:11:17.81] - Justin Gardner
+Okay, that's sick. So we can establish a path traversal primitive. We can establish a simlink primitive, and we can, we can do an oracle on the operating system with the, with the less than, greater than, or the. Oh, and then. And we've got the length piece, right, which can give us more information about, you know, where we are in the operating system. It could be in a temp file or it could be in a, you know, document route or some longer path. Frick, dude, Frick.
+
+[01:11:51.10] -  Mathias Karlsson
+Some information out. Even though that, that's like the, the whole black box hacking works. Like, you get like a tiny piece of information and then you use it somewhere down the line. Frick.
+
+[01:12:02.22] - Justin Gardner
+Dude, this is, this is really helpful. Okay, okay, keep, keep going. Then what do you do? Well.
+
+[01:12:11.77] -  Mathias Karlsson
+It'S difficult to, like, there's no one size fits all that I can think of when it comes to like partial differentials. One thing I would try would make archive with this Unicode path name, which is different. And then I can deduce a little bit like, okay, it's not one of all of this, but it's one the of of all of these. But that's where you have to like, just try trial and error and try to figure out which two. It could be.
+
+[01:12:45.67] - Justin Gardner
+One thing that I would add here, Matthias, that was recently related to the vulnerability that I found was that different operating systems have different case sensitivities as well. So we could also sort of fingerprint what kind of environment we're in by providing a file capital a txt and then lowercase a txt and let's say this could also be a partial differential thing where the Python or PHP that's processing it goes through and says okay, capital a txt, that's not pivotal file. Lowercase a txt, it's fine. But then when it actually gets extracted, depending on the environment that you're in in Windows those are the same. In Linux those are not the same. And so you could, you could sort of get some prioritization happening there.
+
+[01:13:35.72] -  Mathias Karlsson
+Yeah, yeah, that's a very good point too. And there's also, I believe, some like special file names in Windows. I think com, like C O N is one of them which you can also use if it like forbids weird characters. But you can have like capital, capital letters.
+
+[01:13:50.60] - Justin Gardner
+What is that? What? What? What is it? What, what response should we expect from the operating system when we name something?
+
+[01:13:56.40] -  Mathias Karlsson
+Colin Error? Not allowed. Yeah, I don't remember history. I just know like there's a couple of them where like these are reserved file names in Windows systems and Con is one of them.
+
+[01:14:13.28] - Justin Gardner
+Very interesting. I just. Dude, what is the equivalent Of Touch in PowerShell Create File or something?
+
+[01:14:20.64] -  Mathias Karlsson
+I don't know dude.
+
+[01:14:22.05] - Justin Gardner
+I frick. I hate powershell. Why does it have to be so verbose? Touch in PowerShell? I just want to try that. I just want to see what would actually happen. Oh, you could just echo something into file name echo.
+
+[01:14:37.64] -  Mathias Karlsson
+I'll give a Windows tip. Meanwhile, if you are very not familiar with Windows but you like Linux, what you can do is you can install like Windows subsystem for Linux and you install SSH server there and then you SSH from your Linux machine to the Windows machine and from bsl you can actually launch like exes and stuff so you can run. You don't have to look at Windows, you can just like ssh into it and use exes.
+
+[01:15:05.39] - Justin Gardner
+Yeah, that's what I normally do. I figured in this environment I should probably be testing with like actual Windows utilities because it might when it's trying to write the file, you know, it might be having some problem. But it's interesting man, I'm. I, I was able to create a file right now called con by doing echo, you know, abc and then do the, you know, greater than sign into con. But then if I try to type con, you Know like cat the contents of con. It says this file doesn't exist. So there's this. There's some weird, there's some weird stuff with this. Man, this is really weird.
+
+[01:15:41.39] -  Mathias Karlsson
+Yeah, there you go. Windows Antics. But yeah, I was gonna say one reason why symlinks is very, how do you say, Powerful. I guess it's because if, if you're allowed to write a symlink but you are not allowed to do path traversal, what you can do is you first write a symlink and then you write something to that SIM link. So if you have like a SIM link to slash and then you can go into the SIM link and write. So usually unless it has some weird check that it's like not allowed to overwrite files that already exist. You can just make like a. A. Txt which is a symlink to whatever you want and then you make another a. Txt which is not a symlink and it will write to that. So usually when, when symlinks are supported, you you will have like an arbitrary file, right? Primitive.
+
+[01:16:53.17] - Justin Gardner
+That's great. That is very strong. That is very impactful. Okay dude, this is exciting. Now I really desperately want to go try some file upload stuff now.
+
+[01:17:13.67] -  Mathias Karlsson
+So it's a lot of tangents as usual, but I will try to be brief and explain this one shot idea that I got. So I was working with a extraction bug and it supported Zen links but I didn't really know what to write and I had to find a bunch of other bugs and like I got a hold of some log files and stuff and it took like many days. But then finally I was able to like get something into the webroot in the encounter shell. But what I realized then was that since you can make a arbitrary file write primitive out of this symlink stuff, given that symlinks is allowed and there's no check for overwriting existing files. What you could do and it was a Linux system was that you could overwrite the etc LD so preload, which is a think space separated file pointing to shared object files on the system that are supposed to be preloaded whenever a dynamically linked binary is like an elf is started. So what you could do was you make one like file right to like temp lol so and then you make another file right to. Etc LDSO preload with this temp load so in it and then the next time the server runs one of these binaries it will be preloaded and then you can hook, I think init Or I forget what exactly what it's called, but essentially you get RC through that. And what's nice about that is that I.
+
+[01:19:06.97] - Justin Gardner
+A lot of things are nice about that, Matthias. A lot of things are nice about that.
+
+[01:19:11.27] -  Mathias Karlsson
+Yeah. But. Oh, one more thing, One more condition is needed. Only root is allowed to write this LDSO preload file. And so you might think like, why would anyone like run some file extraction stuff as root? But the reason they did it in this one was because they had this web server in. I forget if it's job or go or something, but it doesn't matter. But it was running a docker and so a lot of times in like the container worlds, people are like sloppy with which user they will run the stuff in because I don't know, the default will be root. And it's like more effort to downgrade your privs than it would be in a traditional sense. I guess. So yeah, if you have streamlinks, if you can. If it doesn't have any like file already exists, can't overwrite stuff and it's root because either it's just root or inside of a container or something, then you can use this trick and like blindly get shelled by will it somewhere.
+
+[01:20:25.39] - Justin Gardner
+Will it affect the availability of any of the services by doing this preload? Or can you just. I guess if you're overriding it and they have libraries in there that they need, you know, to run binaries, then excuse me, then you're in trouble. But otherwise it shouldn't, right? As long as you craft a valid SO file.
+
+[01:20:48.64] -  Mathias Karlsson
+Yeah, you need to compile it to the same architecture as like the target system. Otherwise I'm not really sure what happens if it crashes or just ignores it or whatever. But then also it's probably smart making like only run it once check. So in the example I made, I brought another file to another place and the hook starts by checking if this file exists. We're already good. No more reversal tries. Yeah, so that's a good tip. If you have like a file, right? And you're like, damn, I don't know what to write.
+
+[01:21:29.06] - Justin Gardner
+Yeah, this is, I think, particularly a good trick if you are doing research on a specific like application that you've got locally and you can sort of see what's happening and that sort of thing here. Because you don't have to worry quite as much about like, okay, well, you know, I need to not take down the server and stuff like that. But it also gives. One of the things I love with bug bounty is it does Give you a little bit of plausible deniability here too, with some of these companies where you're like, okay, well, I proved my symlink based arbitrary file right, and this is how I would get rce. But I don't want to affect the availability of your service, so I'm not going to run this. If you give me a dev environment, I can test it further. Or maybe you just want to accept it as rce, you know, like, and a lot of times they'll be like, okay, you know, that, that makes sense. We'll just accept it as rce. You know, Matias Carlson said on the CTPB podcast that it's rce. So it's, it's, it's rce. So I like that. I like that. That's good, man.
+
+[01:22:31.94] -  Mathias Karlsson
+I mean, if it runs at rooms, that's a kind of a big gift. But you, you make a good point. Like, you should not try this blind blindly, probably.
+
+[01:22:38.43] - Justin Gardner
+Yeah, yeah, yeah. All right, dude. Freaking amazing. That is so good. Do you have any other tips or tricks for once you've established these primitives, how do we close the loop? How do we create an actionable vulnerability? Once we've established path traversal or symling primitives.
+
+[01:23:03.30] -  Mathias Karlsson
+They both essentially lead to arbitrary file rights primitives. And depending on what happens after the fact, like, can, can you get the files back somehow? Is it like, does it do maybe transcoding because it's supposed to be a video or something, you can sometimes get like an arbitrary file read also. And if you get a read and it's a web app, usually that leads to getting the source code or like in the worst case, compiled source code. And then you can start auditing that for other bugs or just record it as I can read all the files, but other than that it becomes like a different bug. That's it when it comes to the arcade parts. And now you have a file system problem instead.
+
+[01:23:57.23] - Justin Gardner
+Yeah, it's an application level problem as well. So let's say we do establish an arbitrary read primitive via application logic. How can we figure out where we are in the system and try to figure out what kind of pieces of code or what files we should target with that read primitive.
+
+[01:24:22.94] -  Mathias Karlsson
+Yeah. So first off, we touched on how to be able to get the length, for example, and we might be able to guess based on that if we have some errors and stuff like that. Otherwise what you can try is, okay, if you only have a read, then you can try. Well, it's kind of hard without fingerprinting in Some other ways like knowing that it's like a Java or stuff like this. But one thing that I use is good to use is like proc self environment. Like maybe environment variables will tell you something. And also on the same like file system node proxyl cmd line also good to have but also proxel CVD like current working directory.
+
+[01:25:13.22] - Justin Gardner
+Yeah, that would be massive. See that's the kind of thing I was talking about, right? How do we orient ourselves within this system? And that's right. Proc self CWD gives you the current path, right?
+
+[01:25:26.00] -  Mathias Karlsson
+Yep.
+
+[01:25:28.15] - Justin Gardner
+Actually you can kind of turn it into. Yeah, you can turn it into cwd. Man, I wish there was like freaking, you know, proc self ls, you know, like, like that would be great.
+
+[01:25:39.19] -  Mathias Karlsson
+I mean in some languages like in Java, sometimes if you get like a file URL you can just specify directory and you will get it or you can do it like. Net netdoc dash or column. But one more thing that you can do actually if you get like file doesn't exist error if you write like a SIM link and then you try to write to that sim link if file exists versus file not exists, you have that oracle, then what you can do is you make a SIM link to like one path. Up or down? Sorry, down I guess. So if you're like war bbbhtml you do like assume link to assets your file and then you can make like a deer bust primitive.
+
+[01:26:25.89] - Justin Gardner
+That's great, that's great. And so I guess using Archive Alchemist we can implement all of these attacks. And are you normally trying these one at a time? Are you kind of spraying them with Archive Alchemist? Do you have a polyglot archive you use that says, you know, all right, it's going to kick back this error or whatever.
+
+[01:26:49.18] -  Mathias Karlsson
+Usually I ironically make like a bash scripts around it, but now I use it as the what is a utility knife to build together. But also a lot of times, you know, you try the pet reversal, you try the SIM link, maybe get a bunch of tests off of the differential stuff and then you're like okay, the easy wins are not there, but then you start testing the actual files that are supposed to be in the archive. So I find myself a lot of times using it as a tool to test for other types of bugs based on the files that it contains. Usually it's like XML or some jsons or stuff inside of there. That's kind of how I've been working with it.
+
+[01:27:41.09] - Justin Gardner
+Yeah, no, that makes a lot of sense, man. My brain is just Spinning. Because there's so many weird things with all of this that are nuanced. Okay, I'm just looking at the doc here. We didn't cover set GUID yet, which I think would be kind of interesting to talk about. So let's jump to that. Well, okay, I'm sorry, before we jump into that, I do want to say there's also another sort of perspective on all this too, which is we're assuming that we upload a zip file, right, and then the system is processing those zip files. I also think there's a lot of impactful scenarios where in code bundling, specifically with a lot of the AI stuff that's coming out, that's like build an app with, you know, natural language where you can sort of build out a, a whole app and then it will, you know, take it as a zip and you know, bundle it all into a zip and then send it to some server or allow a user to download it. And I think that there is a, there's definitely an attack vector there where what's being represented in the UI to the user is a completely non malicious app. Right. And then when you press download as zip, somehow you get a malicious app that downloaded to your system. Do any of these sort of quirks that you've uncovered sort of stand out to you as something, something that could cause that in that sort of environment?
+
+[01:29:26.09] -  Mathias Karlsson
+I mean, some of them, sure, it's kind of difficult to make it like add it as something, as a SIM link, but if you can represent like perhaps traversal, then that could work. And this like file length stuff getting truncated with unzip, I'm sure that can work. Oh yeah. Especially if like the UI normal license paths, but the actual file name is like blah, blah, blah, blah. And so that's kind of it, I think for the, like the reverse scenario where the server packages the zip and you get it versus you package the zip and you give it to them.
+
+[01:30:06.89] - Justin Gardner
+Maybe like a null byte as well. Yeah, you mentioned that putting a null byte in the name can truncate it. I think you're right. I think it has a lot to do with the way that the UI is presented to the user. One of the vulnerabilities I've found in the past is that was just being converted to a space for some reason in the ui. And so what I was able to do is just spam and create this super mega long file name that was just an empty line and pushed the file name off of the screen. And when it packaged it up, obviously you would overwrite whatever that file that was so the user would be looking at one index JS or whatever. But actually my super long index JS was the one being prioritized when packaged into the zip file. And so you're able to sort of sneak in hidden code to the local version, but not the version in the web app.
+
+[01:31:09.82] -  Mathias Karlsson
+Wow, that's nice. That's nice. It reminds me of like this was many years ago, but I read some bug and I'm sorry, I don't remember who wrote it either, but they had that bug in like a JavaScript minifier, which I thought was super interesting too, where you will have like what looks like super benign code, but when it's minimized it like becomes ridiculous.
+
+[01:31:32.72] - Justin Gardner
+Wow.
+
+[01:31:33.68] -  Mathias Karlsson
+Kind of same thing, like when you look at it it's like, yeah, this is fine, but when you actually use. Wasn't fine. Yeah, but yeah, I was going to say one more thing actually. When testing for path traversals, there's like one small difference. You can put like dot, slash, etc. But you can also put like an absolute path. So if you start the Internet with Slack, blah, blah, blah. So in theory they could exist like a server where they forbid in like path separators, but actually you can just slash and go from the front row. So that's good to know too.
+
+[01:32:15.56] - Justin Gardner
+That is good to note. Yeah, that kind of gives me sort of orange vibes with the whole document. Root confusion that happened with the Apache stuff. This last year's web research that came out. That confusion between the relative paths and the absolute paths is, is. Is very interesting and something that's a lot easier to implement with Archive Alchemist for sure than trying to figure out how to like create a freaking file called slash, temp, slash Please pleasework Txt.
+
+[01:32:49.23] -  Mathias Karlsson
+Yeah, exactly. Yeah, that's a good point too. Like if you want to put like Etsy Pass with, but you don't want to put your own file in there, then it can be good too.
+
+[01:33:04.43] - Justin Gardner
+Absolutely.
+
+[01:33:06.35] -  Mathias Karlsson
+You can load file content from files or from the CLI and stuff. So yeah, just try it out. Yeah. Oh yeah. But speaking of Unix file permissions that can be stored also in archives such as zip and tar. Sometimes you need it. Let's say you're in a position. I was actually in the situation where I could execute anything, any binary on the server and I in a separate place I had an upload, but it's like even if I upload a sh. It refused to execute it because it doesn't have.
+
+[01:33:45.77] - Justin Gardner
+That's gotta Be so frustrating, dude. Oh my gosh.
+
+[01:33:49.21] -  Mathias Karlsson
+Yeah. But then I actually did manage to get it because some SIP parsers will actually look at the file permissions stored in the SIP or TAR, whatever and honor that when they extract it.
+
+[01:34:02.89] - Justin Gardner
+I imagine that's in that local file metadata, that is after that first entry. Right. Entry pointer and then go to local file metadata and then there's maybe like, you know what kind of executability or something like that is for that specific file?
+
+[01:34:20.23] -  Mathias Karlsson
+Yeah, pretty much there is like a specific extra field for like UNIX file permissions. Because this is supposed to be like SIP is supposed to be for like all operating systems and stuff. But yeah, inside of that it's just like normal. So it's like set uid, set group sticky and there's some special flags and then it's like the who owns the file and. Yeah, wow. Thing like shimoding a file.
+
+[01:34:43.27] - Justin Gardner
+Yeah, setuid would be. Yeah, that'd be interesting too. Geez, you could get some pretty nasty privilege escalation and stuff like that as well.
+
+[01:34:52.06] -  Mathias Karlsson
+Yeah, I've never seen that work, but I mean you never know unless you try.
+
+[01:34:56.22] - Justin Gardner
+So that would be crazy, man. That'd be crazy. Wow. All right, so it allows you to keep those file permissions in some scenarios I'm looking through here. One of the things that we didn't talk about was hard links, and I don't know how much you want to talk about this in tar, the use of hard links. I don't even know what a hard link is. So maybe it's showing my, my Linux naivety here. But can you give a little intro into that and then say how those might be different than SIM links in the TAR environment?
+
+[01:35:34.27] -  Mathias Karlsson
+Yeah, so zip doesn't support hard links at all, but the TAR does. And also I'm far from an expert in like Linux file systems, but the way I understand it is that like a SIM link is just like a shortcut. It just points to some path and that path need to exist or whatever. It's just like when you go to the simlink path, the operating system is like, oh, this is a 301 redirect.
+
+[01:36:00.82] - Justin Gardner
+Yeah, yeah, exactly. Pointer.
+
+[01:36:03.39] -  Mathias Karlsson
+Okay, exactly. But whereas how hard links is like pointing to the same id, it's the same physical file on the disk, so it's not possible to have like a hard link and you remove one of them because on the disk you remove the same data. It's like two files pointing to the same place on the hard drive.
+
+[01:36:24.10] - Justin Gardner
+Oh, interesting. So in order to create A hard link, you would need to know, like, the actual storage location in. On a specific storage device or server.
+
+[01:36:35.97] -  Mathias Karlsson
+Yeah, but it can be like E2C passvd. You can make a hard link there, which is like, pretty funny. If you, if you're in a situation where you need to delete a file because a lot of like, CMSs and stuff, you. You would have like, okay, if this file exists, we're not in like, install mode. But if, if the thing is, like, it uploads it, extracts it to a temp directory, removes all those files, and then goes on. Then if you make a hard, hard link to this install file and then it removes it and it's like, whoop, now you're in install mode.
+
+[01:37:12.47] - Justin Gardner
+Now you're install mode and you just hit Install PHP and your code is it WP install php and now you're shelling on that server. That's crazy, man. Yeah, that's a great, That's a great shout. I like that.
+
+[01:37:26.06] -  Mathias Karlsson
+But I should also say, like, I've never seen someone actually allowing hard links in their implementation of Lane Web stuff. But again, you. Someday there will be one where someone has asked, like, their LLM, like, make sure you're following this.
+
+[01:37:50.51] - Justin Gardner
+Wow, dude, that's crazy, man. That is absolutely crazy. Yeah, I think it's great to know about those sort of things as well, because even if they're not going to, you know, work all the time in those environments where you're like, I'm so close to a shell, I need any, Anything I could possibly try, I want to try, you know, I think this is one of those things that would give you another, Another shot, you know? All right, so you've got some stuff down at the bottom here, like talking about how file names are stored in TAR archives because we covered zip, but we didn't really cover tar. Um, do you want to go through some of that or. We're. We're already an hour and a half in, so I know we're backtracking a little bit to, like, file formats here, but I would be interested to know how all this works as well.
+
+[01:38:38.64] -  Mathias Karlsson
+Yeah. So I think in terms of, like, good tips or like, how you test for this, how to, how to use the tool and like, what to look out for. I think that's all I got, so might as well talk about TAR a little bit since we had talked about zip. Sweet. But essentially, tar has its own file format. It doesn't have this database where it has a bunch of pointers. It's just like a dump File format. Start from the top and read a 512 block. Next 512. Next 512. And that's like a header with certain information of each this 512 blocks. And then it's the file data. And that's it. TAR is not. The TAR file format itself doesn't isn't compressed. And that's why you will see like TAR dot gc. First it's tarred and then it's jz. I guess that's good to know. But in any case the TAR file format is very old. I think it's from like 1970 or something like that.
+
+[01:39:42.53] - Justin Gardner
+Wow, that is old.
+
+[01:39:45.39] -  Mathias Karlsson
+Yeah, don't quote me on that, but it's very old at least. And in the beginning, the file name, I think that's what it's called. Yeah, the file name attribute in the block header, one of these 512, it was a fixed size 100 bytes because I guess they assumed you will never have like a full path longer than 100. But then at some later point they realized sometimes people have paths longer than 100. What they did was they did not change the specification because, you know, backwards compatibility I assume. But they added another field which is called like prefix. The prefix field is 155 fixed size long. So now you can have 255. And then I assume sometime later they were like, oh, maybe you need longer than 255 like we were talking about earlier. Like 4096 is like the Linux standard now. But then that's where the TAR paths kind of split into two the camps. And so there's actually two ways to represent file names in tar longer than 255. One of them is a special TAR feature which is called GNU longlink. And essentially how it works is that if it finds a file name that has a special name called longlink, then the parser is like, aha, this is not a real file. It just means it has a long name. So the file contents of the first block is the long path and then the next. Yeah, and then the next block down is the actual file data. So that's how they sold it. We can do a long link and then obviously you can have like arbitrary length more or less. But the other camp used the postix Pax header which is like more a general extension ability of the TAR format. So instead they also have a special name. So if it's like sign text headers, then there's like new line format, like an env file kind of, and it reads like line by line. And then you can have like paths equals the long path. But you have a bunch of other stuff you can put in the packet setters too. That should change. It's like to be able to extend the TARP basically. But one of the things they have is like the file limiting and then the next block after that is the file contents. So that was the short version. There's actually four places you can have file names.
+
+[01:42:47.86] - Justin Gardner
+Oh my gosh. In each one of these things. Things too. In zip and in tar, there's like four different ways you can represent the file. Like, you know, in zip you've got the initial, you know, entry name, the, the local file header, you've got the Unicode format one, you've got like the crc, you know, fallback, like you've got a bunch of these. And then in tar you've got the file name. The file name plus the prefix, the long link and the freaking packs headers. Dude, that's crazy. There's got to be. There's no way, there's no. If, if they are using multiple different extractors, they're cooked for sure. Because there's no way that all of these are aligning across, you know, multiple parsers.
+
+[01:43:28.60] -  Mathias Karlsson
+Yeah, yeah, pretty much, I think. But I think that the TAR camp or as opposed to sip, was more in line. So. So most of the tariff parsers I looked at or tested worked in the same way, but others didn't. So for sure there can be, there can be confusion and also like, I wonder.
+
+[01:43:56.73] - Justin Gardner
+I'm sorry, I'm sorry. I wonder if we could use that to do like a error based leak primitive in TAR where you create a file called onlink or like you create an archive. How would that work?
+
+[01:44:13.53] -  Mathias Karlsson
+That's a good point too. If you have. Sorry, I'm interrupting you.
+
+[01:44:16.93] - Justin Gardner
+Yeah, no, no, take it, take it, take it.
+
+[01:44:18.73] -  Mathias Karlsson
+You had this idea where the UI would package a sip. You know, if it packages a TAR and you name it that, what will happen?
+
+[01:44:27.42] - Justin Gardner
+I don't know exactly. That's very interesting at longlink. And then it'll try to read the first. However many blocks of, of, you know, however much is in that first block to get the, the file name. But that'll actually become the actual contents, will become the file name. Dude.
+
+[01:44:45.31] -  Mathias Karlsson
+Yeah, I think though there's also like some file attribute in, in the tower block header that needs to check out, but I haven't tested if people check that or not.
+
+[01:44:56.71] - Justin Gardner
+That's really interesting. Yeah, yeah, because then what you could do is at the Beginning of your. Let's say you wanted to overwrite the, you know, install.sh or whatever, right? You. When it extracts the tar, you. You can name your file at longlink and then it. And then in the, in the file, you know, create the first 512 bytes or whatever. Install.sh, you know, blank space for. For the padded out, right? And then it will, when it extracts the tar, it'll long link, grab that first bit, you know, that first block, name that, the file that, and then drop the rest of your content. Especially in a dirty file format like PHP or something like that. That would be super helpful where it's like, okay, maybe there's some crap surrounding it, but it's still going to run our code.
+
+[01:45:42.56] -  Mathias Karlsson
+That's a very good point. I bet that bug exists.
+
+[01:45:48.56] - Justin Gardner
+I bet so. I bet so. I'm sure there's some extra nuances to this whole long link functionality, but if you have an extractor that supports it, and it is kind of not very particular about the implementation, then that could work really well.
+
+[01:46:08.63] -  Mathias Karlsson
+So that's the brief on the zip and Tor at least. Dude.
+
+[01:46:14.47] - Justin Gardner
+Okay.
+
+[01:46:14.90] -  Mathias Karlsson
+If people want me to put other RK formats like RAR and stuff, tell me. And I will try, but so far I haven't seen those in Bounty. That's why it doesn't exist yet.
+
+[01:46:25.92] - Justin Gardner
+Yeah, I think targz and zip are the primary ones. Yeah. This long link and packs thing though, is definitely going to go into my methodology. Anytime I see a tar, anytime I see a tar, I'm going to think long link and packs and I'm going to refer back to the hacker notes for this episode and try to see if I can implement something like that. That would be really cool. Yeah, man. And you've got that. Every time I think about it, it gets cooler because you have, you know, assuming you have control of that file, you know, you can really build out the padding perfectly and everything like that. I love it, man. I love it. That's really cool. All right, dude. Well, frick. We. Our episodes always go for so long and I always just, you know, we go here and I'm like, oh, wow, this is an hour, 40 minute episode. Thank you so much, dude, for coming on and sharing about all of this. You can grab Archive alchemist at Matthias's GitHub, which we will link down below. It's Avlidian Brune, which I'm not going to spell, and slash archive Alchemist on GitHub. We'll put it in the description. Yeah, man, anything. Oh, I did mean to ask you, like I know that you said you found a couple of these bugs with these. Did you have any like particular bug story you wanted to share on the pod with this or do you or are you kind of gag ordered right now?
+
+[01:47:56.77] -  Mathias Karlsson
+A little bit gag ordered but I think other than that like after the fact realized I could have one shot it. That's probably like the best one.
+
+[01:48:08.64] - Justin Gardner
+That main one, that one you mentioned already. Very nice man. Well, thanks so much for coming on the pod and sharing, man. This is your third time on. We're definitely going to send you a mic. We're definitely going to send you some, some CTVB swag. I really appreciate it dude. And we'll also, you know, I think what we're going to try to do and I guess I'll go ahead and announce this on this episode is we are going to try to open up the Critical Research Lab a little bit more to researchers that like yourself. And one of the ways that we were thinking about doing this is kind of taking episodes like this where we just kind of sit down and try to toy out some research and talk about it together and then we'll try to get it, you know, formatted into a nice write up that we'll either put on hacker notes or put on the Research Lab website and fully attribute to you. So thank you so much for coming to Critical Thinking to share this research. This is definitely going to benefit the community a lot.
+
+[01:49:02.76] -  Mathias Karlsson
+Yeah, my pleasure. Thanks for. Thanks for having me again.
+
+[01:49:05.39] - Justin Gardner
+Of course man. That's the pod. Peace. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end y'. All. If you want more Critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of the master classes, hack alongs exclusive content and a full time time hunters guild if you're a full time hunter. It's a great time. Trust me. I'll see you there.

@@ -1,0 +1,473 @@
+Episode 124: Bug Bounty Lifestyle = Less Hacking Time?
+Source: https://www.criticalthinkingpodcast.io/episode-124-bug-bounty-lifestyle-less-hacking-time/
+======================================================================
+
+Title: Transcript - Thu, 29 May 2025 15:17:57 GMT
+Date: Thu, 29 May 2025 15:17:57 GMT, Duration: [00:45:26.08]
+[00:00:00.56] - Justin Gardner
+There are so many good, like deep, like low level researchers and CTF players that would be amazing bug hunters if they tried.
+
+[00:00:06.79] - Justin Gardner
+Oh yeah, yeah, 100%. So there are a lot of reasons why I love Threat Locker. I talk about it from time to time, but one of the reasons that's really cool is that they don't talk down to their users in their marketing material. Right? So let me give you an example. There's this new product they've released called Threat Locker Web Control. It allows you to simplify your environment by taking web control like website categorization and that sort of thing and creating policies for those categorizations and then sort of building that into the Threat Locker ecosystem so you don't have to have a third party doing it. Great simplicity. We love it. Right? But as I'm reading through this page and I'm listening to this little webinar snippet, I'm sharing my screen on YouTube. By the way, there's this one piece of marketing material that just makes me smile. Right? It says our Web Control does not rely on DNS to redirect users to another website as that will often cause certificate errors. Instead, they will be redirected to a company managed page with their instructions on their options. And at the end it mentions this Threat Locker browser extension that enhances the user experience, making it super easy for them to request permission to block sites. So I just, I just freaking love how they're like, yeah, you know, DNS, it's cool, but it causes certificate errors. So we're going to sort of work around that, right? They give you a technical explanation of the implementation, which is cool. And then also they care about the ux, right? That's why they built the browser extension, to make it easy for their users to get to the right spot and know their options when a website that they need to access is getting blocked. And I'll try not to yap about it for too long, but in this webinar here they also mention that there's like various types of categorization that is done and that they're using machine learning for that and you know, for their main type of categorization. But they also have a human go back and remove some of those false positives and they've already removed over 6,000 false positives and they've just launched this product a couple months ago. So clearly they're doing a great job here. Love the technical implementation. Love, love that they're simplifying the ecosystem. Way to go, Threat Locker. As always, all Right, let's go back to the show. That's it. Sup hackers? We got a this week in bug bounty real quick and we got a couple announcements from a couple different places. We'll start with yes We Hacks new program that went public Louis Vuitton. Now if you guys are following the livehacking event scene at all, there was a pretty sick live hacking event for Louis Vuitton that's happened in the past couple of years and I was salty that I didn't make it to that one. I would have loved to have hacked on them because it's a cool brand, right, Louis Vuitton. It's nice to be able to say you've hacked Louis Vuitton and now it's public on yes We Hack. Bounties are looks like $100 for a low, mediums up to 600, highs up to 1800 and criticals up to 4K. And that is in Euros. So a little bit bump there from USD seems like they're a pretty good program from what I've heard. They're good to work with. I wish we could get them to release like some hacker exclusive Louis Vuitton swag, but I know that they're really protective of their brand. So I don't know if I see that happening anytime soon, but that would be amazing. So yes, we hack. I know you're listening. You got to make that happen. But if any of you guys are interested, that program is now public on yes We Hack. The other one was something really, really scary that came out of a yes We Hack bug bounty program. And that was CVE2025, 47, 934, which is a open PGP JS signature and encryption bypass here. Very scary. Yeah. Essentially this affects inline signatures and the signed and encrypted messages. And I'll just go ahead and read from this thing here. Detached signatures were not affected, but in order to spoof, the attacker needs to create a single valid message signature, inline or detached, as well as plaintext data that was legitimately signed. And then they can construct an inline signed message or sign encrypted message with any data of the attacker's choice. Ooh, that one's bad. So yeah, I actually when I saw the CVE come across my my doc, I was like, I got to go update some code that I've written. I did and we're fine. But this is an extremely impactful vulnerability and is going to be used both on the client side and the server side because it affects OpenPGP JS. So you can see this in Node apps or you can see this in client side apps as well. The GitHub announcement right here. Credits. Yes, we hacks OpenPGP JS bug bounty program. And I just wanted to shout out Eduardo at the Coti and Labs team for finding that, because that's pretty sick. So if you guys are assessing any like open source apps and you know for sure they're using open pgp, then this CVE would be a good one to try to get your hands on the POC for. They did list the. Let me see where they are. Yeah, they did list the commits on GitHub that they used to fix it. So it should be pretty easy to reverse the actual vulnerability itself. All right, that's what I had for yes, we hack. Moving over to HackerOne, we had a write up on a program called Dust. And unfortunately this wasn't a bug bounty, this was a vdp. But the title of it was Stored XSS and File Upload Leads to Privilege Escalation and Full Workspace Takeover. And just kind of reading through this, the report is really well written and really well done. But this is exactly what we've talked about, which is these, you know, just like Web3AI also has Web2 problems, right? And this is just a traditional file upload content type issue, right, that affects this AI platform. And so when you're attacking AI, definitely, you know, make sure you're listening to all of Rezo's advice that he's talked about on the hacking series and also on his blog with the massive AI hacking write up. But also don't forget your just basic W or Web2 vulnerabilities, right, because they affect everything. All right, that's all I had on the this weekend bug bounty for this week. So let's get back to the show. Peace. I had some people over to my house yesterday because whenever you talk to your friends about being like a hacker, they're like, oh my gosh, I want to learn how to do that. So every couple months I'll run these, like it's probably like every two or three months I'll run these little like house hacker training things where I just kind of. I have a list of people that are like, yeah, I want to try that. Yeah, I want to try that. And I just send them all a message right when I'm about to do this and we just all gathered in my sunroom and I just cover a bunch of little basic things and then we spend like an hour, hour and a Half looking at HTTP requests and hacking targets. And dude, yesterday was like, was one of the best ones I've ever run because we found two bugs.
+
+[00:07:26.13] - Joseph Thacker
+No, you didn't. Oh my goodness, that's insane. I would have never expected to actually pop a bug. I figured you would start with like, I don't know, DVMH or something like that.
+
+[00:07:36.57] - Justin Gardner
+Yeah.
+
+[00:07:37.93] - Joseph Thacker
+Or dvwa. But anyways, yeah, yeah. I think in general this is like really cool that you do that. It makes me want to do it and I think that it probably saves people like weeks of time. There are so many simple questions you have at the beginning, like, what does this box do at the top? You know, like, what exactly is the URL versus the host header? You know, like, there's just so many like little small things that you don't understand as a beginner that take a lot of time to slowly to pick up on that people don't talk about that. They can just ask you in person like that.
+
+[00:08:06.63] - Justin Gardner
+So. So here's the recipe for that, man. This is what I've been kind of doing with people is I'll bring them over, I'll say in advance, you gotta like, your first challenge is to get kaido or burp set up on your computer, right? Yeah. And get the certificate thing sussed. Okay. And then when they arrive, they've got that done typically. So good work. And then I spend very little time talking about most of the time what I would do before is go into how HTTP works and stuff like that, but at this point I just say, hey, look, you can inspect HTTP here. This is the way that everything communicates. We need to look at the path. Just the path in the body. Don't worry about the headers right now.
+
+[00:08:47.17] - Joseph Thacker
+Yeah, yeah, yeah.
+
+[00:08:47.74] - Justin Gardner
+Just the path in the body of the request. Okay. And we're going to try to find. I give them a little lab on idors and I give them a little ad lab on client side access controls. Right. And then after we've done that, we pick a real app and we start, we just start poking at it and. And yeah, dude, it was crazy because yesterday the first, the first attack vector that we tried, it actually worked and I was like, guys, guys, wait, wait, wait, wait. This is not.
+
+[00:09:15.63] - Joseph Thacker
+Guys.
+
+[00:09:16.45] - Justin Gardner
+Yeah, this is not how this normally works. Like, and. And then later on we found another one that was definitely a valid vuln, but I just fear I've ruined them a little bit.
+
+[00:09:27.21] - Joseph Thacker
+Yeah, you did.
+
+[00:09:28.37] - Justin Gardner
+Yeah.
+
+[00:09:28.85] - Joseph Thacker
+All the rest of us spent months finding like informationals and.
+
+[00:09:33.33] - Justin Gardner
+Exactly.
+
+[00:09:34.28] - Joseph Thacker
+I promise it's a version link here. You shouldn't be telling your workers that there's a version leak here. You know, trying to justify little lame bugs. That's so cool.
+
+[00:09:42.27] - Justin Gardner
+Yeah, yeah, man, it's. It's cool. And we normally try to split it, split the bound evenly across the group so that everybody gets like, you know, a little hint of the wow, it got paid sort of thing. So, yeah, I do that for my friends that I know in real life. So please, like, I can't do it for everybody, guys. Please, please don't ask DM on that. But yeah, for the, for the people that I've. I've met in real life, they. It's. It's a pretty fun time. And I think as more advanced hackers, Right, like, this is a really fun little thing you can do for your friends that are like, I want to be a hacker too.
+
+[00:10:14.82] - Joseph Thacker
+Yeah. Honestly, I think that people that feel the urge to DM you about this should actually host it because they're going to learn so much by, like, walking someone through it. It keeps you very focused, keeps you trying things and then you're basically, like you said, you're, like, showing people what they think is really cool. So.
+
+[00:10:29.53] - Justin Gardner
+Yeah. Yeah, man, it was so hype. We were all, like, freaking out when we found a podcast. Awesome, man.
+
+[00:10:34.46] - Joseph Thacker
+Yeah. And you've got that energy that's in. That's. Wow. What's that called? Whenever. Something contagious. Yeah, you have very contagious energy. So I'm sure.
+
+[00:10:41.70] - Justin Gardner
+What's that word when it's contagious?
+
+[00:10:43.62] - Joseph Thacker
+Yeah, I was thinking some word like enthusiastic or something. But anyways. Yeah. You want to jump something technical?
+
+[00:10:49.53] - Justin Gardner
+Yeah, let's. Let's jump to the technical content. You want to take one first or should I? Yours is really good. Talk. Talk to them about the Supabase thing.
+
+[00:10:56.25] - Joseph Thacker
+Yeah. Cool. I mean, I think in general. So this is 100% a shout out to Shell S. Shell Justin Reinhart. I did not find this, but when he messaged me, I was like, oh, that's so genius. Because I've tried to test Supabase related apps. Oh. So anyone who doesn't know what Supabase is, basically, it's like a managed postgres that has a whole bunch of, like, default functionality, like our back control and all this. And nearly every AI app these days, like, you know, new startups or if you use like bolt new or V0, a lot of them are using Supabase under the hood and they'll even, like, sometimes have a button that's like Enable Supabase, integrate Supabase. Like so it's baked into so many of these new AI apps anyways, their API calls for pulling stuff back often use a format where it's like equals EQ dot and then like a uuid and then that will fetch some object. So it might be a user object, it might be a conversation object, it might be whatever you name it. Right. And I had tried putting in other UUIDs from other places in the app, like you know, cross user testing and that sort of thing. And if they have row level access turned on, it doesn't work. And so, you know, I found like where row level security is disabled and I've reported that to some, some people. Um, one thing that I for some reason had never thought to try that Justin found, which is amazing, is just doing LT so less than or GT greater than and then putting in a UUID that's like, like GT. And then all. All 0uuid or LT all 999uuid. Right.
+
+[00:12:23.69] - Justin Gardner
+Actually so weird that it processes it like that because it's like UUIDs aren't.
+
+[00:12:28.21] - Joseph Thacker
+Yeah, they're not numeric in that way.
+
+[00:12:29.97] - Justin Gardner
+Yeah. Okay, so I'm going to share my screen really quick. I was trying to find something that has that syntax in it and I was googling around. This is the only thing I could find that had it. But this is a GitHub discussion and you can see it right here. This is what you're talking about, right?
+
+[00:12:47.13] - Joseph Thacker
+Yep, that's exactly it. It's always like a select star too for some reason.
+
+[00:12:51.74] - Justin Gardner
+That's a weird format, man. I've never seen anything like that.
+
+[00:12:55.58] - Joseph Thacker
+Yeah. Um, yeah.
+
+[00:12:57.67] - Justin Gardner
+And then here we go. Right. This is the actual format right here, EQ dot. So he changed this to like less than or you know, zeroed out the whole UUID and then did greater than or something like that. And it. And it processed the UUIDs as a numeric entity.
+
+[00:13:10.55] - Joseph Thacker
+Yeah, it's always looks super juicy because I mean look at the end it looks like you're just like injecting straight into a query and they always look that way. I don't know if that's just by design in general. It is usually sort of secure. Ish. I've found plenty where it's not. But anyways, really interesting and a very quick tip for people to go find some bugs in these new.
+
+[00:13:28.38] - Justin Gardner
+I would definitely have not have thought that you could do a less than or greater than a uuid. So that's got to be a Weird quirk to Supabase. Or maybe I'm off on that. Hit up the hashtag corrections channel on the critical thinking Discord if you've got more info on what I'm missing about that. But yeah, that's definitely a cool one. All right, I'll share this next one here, guys. There, there are a couple people out there that whenever they tweet, you should just be paying attention. Okay. And. And lately Jorian has become that for me, like he really has. He's been dropping stuff left and right. That is really impactful. Slonzer has has become that lately. You know, like there are a couple people that weren't really on my radar as much besides the past couple months, and they're just crushing it. Zero is another that researcher. ZH E R O But anyway, here's the latest post by Jordan that came up in my in my notifications because I have no notifications turned on for this guy. And it's a really interesting thing that he has here, which is there's a fun trick to detect when actions like shortcuts or clicks are happening in a cross origin iframe, which is not something that you normally are able to do very well and something that I've needed in past exploits to detect when a click has occurred inside of an iframe. And the way that.
+
+[00:14:52.48] - Joseph Thacker
+Because you need to update something like you need to update what's drawn on screen or something.
+
+[00:14:55.67] - Justin Gardner
+Yeah, exactly. Because if you're clickjacking or something like that, right, it's sometimes helpful to understand whether they've clicked in the button in that iframe so that you can maybe send a post message or do something to manipulate the page. Or if you need to harvest multiple clicks, then you can change your offset on the page to click on a different button this next time or something like that. This trick that he has here is really interesting. It uses Navigator useraactivation isactive and it checks it on an interval of zero milliseconds. So it's just constantly checking it. Then as soon as a a user activation is triggered. So on the top level page, apparently this can also detect clicks. In the bottom level page, it consumes that user activation by doing a window open which consumes the user activation and then instantly closes it. So it's boom boom. And then now that page is not selected again. So the user, if they want to click on something again, it will trigger that user activation call once again and then you can repeat the process. So it's a way for you to constantly like Harvest a change to the user activation state and then reset it so that you can detect it again. Very, very smart technique. Definitely going to be using that in some of my client side exploits in the future.
+
+[00:16:22.16] - Joseph Thacker
+I've noticed that this comes from Jorian quote tweeting a person named Atomic Byte where they somehow do clip jacking where like you can get owned by copying. That's like really unique. I need to go in and read this.
+
+[00:16:34.11] - Justin Gardner
+Yeah, let me. Yeah, exactly. It is. That's another one. Lately, um, it's been crazy. So let me, let me go to this article. I read through this and here's the.
+
+[00:16:43.71] - Joseph Thacker
+POC on the me on pronunciation. I think it's just all, just all.
+
+[00:16:47.59] - Justin Gardner
+Okay, well, so sorry, dude. We do our best for podcasters, you know, like it's difficult, but check out this POC dude. So he pastes it in here and he says just hold down Control acv and then he grabs all this information from this domain. Right? So you can embed a page and then there is like you just press Control A, Control C selects everything on the page and then the attacker can, using this click detect or this event detection can then focus, force focus onto a text area. And then when they press Control V, it pastes that content into the text area. And so it's a very sneaky way to do like cross site hijacking of information. And I've actually seen some research by Matan Bear that is also really, really cool on this that I'm going to have him come on and talk about at some point where you can do something very similar. So yeah, I got to write that down because people want more from the researchers.
+
+[00:17:51.40] - Joseph Thacker
+Come on, Justin.
+
+[00:17:52.75] - Justin Gardner
+I know, I know. And I. And they've been finding cool stuff. We just haven't done the thing.
+
+[00:17:57.89] - Joseph Thacker
+Yeah.
+
+[00:17:58.60] - Justin Gardner
+Published it. So there's going to be more coming from that soon if I can.
+
+[00:18:01.56] - Joseph Thacker
+The phrase is what gets measured gets managed. So you need to like say we're going to release one thing per month or something.
+
+[00:18:09.08] - Justin Gardner
+Yeah, yeah, dude. Yeah. But it's difficult, right? And that kind of flows into our topic for later where it's like talking about how to balance the opportunities that you get when you're a full time book bounty hunter and like the reason that you maybe became a full time bug bounty hunter in the first place, which is to live a life of full flexibility.
+
+[00:18:27.55] - Joseph Thacker
+Right.
+
+[00:18:28.59] - Justin Gardner
+So anyway, we'll get to that. But let's, let's, let's pound out the rest of this technical content first.
+
+[00:18:33.07] - Joseph Thacker
+Cool. Yeah, let's go super technical first and then that way throughout the episode we slowly get less technical. But the thread I wanted to share was and mostly it's just a user to follow but let me share my screen. His name is Wyatt Walls but he's kind of been around the prompt injection space a little bit. I don't know them other than you know, following them on X share screen.
+
+[00:18:57.23] - Justin Gardner
+Hopefully is this.
+
+[00:18:59.23] - Joseph Thacker
+Let's see we are going to leak.
+
+[00:19:01.19] - Justin Gardner
+My messages Left left hand draft sorry.
+
+[00:19:03.39] - Joseph Thacker
+For yep left hand draft. Sorry to the editors. Anyways the they basically did really well on the gray swan like hacker hacker prompt challenge or whatever I think you people probably saw me tweet about or whatever. Grace one is a company that makes like models called Signet and they're like pretty resilient prompt injection. Anyways they ran a challenge where you could earn money and stuff and the their you know Wyatt is now allowed to tweet about it and so he basically breaks down in this thread which we'll share all like a bunch of different prompt injection payloads where they're trying to get an email agent to do malicious actions and that's really useful and beneficial because one agents are going to keep cropping up. Two as we'll talk about in just a second with Google I O Google is obviously cares deeply about this stuff and pays well and their Gemini is now going to basically be able to access your emails from like all over the place. Like look through your docs, look through your emails. Like yeah, I've got a lot to say about Google I O in just a second. But anyways all that to say this is a really good thread on prompt injection payloads and the ways that you could weaponize or get malicious actions out of like an email agent. So people should just look at this. I don't want to beat a dead horse about it and I also know that we're going to train on time today but you should follow, you should follow this person and also if you're interested in AI security and also potentially you know use these payloads to test Google or other companies that have big bug money programs.
+
+[00:20:24.17] - Justin Gardner
+So so speaking of like programs that have you know that you need to put a lot of payloads through and stuff like that. Are you able to talk about the thing you showed me right before this podcast or does that need to wait a little bit?
+
+[00:20:35.21] - Joseph Thacker
+No, I think it's fine. I don't mind to share. I don't. I don't think that I'm doing anything there that one it's people to yeah One people can replicate it, that's great. If they can't, that's not. That's fine too. But anyways, I have basically been doing AI safety testing for a major, major model provider. Since it's a private program, I won't mention it, but I'm sure most people saw it. They tweeted about it, actually. Yeah, I can just say it since they tweeted about it. Anthropic basically has an AI safety challenge going on, and anyone who applies can do it. So you should go apply. It's really cool. But the way it works is they've got some malicious prompts that if you can get the model to respond to, then you get a bounty. And they then will submit your same payload with their. With their hidden request that they want to see if it'll pass on the back end. And if it also passes those, you get an even bigger bounty. So that's really cool. But I wrote a system that is kind of similar to Haddock's system. I assume his is better. He's been cranking on it for longer. And it's similar to what this company that I'm an advisor for called Splix or SPLX made internally that they use for their stuff. Basically, when it comes to making a property payload, as you and I discussed on the Google episode, like, there's always like a goal or, you know, you're trying to do something, so you have to have the model respond in a certain way. And then often you'll need to like bypass guardrails. And sometimes you do that through. Through obfuscation things. And so I know whenever Haddock described his, he described it as like a tactic or like a goal, and then like a technique, like, but through this form of injection or through this form of storytelling or whatever, and then the obfuscation at the end, which is like base 64 encoded or invisible unicoded tags or whatever. And that's cool, but. But I always thought like, man, that's still you selecting all three items and generating and then copying and pasting the payload, blah, blah, blah. I needed that to be way more automated. So when I built mine, I basically. It's like two step. The first step is it iterates over every attack tactic that I could come up with. I'm sure there are a lot more. I need to refine those prompts. But every attack tactic and then every obfuscation tactic that I could come up with, and then I put in a custom goal and then when I hit run it, it does every permutation of the tactic and the obfusation payload, all of that goes to a prompt writer. And so I'm using Sonnet 3.7 for my prompt writer because Anthropic has in their console, if people don't know this, it's like pretty high value, high utility. Basically. If you're designing some sort of AI app and you want to improve your prompt inside of Anthropic console, like in the Workbench I think is what it's called, you can have it write a prompt for your app. And it's really good. And so I was like, so I'll probably have this thing write the prompts. So it takes my goal, it takes my tactic that I want to use to try to get the model to respond unsafely. And it takes my obfuscation payload, and it gives that to the prompt writer, which is sonnet 3.7. It outputs the. The prompt that then the malicious prompt that then tries to get this new model they're testing to respond in an unsafe fashion.
+
+[00:23:21.27] - Justin Gardner
+So it's kind of like Inception, dude.
+
+[00:23:23.59] - Joseph Thacker
+Yeah, well, that's actually one thing that makes it really hard. So actually, this is a really good pro tip for anybody who's out there developing apps that deal with prompt injection or gel breaks. If you want to write code, like let's say you're using Cursor and a part of your app is a prompt or a jailbreak, one thing that gets confusing is the agent now is influenced by that. So it's really hard to write a code around that because it's like the model has to, like, hold this meta state in its mind and, like, not get confused by all these jailbreak payloads as it's trying to write code over here. And so the way that I have kind of fixed that or solved that, so this is the pro tip for everybody, is basically template all those out into a file that you don't give access to the model and then just let it have those variable names or those enums or whatever.
+
+[00:24:04.15] - Justin Gardner
+Oh, interesting.
+
+[00:24:04.78] - Joseph Thacker
+So it can use those enums in the process of writing its code, but it can't see those payloads. And then you can edit those payloads or just include that when you're executing the app at runtime, but don't include that in the context because all of those payloads will confuse it. I actually do that a lot with Shift when we're working on Shift and stuff. Because those payloads can confuse it as well.
+
+[00:24:22.63] - Justin Gardner
+Yeah. Yeah. Wow, that's a lot of. Yeah, that is a lot for it to keep straight. I'm sure. But it's interesting that you're using AI to build a prompt to hack AI. I feel like they would deny. I feel like you might run into denials on the prompter.
+
+[00:24:36.50] - Joseph Thacker
+You're exactly right. So I was worried about that. And for some reason, Sonic3.7 is fine with it. Yeah, I do agree with you. I thought I would have to, like, convert to Grok or something that's like, you know, less safe. That's like. Doesn't refuse at all. Yeah, but I haven't had to yet, so.
+
+[00:24:50.26] - Justin Gardner
+Yeah, that's funny. Croc just doesn't refuse anything.
+
+[00:24:53.23] - Joseph Thacker
+Grok has no refusals. Yeah. You can convince Grok to do whatever you want.
+
+[00:24:56.93] - Justin Gardner
+That's amazing.
+
+[00:24:57.28] - Joseph Thacker
+And it's really smart, so it's good for hacking.
+
+[00:24:59.49] - Justin Gardner
+Nice. All right, next on the list, I just wanted to give a shout out to the Wiz team. I just went on their podcast and did an episode with them. Lots of fun. So check out the podcast. Crying out.
+
+[00:25:09.49] - Joseph Thacker
+How is that episode performing? Have they told you any stats or metrics?
+
+[00:25:12.17] - Justin Gardner
+I haven't checked it out, actually. I have to go see. But definitely go check it out, guys, if you want more content. You've been saying for a while, Joseph, that we should do, like, interview of me because most of the time I'm on here interviewing people.
+
+[00:25:26.74] - Joseph Thacker
+Yeah.
+
+[00:25:27.09] - Justin Gardner
+And stuff like that. And so Crying Out Cloud is kind of a version of that. And they spend a lot of time. They actually really did their research on me. They're like, so you play volleyball, right? So you do jiu jitsu. Right. And I'm like, when you were six.
+
+[00:25:37.57] - Joseph Thacker
+And a half years old and you fell off the stoop and you hit the. Exactly. How was that?
+
+[00:25:41.05] - Justin Gardner
+Geez. They got some, like, serious recon going on over there.
+
+[00:25:45.42] - Joseph Thacker
+Like, that makes. That makes interviews great, though. I'm a huge fan of podcasts, and one of my favorites is Conversations with Tyler. Tyler Cowen is just a polymath about everything and interviews experts on everything, and he reads anything they've ever written, even if it's like, multiple books and digs deep. And those always make for some of the best questions.
+
+[00:26:02.40] - Justin Gardner
+Yeah. So it was a great interview. So we'll link it in the description, But I just wanted to also shout out them because their research team won pwn to own, which is a huge accomplishment. And that's something that we've kind of been. I've been trying a little bit to get people from PWN to own on the podcast. We had Synsonology on and Sharon Brisonov that did some pwn to Own stuff. So I definitely want to get more people from the PWN to Own space onto the podcast and talk to them. So I'm going to send out some feelers to some of the people that performed well at this Phone to Own and see if we can get more people on because I think it is a really different world than the normal web bug bounty world and I think I would like to try to cross that gap a little bit. I think that'd be.
+
+[00:26:45.30] - Joseph Thacker
+There are so many good, deep, low level researchers and CTF players that would be amazing bug hunters if they tried.
+
+[00:26:52.38] - Justin Gardner
+Oh yeah, yeah, A hundred percent speaking.
+
+[00:26:54.38] - Joseph Thacker
+A little mini shout out. Jacoby, you know, a lot of people might know him from some of his like Microsoft research and stuff. He has been like leaning into bug Bounty and tweeting a lot about it and I just love it so much because like I think he's a, you know, a researcher and like a technical person who's like, knows a lot about Microsoft products and has never really done bug bounty and like within a week was already finding bugs on Microsoft and.
+
+[00:27:15.05] - Justin Gardner
+So yeah, dude, what's his. What's his handle?
+
+[00:27:17.50] - Joseph Thacker
+I think it's I am Jacoby.
+
+[00:27:19.43] - Justin Gardner
+I am Jacoby.
+
+[00:27:20.95] - Joseph Thacker
+Yeah.
+
+[00:27:21.39] - Justin Gardner
+Oh yeah. Oh, okay. Yeah. For some reason I always. I. I'd never heard anybody say that name out loud.
+
+[00:27:29.58] - Joseph Thacker
+Did you say Jacoby or something?
+
+[00:27:31.34] - Justin Gardner
+Jacoby. That's what I was thinking. It was. And when you said Jacoby I was like the frick is that. Yeah, no, I saw that.
+
+[00:27:37.75] - Joseph Thacker
+I don't know.
+
+[00:27:38.23] - Justin Gardner
+But so, so yeah, definitely like to see people pivoting into that space a little bit. All right. And then this was the other one that we wanted to talk about was once again our boy, Gareth Hayes. Portswigger Research pointed something out that was really cool. That actually originally came from Simon Peters. And this is that use actually a new XSS vector with the image tag and it no longer requires the source property.
+
+[00:28:11.69] - Joseph Thacker
+Image text trigger on error insert. So hot these days. Image Image Related things, right?
+
+[00:28:16.80] - Justin Gardner
+Yes it is.
+
+[00:28:17.45] - Joseph Thacker
+Dude, seriously, to close the loop on that. They patched your leak.
+
+[00:28:21.36] - Justin Gardner
+Shoot, they did patch it, man. Freaking Jun Kokatsu, man. I swear this guy. I should not have tagged him. But yeah, they actually turned it around much faster than I expected. I was expecting a year plus deprecation time on that, but I guess they just said this has got to be closed up now. And it makes sense because the refer policy being able to be bypassed is pretty bad.
+
+[00:28:47.00] - Joseph Thacker
+Yep. Yeah. One click atos. I saw somebody like Max or whatever got paid twice.
+
+[00:28:51.55] - Justin Gardner
+Yeah, I think like, yeah, over the course of. Over what I've seen in the critical thinking community, I saw 15 +atos get paid out with that bug. Like it was crazy. Okay, anyway, back to this. This is not related to refer policy or leaks or anything like that.
+
+[00:29:06.75] - Joseph Thacker
+I thought it was interesting and funny that they're both image.
+
+[00:29:09.14] - Justin Gardner
+Yeah, yeah.
+
+[00:29:09.57] - Joseph Thacker
+Tell us how this works.
+
+[00:29:10.66] - Justin Gardner
+So Gareth, you know, tweeted out just a tweet that says image source set equals one on air equals alert one. And this is interesting because typically the source parameter was required for images image based exploits. In the past, the on air and the onload won't work unless you have a source attribute. But now you can actually get it to trigger with source set. So if there's something looking for source equals or something like that or you're having some problem there, you can use source set equals 1 and that will also trigger the onerror for an image tag. And then the guy that he was quote, tweeting on this assignment said actually you can trigger it without even having any other attributes. So just image onerror alert 1. If you wrap it in a source tag that has Source Set equal to 1. Oh, interesting. Which I was really confused about, but I tried it in my browser and it worked. So. Yeah, it's just those little niche things you want to know about when you're in these exploitation scenarios where maybe you're going up for some weird waf or something that really does not like the source attribute on an image or something. The source set could get you past it.
+
+[00:30:20.82] - Joseph Thacker
+Sweet.
+
+[00:30:21.86] - Justin Gardner
+Yeah, pretty solid.
+
+[00:30:23.30] - Joseph Thacker
+Let's use the next three minutes to cover any other news and then we'll save the last 15 for our kind of discussion.
+
+[00:30:29.30] - Justin Gardner
+Okay, yeah, that sounds good, man. I wanted to.
+
+[00:30:32.51] - Joseph Thacker
+Do you want me to. Are you more interested in hearing about Google I O Since you didn't pay attention, Tune in. Or the coding agent stuff, I'll just, I'll wrap it all in one quick thing.
+
+[00:30:39.64] - Justin Gardner
+Do it, do it, Wrap it. Because I'd like to hear about those.
+
+[00:30:41.72] - Joseph Thacker
+Yeah, yeah. So crazy. In the last like three or four days, we'll just call it the last week, but I think it's really been the last three or four days. We've seen Codex be released from OpenAI, which is like basically their hacking or their coding agent. So you can even apparently like use it from your phone. The majority of these coding agents, I think are in like the $200 a month price. Tier, but they're really good. Like, I've seen a lot of people who are very technical talk about how impressed they are with it. But anyways, you can basically just like, you just connect up your GitHub and you choose like a branch and you just like give it a prompt and it goes, and it'll do a PR and then submit the PR and it happens through your auth. So it kind of looks like you did it too, which is interesting. But you can basically go in and then review the PR and just approve it or deny it. And so you can just spin up 100 of these, right? As long as you have the time to review the PRs, just spin them up for whatever features you want to add to your app and then just like approved, deny it and kind of have like automated.
+
+[00:31:31.53] - Justin Gardner
+Yeah, yeah, dude, I don't know. I mean, cursor, like, even with cursor currently, like, does implement features pretty well, but it definitely needs to be tweaked when things are more complex. And I think the real crazy thing that's going to happen with these things is when it can actually validate that it wrote the code correctly. So you can give it a scenario where it's like, all right, come to this webpage, click this button, enter this text, and this object should be added to the page.
+
+[00:31:57.72] - Joseph Thacker
+And there's no doubt that that's possible now with. Through things like Selenium and browser use and MCP servers. Like, there's no doubt that that's possible. But yeah, I haven't seen it like, done really well yet.
+
+[00:32:07.48] - Justin Gardner
+Yeah, it needs to be able to validate that it wrote the code correctly, you know, like, and then if it can, then it's like, oh, this is sick. Like, could you imagine just, just like essentially just writing in plain English test cases or essentially writing software would then get reduced to like, user requirements.
+
+[00:32:23.28] - Joseph Thacker
+Right.
+
+[00:32:23.60] - Justin Gardner
+As you know, if anybody's ever done like the user stories or whatever, it's like, as a user, I want to do, you know, xyz. And then you just write those and you give it to the AI and the AI will write the code, check that it did the thing correctly.
+
+[00:32:35.80] - Joseph Thacker
+Right.
+
+[00:32:36.13] - Justin Gardner
+And then.
+
+[00:32:36.73] - Joseph Thacker
+Dude, no, I think. I think it's coming. Yeah. So multiple companies release stuff like that. Google's is called Juuls Jules Google and J U L E S and it was a part of their Google I O release, which released a ton of crazy stuff. They have. They have glasses finally, you know, like Google Glass started it. This is kind of closing the loop on it. That are fully multimodal, where they can. It can see the world. You can talk about your world. You can be like, where did I leave my coffee cup? Or whatever. And it overlays it on the glasses. And they, like, are pretty small form factor. Like, they looked pretty normal to me on stage.
+
+[00:33:11.19] - Justin Gardner
+Yeah, I had. I did see that. And I was. And I think they're doing it more correctly this time where. Where, like, it actually is powered by your phone and the thing on your glasses is just screen, you know, batteries and microphone, you know, input. Right. And then everything gets powered from the, you know, phone in your pocket. I think that makes way more sense.
+
+[00:33:33.46] - Joseph Thacker
+Yeah.
+
+[00:33:33.77] - Justin Gardner
+Yeah.
+
+[00:33:33.98] - Joseph Thacker
+This still, like, I finally got my meta AI Ray Bans hooked up to my new phone. For some reason, I wasn't using them for months because I tried to switch it and it didn't work. And I eventually did it, and it's such a game changer. It's so nice. But anyways, they also released the craziest video generation I've seen. Have you seen any of these videos?
+
+[00:33:50.64] - Justin Gardner
+What is that VO3 or something like that? Is that. Yeah.
+
+[00:33:53.68] - Joseph Thacker
+With audio?
+
+[00:33:54.55] - Justin Gardner
+No, but I freaking saw it in the code when we were hacking in Tokyo before it got released. VO3. That's. That's kind of crazy. What is that? And then I couldn't get it to, like, work.
+
+[00:34:03.51] - Joseph Thacker
+It is insane. Like, you need to, as soon as we hang up the call, go look at it. Like, it can basically do a full video for you of whatever you want and include audio. And if. When people are speaking, like, their mouth moves perfectly with the. It's insane. Like, somebody generated, like, a guy rapping about VO3 and it, like, just looks perfect. Like, you could convince me it's real. So.
+
+[00:34:21.28] - Justin Gardner
+Dude, it's crazy. We're doing the podcast right now with VO3.
+
+[00:34:23.69] - Joseph Thacker
+Yeah, yeah. This is.
+
+[00:34:25.28] - Justin Gardner
+No, no, no. I'm just kidding. I'm kidding.
+
+[00:34:27.44] - Joseph Thacker
+I've seen a lot of people. It's so good, though. I've seen a lot of people tweeting videos and saying, like, can't believe this is AI generated. And I. I don't think it is. I think they're just, like, posting, like, Rick.
+
+[00:34:36.80] - Justin Gardner
+Like.
+
+[00:34:37.09] - Joseph Thacker
+Like, they're like the Rick Astley Rick roll. But I legitimately can't tell because it's over fit. You know how some of the image models would, like, output, like, Disney characters that look exactly like Disney characters?
+
+[00:34:45.48] - Justin Gardner
+Yeah.
+
+[00:34:45.84] - Joseph Thacker
+And you could. It was a screenshot from one of the movies. That's how. That's how overfit VO3 is. So if you have it make like copyright video of like, you know, Rick Astley, it looks exactly like it. So you can't actually tell if it's AI generator or it's like actually scraping from the video. So yeah, we're, we're entering that weird uncanny valley.
+
+[00:35:04.15] - Justin Gardner
+Yeah, that's. That gets a little bit, let's get. It gets a little bit whack for sure. We will be on this pod doing things live. I was telling Richard that it would be really cool if like, if I like fumbled over my words during a ad read or like if I, you know, needed to bleep something out instead of bleeping it, you know, it just seamlessly deleted it. You know, I was thinking, I think.
+
+[00:35:26.42] - Joseph Thacker
+That'S coming very soon. I think it's 100% possible with video editing and all that. So anyways. Oh, we went a little over time. But anyways, my whole point was, and I posted this in the critical thinkers chat was like, Google releases 10 products, go forth and hack. Right. I think it's like really cool that stuff like that can happen. And companies are releasing stuff so fast.
+
+[00:35:43.98] - Justin Gardner
+They are cranking stuff out. So there's bugs there for sure. Hundred percent. All right, so I guess you and I were kind of talking about what we wanted to do with this episode beforehand and I kind of wanted to end this with a little bit of a chat about full time bug bounty. Because, you know, you've been doing full time bug bounty for how long now?
+
+[00:36:02.21] - Joseph Thacker
+Five months? February, March, April, May. Yeah, for four months.
+
+[00:36:07.03] - Justin Gardner
+Four months, yeah. So. And, and I know that you and I have both had this experience where it's like we, we become full time bug bounty hunters for the purpose of living our life with flexibility. Right. And, and you know, to be honest, the, the money part of full time bug bounty is great too. And I think I would, I think it would be possible for me to get a job outside of bug bounty that pays more than I make in bug bounty for sure. But, but it would be a little bit of a struggle. And the, the major game changer with bug bounty is that you have complete flexibility. But that complete flexibility can kind of, I don't know, it affects your, your, your, your full time bug bounty vibe. Right? You're not, I feel like I'm not doing that much bug bounty even though I'm full time book bounty.
+
+[00:36:51.80] - Joseph Thacker
+I definitely feel that way. You know who does a good job of it? Douglas. Like he's, he's full time and he'll very frequently Be like, yep, I'm on my five day streak, five bugs, five days in a row, or whatever.
+
+[00:37:01.01] - Justin Gardner
+Dang, dude.
+
+[00:37:01.82] - Joseph Thacker
+So maybe it's worth asking him. But yeah. So I guess your question is kind of like, how has that been for me?
+
+[00:37:06.94] - Justin Gardner
+Yeah, yeah, that's what I'm asking.
+
+[00:37:08.38] - Joseph Thacker
+Yeah. No, you're fine. Yeah. I think that, I thought that you were building there. Yeah. So I think that like you said, being a. Let's just start at the beginning. I was a full time employee. I like loved Bug Bounty so much. I actually, there's a misconception to kind of clear up here. I was like considering going full time Bug bounty when I was a full time employee, but there were some people who were like, what if it takes a joy away from it for you? Like you like it so much. What if when you're doing it full time you don't enjoy it as much?
+
+[00:37:35.46] - Justin Gardner
+Yeah.
+
+[00:37:36.09] - Joseph Thacker
+I think that that's just the human brain playing tricks on people. I think that's like saying, hey, what if you make too much money? What, what if, what if you got too buff? You know? Like there are people, dude, this is a really common. Do you know about this, this stereotype? There are a lot of people who are like, I don't want to lift weights because I don't want to get too big. It's like, yeah, well, guess what? You won't do that. And if you do, you just not work out for a few months and you'll be small again. It's like, it's not like no one is going to accidentally get too big. No one's going to accidentally make too much money. And I think that's the same way here. It's like if you really love something, I think doing slightly more of it, especially where you have a fallback plan where anyone who's a top bug hunter can go get a job pretty easily. Like, we all have these like big safety nets, those of us who like have found plenty of bugs. So I say all that to say, like, when I left I was doing it to do more Bug Bounty. And you're right, it has been kind of paradoxical in the sense that I like am doing more, but it's not a lot more. So I think the real win is, and I know you asked me about this before we started rolling, that what it does unlock is all of the other things that were like maybe bouncing around in your head or other things that you wanted to do. So I have a lot of ideas every day. Like they just pop into my head. Whether it's business ideas or whether it's research ideas. And I was never able to pursue them. I don't know if that's true for you or like how that's been for you. If I had to guess, critical thinking kind of was that for you and maybe the things you've done with critical thinking.
+
+[00:38:56.05] - Justin Gardner
+Exactly. Yeah, you're right.
+
+[00:38:58.05] - Joseph Thacker
+And so I think if you are going to go full time bug bounty and like to become a full time bug bounty hunter and you know, you're just like, you know, looking for reasons to do it, you know, we're obviously big fans of it. I think that that's a big thing you could potentially unlock is instead of it being your one hobby or your big hobby outside of work, now when it becomes the main thing, you have this freedom to do other stuff that you love, which for me has been like doing advisorships, doing critical thinking, doing, doing just independent research or like AI stuff. What has it been for you, Justin? What is your life outside of look like? Like you said, you're not doing that much. What's it filled with?
+
+[00:39:35.40] - Justin Gardner
+Yeah, well, I mean like I think here's the other thing about this is like we, we make this decision to get the freedom right and then I think a piece of longevity for being a full time Bogani hunter is living in that freedom. Right? And I think you know, J Rock posted in the. The accountability, you know for the full time Hunters Guild and the Accountability Channel, he was saying, you know, hey, it's. I've. I crushed it for the first like however many months of this year and I've just been chilling for the past four weeks. You know, I'm like hell yeah dude, that's what you got to. And I saw him when I was at North Sec in Canada and I hung out with him for a bit. Super nice place by the way. He's got a great house and thank you for being a great host. J Rock. I know you listen to these episodes but he was saying that that's. And I think it was very wise that that is a very key part of longevity in bug bounty as well. Right. Is like you can burn out really easily. So live in that freedom that you optimized for. And it doesn't necessarily mean you are going to be spending your eight hours a day even hacking where, where you might want to be able to do other things like go play tennis at 11am on a Tuesday, you know, like. And, and that's just a part of living that lifestyle.
+
+[00:40:45.17] - Joseph Thacker
+Dude, speaking of living in it and Just sitting in it.
+
+[00:40:47.65] - Justin Gardner
+Yeah.
+
+[00:40:48.13] - Joseph Thacker
+I think this was mentioned on the Chris Williamson podcast, like the one, the most recent one he released, if anybody wants to go look at that. But it's also something that's been on my mind and it's something you mentioned. So I feel like this is like, sometimes I call this. Obviously, obviously I'm a Christian. I sometimes call this like God connecting the dots. But, yeah, you know, maybe it's just a theme for some people, right? But I think there's a theme here that everyone needs to grasp onto, which just being grateful and like, sitting in your wins. So Chris Williamson was saying that, like, for motivated people, they don't sit in their wins, right? It's like they set some goal, they get it, and it's like the next day they're working on the next thing. I think when you mentioned this earlier, you mentioned it in the context of Kaido, like, just being an advisor for Kaido, like, you've just been really enjoying it and you've been just thinking about that. I don't think we just. I don't think we think about the joy that our hobbies or our interests bring us very often. And, like, I want to do that a lot more.
+
+[00:41:34.67] - Justin Gardner
+Like, we need to do that, man.
+
+[00:41:35.86] - Joseph Thacker
+Yeah. I think anyone who's a critical thinker or in the guild, like, they are at the top of the coolest industry with the coolest skill set that humans have ever had, like, I think the hacking is just like, at least for us, for our type of people, for people with our brain, like, it really is extremely cool. And it's so easy to lose sight of the fact that we get to do something that we find so fun and awesome. And so, yeah, I think if you're listening to this and you do bug bounty, even if you're not making a killing and you're just like, making a little bit of side hustle money, or you're struggling to find a bug. Like, just remember, like, what it was like when you wanted to be a hacker, when you wanted to know how to hack. You know, I think that I want.
+
+[00:42:10.96] - Justin Gardner
+To take some time and chill in that, sit in that, Appreciate that, right? Yeah.
+
+[00:42:14.40] - Joseph Thacker
+And I'm not saying, like, let your foot off the gas, but like, when you're walking to the bathroom, when you're in the car, driving, when you're about to go to sleep and just be like, man, I've got it so good. Like, this is really cool. I'm so thankful I get to do this.
+
+[00:42:25.36] - Justin Gardner
+Yeah, yeah, totally, man. I think That's a. I think that's a great reminder, and I think it's interesting because there is a little bit of a juxtaposition on that, right? It's like, I think that probably if you want to be, you know, and you actually had a. A really interesting tweet about this the other day. If you really want to be like, the top, the top, the top, the top, the top, the top, you know, then, you know, maybe you need to keep pushing, pushing, pushing, pushing. And a lot of people do if they. Especially if they really love it. But I also think it's nice to. To like, especially if you get maybe top 10% or whatever, right? To just like, enjoy that and. And sit in it and, you know, I don't know. Do you know what I'm saying? Relish. Relish that.
+
+[00:43:07.38] - Joseph Thacker
+Yeah. Yeah, 1,000%. I mean, I think that, like, a lot of people who have succeeded, have succeeded because of their relentless grind. But I think that having that reminder, Naval or someone else, there's a lot of, you know, big people, productivity people who mentioned this, like, what we're doing is a. Is both a means to an end, and it's sometimes the end itself. Like hacking, like, having fun. Hacking is the end for me in some ways. Like, it's why I left my job, because I love it. Like, and I think, like, if the. The means to the end is hacking, then when you're making enough money to sustain the lifestyle that you and your family want, like, you have kind of reached that point that you are working towards. Don't constantly let your monkey brain make you discontent because you kept moving the goalpost. Like, it's okay to move the goalpost and to get excited about it, but don't let yourself be unhappy because of that. Naval does have a really famous quote, if you all haven't heard it. But it's. It's like the promise you. I'm gonna forget it. Do you know the one I'm talking about? It's like.
+
+[00:44:07.34] - Justin Gardner
+No.
+
+[00:44:07.78] - Joseph Thacker
+Oh, yeah. Wanting. Wanting is the. Is the promise you make to yourself to be discontent until you get what you want. It's like you're basically saying, you know, by wanting something like, oh, I'm gonna be discontent until I have this thing, or slightly discontent until I have this thing. Right? And so it's like, make sure that you don't want.
+
+[00:44:26.98] - Justin Gardner
+Desire is a contract you make with yourself to be unhappy until you get what you want.
+
+[00:44:31.28] - Joseph Thacker
+Yeah. And so I think, like, yeah, I mean, you know, I. I believe that, you know, there's a deeper level of satisfaction that comes from objective truth and other things. But I think in general a lot of people do. They don't. They don't. They haven't really thought about what they want and so they're just always going for more when really they may have already arrived at where they wanted to get.
+
+[00:44:48.36] - Justin Gardner
+And so I certain, I certainly fall into that trap from time to time. So. All right, man, I think that's a wrap on this episode. Yeah, let's end it with that.
+
+[00:44:55.59] - Joseph Thacker
+Yeah, I love it. Peace. Hope you all enjoy.
+
+[00:44:59.36] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end y' all. If you want more Critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of the master classes, hack alongs, exclusive content and a full time hunters guild. If you're a full time hunter. It's a great time, trust me. I'll see you there.

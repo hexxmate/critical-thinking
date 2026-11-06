@@ -1,0 +1,1175 @@
+Episode 107: Bypassing Cross-Origin Browser Headers
+Source: https://www.criticalthinkingpodcast.io/episode-107-bypassing-cross-origin-browser-headers/
+======================================================================
+
+Justin Gardner (00:00.942)
+Alright my dude, first day of full time Buck Bounty and freedom from the 9 to 5, how you feeling?
+
+Joseph Thacker (00:08.077)
+I feel good, yeah, and we got to announce that I'm the new co-host today, which is pretty sick. Got to post that everywhere and it's popping off, but no, I'm excited to be here. I mean, I hope that I can pull off the goal of finding a bug today on day one. Obviously you pulled me away from the computer for a little while here today, but it's worth it, so.
+
+Justin Gardner (00:10.99)
+Yeah.
+
+Justin Gardner (00:19.342)
+That would be sick.
+
+Justin Gardner (00:23.15)
+Yeah, man, dude, I don't know what's up this morning, but my shoulder is like, hacked up from volleyball. Last night, dude, was like, some of the best volleyball I've ever played. Like, just, like, the rest of our team wasn't there, so we were actually five versus six. And there's something about being like five versus six that just makes you kind of go into over, overdrive mode. You know what saying?
+
+Joseph Thacker (00:38.243)
+Yeah.
+
+Joseph Thacker (00:41.506)
+Makes you go harder.
+
+Is it like an actual match like 1v1 where you advance or you get a win loss and everything?
+
+Justin Gardner (00:48.834)
+Yeah, we played like three rounds, like three games to 25, and then we do it again. So it's like six games in total, and it just contributes to your overall score. But dude, yesterday I was just crushing the spikes, and it just, my arm's feeling it a little bit today though, I don't know.
+
+Joseph Thacker (00:54.466)
+Nice.
+
+Joseph Thacker (01:04.11)
+Yeah, I was looking around on the ground because I was thinking about the Nito. We found out that both you and I like our Nito as our little fidget thing because you were using it in the last episode.
+
+Justin Gardner (01:10.222)
+Dude, I freaking love this thing, dude. I think (REDACTED) got one and literally like I saw it and I'm like, my gosh, this thing is amazing. I started playing with it and I never gave it back to her. And so they got me like six for Christmas.
+
+Joseph Thacker (01:25.122)
+Same, yeah, same thing.
+
+That's amazing. I don't know what it is about it. It's definitely a really unique feel. I'm sure honestly, we already know a lot of our listeners have either ADHD or some form of autism. If you need a fidget thing, it's called knee dough. It's really interesting. It definitely feels like cooler and better than any kind of other squish toy.
+
+Justin Gardner (01:37.602)
+Yeah. Yeah.
+
+Justin Gardner (01:44.782)
+It's also pretty freaking good for just like, just a hand exercise too. Like it'll rip up your forearms, yeah.
+
+Joseph Thacker (01:53.506)
+I was gonna tell you that. I kinda wanna do that for getting better grips in BJJ. I was already thinking about that if I just do it enough, but anyways.
+
+Justin Gardner (01:57.922)
+Yeah. Dude, I rolled for the first time in like a couple months, like two weeks ago. And it just, dude, it just so reinvigorated. I gotta get out there. I gotta get in the gym for that, dude. It's just so, mm.
+
+Joseph Thacker (02:03.295)
+Joseph Thacker (02:11.14)
+It's locked behind my quarterly goal along with playing video games and watching more YouTube. So when I hit my quarterly bug bounty goal, it unlocks all of those things.
+
+Justin Gardner (02:17.293)
+Yeah.
+
+Well, I liked what, who was it? Was it Douglas? What Douglas said is like offsetting your goal with your professional goal with like a, no, no, no, that was James Kettle. James Kettle posted about it. He said you should have a professional goal and then a non-professional goal that you kind of pair. So he's like, I want to get my research in Defcon or whatever and I also want to like.
+
+Joseph Thacker (02:36.58)
+don't think I've seen this.
+
+Justin Gardner (02:46.232)
+do a three times body weight deadlift. I'm like, shit dude. Like a three times body weight deadlift is like pretty freaking good. Yeah.
+
+Joseph Thacker (02:50.361)
+Yeah.
+
+It's pretty intense. Yeah. I've always had really strong legs. For me, would try, I'd maybe try to do a three times body weight or maybe two and a half times body weight squat or something. But I mean, I don't know if I could, I think it'd be interesting to try. Yeah, that's for sure.
+
+Justin Gardner (03:02.187)
+my god, dude, are you serious? That's not...
+
+Yeah, deadlift is definitely better for me. My legs are a little weak, but the back kinda makes up for it. So anyway, all right. So we did a little off track right in the beginning. We got some news today, a little bit of stuff from me, a little bit of stuff from you, and then we're gonna talk about web header stuff, which yeah, it seems like you're very prepared on, Joseph. Yeah.
+
+Joseph Thacker (03:13.144)
+Yeah, nice.
+
+We did our off-topic banter.
+
+Joseph Thacker (03:29.932)
+Yeah, we'll talk about that in a little bit, I'm gonna play as the listener maybe, so we'll see.
+
+Justin Gardner (03:35.102)
+Okay, we, you know, Joseph is new to the co-host thing and we had the doc sectioned out and he like did all of his thorough research on the news section and then I was like, so what'd think of the web header section? And he's like, the who what section? well.
+
+Joseph Thacker (03:49.256)
+I will say, listen, I've been a guest on Critical Thinking and I prep for one or two episodes and in every one, all of the stuff's in the news section. It's all just been right there. There's been no main content, so yeah.
+
+Justin Gardner (03:52.61)
+Yeah. Yeah.
+
+Yeah.
+
+All good, man, it happens. Plus, you know, I'm used to just yapping about client-side stuff, so I get it. All right, let me hit the first news item then. This was just a really like feel-good story that I saw. This is from, I grabbed this one actually from LinkedIn, from Dustin Kirkland, and he posted about an article entitled, A Proud Dad's Tale of Two Bug-Hunting Daughters and Their Responsible Disclosure. And when I saw this dude, I was like, my heart is so warmed.
+
+Joseph Thacker (04:04.622)
+Exactly.
+
+Justin Gardner (04:28.662)
+And I was reading through here and his daughters found two bugs on the parental controls aspect of Google. One was like a, you could reuse those codes that you give to the child to unlock the device. And then the other one was like on their Chromecast or Google TV, they just mashed the home button and they bypassed the parental controls and just put them right into the parent account, which is like totally nuts.
+
+Joseph Thacker (04:54.028)
+Insane. Yeah, yeah, when you sent me that and I clicked on it, first of all, the picture, the header picture is like so cute. So hopefully people either tune into the YouTube channel and we have our producer add that in there or they go to the blog post. yeah, I mean, obviously we have young kids, both you and I, and so that just warms the heart. But yeah, totally impressive. I mean, and they both got paid, like no better way to set them up for finding success from throwing that into, you know, the Roth IRA is like a eight year old.
+
+Justin Gardner (05:00.19)
+So cute.
+
+Yeah.
+
+Yeah.
+
+Justin Gardner (05:14.85)
+Yeah.
+
+Justin Gardner (05:21.114)
+yeah, and for sure, and then what did, like I wanna say down here at the end, where did she say, she said, one of them was like, was it the first daughter that was like, I wanna invest it in the stock market, yeah she says, I asked her what did she wanna do with it and she says, invest it in the stock market dad, and I'm just like, could you imagine, like my gosh. So cute man, so cute, and yeah I think it's really cool to share the hacking stuff with your kids, you know.
+
+Joseph Thacker (05:27.874)
+It was the first daughter. Yeah, save it. Yeah.
+
+Joseph Thacker (05:38.232)
+Yep, they're writing them well, that's for sure.
+
+Joseph Thacker (05:48.632)
+Mm-hmm.
+
+Justin Gardner (05:50.106)
+I know that I've hacked with my kid and it's been a nice experience. At least to just be able to talk about, like, yeah, I know a little bit about hacking. Even if it's not your thing, it's still cool to be able to say, like, yeah, I understand what my dad does and can talk about it a little bit and say they have some experience with it.
+
+Joseph Thacker (06:08.844)
+Yeah, yeah. So with my oldest daughter, she's eight, but I think it was probably when she was seven. She told me that at school to log into some
+
+app they are some website they use they type in their classrooms number like these are classroom number or their teacher's name or something. But yeah, she told me that instead she typed in our yeah, they type in their classroom number. But instead she typed in our phone number. And there wasn't even enough digits for it was like six digits instead of eight or 10 or whatever phone numbers are. And it brought up a somewhat like a different class and she could see other students information in there. And when she got home and told me this, I like
+
+Justin Gardner (06:24.003)
+Yeah.
+
+Justin Gardner (06:40.962)
+Yeah.
+
+Joseph Thacker (06:43.372)
+just lit up. was so pumped and told her that she had found her first bug and made a big deal out of it. And then whenever Hacker One had like the family kind of event in Orlando last January, they were down there and she was going around telling all the other bug hunters and telling all the staff about the bug she found. I would have her retell the stories though.
+
+Justin Gardner (06:51.786)
+Mmm, yeah.
+
+Mm-hmm.
+
+Justin Gardner (07:01.976)
+Dude, that's so cute, man. Yeah, those kid-oriented apps are like wicked insecure sometimes. And I get it, because you gotta make it easy enough for a kid to be able to log in and stuff like that, but also, why don't you just not put all the kids' PII at risk while you're at it? Yeah, and I guess, I don't know, if you're a motivated attacker trying to go after kids or something like that, maybe you could figure it out, but most of the time, you're not even gonna see it unless you've got a kid and you're like, yeah, they're logging into this portal or whatever.
+
+Joseph Thacker (07:08.386)
+Yeah.
+
+Joseph Thacker (07:13.047)
+Yep.
+
+Joseph Thacker (07:17.514)
+Exactly. Yeah, when it's when it's school related, it's yeah.
+
+Joseph Thacker (07:31.232)
+Exactly. Yeah.
+
+Justin Gardner (07:31.818)
+So I don't know, but it's definitely a little bit insecure. have to say most of those kid oriented apps that I've seen.
+
+Joseph Thacker (07:37.558)
+Mm-hmm. Yeah, I mean all the different stuff for like kids sports and for like their fundraisers and all those I mean, I've probably put our information in don't know 20 different sites that I'm terrified. Yeah, they're like very vulnerable very insecure
+
+Justin Gardner (07:47.254)
+obscene amount of apps. Yeah.
+
+Yeah, solid dude. All right, what have you got on your side? Did you want to talk about H1 and BC pen tests?
+
+Joseph Thacker (07:57.324)
+Yeah. So I put down on this news list just for the listeners. because I actually haven't heard you or Joel mentioned it too much. It might've been mentioned in passing, but both hacker one and bug crowd have a notion of pen test. I don't, they've kind of iterated and changed through the years. Hacker one, pen tests are pretty cool. They're like in standard and then premium. you don't get paid for findings on those. I remember there were some on bug crowd in the past. I don't know if it still works this way where you could get paid a flat fee and then you also got paid for the vulnerabilities, which is pretty cool. And that's how,
+
+And I guess just, yeah, as an addendum to that, not only are there Hacker 1 and Bug Hunt pin tests, but also Google will sometimes do research grants where it's similar. You get paid a flat fee, but you still get paid for all of the bugs that you submit. And you have to go in and enable that on your profile. So if anybody is interested in that, go to your Google Bug Hunters profile and make sure you enable it, that you're open to it.
+
+Justin Gardner (08:32.482)
+Hmm. Yeah.
+
+Justin Gardner (08:47.436)
+Yeah, yeah, yeah. And so you have to go in there on bughunters.google.com, go to your profile, scroll down, and I think there's a little toggle button that says, like, enable research grants. And I'm like, dang, that should be public, man. Or that should be on by default. That would be great if people just all of a sudden, like, boom, here's the money in your bank. Now go hack on this. So yeah, yeah. But yeah, there's also some, I'm trying to remember who told me about it.
+
+Joseph Thacker (08:56.878)
+Yep. Yes. Yep.
+
+Joseph Thacker (09:06.881)
+Yeah, exactly. You do have to go and accept it and all that.
+
+Justin Gardner (09:17.39)
+Another top hacker recently told me that they were doing some pen tests. I want to say it's with integrity, I don't know. But it was $500 flat and you get paid for the bugs. I'm like, and you know, anybody who's done these pen tests before, it's like, I don't know, man, pen tests are such a different world than bug bounty. It's like, there's just bugs freaking everywhere, you know?
+
+Joseph Thacker (09:29.857)
+Right, yeah, that's super cool.
+
+Joseph Thacker (09:39.308)
+Yeah, yeah, very frequently, especially if it's one of their first few.
+
+Justin Gardner (09:42.508)
+Yeah, exactly. so, yeah, to be honest, I think I'd be a little bit more in favor of the flat rate plus bounties rather than just the higher flat rate.
+
+Joseph Thacker (09:49.814)
+Yeah, definitely.
+
+Yeah, and I think a lot of it depends on like the hours that are expected there. You know, if, it's kind of like, make sure you've tested everything, you know, with like a baseline pass, that's much more reasonable than like a, you know, a kind of lowest rate for a bunch of hours. So
+
+Justin Gardner (10:08.088)
+Yeah, yeah, for sure. Yeah, dude, I've really enjoyed the Google one too. You and I both got some research grants with Google lately, and they've just been really great. They're so fun to work with, dude, to be honest, because they will help you exploit bugs. Really, really nice. Really good.
+
+Joseph Thacker (10:11.949)
+Yeah.
+
+Mm-hmm.
+
+Joseph Thacker (10:19.522)
+Yeah. Yeah.
+
+Joseph Thacker (10:26.882)
+Yeah, very communicative. Yeah. Very easy to work with. Yeah.
+
+Justin Gardner (10:28.834)
+Yeah. All right, let me jump over to my next news item, which was TruffleSec released a new article talking about OAuth bugs that affect millions of accounts, particularly Google's OAuth login. And I was clicking through here, because I've been really interested in OAuth lately, and we're going to do an episode on OAuth in a couple weeks after this episode airs. But.
+
+This one was interesting. He does kind of break down the specific details of it, but the TLDR of it is kind of like, if a startup fails, you can register the domain and then SSO into all these services, which like, totally makes sense. Yeah.
+
+Joseph Thacker (11:06.934)
+Yeah, there's lots of other ways to not necessarily always failing. It could be they changed their domain, like they bought a new one, they migrated. There's lots of maybe other use cases or other examples there.
+
+Justin Gardner (11:17.07)
+Yeah, I think the coolest part about this piece of research was the proposed fix that they had where they were talking about implementing two immutable identifiers in the OpenID Connect flow. And I think Google is considering this. They said at the end of the day, they awarded a $1,337 bounty and then seems like they'll be making some changes. So I think that's cool. But I think this really also makes me think of the episode with the
+
+Joseph Thacker (11:22.308)
+Mm-hmm.
+
+Justin Gardner (11:44.622)
+like the top bugs from 2024 from the hackers, Nogli mentioned on that episode that they used a like a dev token to get into an Azure environment. And then once they were in the Azure environment, they dumped all the users and then looked at all the domains that are registrable, registrable? Registrable? Registrable. Dude, I swear sometimes like, my English just dies, dude.
+
+Joseph Thacker (12:06.872)
+Registerable?
+
+Justin Gardner (12:14.786)
+But yeah, they looked for all the domains that were registerable and then registered one and then used that to escalate their privileges. So I think that whole, I don't know man, I don't know what I think about that concept because I think it goes a little bit outside the realm of normal bug bounty flow. But man, the impact is high a lot of times. So I don't know, what are your thoughts on that?
+
+Joseph Thacker (12:30.485)
+Mm-hmm.
+
+Joseph Thacker (12:34.902)
+Yeah, yeah, that's one thing that stood out to me that this is often not, mean, companies where this would be impactful are already defunct, right? So like, who's going to pay you for this? But at the same time, there is impact there because like they mentioned this thing, know, millions of people's data is accessible through these third party SaaS providers. Honestly, it's a little bit of like a SaaS security or I guess maybe cloud security issue, right? Because
+
+Justin Gardner (12:42.592)
+Yeah, yeah, exactly. Well, yeah.
+
+Justin Gardner (12:52.366)
+Mm-hmm.
+
+Joseph Thacker (12:59.396)
+with the single sign on, once you get access to the account, you can get access to everything else. And yeah, I really loved that part of Nagley's book. And it actually makes me wonder, but also probably believe that other username disclosures might actually have slightly more impact if there's something like this possible. So.
+
+Justin Gardner (13:13.154)
+Yeah, yeah, yeah, and I think the way that this would apply to Bug Bounty is, like you said, the companies that are being attacked here, mostly what they're talking about here is personal user information and information that are in those systems, right? But I think that it's most applicable in the way that Nogli did it, right? Which is you have XYZ company that you're attacking.
+
+Joseph Thacker (13:29.134)
+Mm-hmm.
+
+Joseph Thacker (13:35.555)
+Mm-hmm.
+
+Justin Gardner (13:40.076)
+Right, an XYZ company contracts out to ABC company. ABC company goes under, right? You grab the domain and then single sign on into like some part of XYZ company, the first company, and then get access to like their internal Slack or their Jira or whatever. But to be able to get that level of insight, one, you have to know what companies this company is contracting with, right? And then you've also gotta understand what systems that...
+
+Joseph Thacker (13:51.94)
+That's right.
+
+Joseph Thacker (13:55.672)
+Mm-hmm.
+
+Joseph Thacker (14:01.462)
+Right.
+
+Justin Gardner (14:07.522)
+contracting company will have access to on your target company. there's a lot of recon, pretty heavy recon that needs to go into place there, but I could definitely see this being super useful for those targets where it's like, get this flag that's in this deep embedded system. we don't care how you do it. As long as you get the flag, you get the money. And then you kind of go through this route.
+
+Joseph Thacker (14:10.724)
+Hmm.
+
+Joseph Thacker (14:21.952)
+Yes. Yeah, yeah.
+
+Joseph Thacker (14:27.916)
+Yeah. Especially if they're using some sort of like, like if there's an octa or something, there's no doubt there are lots of non employee accounts in there. Whereas when you, when you think about something like Google workspace, all the, think like every user is going to definitely have the exact same, you know, domain name as a part of their email address. But then there are lots of systems like Azure or octa or whatever, where there are going to be a lot of guest user, like you said, contractors that have different domain names at the end, and then they can actually log in and those with those expire. Then of course you could hijack them. So.
+
+Justin Gardner (14:31.544)
+Yeah.
+
+Justin Gardner (14:35.143)
+for sure.
+
+Justin Gardner (14:43.181)
+Mm-hmm.
+
+Justin Gardner (14:55.5)
+Yeah, it's a little interesting. wonder, I'm looking at all this now and I'm wondering, let's say for example, we have a company domain.com that went unregistered, right? And we take over an account on there. Is there any way for us to see what users they had in that Google Suite organization in the past? Because if there was, then you'd have a much easier time saying like, okay, I'm just gonna register all of the users that belong to this company.
+
+Joseph Thacker (15:21.922)
+Right.
+
+Justin Gardner (15:22.924)
+and then try to use all of those users to log into all of these systems. And you've got sort of like a many to many sort of thing rather than.
+
+Joseph Thacker (15:27.758)
+Could you do like a wild card? I'm pretty sure there's some way to set up like wild card email stuff where you receive everything that comes to anyone. And so then you would be able to slowly know who was there because they probably registered for websites and they're gonna get like spam or marketing material. So you would be able to see who they go to. Yeah.
+
+Justin Gardner (15:34.477)
+Yeah.
+
+Justin Gardner (15:40.558)
+Oh, that's an interesting idea. That's a great idea. Yeah. Yeah. And then, and then you'll see, okay, you know, Slack got an update or something like that. And you're like, Hmm, that's a great idea. I like that. Huh? Dang it, dude. We got to release this on the podcast. Shoot, dude. Shoot. We got to start recording further in advance. Good shit, All right.
+
+Joseph Thacker (15:48.918)
+Right. Yes, yeah, exactly. Yeah, yeah.
+
+We have a week, we have a week, yeah, we have a week to go look it up now, so.
+
+Yeah, we can maybe I'm gonna actually I'll just DM you
+
+Justin Gardner (16:04.994)
+Yeah. All good. All right. What you got next on your list?
+
+Joseph Thacker (16:10.444)
+yes. let me pull back up the show notes. yeah. So I've tweeted something, just literally one sentence. So most of you probably saw it on your Twitter because for some reason it resonated with a ton of people. I just tweeted that AI agent security is a massive industry that's being slept on and
+
+Justin Gardner (16:26.956)
+Yeah, this blew up.
+
+Joseph Thacker (16:28.484)
+It blew up. Yeah. I got 118,000 views and already has a thousand likes and 400 bookmarks. Um, and it's similar to, think, like it resonated with people in the same way that I wrote a blog post early last year, like February of last year about, uh, the required security architecture changes to make AI agents secure. And specifically, you know, I got into the details of like, I think we needed to be like delegated or childlike system because when there's a human in the loop, if the AI wants to pay somebody, like you don't want to just throwing your money out the window, right? You want to be able to approve it. Or if it wants to send an email or reading,
+
+Justin Gardner (16:44.59)
+Mm-hmm.
+
+Joseph Thacker (16:58.39)
+emails, potentially like sensitive ones, then we need some sort of like way to approve that. And then I also think we need some like really smart people working on the architecture side of things, like similar to like how Apple cloud or Apple AI cloud. They released that extremely in depth architecture and they open source it so people could critique it because they want it to be secure. I think, you know, when agents are executing code and stuff, the sandboxes have to be like locked tight, especially as they potentially get really, really intelligent and we need like AI safety controls there too.
+
+And so in general, I think there's going to be like an off layer. can off Z layer where it's like, you know, just because this AI can use the browser, should they be able to send requests to gmail.com or should they be able to like, almost wonder, I was thinking about this. This is like some big alpha. I think there's a potential solution there at the DNS level. So like, I think that you could potentially have like almost a firewall like restrictions or just like a specific, you know, AI
+
+Justin Gardner (17:39.117)
+Mm-hmm.
+
+Justin Gardner (17:47.522)
+Yeah.
+
+Joseph Thacker (17:55.498)
+agent safe DNS support from cloud player or something where it's like a three dot three dot five dot five or something. And, and like that specifically for sandboxes, the AIs are interacting and that won't let them do certain stuff. But anyways, I don't know. But my whole point in bringing this up for the podcast is we've got a lot of really smart listeners that are extremely intelligent. And I think they should lean into the niche of if they're interested in it, how am I going to hack AI agents in the future? Cause there's going to be a bunch of new companies that are going to get bug bounty programs that are offering AI agent type support. How can I hack on my existing
+
+Justin Gardner (18:00.694)
+Yeah, yeah, yeah.
+
+Joseph Thacker (18:25.382)
+which are already implementing AI agents on the backside, like what kind of bug could be there. And then if people like building stuff, like how can I build some sort of like AI agent security product, whether it's that off layer or other stuff. So I just wanted to bring that up because I think it's blowing up in the industry and it's on people's mind.
+
+Justin Gardner (18:36.366)
+Cheers.
+
+There's a lot of that, man, yeah, for sure. And it's definitely like we were talking about before the episode ran. I think it's a space where, it's a very good niche. If you are looking for an area where you want to specialize in hacking stuff, and you just wanna make good money on that, you wanna be a high paid consultant, that sort of thing, or, you know.
+
+there's an episode that I'm thinking about doing, which I won't give away too much on, but essentially it's an episode around what I call the AJX Chapman method, which is you deep specialize on one specific thing, and how do you do that, and what areas would be a good place to specialize? I think this makes the list, because whenever you see weaponized agents, agents that have functionality to them,
+
+Joseph Thacker (19:15.714)
+Nice.
+
+Joseph Thacker (19:19.63)
+Yeah.
+
+Joseph Thacker (19:23.581)
+Mm-hmm. Yeah.
+
+Justin Gardner (19:31.788)
+that are of the ability to take action, that's a specialized technology that you have to know how to attack. So, I mean, let me ask you this, What do you think are like, okay, let me just draw the correlation back to the Ajax Chapman sort of thing, right? People hit Alex Chapman up when they see a headless browser, right? you get that, exactly, you get that sort headless browser type environment. So, what is the...
+
+Joseph Thacker (19:35.844)
+Mm-hmm.
+
+Joseph Thacker (19:52.194)
+Yep. Headless browser, XSS to RC. You got to get it. Yeah.
+
+Justin Gardner (20:00.578)
+the user agent Chrome, right, of these AI agent things. What are the things that you should see that make you say, okay, hey, I should get this to an expert or I should deep dive on this because there's more functionality here that I need to know how to attack at like a deeper level. Does that question make sense? Yeah. Mm, mm, yeah, yeah.
+
+Joseph Thacker (20:17.026)
+Yeah, think that that yeah, does. That's basically the question I was asking Johan in that episode of people want to go back and listen to that. But like in general, it's just like.
+
+If it can do anything interesting with data or tools, that's what I find super interesting. And I think that that level of functionality is a target rich environment because it is kind of annoying to hack sometimes because you have to convince the system to use the payload you want to use. But also port speakers labs on that are really good, right? It's like you're telling an agent to call a tool with a payload and you can tell it to use a apostrophe or you can tell it to use open and close square brackets. You can tell it to like use other users IDs.
+
+Justin Gardner (20:28.44)
+Mm-hmm. Mm-hmm.
+
+Justin Gardner (20:41.582)
+super freaking annoying, yeah.
+
+Justin Gardner (20:55.438)
+Mm-hmm.
+
+Joseph Thacker (20:55.786)
+There's kind of a rich attack surface there. But yeah, I mean, think it's a strong niche, even if you don't like interacting with LLMs. Like don't want everyone to think like, oh, you I don't want to be the LLM hacker guy. And LLMs can be annoying because of the non-determinism there. But I think in this AI agent security space, we need people who are like working on like kind of the sandbox.
+
+and like the sandbox escapes, we need people who are like tackling the prompt injection and jailbreak side of things. We need people who are like thinking through the AI safety things. I think that there's a lot of different areas you can specialize in. But yeah, in general, I would say if there's a chat bot or an AI feature that has like a lot of tools or like some interesting or deep tools, and if the tools have access to any kind of data, like you just, when you're chatting with chat bots, ask like, hey, what do you know about me? What can you tell me about myself? Because if it has a lot of information about you, then someone could leak that probably
+
+Justin Gardner (21:32.861)
+Mm. Yeah.
+
+Joseph Thacker (21:46.052)
+about you with certain different techniques.
+
+Justin Gardner (21:48.174)
+There was a challenge we were given by a target recently and I think the way that they outlined what they were looking for with these AI attacks was super good. They were like, hey, you it needs to start with some sort of indirect prompt injection. So there has to be some tool that is grabbing your data as the attacker and then putting it into the prompt, right? So, you know, then they've got an array of tools that they can do that with. And then from there, you need to establish control of the LLM prompt, right?
+
+Joseph Thacker (21:58.136)
+Yeah.
+
+Joseph Thacker (22:08.718)
+Mm-hmm.
+
+Joseph Thacker (22:16.952)
+Mm-hmm.
+
+Justin Gardner (22:17.558)
+And then once you've established control of the LLM prompt, you need to either do X, Y, Z, right? You either get persistence on the system, you affect the user's data in a negative way, in a way that's not undoable, you know, that causes permanent data loss or permanent data effect. Yeah, or leak the data back out, right? So I think that's a good, just quick and easy three-step process, right? Establish some reasonable method for
+
+Joseph Thacker (22:22.136)
+Get persistence. Yeah.
+
+Joseph Thacker (22:32.59)
+Mm-hmm.
+
+Joseph Thacker (22:36.374)
+Or leak their data. Yeah. Yep.
+
+Justin Gardner (22:47.192)
+prompt injection, Indirect prompt injection or prompt injection. Establish control of the prompt, And gain control of the LLM. And then utilize that control to either leak or affect user data or gain persistence in the LLM moving forward. Yeah. Pretty solid. Okay, cool. So.
+
+Joseph Thacker (23:04.097)
+Yeah. Yeah. Yeah. Good stuff,
+
+Justin Gardner (23:09.912)
+Dude, let me hop into this next, dude now I'm all hype on AI stuff, now I gotta change, I gotta change, well actually, since we're talking about AI stuff, what is this rank thing that you had from Bishop Fox?
+
+Joseph Thacker (23:14.084)
+Ha ha.
+
+Yeah. Yeah. So, I'm sure most people know of an operator. I found out before the episode that you're also friends with him in real life, which is cool. But so yeah, he wrote this thing you all can find on the show notes. It's called rank, but spelled with an I. So it's AI with in the middle of the word rank.
+
+Justin Gardner (23:23.566)
+My boy. Dude, he rocks, man.
+
+Justin Gardner (23:35.427)
+Mm-hmm.
+
+Joseph Thacker (23:37.668)
+and so one thing you often want to do when you're hacking in general, it's like what assets should I look at first? Right. Which domains most interesting, which payload is most likely to work? They're like humans kind of figure out, know, what we're going to do first by kind of ranking them in our head. And then just like going down that list with AI, sometimes that's hard to get them to like, that's not hard to get them to, can just ask them to list them, but it's hard to get, AI output to be ranked in a meaningful way based on a specific heuristic that you want and to not repeat itself and that sort of thing. And so they found some cool ways.
+
+Justin Gardner (23:52.622)
+Mm-hmm.
+
+Joseph Thacker (24:07.462)
+I haven't dug into how all of the different ways they use them, but they wrote an open source project where you can have AI rank a list of anything. And so I think for the security implications, they are pretty cool. The ones I just mentioned, ranking the best payload we use or the most likely to use or the website that's most likely to be vulnerable, et cetera. There are probably a lot of different use cases here, but I think you went to the talk where they actually use this to find some bugs with called Patch Perfect, right?
+
+Justin Gardner (24:31.202)
+Yeah, yeah, was really cool when you showed up in my docs because one, I'm like buddies with Caleb. He's like, I knew him even before the security community. We just met through a mutual friend. And then it was kind of crazy. I don't know if I've talked about this story on the pod before, but like I met him through a mutual friend, right? And my mutual friend was like, hey, you you're a hacker. He's a hacker. And I'm like.
+
+Joseph Thacker (24:42.221)
+Yeah.
+
+Joseph Thacker (24:53.667)
+Yeah.
+
+Justin Gardner (24:54.026)
+Okay, cool, yeah, sure. And then I meet him and he's like this super badass dude. There's so many people out there that are like, yeah, I'm a hacker. they work in security and it's like, okay, cool, you are a hacker, but it doesn't mean that you're doing hands on the keyboard, POC or GTFO, popping shit all day, every day sort of hacker, right? That is definitely Caleb. And so when I met him, I was like, shit, he's the real deal. And so anyway, I...
+
+Joseph Thacker (25:02.116)
+Yeah. Oh, I know what you're talking about. Yeah.
+
+Joseph Thacker (25:11.214)
+Sure.
+
+Right.
+
+Joseph Thacker (25:17.068)
+Yeah.
+
+Yeah.
+
+Justin Gardner (25:22.446)
+We've got a local conference here in Richmond called RVASec, and Caleb, being the inspiration that he is, decides to support the local conference and present his talk there. And so I was there just chilling, watching this talk, and it was really good. It was entitled Patch Perfect, Harmonizing with LLMs to Find Security Volumes, which I loved, because I'm a musical boy, pitch perfect. I got you. Dude.
+
+Joseph Thacker (25:32.942)
+Yeah.
+
+Joseph Thacker (25:42.82)
+Mm-hmm.
+
+Yeah, Pitch Park's a fantastic movie. We listened to that soundtrack for like years after it came out.
+
+Justin Gardner (25:51.896)
+freaking good man. like, I'm a little bit scared of that movie because if I listen, if I watch it again, it's going to get all the ear bugs. I'm just going to be singing nonstop for the past or for the foreseeable future. But the talk was really good in how they use sort of like this ranking sort of thing to identify the most likely functions in a binary diff of a patch that contained the vulnerability and give the researcher that's trying to reverse a patch.
+
+Joseph Thacker (25:58.852)
+Yeah.
+
+Joseph Thacker (26:12.343)
+Hmm.
+
+Yeah.
+
+That's cool.
+
+Justin Gardner (26:21.6)
+a head start on where the vulnerability lies. And the results were pretty impressive. They're able to get it down to 10 % of all the diffed functions. With really, really high accuracy, the function that has the vulnerability is within this top 10%, which saves you 90 % of time. So definitely lots of good applications for this across security, and it's nice to have a tool that automatically does it.
+
+Joseph Thacker (26:21.688)
+Mm-hmm.
+
+That's really cool. Yeah, that's really cool.
+
+Joseph Thacker (26:33.624)
+Yeah.
+
+Joseph Thacker (26:40.216)
+Yeah. tons of time. Yeah.
+
+Joseph Thacker (26:51.414)
+Yeah, that's legit. You wanna tell us about this gift card research?
+
+Justin Gardner (26:55.308)
+yeah, okay, cool. Yeah, so our boy W2W, a member of the Full Time Hunters Guild, by the way, shout out to my man, dropped some research called Gift Card Security Research. And I just wanted to shout this one out. We'll link it in the description as always, but let me go ahead and share my screen as well for those folks on YouTube. This research was awesome because once again,
+
+It's just a time when somebody says, hey, I'm gonna research this specific vuln class or this specific niche, and they do it across a lot of targets, and they record the results. I'm such a sucker for that stuff, man. That's the stuff that freaking Bug Bounty Reports Explained does on their premium newsletter subscription, where you'll just get these super data-rich analyses on types of vulnerabilities, and it's just so insightful into the way that you should look at these vuln classes. So, anyway.
+
+Joseph Thacker (27:26.446)
+Mm-hmm.
+
+Joseph Thacker (27:31.565)
+You really are.
+
+Joseph Thacker (27:37.336)
+Yeah.
+
+Joseph Thacker (27:48.612)
+Yeah, and you've applied it sometimes in your own life, like with the credit card research. So, yep.
+
+Justin Gardner (27:52.596)
+a hundred percent. Yeah. And, and, it's very applicable and definitely worth whatever I pay for bug bounty reports explained premium for sure. but this one w two w gives us, for free. And he says, I acquired 30 plus gift cards on this research and revealed nine vulnerabilities by unlocking new features, which granted me $6,500. and let me see how many bugs he's got here. I think nine different bugs. and there were three primary vulnerable classes that popped out of this. There was race condition.
+
+There was HTML injection or XSS and iDoor. And I just wanted to echo this as well because my personal experience has really aligned with this research that anytime I've bought gift cards, there's either a race condition or an iDoor. I don't know what it is, but there just always is. Yeah, and so I think that's a pretty target-rich and attack-vector-rich environment, and you can sometimes get a gift card for like five bucks. So it's definitely worth the investment.
+
+Joseph Thacker (28:22.318)
+Mm-hmm.
+
+Joseph Thacker (28:37.796)
+Every time.
+
+Joseph Thacker (28:47.118)
+Mm-hmm.
+
+Joseph Thacker (28:51.138)
+Yeah. mean, anytime you can get access to like a little more scope, a few more API calls and like working ones too, right? If you have the gift card, you're actually going be able to actually purchase something. You'll be able to actually enable it. It gives you access to a bunch of like either new domains or new paths that are actually working for you.
+
+Justin Gardner (29:05.346)
+Yeah, yeah, for sure. then, so, you know, those are the three main vol types that he found, the specific research. And then I wanted to also just shout out this last tip at the very end. He doesn't talk about this too much in the actual article, but he says at the end, final thoughts, says, ensure you enable out of scope logging and all mime types in your midem proxy.
+
+Joseph Thacker (29:22.872)
+Mm-hmm.
+
+Justin Gardner (29:26.134)
+to catch the checkout finalization request. I wasted quite a few gift cards to learn this lesson. It doesn't hurt when it's a $5 gift card, but it's a big ouch moment when it's a $50 gift card. So yeah, I totally agree. Going through that full process and just literally intercepting everything and going through each request being like, is this the final request? Is this the final request? So that you can race condition it or something like that. Very important. And there's definitely some gotchas there with the proxies trying to let you focus on specific stuff.
+
+Joseph Thacker (29:35.587)
+Yeah.
+
+Joseph Thacker (29:45.699)
+Yeah.
+
+Joseph Thacker (29:55.692)
+Yeah, and I would say a lot of these companies that are using gift cards might be using third parties. So it's very smart to enable out of scope logging because it could be on the weird domain. It could be on the third party domain. Like you don't want to miss it.
+
+Justin Gardner (30:01.325)
+Mm-hmm.
+
+Justin Gardner (30:07.234)
+Yeah, very common. That's one of the things I love about Kaido. It's a little bit of love and hate thing with that with Kaido right now, but Kaido doesn't have currently a way to set logging to none for stuff. sometimes, right, they always get stored. that blows up your hard drive space a little bit, but storage is cheap, and you know what is not cheap? Not having the piece of information that you need. And so there have been many times where I've been like, dude, that S3 bucket, or like, man.
+
+Joseph Thacker (30:18.348)
+Right. You can't, you can't, you can't just drop requests that they get stored. Yeah.
+
+Joseph Thacker (30:30.948)
+That's right.
+
+Justin Gardner (30:36.398)
+this functionality is getting pushed out to a third party. How did I do that? And then I went back and the data was there. And I was like, frick yeah. So I mean, that alone has made me several thousand dollars, I think, just having that forced me to be a little bit more permissive with what I'm storing. And that's the same sort of thing we talked about last year when mayonnaise came on the pod, where he literally has never.
+
+Joseph Thacker (30:43.181)
+Right.
+
+Justin Gardner (31:00.942)
+not had every single, he's never gotten rid of any piece of data related to a bug bounty target ever, right? And he's just got it all in a big database and he just does big data, queries against it, and he just uncovers these trends across targets and across the same targets. So definitely a useful piece of functionality, I think. Yep. Yeah.
+
+Joseph Thacker (31:04.864)
+wow.
+
+Joseph Thacker (31:14.457)
+Mm-hmm.
+
+Joseph Thacker (31:19.342)
+for sure.
+
+Yeah. And then I think the one last thing we wanted to mention, it's on your list, but I can kick us off on it is that the, um, top 10 voting for, from port swagger, um, is now out and not only is it a huge treasure trove of data, but our listeners probably care deeply about who wins. Cause there's a lot of our listeners who are on this list. Right. And so make sure, make sure you go out and support the, uh, the, your fellow hackers by voting for their research, if you like it. And, um, it's a fantastic way to go back and learn what you missed or see what you missed from, um,
+
+Justin Gardner (31:39.053)
+There are.
+
+Joseph Thacker (31:50.146)
+as far as like cool hacks go from last year.
+
+Justin Gardner (31:52.224)
+Absolutely, yeah, there are a lot of CTBB podcast guests that have their data out here in this up for rating. So that's pretty rad. Definitely, like you said, a good place to see the research that you missed, great research that you missed, but also just to support the fellow hacker.
+
+Joseph Thacker (32:11.362)
+I can't help but ask you, do you have any idea why there's one that says do not vote for this entry?
+
+Justin Gardner (32:14.69)
+Dude, saw that, I just saw that as I'm scrolling through there. I don't know, but dude, you know that's gonna get so many freakin' votes. Son of a, don't do that, guys. Come on, don't waste your vote. Give some valid research the vote, please. Solid. All right, man. So, now the time has come to talk about web headers. You ready for this?
+
+Joseph Thacker (32:19.2)
+hackers are gonna vote for that for sure it's gonna get so many votes
+
+That's Cool.
+
+Yeah, the topic, the topic I did not know what we were even discussing today. So yes, I will play the ignorant listener and also in general, know, my specialty is not in front and stuff. It's definitely been server side bugs and kind of a big fuzzing and then obviously AI of late. So this is stuff that I've been wanting to dig into and this has given me an excuse to learn about it. So when I don't understand something, a lot of listeners probably don't either. And so I'll be sure to ask that.
+
+Justin Gardner (32:37.806)
+it
+
+Justin Gardner (32:56.578)
+Yeah, dude, ask away and I'll do my best to articulate it all. So yeah, what we're talking about today is cross origin headers, which is like a suite of headers, cross origin, opener policy, cross origin, embedder policy, cross origin research policy, I'm sorry, resource policy, and how these specific headers apply to the browser and how to get around them. And unfortunately, I have to say, guys, it's rough. It's rough out there. There's not a lot of ways to get around these things.
+
+So, but I'm gonna give you my best takes on it and we have a little bit of research from the Critical Research Lab, which is the team that we kind of put together to try to give us cool pieces of information about this and also I'll just kind of talk to you about how these headers are actually used. Yeah.
+
+Joseph Thacker (33:44.408)
+Yes, so question with this Andrew Locke link at the top, think you're going to talk about. Did you learn anything new? Like, did you learn any kind of potential bypasses or gadgets as you went through this?
+
+Justin Gardner (33:50.869)
+yeah.
+
+Yeah, so I think the Andrew Locke article is really, which we'll link in the description, but also just go ahead and share on the screen now. It's sort of like a three-part blog post on these cross-origin headers. It's entitled Understanding Cross-Origin Security Headers. So he does part one on Coop, which is the main culprit, the one that we hate. And then there's part two on cross-origin resource policy, which is an interesting one.
+
+and then we've got cross origin and better policy as well. So these are definitely, if you're looking to sort of skill up on this area, these are great. I think this came out in November of last year. But yeah, there was definitely some things that I learned about here that I didn't know before. So definitely worth a read if you're trying to skill up there. But I'll also try to give you the TLDR today, you know, and see how we can do that. first, this whole set of...
+
+Joseph Thacker (34:37.974)
+Yeah, exactly.
+
+Justin Gardner (34:47.704)
+headers and this whole concept is related to a browser concept called cross origin isolation. And this is a concept that was recently put into the browsers to kind of help deal with the specter attacks that were happening that allowed you to violate same origin policy. And if you opt into these cross origin headers, you get some of the features back that they had to remove to help deal with the specter attacks.
+
+And there's a JavaScript window property called cross origin isolated and it's a Boolean, true or false, and it tells us whether in this specific context is this frame, this window, is it cross origin isolated or not. So that's something that I didn't even know existed but is actually in place.
+
+Joseph Thacker (35:37.977)
+So what are some examples for why you would want to not isolate an origin or why, then when you would.
+
+Justin Gardner (35:42.04)
+Hmm. Yeah, so if you're trying to isolate an origin, it provides an extra layer of security, but also there are reasons to not do it, right? If you need to communicate with a different tab via like a window.opener relationship or something like that via post message or whatever, then you can't really isolate yourself because there has to be a relationship between those two tabs in the browser context group. And so that's, mm-mm.
+
+Joseph Thacker (36:08.014)
+So if an app were to open a new window for you to like log in or do an offload or do something and then it needs to pass something back to the first tab, they could not use this feature.
+
+Justin Gardner (36:15.02)
+Right, exactly, and that's something you often see with auth flows is like, you know, you're handing it off either to a third party or to a same, something on your same site, right, which is like, know, auth.domain.com, going back to www.domain.com, right, the site is the same but the origin is different, where it starts to get a little tricky. And so the main header that just really tweaks my melon, Joseph, like they really just hex up some great exploits.
+
+Joseph Thacker (36:25.966)
+All right.
+
+Yeah. Right. Yeah.
+
+Justin Gardner (36:44.454)
+is the cross origin opener policy or Coop, okay? So let me sort of, let me rant on this one for a second, okay? Coop, this son of a badger is really messing up some stuff. Because what often happens when we're trying to exploit post message related bugs, which is like one of my bread and butter vulnerabilities, is we need to open up a new tab because of same site stuff or extreme options, right? So we pop open a new tab.
+
+Joseph Thacker (36:47.992)
+Yep. Yep.
+
+Justin Gardner (37:11.222)
+and then we send a post message from our attacker controlled page to our victim page, right? And in order for us to send, they have to be in the same browser context group, which is why we open it up and we get a frame reference. And then we can do frame reference dot post message and that's how we send it. This son of a gun, Coop, here, severs that frame reference. So whenever I pop open a new tab, if that new tab, know, site dot com,
+
+has the coop header and it says coop same origin or same origin allow popups, then when I try to access that window that I opened up by window.open, it's gonna say null. It severs that relationship, right? So there's no freaking way, Joseph, to send a post message to that page. And I have a zero day right now. Dude, I actually figured out a way around it, which I'll explain, which is great.
+
+Joseph Thacker (37:54.606)
+Yeah.
+
+Joseph Thacker (38:01.666)
+How many bugs do you have that are blocked by that?
+
+Justin Gardner (38:08.93)
+but this will really, really inhibit a lot of post message related bugs. But there is an upside to this too, which is that you can tell companies that don't want to pay for third party library vulnerabilities, that have post message, that they have a remediation method, which is they can put cross origin opener policy on their page, and then there's no way to send a post message through. And so it's sort of a double edged sword, right? You can use it to...
+
+Joseph Thacker (38:34.978)
+Yeah, yeah.
+
+It gets bugged by many people paid sometimes because you can yeah, you can give a fix. Yeah.
+
+Justin Gardner (38:39.628)
+Yeah, because they have a mitigation, right? Exactly. So it's a little bit of a double-edged sword in that regard. But essentially what it does is it severs the relationship between your attacker page and the victim page. And there's no way to communicate via post message between those two. Now let me kind of talk about the nuances of this bad boy for a second, OK? So one, and this is the big one, it only affects top-level pages, OK?
+
+So if you can, so let's say you've got a vulnerability on www.site.com, right? If you can get www.site.com iframed into a page that does not have coup headers, right? So let's say, you know, iframe.site.com. Iframe's in www.site.com, Right. If iframe.site.com does not have a coup header, then you can do a window.open to iframe.site.com and then it will iframe www.site.com.
+
+Joseph Thacker (39:10.446)
+Yeah.
+
+Joseph Thacker (39:23.14)
+Sure, some random subdomain.
+
+Justin Gardner (39:34.87)
+and then you can send a message from your attacker controlled page through iframe.site.com to www. Exactly. And so even though www.site.com has the coup header, it's gonna be ignored because it's not a top level page. And so you still will have that frame reference and can send that data through. And so here's the place where, I mean this is the major work around that the team, the research lab team that was kinda talking about.
+
+Joseph Thacker (39:38.03)
+Nice.
+
+to the iframe on the page. Yeah.
+
+Justin Gardner (40:04.61)
+these concepts shared, which is that if you can figure out a way to get it iframed in, then that's kind of your best way to exploit this. And I'll just share from my own personal hacking experience that it is easier to get an iframe injection when you are dealing with some third-party libraries, right? And so oftentimes what'll happen is a site will have a third-party library, it'll iframe in some support page or some chat page.
+
+Joseph Thacker (40:24.676)
+Mm-hmm.
+
+Joseph Thacker (40:32.278)
+Yeah, yeah, makes sense. Yeah. Yeah. Yeah.
+
+Justin Gardner (40:33.806)
+or something like that, right? And then if you can get an XSS on that page, then you can reach through, redirect, if you can get it, this is how it works. like, I'm getting crazy now guys, listen closely, because this one's gonna be tricky, okay? So you get an XSS on the support.com, right? So you get the XSS on support.com, you iframe that into your attacker page, right?
+
+Joseph Thacker (40:39.672)
+That's really funny.
+
+Justin Gardner (41:02.242)
+So now you've got control of support.com in your attacker page. Then you open up a window to the page that has the iframe to support.com, right? And then you reach from your attacker controlled, you know, XSS, and you reach over through the page that you can't into the iframe on the victim page. And then you redirect that to the page that has the coup headers, right? Do you see what I'm saying? And then now,
+
+Joseph Thacker (41:14.497)
+Interesting. Interesting, yeah.
+
+iFrame.
+
+Joseph Thacker (41:25.561)
+Yes.
+
+That's absurd, that's even possible. Yes, no, I understand.
+
+Justin Gardner (41:32.588)
+Yeah, because you have the XSS, it's same origin, so you can do read or X, and now you've got the page that has the kube headers embedded in iframe.site.com, and then you can communicate to that page via post message and then pop your XSS or whatever. So it's a little convoluted, but it really does work, and it's the best way that I've found to get around kube headers.
+
+Joseph Thacker (41:53.496)
+Go hack on things you're not supposed to. Go find access on third parties. Yeah, yeah, exactly, yeah. There you go, yep.
+
+Justin Gardner (41:55.054)
+leverage, leverage the third party trust relationship is what I prefer to call it. Okay.
+
+Joseph Thacker (42:04.556)
+And you're doing it for responsible reason and just closing it and it's fine. But yes, no, I agree. I think, I think that's really cool. And I'm, I'm shocked that I was able to follow that. Hopefully the listeners can too, but yeah, basically on your attacker page, if you get XSS, you can I frame that support.com and influence the I frame of support.com on the, on the company's website, which allows you to redirect it. Yep.
+
+Justin Gardner (42:07.585)
+Exactly.
+
+Justin Gardner (42:12.109)
+Yeah.
+
+Justin Gardner (42:24.138)
+Exactly. Dude, that's great. All right, dude, I'm glad you're able to track with that. I don't know if that's you being big brain or my explanation being sufficient, but some combination of the two I imagine. Okay, so let me mention this other piece of this, okay? Coop is also, it's called cross origin opener policy, but it actually has, it affects the opener and the opened, right? So if you can get a, like, whateversite.com to open a pop-up window,
+
+Joseph Thacker (42:31.076)
+No, it's good. Yeah, yeah, makes sense.
+
+Yep.
+
+Justin Gardner (42:51.786)
+it will also have a severed relationship if the coup header's in place. Except it...
+
+Joseph Thacker (42:55.694)
+Well, actually, yes. So let's tell the listener real quick, what are the options for that header? The values.
+
+Justin Gardner (42:59.436)
+Yeah, great, thank you. Great, great, great, great, great specification there. Okay, so there are three values for that. There's same origin, which means only sites of the same origin can have that opener relationship, right? There's same origin allows popups, which I'll explain, and then there's unsafe none or missing, which is like the default value when it's not there, okay? So, same origins, yeah, exactly. So, same origin allow popups is the nuanced one, okay? So essentially what happens with that one is like,
+
+Joseph Thacker (43:02.276)
+Let's start there.
+
+Joseph Thacker (43:18.222)
+And that's good if it's missing. It's great if it's missing.
+
+Justin Gardner (43:28.194)
+you can't have any relationship, excuse me, you can't have any relationship with the page beforehand, but if that page opens up a popup to like your attacker controlled page, then that page will have a reference to the page with the coup headers because it's a popup from the page with the coup headers, right? So if you can get it to pop up a window, then you will be able to access that, get a frame reference to that window via window.opener, okay?
+
+Joseph Thacker (43:40.196)
+Mm-hmm.
+
+Justin Gardner (43:57.87)
+So that's another sort of workaround. It's a little bit more rare for you to be able to get a pop-up like that. You kind of need like a pop-up injection or maybe there's like some page where they forgot to do like, where they have like a, like an href, you know, pointing to it and they didn't put like no refer or anything like that. But if you can get that to happen, then you can be able to trigger the attack back on that same page that has the coupeters. Does that make sense? am I, yeah, yeah.
+
+Joseph Thacker (44:03.854)
+Yeah.
+
+Joseph Thacker (44:23.34)
+Yeah, it does a little bit. Yes. I've never even heard of pop-up injections though.
+
+Justin Gardner (44:30.03)
+Yeah, well, there's a good reason for that, which is I just invented it on the spot. controlling what window or what location a specific site is popping up. I've never seen same site allow pop-ups, so it's not really a very relevant situation. But I figured I would add that nuance in there just in case. So that's Coop.
+
+Joseph Thacker (44:33.752)
+You invented that on the spot.
+
+Joseph Thacker (44:42.712)
+Gets opened. Yeah, it seems pretty rare, like you said.
+
+Joseph Thacker (44:49.429)
+used. Yeah.
+
+Joseph Thacker (44:54.7)
+Yeah, cool.
+
+Justin Gardner (44:58.914)
+Pain in the ass, severs the frame relationship. Solution is, if it has allow popups, try to get a popup. And if it doesn't have allow popups, if it's just same origin, then you need to get that page iframed into a page that is same origin but does not have a coup header, which is tricky. So you gotta understand where your application segments are and get that iframe injection. And I'll just add there, there is no same site setting for this, so it has to be exactly same origin.
+
+Joseph Thacker (45:14.244)
+Right.
+
+Justin Gardner (45:26.03)
+And so my example was a little bit flawed. It can't be iframe.site.com. It has to be www.site.com, iframing in www.site.com, which does make it more difficult, but was the situation when I actually exploited it. And so just understand.
+
+Joseph Thacker (45:36.003)
+Hmm.
+
+Yeah, that's cool.
+
+Joseph Thacker (45:44.312)
+So probably the large companies with a lot of functionality under a main domains where you would have to find that.
+
+Justin Gardner (45:49.302)
+Yeah, exactly, and there will be different application segments as well, right, where there's like, okay, slash whatever is one app and then slash blah blah blah is another app, right? So that's the sort of situation we're looking at. Okay, two more headers to go. These would be a lot less nuanced. We have cross origin and better policy, okay? This one...
+
+Joseph Thacker (45:56.47)
+Right. Yes. That's right.
+
+Justin Gardner (46:12.078)
+This one is kind of exactly what it sounds like. It's a policy on what can be embedded into the page. Okay, so the default value for that is unsafe none, or if it's missing, then that's unsafe none. And there's two other values. RequireCorp, which I'll explain in just a second, and then credential list, which is any resource that you have embedded in the page will be sent with zero cookies. You know, your images, whatever. And this is a little bit less of a big thing now that we've got same-site cookies that cookies aren't really sent anyway.
+
+unless they are top level navigations. But if this is something that you're running into and you do need to have those on there, then you're kinda screwed. So just be aware of those three values and then going back to the other one, Good question, let me explain that. So require corp says any asset that is being embedded in this page has to
+
+Joseph Thacker (46:42.425)
+Yeah.
+
+Joseph Thacker (46:55.908)
+So what does RequireCorp do?
+
+Justin Gardner (47:08.96)
+return the cross-origin resource policy header. And if it doesn't, then it's blocked. And the cross-origin resource policy header, unlike these other two headers, embedder policy and opener policy, which are embedded on the page, this resource policy header has to be embedded on the asset that is being loaded.
+
+Joseph Thacker (47:13.668)
+Hmm
+
+Joseph Thacker (47:28.59)
+That's really interesting. feel like that's a kind of a paradigm that could be applied, like a meta paradigm that could be applied for security in other places. It makes me think, it's like a really neat concept that you want to like go ahead and pre-approve or put on an allow list, things from other places. And so what you do is you put it in the body or the header of the thing that's coming in. It's kind of interesting.
+
+Justin Gardner (47:38.626)
+Mm-hmm.
+
+Justin Gardner (47:51.468)
+Yeah. Yeah, it's very thorough. It's very depends on depth. And I just DM'd you a link. This is like to Google user content dot com, which is where they like host user content for Google. And you notice there, their cross origin resource policy says cross origin, which is the most permissive setting, right? So there's three settings, same site, same origin, and cross origin. So this is particularly helpful if you are looking to prevent an asset that you have from being embedded.
+
+Joseph Thacker (48:04.45)
+Yeah.
+
+Justin Gardner (48:21.034)
+on an attacker controlled page. And there's a specific class of vulnerabilities that is all but gone now, but does still sort of exist called cross site, XSSI, cross site script injection, okay? And I don't know if you were in the front end game when this class of vulnerability existed, but essentially how this works is on an attacker controlled page, you do a script tag and you include a dynamically generated script on the target
+
+Joseph Thacker (48:36.11)
+Yeah.
+
+Justin Gardner (48:50.338)
+website that leaks data about the current user's authenticated state. And then when it loads that script into your page, you can do some JavaScript shit to pull out the data and get access to it, right? And so this kind of got deleted when same site lax became the default. But if the auth is being done off of same site none cookies and the script is being dynamically generated off those cookies, then it could be something that could still happen.
+
+Joseph Thacker (48:56.067)
+cool.
+
+Joseph Thacker (49:01.026)
+That's interesting.
+
+Joseph Thacker (49:19.044)
+Mm-hmm.
+
+Justin Gardner (49:19.254)
+Anytime you see dynamically generated scripts, you should be thinking about that. But the cross-origin resource policy is a great way to prevent this from happening. So you can take that script, add the cross-origin resource policy header to it, and say, hey, cross-origins, set it to same site or same origin. Cross-origin is not allowed to load this resource. And then that would block that XSSI from occurring because the attacker could not include your dynamically generated script tag on their page. Does that make sense?
+
+Joseph Thacker (49:33.348)
+Mm-hmm.
+
+Joseph Thacker (49:39.683)
+Right.
+
+Joseph Thacker (49:47.864)
+So does the browser just straight up refuse it?
+
+Justin Gardner (49:50.978)
+Yeah, it says no, we're not gonna let them load this resource because they don't have, yeah, yeah, so it's pretty solid. Okay, if you implement all three of those headers correctly, then the JavaScript Boolean cross-origin isolated will be set to true. And then you get access to a bunch of super secure timing APIs and stuff like that that you can get access to that Spectre was utilizing to leak a bunch of stuff.
+
+Joseph Thacker (49:54.052)
+That's interesting. Yeah, that's cool. Yeah.
+
+Justin Gardner (50:19.554)
+So I just wanted to give those to the listeners and kind of say, hey, this is kind of what we've got as far as these cross origin headers go. Cross origin embedder policy and cross origin resource policy are not super helpful for an attacker, but understanding the nuances of Coop are absolutely necessary. And I think that work around that the research lab came up with, with getting it embedded into a page, is super helpful for exploiting these sort of scenarios.
+
+Joseph Thacker (50:44.854)
+Yeah, I mean, I doubt there are very many people who have figured that out. And so there's probably a lot of those lying around where it seemed unexploitable, but there actually is now a path to exploitation.
+
+Justin Gardner (50:54.764)
+Yeah, yeah, so shout out to the team. It warms the heart a little bit to see some good research coming out of the research lab already. It is an investment we're doing, and we've already seen, I think, several volumes get popped from the research lab, and then also this nice piece of research getting pumped out to the pod. So appreciate you guys on the research lab. Okay, dude, hang in there. I got two more headers I want to tell you about, okay? Okay, so.
+
+Joseph Thacker (51:14.604)
+Yeah. 100%.
+
+Joseph Thacker (51:20.996)
+Perfect. Yeah.
+
+Justin Gardner (51:22.658)
+These are not related to cross origin stuff, but I just kind of wanted to, since we're talking about web headers, I kind of wanted to like throw these in there just as a bonus, okay? The next two are service worker allowed and X content type options, okay? So, mm.
+
+Joseph Thacker (51:34.532)
+Yeah, I'm glad you have a service worker allowed on there. I know you have mentioned service worker stuff a lot in the past and I'm not, you know, super up to date on like how it works and like what volumes are possible there, but you see it all over the place these days. So I'm curious. Yeah. What you have to say about this.
+
+Justin Gardner (51:39.597)
+Mm-hmm.
+
+Justin Gardner (51:49.016)
+So service workers, for those of you that aren't familiar, is essentially a way for you to, I'm gonna explain this from such an attacker perspective, like literally what I was about to say was, a way for you to gain persistence in the browser, right? Service workers are not that. Service workers are something to help with caching and like a bunch of other stuff like that in the browser. But from an attacker perspective, from a hacker's perspective, it's a way for you to gain persistence in a victim's browser, okay? So the way this typically works is you have to have file upload. You have to be able to upload a JS file.
+
+Joseph Thacker (52:06.596)
+Yeah.
+
+Justin Gardner (52:17.238)
+and you've got to be able to upload an HTML file or have an XSS, okay? And once you do that, you can register a service worker, and that service worker is scoped to whatever path you have the JS file and the XSS on. So if your JS file is under, you know, slash site slash asset slash upload, then your service worker is only gonna be able to access slash site slash upload and affect the pages that are being loaded in the victim's browser thereafter.
+
+Joseph Thacker (52:17.54)
+Mm-hmm.
+
+Justin Gardner (52:46.56)
+at those paths. But it's pretty cool. If you can get it installed at slash, then you just essentially have persistent XSS on every single page in the browser, which is awesome. Yeah.
+
+Joseph Thacker (52:48.014)
+Yep, yep.
+
+Joseph Thacker (52:56.196)
+Yeah, I was going to say, guess that means that many service workers are probably implemented at root because they need to be able to run across a majority of the website.
+
+Justin Gardner (53:04.726)
+Yeah, so if you're able to attack a service worker, that's a really interesting scope too, because if you're able to hijack, then I imagine there's a lot of stuff you can do there. I do know that it's a little bit tricky, and I do know that the research lab is doing some research on that right now, but very, very ripe scope. However, so that path thing really kind of gets to become a problem, because it's not that rare that we can upload a JavaScript file or an HTML file to a target, right? That's pretty standard.
+
+But it's normally at some obscure path that has our ID, and if we register a service worker there, then it doesn't really do anything. And so there's this header that's very interesting called service worker allowed. And it's an HTTP response header that contains a path that the service worker should be scoped to. So even if your JS file is at like, slash asset, slash user, my user ID, slash whatever.js, if you can figure out a way to return the service worker allowed header,
+
+Joseph Thacker (53:57.934)
+Sure, yeah.
+
+Justin Gardner (54:02.39)
+and say service worker allowed colon slash, right? Then it will, it trusts it and it will give the service worker permission to access anything under slash, right? Which is great. So here's where the rubber meets the road on this one. I just wanna make people aware of this because I know Franz has done a lot of really cool stuff in Matan as well, to using service workers to leak like private.
+
+Joseph Thacker (54:07.384)
+browser just trust it.
+
+Joseph Thacker (54:13.535)
+Cool.
+
+Justin Gardner (54:29.42)
+like signed header or signed query parameters to access a specific file and that sort of thing. And I think this is really helpful for those sort of scenarios. But it's pretty rare that you can control an HTTP response header. And there's two sort of main configurations where I can think that that would be happening. And that is with CRLF injection, right? If you can get a CRLF injection, then you can insert this header and get the XSS and generate the JS file, which is pretty rad.
+
+Joseph Thacker (54:34.926)
+Yeah.
+
+Joseph Thacker (54:44.473)
+Yeah.
+
+Joseph Thacker (54:58.884)
+Mm-hmm.
+
+Justin Gardner (54:59.342)
+Or more likely in a scenario where the app allows you to configure a reverse proxy back to your own site. Okay, and I wanted to sort of shout out the specific functionality in Shopify called app proxies and Essentially it allows you to do just that proxy a specific path on a store that you've installed an application on back to your website And and so, you know, typically you could return the service worker allowed header
+
+Joseph Thacker (55:22.456)
+Mm-hmm. Yeah.
+
+Justin Gardner (55:28.278)
+and that would allow you to register a service worker, which would gain you control of the whole My Shopify website. But they have a list of disallowed headers that can come through this reverse proxy, and service worker allowed is on that. So if anybody can figure out a way to smuggle a service worker allowed header through this app proxy, then that's a really cool piece of scope. And any other scenarios, any other targets where there's like an app proxy-like functionality where you're doing a reverse proxy,
+
+Joseph Thacker (55:40.17)
+Yeah. Nice.
+
+Justin Gardner (55:57.838)
+There is a really ripe attack scenario there with service workers being able to take over that whole origin, not just the origin that you're scoped to for the reverse proxy.
+
+Joseph Thacker (56:10.436)
+So why does Shopify have this? If you don't want me asking, okay, I'm a little dumb.
+
+Justin Gardner (56:12.398)
+Dude, I don't know, man. I'll give a full disclaimer, you know. I would be careful reporting bugs on this scope, you know. I know that there are some weird quirks with this specific piece of scope, but I just wanted to use it as an example because it's pretty funky functionality. And I think there's a lot of areas where that can cause problems.
+
+Joseph Thacker (56:17.444)
+Dynamic.
+
+Joseph Thacker (56:35.427)
+Yeah.
+
+Joseph Thacker (56:38.916)
+Yeah, I'm just, was just trying to think through, I understood why Shopify added it, then I would be able to like kind of update on mental model for what other companies, what other programs would maybe have a similar functionality.
+
+Justin Gardner (56:49.218)
+Yeah, think Shopify is really built on plugins. So I think you see this type of functionality in any area where there's app hosting or there's third-party plugins that really need to be seamlessly integrated into the main app. Those sort of scenarios are where you primarily see it. Yeah, yeah, Atlassian might have something similar. I want to say I saw something on (REDACTED) that was similar. Those bigger, those giant apps often have this functionality buried in there related to the app functionality.
+
+Joseph Thacker (57:02.814)
+Mm-hmm. Maybe Atlassian, stuff like that.
+
+Joseph Thacker (57:19.127)
+Yeah, definitely.
+
+Justin Gardner (57:20.91)
+All right, cool. Last one. Dude, my throat is getting a little scratchy again. I don't know, I've had this cold for like a week. It just won't go away. All right.
+
+Joseph Thacker (57:30.616)
+Yeah, I it come through once or twice, but you've been good.
+
+Justin Gardner (57:33.068)
+Yeah, all right, so last one here, xcontent options has one available sort of parameter that you can give it, which is no sniff, okay? And have you heard of this one before, Joseph, do know what this one does? Okay.
+
+Joseph Thacker (57:46.916)
+Yes, I don't, but I have seen it many, times.
+
+Justin Gardner (57:51.138)
+Yes, so essentially what it does is the browser will attempt to sniff the content type of the page that is being returned if a content type header is not provided. Okay? And so this one says, don't freaking do that. Is what it says, Because a lot of XSS can occur from that sort of thing. Content type sniffing, or even as we've learned recently, character set sniffing can cause a lot of issues. So this says, don't do that, just don't, okay?
+
+And I just wanted to tell the community about this one little nuance that I stumbled upon not too long ago, which is that if you repeat the content type options header twice, let's say you've got a CRLF injection and your injection is below the content type options header and below the content type header, right? So you can't overwrite those two headers. What you can do is you can add another X content types header with a invalid value and the browser will be like, dude.
+
+there's two content type options headers. What do I do? I'm gonna sniff. I gotta sniff. The browser is just really eager to sniff for some reason. And so if you provide two of these content type options headers, it will actually discard both of them and allow the browser to actually sniff the content type from the data that's being returned. So it's a pretty nuanced scenario. It's weird though, right? Yeah.
+
+Joseph Thacker (59:07.47)
+Wow.
+
+Joseph Thacker (59:12.772)
+Dude, that's amazing. Yeah, that's cool. It is. Hey, I got a cut. I've got a contract here. I've got to go quick. No, no, no, no, let's finish the podcast. Just give me just a second.
+
+Justin Gardner (59:18.796)
+Okay, sure, you're good, man. Go ahead and go, I'll close the window. Okay, sure.
+
+Joseph Thacker (01:00:06.478)
+I didn't know you were here.
+
+Joseph Thacker (01:00:11.938)
+Sweet, can cut it right back in. Sorry, that turns out McCall is actually here so she can handle it all. And I wanted to let you finish that bit, because you were very energized. So we can just clap, clap back in here and finish up.
+
+Justin Gardner (01:00:15.874)
+Okay, sweet.
+
+Justin Gardner (01:00:21.6)
+Yeah, no, it's all good. We're like 30 seconds from being done with the pod anyway, so. Yeah, just popping back into it. Yeah, man, so this content type options header, it's really funky. The browser just.
+
+Joseph Thacker (01:00:26.372)
+Oh yeah, no, that's fine.
+
+Joseph Thacker (01:00:33.184)
+Why in the world, why would a browser just drop it if there's two? It's like, just take one at least.
+
+Justin Gardner (01:00:37.486)
+That's what they do for most other headers, but I think this is also a really interesting area of research where this one content type options header behaves this way. I wonder if there's any other headers that sort of have a similar functionality. So that's something that's on the research list for the research lab, and maybe the community can kind of poke at it as well.
+
+Joseph Thacker (01:00:46.222)
+Yeah.
+
+Joseph Thacker (01:00:49.87)
+Yeah.
+
+Joseph Thacker (01:00:56.13)
+Yeah, it's so easy to now, I think you mentioned this to me recently, to have AI spin up like little Docker containers of things that like, you know, servers that respond in weird ways, for example, it'd be really interesting to like have it do that with a bunch of different duplicate headers and see how browsers respond. Yeah.
+
+Justin Gardner (01:01:08.962)
+Yeah, absolutely, definitely a cool and really easily done piece of research. think that could easily be knocked out in eight hours and you could write something up and it'd be really value add to the community. Yeah, yeah, send it to us guys, drop it in the cool research section if you do it and we'll cover it on the pod. Okay, one little thing that I just wanted to close with. Dude, so you've seen the refer header, right? That's like super common. Dude.
+
+Joseph Thacker (01:01:16.492)
+Right. And you could get featured on the podcast. It'd be great people. Let us know.
+
+Joseph Thacker (01:01:34.166)
+Of course, a million times, yeah.
+
+Justin Gardner (01:01:36.054)
+I've always thought there was something funky about the referrer header. Sometimes there's like CSUR protections or whatever and you're like checking something and it says, you know, don't have the referrer header. And then I type referrer and I give it a referrer and it says, don't have the referrer header. And I'm like, I misspelled referrer. There's only one R. No, no, there's two R's, dude. The referrer header that is always sent in the browser, every time you make a request,
+
+Joseph Thacker (01:01:55.14)
+All right.
+
+Justin Gardner (01:02:02.881)
+contains a misspelling of the word referrer. Referrer is spelled R-E-F-E-R-R-E-R. And the one that the browser actually sends is R-E-F-E-R-E-R. So.
+
+Joseph Thacker (01:02:08.59)
+That's right.
+
+Joseph Thacker (01:02:13.506)
+Yeah, I don't know. I came across this randomly. Someone else mentioned it as like a little tidbit or like, did you know about web security like a few years ago, but it's really funny and mind blowing. I love like any kind of little quirks of old systems. I think about that a lot with video games. I know a lot of our listeners probably game, but I think it's really like just neat and a really cool byproduct of the fact that some small dev team made some decision 15 years ago and now like two.
+
+Justin Gardner (01:02:19.363)
+Yeah.
+
+Joseph Thacker (01:02:38.144)
+you know, 2 million people are like playing this game where they're over optimizing to find that one item that the developer didn't think about when they actually added an attribute that was overpowered or something, you know, like I think it's really cool to have those downstream effects and it feels similar here. It's like some developer misspelled it and at some point it was way too embedded in all the systems to like roll back. Yeah.
+
+Justin Gardner (01:02:47.361)
+Yeah, yeah.
+
+Justin Gardner (01:02:55.086)
+Exactly. Yeah, so it makes me feel good. you know, these core people that built the whole... This is what I'm talking about. Like when I sat on the pot a couple weeks ago, like the people that built all these crazy specs and these cool like crazy protocols and stuff like that, they're just humans, just like you and me. You know, like there's no need to be so intimidated from all of this. If some bro in his basement built this protocol, you can figure it out in like, you know, 10 times as much time as he took. So it's not going to be beyond your grasp. You're not just incapable.
+
+Joseph Thacker (01:03:10.532)
+They're just humans. That's right.
+
+Joseph Thacker (01:03:23.8)
+That's right.
+
+Justin Gardner (01:03:25.128)
+of learning this. You can, it just takes time. And people like those bros misspell the word referrer and then the whole internet has to use this misspelling for the rest of the time the internet exists. yeah.
+
+Joseph Thacker (01:03:36.972)
+Yeah, I feel like usually the stuff that's like hard to understand or confusing is mostly due to like naming conventions or like the fact that our brains kind of conflate to topics or two subjects. So as soon as you like can properly classify it, even as you were describing that thing that I grok the first time with the windows and all that, I feel like having like just a mental.
+
+Justin Gardner (01:03:44.28)
+Yeah.
+
+Joseph Thacker (01:03:56.982)
+a physical mental view of what actually is occurring. I even noticed you kind of do it when you draw it out with your hands and you say it goes over and then it goes down, it goes in. It's like these like spatial references really help understand front end hacks, like front end bugs. So yeah.
+
+Justin Gardner (01:04:04.715)
+Yeah, exactly.
+
+Justin Gardner (01:04:10.35)
+Oh yeah, oh for sure dude, for sure. Yeah and that's why we try to always draw it out when we're doing the master classes in the Critical Thinkers Discord and stuff like that to try to give people a tangible method. You know, got auditory learners, you got visual learners, you got kinesthetic learners. I think we over leverage, you know, on the kinesthetic learners because we're hackers, we like to get our hands on the keyboard and tweak with stuff but there's a lot of people that are learned by audio, the podcast or visual, you know, watching something or seeing a graph drawn.
+
+Joseph Thacker (01:04:22.968)
+Yep.
+
+Joseph Thacker (01:04:34.776)
+Mm-hmm.
+
+Justin Gardner (01:04:38.562)
+you just gotta figure out which way you learn best and then try to get the content into that medium for you, which is why we also released the podcast via text with the hacker notes, so people that learn better by reading can ingest the same content and get the value out.
+
+Joseph Thacker (01:04:46.436)
+Yeah.
+
+Joseph Thacker (01:04:50.412)
+Yeah, yeah, exactly. And, you know, using AI, can kind of swap between those, those modalities a little bit, a little bit more seamlessly these days. So.
+
+Justin Gardner (01:04:57.346)
+Yeah, for sure, man. All right, you got anything else to add or is that a wrap on the pod?
+
+Joseph Thacker (01:05:00.95)
+No, think that's it. appreciate it. I'm excited. I'm going to go try to find my first bug on day one, a full-time bug bounty. So thanks. See you.
+
+Justin Gardner (01:05:06.52)
+Dude, GG, go get it, man. All right, peace.

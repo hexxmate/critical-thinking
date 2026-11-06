@@ -1,0 +1,281 @@
+Episode 160: Cloudflare Zero-days & Mail Unsubscribing for XSS
+Source: https://www.criticalthinkingpodcast.io/episode-160-cloudflare-zero-days-mail-unsubscribing-for-xss/
+======================================================================
+
+Title: Transcript - Fri, 06 Feb 2026 18:31:53 GMT
+Date: Fri, 06 Feb 2026 18:31:53 GMT, Duration: [00:45:05.71]
+[00:00:00.64] - Joseph Thacker
+It makes me want to do things like name my user, that string, put my email as a plus alias reso plus that big long string@wearehacker1.com. Just basically just get that string anywhere I can.
+
+[00:00:39.78] - Joseph Thacker
+hey, what's up guys? I just had a quick little snippet here for you from the Adobe team for CTBB listeners. They're doing an AI campaign and if you use code CTBB040126 you get a 10 bonus on your bounty for any AI vulnerability which is mapped to the OWASP LLM Top 10. So just do April 1st of this year and it's true for the products that are Adobe Acrobat Web AI Assistant, PDF spaces, content creation and presentation features using Express and then their Adobe Express AI Assistant. So make sure you check that out and get a 10% bonus on your bounty. All right, dude, what's up? How have you been?
+
+[00:01:24.00] - Brandyn Murtagh
+I've been good, mate. It's been a while. How about yourself? What's been going on? Many bugs, lots of research. What's been happening?
+
+[00:01:31.89] - Joseph Thacker
+Oh man, I feel like, well, 2025 was a tough year in general for our family, but this month we've also had some tough stuff going on. Hacking wise though I would say definitely in a building phase. You know, I'm sure lots of people are sure everyone's installing claudebot or openclaw or whatever it's called these days and getting their stuff built, but which I haven't, I haven't messed with it much. I'm still using cloud code for everything, but. But yeah, I've been using cloud code to build a ton of stuff on the side. Inadvertently it has found like two bugs, but I think that it will hopefully pay dividends over, over the course of the year. You were just telling me that you're building some like program specific automation, huh?
+
+[00:02:13.84] - Brandyn Murtagh
+Yeah, yeah. I think I started off the year and I looked at all my notes, obviously, you know, I take excessive notes of everything I do and I just realized there's a couple of big inefficiencies and some really nice quality of life things that I just needed to bite the bullet and start building. And now obviously with Claude and actually knowing how to vibe code properly, it just makes life so much easier. So I set myself some time out in the calendar and committed to it and it's going pretty well so far with the stuff that I did want to make. I'm just excited to unleash it. When it's finally ready in a couple of weeks.
+
+[00:02:52.84] - Joseph Thacker
+Yeah, I was going to ask you, is it more passive stuff like automation monitoring and that sort of thing, or is this stuff that you plan to use when you're actively hacking?
+
+[00:03:01.24] - Brandyn Murtagh
+Both. So my idea is in my notes. It makes a lot of sense to me mentally in my notes, but it's called the hackers toolkit and there's four different areas of my hunting methodology, if you want to call it that, that could be improved by some tooling, some improvements to existing tooling have. And just better tracking and monitoring of a lot of the things that I use when I'm hunting on some targets. So it's basically consolidating all my pain points and trying to like hit them out all in one by creating this hackers toolkit which will hopefully pay dividends. But we'll see. It's early days, it might not work, but hopefully in a future episode I'll have some good news.
+
+[00:03:45.53] - Joseph Thacker
+Yeah, I do feel like that's the thing is a lot of times I'll get something set up and be like, oh, this is going to be awesome. And then I check on three days later and it's like it crashed or it was like looping on an error, you know, or something like that. Um, because when you're not writing the code by hand, it's like you don't know exactly where to be checking where it could break. You know, obviously you can tell Clyde to like write tests and check, check it all but exactly. I think you and I have a bunch of stories for the day. Uh, but one thing we did want to mention up front, you know, Justin had an awesome Google episode last week, was that they, I think they might have meant to mention it on the pod. And so this is us mentioning it now. Basically, Google Cloud VRP has a swag bonus for critical thinking listeners. All you got to do is mention in your report, the podcast and it can be like a cash or a credit reward or any report that gets rewarded and they will like send out some bonus swag for critical thinker listeners.
+
+[00:04:42.24] - Brandyn Murtagh
+So that's pretty. That's pretty awesome. I don't think I've ever seen that happen before.
+
+[00:04:48.75] - Joseph Thacker
+I'm going to do it right now. I forgot to do that on one of my reports.
+
+[00:04:52.18] - Brandyn Murtagh
+So I haven't looked at Google. We're just talking about this off air and I do want to look at Google this year. So I think this has expedited it to try and get a bug in before April. Just so I Can have some swag. What is the Google swag like? Actually, you have quite a lot of it.
+
+[00:05:06.58] - Joseph Thacker
+Oh, man. I. So some of it's incredible. Yeah. I'll kind of do, like, a super quick rundown. They have, like, pretty nice shirts that I really like. It just says Google Buck Hunters and black on the front. And then it has, like, some sort of design on the back, depending on the event. And then my favorite piece of swag is they have, like, thick sweatshirts that are really nice, like, thick black hoodies. And there was, like, a really small AI Life hacking event, you know, like two or three years ago that didn't have, like, an official mvh, but they, like, gave me mvh. And so that's like, my favorite hoodie. It has, like, some AI art on the back. But in general, their NVHs are always those, like, sick dragonflies too. So, I mean, they have some good stuff. They gave out some pillows recently, so that was fun.
+
+[00:05:47.75] - Brandyn Murtagh
+But yeah, damn, I need to get my hands on some of it. My entire wardrobe is, like, a little bit of bug crowd, mostly hack of one and, like, the rest is 80% Amazon, which isn't.
+
+[00:05:58.95] - Joseph Thacker
+I'm wearing one. I don't wear much, but I think it's, like, a really fun one.
+
+[00:06:03.25] - Brandyn Murtagh
+What program's that from?
+
+[00:06:05.33] - Joseph Thacker
+It's just a bug crowd shirt.
+
+[00:06:06.77] - Brandyn Murtagh
+Oh, nice, nice. Sorry, I couldn't quite say.
+
+[00:06:08.66] - Joseph Thacker
+Yes, it's all your bugs are belong to us. I personally love that meme and that joke. Every time I wear this shirt, my wife makes fun of it.
+
+[00:06:14.25] - Brandyn Murtagh
+But it doesn't matter. It does not matter. But. Right. In terms of getting started on some research, do you want to start? You've got some pretty cool things that I haven't seen on this list.
+
+[00:06:27.10] - Joseph Thacker
+Yeah, sure. So we have a ton of interesting research from the last month. Um, we've had some episodes where we didn't get to cover as much. Um, the one I'm the most jealous that I didn't find, so I'll mention it first because it's super cool. Was this Cloudflare one. So I'm gonna open it up and share my screen real quick for the listeners. There was a Cloudflare, you know, they're calling a zero day here. I guess it's probably valid as a zero day found by Fears off. And basically there was like. What would you call this? There was like, a misconfiguration that completely disabled their WAF if the request was made to wellknown ACME Challenge. And so if the token in the Request match any active challenge across their entire infrastructure, not just the target domain. Then it would pass through completely unfiltered to the origin server. So an attacker could like craft request through that to bypass all of the customer configured WAF rules and. Yeah, let's scroll down here, let me show you.
+
+[00:07:37.82] - Brandyn Murtagh
+Wow.
+
+[00:07:39.26] - Joseph Thacker
+Yeah. Whenever they first found this, it was totally absurd. So yeah, there was this actuator ENV endpoint for. Well, actually I don't know if this was custom or if this was for every user, but basically for anyone that relied on Cloudflare WAF for blocking stuff, you could go straight to the actuator like env. So what I'm showing for the listeners is basically a screenshot where they showed that, you know, it's, you know, the testing domain slash, well known slash, ACME challenge slash. Then the actual challenge token, which could be true for anybody. So you can do it with your own token. Right. To attack other victims and then a path traversal up to whatever path you were trying to get to. Right. So in this case it was like. Semicolon and then actuator env. And so then they dumped the actuator env.
+
+[00:08:32.53] - Brandyn Murtagh
+Wow. So to summarize, you could have your own Cloudflare instance. You could generate one of these tokens on what's the endpoint? Well known ACME challenge and then token. You include that token, was it. You include that token in the well known path on the target domain and then you just path traverse to whatever path you wanted to bypass the waf.
+
+[00:08:58.17] - Joseph Thacker
+Yeah, you're able to see my screen, I think, right in this Screenshot. They're using fearsoff.org but let's say that the victim was google.com. right. Or whatever. Then you would spin up this, get your token, but then you would put the in the path for the victims.
+
+[00:09:12.90] - Brandyn Murtagh
+Yeah, nice. Wow. And they have Cloudflare have a bug bounty program, don't they? Or do they?
+
+[00:09:19.54] - Joseph Thacker
+I believe they do. I didn't see at the bottom, did they get a bounty? So maybe a hacker one.
+
+[00:09:25.07] - Brandyn Murtagh
+Nice, very nice. And the crypto.com security team. Oh, very nice.
+
+[00:09:30.59] - Joseph Thacker
+Yeah. Who they approached to independently verify it. I wonder if they were hoping for a big crypto bounty from that. So like let's submit this to the company that will be impacted the most here and then work backwards from there. Honestly, I mean, it's a little. It's probably not. It's a little more green hat than a white hat. But I do think sometimes when there are these like widespread issues like this that can Affect multiple companies in really significant ways. The bounty you would get by submitting it to the vendor only sometimes doesn't feel worthy of the payout. You know. And I think that in some cases like this it would be nice if some of the victims but also especially if they're bigger companies with big budgets kind of contribute to the bounty in.
+
+[00:10:12.11] - Brandyn Murtagh
+Some way for sure. I think that's been a topic of discussion for some of the recon guys as well. Right. When they are finding these sort of like configuration esque bugs which can be patched at the vendor side but it actually impacts a lot of other things. Where do you report it? Do you put the green hat on? Do you put the ethical hat on the very nice bug. And when did this get patch was this this month?
+
+[00:10:37.21] - Joseph Thacker
+I think it was January 14th. Yeah, no, actually sorry, no back in October. I only saw this in January though. I wonder when it. When this blog post went live.
+
+[00:10:46.25] - Brandyn Murtagh
+So it says it went live or last Update it was January 19, 2026.
+
+[00:10:51.28] - Joseph Thacker
+Yeah, I was thinking it was pretty new. So they must have just waited to get their stuff together before they disclosed.
+
+[00:10:55.92] - Brandyn Murtagh
+Damn. Yeah, that's very nice. Very impactful as well.
+
+[00:11:00.73] - Joseph Thacker
+That's the stuff I love looking for. Like I love server side stuff like that to expose secrets and hidden paths.
+
+[00:11:07.61] - Brandyn Murtagh
+Yeah, very nice. Let me share my screen. I've got one. Where are we? Which matches quite nicely with the kind of bugs I like to look for. Let me know if you can see my screen.
+
+[00:11:25.04] - Joseph Thacker
+Yes sir, I can see it.
+
+[00:11:26.80] - Brandyn Murtagh
+So this one made me laugh because you know when you're getting spammed from whatever email chain you subscribe to like two years ago and you know that would be useful and then you just get hammered every day ever since with check out this product, blah blah blah.
+
+[00:11:42.73] - Joseph Thacker
+Well, it's the worst of bug bounty. All of our listeners know that pain so deeply like oh man, just getting pinged and when they don't have a good unsubscribe it's like you can never get away from it.
+
+[00:11:52.28] - Brandyn Murtagh
+Yeah and I'm personally I've hit over 50,000 unread emails. So like this one put a smile to my face. So this research on the by Lawrence Haltman, I think it's pronounced sorry if I just completely butchered that turns the list unsubscribe into an SSRF and XSS gadget. Now the way it works is there's a SMTP header called list unsubscribe which is now standardized that is supported by however many mail servers it's it's standardized, it's a thing. Now the it essentially allows clients to provide an easy standardized way to unsubscribe from a mail list that you're getting absolutely hammered by.
+
+[00:12:34.50] - Joseph Thacker
+Do you think that's how the Google button works in Gmail? You know that like unsubscribe button that automatically appears when you kind of hover over emails?
+
+[00:12:41.30] - Brandyn Murtagh
+I have wondered, I might have to look after this call actually, because I'm intrigued. But the field essentially looks like this. For the people that are listening, it's list dash unsubscribe comma and then open bracket mail to list host, app, whatever subject and then you can provide URLs and mail to schemas there. Now that looks pretty standard. But what's interesting here is that the RFC states that you can include HTTP uris and a mail to link. So this researcher basically thought, okay, what happens if we add an arbitrary HTTPs scheme here or maybe other schemes? Now they went on to get some pretty impactful bugs on a lot of mail servers. So one CVE they got issues off the back of this CVE2025 68673 is a stored XSS affecting horde mail. Now essentially what happens is when you include a URI and this doesn't have to be a HTTPs or mail to uri, it can be a JavaScript URI it renders in a backend portal. So they include a JavaScript URI within their unsubscribe and they've got proof of concept scripts on here as well for the listeners. If you did want to come and have a look at this and you can see here in the list unsubscribe, It's a simple JavaScript URI confirm document domain, send that through and this actually pops on the back end of horde mail, which is pretty nice. So it's kind of a blind exercise if I'm following this one correct. So that was one of them. Now next up, they also found an SSRF in nextcloud and exactly the same methodology, when the user clicks unsubscribe from a mailing list, it issues a server side request. Now during their research it looked like nextcloud were allowing requests to arbitrary internal destinations as well. But building this research out a little bit more, they later discovered that this is only possible to hit internal hosts in nextcloud if this allow local remote servers is set to true in their configuration. So the radius is a little bit smaller there. But they've also included a proof of concept Python script. If you did Want to try this on any deployments that you find and it's literally just list unsubscribe with the target your URL in there as well. Pretty nice. Really nice research because for me this is one of those pieces that is an unlooked upon attack surface where everyone sort of knows that this exists but actually using it as a primitive for blind XSS and SSRF probably a little bit less known. And they've got Some really nice CVEs from this as well. So I can only assume that this is going to be in a few other frameworks out there. Definitely one to test for I think.
+
+[00:15:50.91] - Joseph Thacker
+Yeah, 1 million percent. And I think it does feel like in the last year or two there have been so many bugs from stuff that whenever we're as bug hunters hunting we just kind of ignore it. Some of those trace headers and they're just little things that are here and there, you always see unsubscribe and you kind of look for CSRF to unsubscribe others and then no one really submits it because it would be like a super low or something. But. But you know you're always looking for like just like little vulnerabilities like this. And you know we've all seen unsubscribe links. They're always like kind of interesting because they often don't need auth. You know you can just, you can just like get to them and then put in anybody's email and it'll unsubscribe them or whatever. But that's usually informational or you know like a hundred dollar low or something. This is a really cool way to find a high impact bug on the same. On the same scope.
+
+[00:16:37.95] - Brandyn Murtagh
+Yeah. Yeah. So takeaways. If you find a mail server and it supports the list unsubscribe functionality, try and embed any sort of SSRF targets you want to embed in there and also try blind XSS payloads as well because they could trigger. So nice research.
+
+[00:16:59.25] - Joseph Thacker
+Sweet. I'll go next. This is Heroku postgres vulnerability by Alistair. This was kind of interesting. I think this might have been found at a life hacking event that you and I were in, but.
+
+[00:17:16.32] - Brandyn Murtagh
+Oh really? Oh yeah, of course. Okay.
+
+[00:17:19.60] - Joseph Thacker
+Yeah. But anyways, this was. Is like a really cool bug and you should just read the whole. The whole. Read the whole post. But the TLDR here is that if you can overwrite functions which are automatically called by super users, then you can basically control what that super user is doing. This is like my buddy I'll shout him out here. His name's Mike Brancato. He got like third best bug or second best bug for Google or second best write up or something like a couple years ago for Google when they used to do those big payout bonuses for best write up of the year. And he looked for this similar vulnerability across many different cloud providers because they often will be in the background running metrics, right? Like let's say you're Google or AWS and you've got a bunch of managed servers. You probably need to keep metrics and health data on that, right? Like how many rows, like what's the size of the db? I don't know. Basically you just want usage statistics as you want to know how many databases are out there, how big they are, how much they're costing you, all these things, right? Well, whenever. So they kind of have to have like a God token of sorts, right? They have to have like a super super user who logs in to these DBs, pulls metrics on them and then logs out. And so there's often a potential vulnerability there where if you can overwrite the function that is being called by that super user then whatever, then you know, with whatever malicious action you want to get taken. So let's say, let's say there's like a super super user and a super user and if you want to escalate up to being super super user you need to change that fun be a function which sets your permissions to be higher, right? Or if you want to read other users databases like cross tenant vulnerabilities in cloud providers which is obviously one of the highest impacts you can have, you know, then you would change that function to let's say like read a different database for a different user based on you know, kind of like an eye door of sorts but really it's just this super super user has access to every postgres and so anyways you should just read Alistair's post. But that's basically what they did, right? They, they overrode a function and then when it was executed by the RDS super user it gave them that permission.
+
+[00:19:33.63] - Brandyn Murtagh
+So very nice. I can see as well there's a note here that it was, it won extraordinary research contribution award from Salesforce as well. And this is one of those attack surfaces where like I'm intrigued by it because as you say it's a managed service and obviously you and thousands of other tenants are running there. But without this kind of research I wouldn't even know where to begin to start dissecting some attack surface like this and the other things as well, it's always going to be incredibly impactful. And I can only imagine if you spend a long time on a single target, having this fundamental understanding of the service would be really, really beneficial because this is like a fundamental core service that's going to be embedded throughout the entire target. So this is a really nice write up and it actually covers quite in depth a lot of the architectural decisions as well that they've made around their Heroku infrastructure and how the customer databases are configured as well. So, yeah, this is really nice. I'm going to bookmark that.
+
+[00:20:39.93] - Joseph Thacker
+Nice. Dude, you're up.
+
+[00:20:42.32] - Brandyn Murtagh
+Right, what have we got next?
+
+[00:20:44.00] - Joseph Thacker
+You want to feature the CTBB research?
+
+[00:20:46.73] - Brandyn Murtagh
+Yeah, let's get the CTB researcher up. So for the listeners, we have some fresh CTB research up on the lab and the clients are guys and, well, just about every bug hunter is going to like this, but this is by. It's really a bad name for them.
+
+[00:21:05.91] - Joseph Thacker
+See you now.
+
+[00:21:07.67] - Brandyn Murtagh
+Thank you. On parser discrepancies. And parser discrepancies has been quite a hot topic on the POD on previous things. And the core concept here with parser discrepancies is that we can cause a confusion between two different parsers that parse the exact same input string, but they produce different results. Now, this one was really nice because the impact here allowed them to get XSS on Chrome and Firefox by abusing and hold on, let me just get this right. List based and singleton fields, which are described in the RFC as different ways header fields can be defined. Now when I started reading this, this is going to be one of those things that you intuitively know, because when you see Accept headers, you see this format all the time. When you've got accept text,/HTML, application xhtml, so on and so forth. Now only certain headers and fields accept this format. Not every header and field can accept that. And what defines that is a different rule in a different RFC called the ABNF rule, and that defines what header syntax can be used. Now, throughout this research, it actually built upon, and let me get this name right as well, the original research by Blackfan, when they done the MIME type validation research, we covered it previously on an earlier episode. We'll get that reference in the Hacker Notes. And essentially it allowed a application JSON semicolon comma, text HTML to be parsed as application JSON by a backend library, but by the browser get passed as text HTML, allowing XSS now he does a massive deep dive into exactly how these concept type headers are parsed and even gives code snippets from the Chromium code base here about their behavior and why they handle different things. I'm not going to go into it completely, but it's quite an in depth write up. Very good. Now the other thing as well is that the last match wins problem. Now how does Chromium handle and parse the content type response headers value? It goes into that because that affects the exploitability a little bit. Again, loads and loads of code snippets here. Very, very long read. So I'm not going to dive into all that. But the part that I did want to mention is right at the bottom. Where are we? Is a summary table which is really nice and I think the community and maybe even us should and it gives a summary of different libraries compared to browsers and how they pass the singleton and other fields and how they actually validate them. There's been previous research I think around the cache deception, if you remember what dropped last year at defcon and it gave the really nice fields of different frameworks, different web browsers, different frameworks, CDNs and how they validate different types. And this is exactly that. Very nice to read, very nice to check if you've got one of these libraries that you're encountering as well. But there's going to be a ton more libraries out there which have this exact same problem. So I recommend that this is probably going to be a ripe area to hunt on if you have the time and willpower to do it.
+
+[00:24:53.00] - Joseph Thacker
+Yeah man, I feel like some of the coolest things are whenever there's some new way to, you know, get HTML to be process client side whenever you can, like all of a sudden re unlock or basically do a first unlock for a new path to XSS is like the one of the coolest like types of research that can be done.
+
+[00:25:14.09] - Brandyn Murtagh
+So yeah, it's a really good write up. I didn't do it justice because there's a lot of code snippets here which will give you really solid fundamentals on how MIME types are handled and what why these little RFC quirks are producing this behavior. But you can't really speak all of this out on a podcast. So I recommend everyone to go and give this one a read. It's really nice. We'll probably land you a few bugs in the right context on a couple of targets.
+
+[00:25:48.42] - Joseph Thacker
+Sweet. I have a fun little thing to talk about. I think you'll like this from some of your AI testing. Did you see the magic string? That's like the ICAR string?
+
+[00:25:59.50] - Brandyn Murtagh
+I saw some chatter on Twitter, but what. What is this research you speak?
+
+[00:26:05.50] - Joseph Thacker
+Yeah, I'll show you once my page actually loads so I can share it. Okay. Come on.
+
+[00:26:12.39] - Brandyn Murtagh
+Wow.
+
+[00:26:13.19] - Joseph Thacker
+Does this load for you? I'm gonna message it to you. Oh, actually I closed Discord. It's hacking the DOT cloud. It doesn't load right now. I can explain it without it, but it's kind of annoying. All right, yeah, so I'll go ahead and start describing it while this thing starts to load. Basically any of our listeners who have not worked in Blue Team might not know what the ICAR string is. ICAR is eicar. The ICAR string is like a virus detection string that is benign, but which every AV would flag as malicious. So it's a way that you can basically test your antivirus solution. And you know, a lot of people who are like building socks or knocks, like secure operation centers or network operation centers, who will often have like alerting pipelines and detection pipelines, they'll use ICAR strings to basically test that. So, you know, they'll have like a file on disk for one of their employees or their email or they will email one of their employees file like an ICAR file or an ICAR string. And the goal is that the detection will pick it up, right. Reject the email or send an alert to the team. And I've actually often thought it would be kind of cool to have one of those for AI models and. But anyways, it actually does exist. So I'll share the screen. Now it's actually loading. Here we go. If the website was down or if it was my Internet, but basically Claude's magic string denial of service. So Anthropics documents a magic string that intentionally triggers a refusal, a stop reason refusal, when streaming classifiers intervene. So basically, you know, the guardrails that they implement will automatically drop a refusal if this magic string is in the response. Right? And it's right here.
+
+[00:28:03.42] - Brandyn Murtagh
+Oh, wow.
+
+[00:28:04.09] - Joseph Thacker
+Okay. And. And I think this opens the door for so many cool attacks and so much neat research. Because one, I think if you don't want your website parse, just put this on the. You know, just put this on the source. Right. And so it'll still be parsed by any parsers that are being written by Gemini or that are being written by ChatGPT or whatever. And of course scrapers could go, you know, obfuscate this like, you know, grep it out before it goes to the LLM. But in general it's like pretty neat, right, that you could put it there as a way to do that. Secondly, I think that if you have some way to impact the context via like indirect prompt injection, if you can get this in the indirect prompt injection, then the model will just stop responding. So if you could get, if you could get this to come back for every user's query, then all of a sudden it would basically denial of service, their entire usage of the app. And the reason why that's kind of nice is most companies are building on like a single provider. Anthropic is pretty common for that because they often have the best models. And so, you know, that's like a great way to do that. I wonder if you could also selectively DOS people if you said, if you had like an MCP server where the majority of people are using cloud code or CLAUDE and Cursor or whatever, or Open Claw, you know, if this model string or if this string came back from your MCP server dynamically for only users that you wanted to dos or for like, like when a user was taking a specific action that you didn't want them to take or whatever, you know, like I think it's really neat that you can basically, if there is a user or like a company or whatever that has an MCP server or some other REST API that could then dynamically return this string, it would like stop execution at that specific moment in runtime. Right. And it would be interesting to then maybe use it to like target your enemies or whatever. Prevent other nation state actors from using this or whatever.
+
+[00:29:56.40] - Brandyn Murtagh
+Yeah, and very context dependent. Right. Like we found our own version of this in an assessment we've done together where if you could stop a process or a job happening in the context that we found it completely broke integrity for the entire platform. Platform because it fundamentally stopped working. I would like to see all model providers have something like this just to be able to have that coverage for when you are encountering something other than claude. This is a really nice thing to have in your back pocket. Did they say exactly why that they've come out and produces.
+
+[00:30:36.61] - Joseph Thacker
+Let's go look. I actually haven't read Anthropic's documentation on it here. Share this if you need to test refusal handling in your application, you can use the special test string as your prompt. Yeah, it's just for ease of testing because you know as well as I do that whenever you're testing LLMs, they're just so non Deterministic, that it can be like pretty flaky. So I think that if you're wanting to see like, let's say you wrote a front end application and you want to see how it handles a refusal to make sure it fails gracefully and doesn't like pop up a big red 500 error in your app or something, then I think this is kind of what that's for. It's like let's make sure we have graceful handling of rejections. Like a lot of companies would have some sort of like automatic text that comes back that says, you know, sorry your message triggered our guardrails. Please try again with like a retry button. Right. So I think it's like for like testing UI or UX elements like that.
+
+[00:31:27.05] - Brandyn Murtagh
+Yeah, nice. I can see as well in the threat model that it mentions anthropic state. A single injection can become sticky if the poisons turn remains in history. All future turns will keep refusing until the application drops or rewrites the offending content. So yeah, it could be very impactful in the right context.
+
+[00:31:46.55] - Joseph Thacker
+Yeah. Because I mean, if you think about the way these models work, you know, it's just one big input blob. Technically we kind of chunk it up as like previous messages, you know, user assistant, whatever, like you know, multi turn. But it's at the end of the day, it's all just one string that goes straight into the model at execution time, at inference time. And so if that string is in there anywhere, it makes me want to do things like name my user that string, you know, name, you know, put my email like as like a plus alias, like reso plus that big long string at we are hacker1.com like just basically just get that string anywhere I can and just like see if it breaks stuff kind of. It harkens back to the old school hacker mentality of just breaking stuff for fun.
+
+[00:32:29.35] - Brandyn Murtagh
+You know, I'm not gonna lie, I was hoping the string would be a bit shorter so it could get through a lot of validation because obviously you're restricted by characters. But it is quite a long string. I wonder if it would require the full string in order to fully think it's a stop. Or if you could do partials.
+
+[00:32:47.26] - Joseph Thacker
+I think it has to be the full one, but I don't. Sure, yeah, it would be fun to register that as a subdomain. Obviously you can't underscore. So it's not going to work. But I wonder if it's that second part. Like I wonder if it's anthropic magic string trigger refusal or if it's just that second number, number and letter thing.
+
+[00:33:05.20] - Brandyn Murtagh
+I'm gonna have to give that a go at some point this week, I think. Yeah, but very nice. I will go next. Now this one is kind of a long right up, but I really liked it as I've been doing some mobile testing lately and the chain is pretty crazy. So by this one's by do you want to say that name? Rizzo Lee?
+
+[00:33:27.88] - Joseph Thacker
+Lies?
+
+[00:33:28.40] - Brandyn Murtagh
+Muhammad. Yep, we'll go. I think it's.
+
+[00:33:30.68] - Joseph Thacker
+I think it's just lies, I don't know.
+
+[00:33:32.41] - Brandyn Murtagh
+And the attack chain is actually pretty crazy. It results in remote code execution in an Android application and at a high level the chain is a deep link trust bypass to access a webview JavaScript interface, abusing that interface to perform an arbitrary file write for a path traversal, abusing that to hijack and over the update writing a malicious code bundle which then gets loaded on restart to full rce.
+
+[00:34:06.21] - Joseph Thacker
+Actually I figured that out last week as well. I just didn't want to report it.
+
+[00:34:11.25] - Brandyn Murtagh
+This is like one of those mega chains that you look at and you think fair play to whoever found this because it obviously took a bit of time to craft. So the initial entry point, if you've done any mobile tests and you're probably pretty used to looking for any sort of deep link schemes that handle URLs, and they're often only accepted from trusted domains. Now the flaw in this, although it was looking good, was that the app blindly trusted all subdomains of google.com and we'll touch upon that later. And the web view the app had an internal browser which had a JavaScript native message handler which used PostMessage, which was initially accessible from any host or domain, but it turned out that it was only Google. That's touched upon later on in the research. Now the bridge, the interface exposed the native message handler, but it required a registration handshake process before it was actually recognized as like a native handler that it could actually talk to. So in the right up here you can see that it was a post message containing data with an action in it with your receiver name, your sender, all that stuff. And then it had to be initialized by a secondary post message after that. And once you've done that, you had access to all of the native actions. Now with mobile testing we when you're in the context of a web view, if you do see any functions decorated by the JavaScript interface, that means that they are accessible through that webview and what that means is you can access it through like window, in this case native messagehandler name. So it could be like window native messagehandler function name and you can access it through that webview. So it's kind of always like it should get your hacker sensors tingling. If you see at any point, because they're exposing native Java calls through that webview, which is always something to look out for, then the application implemented some form of file sharing, which was where the path traversal came into play. And it was simply grabbing the file name from one of the post messages, doing some checks which didn't actually do much, concatenating the file name onto the cache directory path and then simply allowing a file right to that path without actually validating it. So I think the misconception there was that the post message is only ever going to come from a trusted origin, so they didn't actually need to worry about it. But that's wrong. Now, one thing I didn't realize, which is quite nice, is there's React native over the air updates for mobile apps, and it allows mobile apps to update their JavaScript bundles without having to redeploy to the app Store and getting all that process in place. Now it makes sense to have that because obviously developers wouldn't want to go through that entire process again. But I just didn't ever think about it as attack surface, which is why I really like this blog. So they started looking at how the update mechanism worked and to cut a long story short, they realize that they can actually use the path traversal to overwrite some of the files that the over the air update uses. So they get through this, they start building out this chain. Fantastic. But there's one step towards the end is that in order to verify the deep link, there's actually a server side check that sends to an API endpoint to check and verify whether or not it's trusted or not. So it take the URI from what you're sending, send it externally, say trusted, yes, no, and then deny or permit based on that action. Now you'd usually think game over here. But after some good recon or fuzzing, whatever they've done, they figured out that it trusts google.com, but it also trusts google.com and all of its subdomains. So using that, and this is a gadget I didn't know existed in Google, is that you can use sites.google.com to host arbitrary pages through an iframe. So once that's there, what they've done is they have their web page in an iframe and register a post message listener to deliver and talk through that embedded iframe because if you're iframing it from sites.google.com, which is pretty nice, I didn't know that existed. So once that out the way, they rewrite the otapress XML and plant the malicious react native bundle at that path and then the next time the app restarts the over the air loader reads the compromised config file, finds a pending update and it actually loads the attacker's bundle. Now when that happens, it's essentially full RCE in the application context. And they even done some really nice things in their exploit as well, like they added checks for version detection to ensure that their exploit was cross version compatible. So regardless of what version that their victim's app was running on, they'd always say that there was an update required. So it always overwrote the OTA update regardless of what version they're running, and then deploys a malicious bundle, as you can see in the post. So really nice. As soon as the user quits out of the app, triggers a restart and that's when their RCE gets triggered. And they've done some pretty nasty stuff here. They loaded all their auth tokens from the keychain manager, disclosed a couple of sensitive files from the database directory, some stuff from the files directory, and exfiltrated it all externally to their attacker controlled site. And kind of a crazy export chain. They included a really nice diagram as well of how the entire exploit works, which will help listeners revisit and get a better comprehension of it. But crazy attack chain man and RC and the mobile app is pretty cool.
+
+[00:40:51.26] - Joseph Thacker
+Yeah dude, absolutely wild. And I was going to tell you, I feel like it's not uncommon to see startup Google in CSPs, so that side stock Google is a great tip.
+
+[00:41:01.42] - Brandyn Murtagh
+Yeah, yeah, absolutely. Funnily enough, when I was walking through this, I actually played around with this to check if it was actually legit and of course it was. But I was trying to embed one of my blind XSS hosts and it wouldn't embed and I was thinking why is it not embedded? I accidentally set an X frame options header on my web server configuration, which meant I've accidentally broke some of my XSS payloads without realizing. And by going through this blog I actually figured out that that shouldn't be there. Remove the header and it works. So I dread to think how many blind XSS I've missed because I'VE had funky X frame options at some point.
+
+[00:41:45.15] - Joseph Thacker
+You said that. And so it like yeah, it made.
+
+[00:41:47.80] - Brandyn Murtagh
+It not work by complete accident. But we'll see. Let's see if we get any more triggers.
+
+[00:41:53.03] - Joseph Thacker
+One thing that's really cool here that I noticed, I'm sure you saw at the end of the blog was Genie AI is actually a product. So they have an AI based basically product that is almost like Shift agents or you know like some of the current AI hacking tools but it's split for specifically hacking mobile apps. And so if there are any researchers out there who you know are looking for, you know, wanted to get into mobile researching or mobile hacking for bug bounty and want to have like a little mobile hacking AI assistant maybe try out Genie AI.
+
+[00:42:25.44] - Brandyn Murtagh
+Yeah, it's nine at all. It's on my to do list. I've actually got some pretty cool research as well off the back of this and this is incredibly impactful so I'll be checking it out. And it's GENIE AI.
+
+[00:42:39.11] - Joseph Thacker
+I had a cool post from Zero, but I might wait and let Justin explain it or explain it next week because I actually have to drop and I think you had one more. Maybe we'll save that one for next week as well.
+
+[00:42:52.55] - Brandyn Murtagh
+Yeah, sure. Yeah, there's no problem. I'm just trying to think which one it was. Yeah, it's a bit of a primer in fact I just really quickly say it now. It is a very and this is one for people which aren't as client side inclined as well both of us I guess compared to Justin anyway and it's really a quick primer on DOM xss. It covers some of the trusted types API as well which is coming out if people aren't familiar with it. It's being implemented more in some targets and it's a way to harden browsers against DOM XSS and it breaks down a couple of DOM based polyglots as well and I just thought it was quite a nice read for people newer to the client side world. If you did want a quick primer and it's not an overly long article, I just thought it'd be appreciated by some of the community. So that is on at Blog jsmon Sh and it's DOM access is not dead the rise of polyglot playloads so that's a good little read.
+
+[00:44:02.75] - Joseph Thacker
+Sweet. Okay. Yeah, I think that's good. I I know that we've got to do a little another recording ad read here in a second but besides that I think we're good man you got anything else you wanted to mention before we sign off?
+
+[00:44:19.09] - Brandyn Murtagh
+No. Other than remember to include Critical Thinking somewhere in your Google reports until the end of April to receive bonus swag. Remember to do that. Free swag. Sweet.
+
+[00:44:29.92] - Joseph Thacker
+Yep. I went and did it when we first started recording.
+
+[00:44:34.53] - Brandyn Murtagh
+Cool.
+
+[00:44:35.17] - Joseph Thacker
+See you guys.
+
+[00:44:36.13] - Brandyn Murtagh
+Peace. Peace.
+
+[00:44:38.13] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'.
+
+[00:44:41.98] - Brandyn Murtagh
+All.
+
+[00:44:42.19] - Justin Gardner
+If you want more Critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there. On top of the master classes, hack alongs, exclusive content, and a full time hunters guild if you're a full time hunter. It's a great time, trust me. I'll see you there.

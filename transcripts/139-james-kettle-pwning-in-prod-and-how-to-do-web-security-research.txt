@@ -1,0 +1,951 @@
+Episode 139: James Kettle - Pwning in Prod & How to do Web Security Research
+Source: https://www.criticalthinkingpodcast.io/episode-139-james-kettle-pwning-in-prod-how-to-do-web-security-research/
+======================================================================
+
+[00:00:00.96] - James Kettle
+And when I read the white paper I copy pasted an exact like payload from that PDF and it exploited everything on Akamai.
+
+[00:00:21.39] - Justin Gardner
+All right. Sup hackers? We got the TWIB for this week. The this week in bug bounty for this week. There we go. Just two articles that I wanted to kind of bring to Yalls attention. First up is yes, we Hack has released a monster of a guide on setting up your Android bug bounty lab essentially and they cover a bunch of stuff in here. Obviously they cover the basics, but I just wanted to highlight a couple things for you. One, they break down what kind of mobile device you know to like emulator that you should be using. And as I was kind of reading through this, I did not know this, but let's see if I can find the portion of it. Apparently yeah, there's ARM translation in Android Emulator and it's just for the apps. Okay, so here's what it says. The new Android 11 system images are capable of translating ARM instructions to x86 without impacting the entire system. This allows execution of ARM binaries for testing without the performance overhead of full ARM emulation. So you can still run your system image in x86 but run ARM apps via this ARM translation for Android emulator. So that is massive and really helps with the performance issues that you'll see in a lot of Android emulators. Was really cool to see that. And then they give a really in depth summary of how to set up, you know, all of these various emulators, which one you should be using, how to root a physical device if you need to actually do that with magisk. And then they also talk about proxying the traffic through burp and they also talk about bypassing SSL pinning with Frida. So it's a very like comprehensive write up here. Definitely worth checking out. I think this is probably like the go to article on like getting your bug bounty mobile lab set up, which not enough of you have done apparently because we did a promotion with Adobe where we were highlighting mobile apps and very few submissions came through from the critical thinkers. So guys, if you are tired of getting dupes and you want to build a unique skill set then you really should go read this, set up your mobile testing environment and just do basic API testing on mobile apps and you'll find a lot of bugs. Really cool stuff. The only thing I wanted to add to this was that they are pushing. Where's the like proxy section? Here it is right Here they push the proxy configuration like this, which is totally fine, but I also really like to use ADB to create a, to open up sort of a pipe from the actual device itself to my local host on, on my host machine right in these emulators. So then you can just point the ADB proxy at localhost on the mobile device and it'll just proxy through to burp or Kaito or whatever you're using on the outside. So yeah, look into that technique as well. I think Joel mentioned it on one of the episodes a while back. And apparently today is mobile day because we also have a write up here from Bugcrowd Mobile Hacking Resource Kit, your one stop shop for iOS and Android pen testing. So inside of this kit they have a PDF that kind of talks about all of the valuable resources that you'll need, videos, courses, blog posts, tools, that sort of thing, and kind of has them all on a nice list. So if you're ready to take the mobile deep dive, you know, check out this list right here. Check out the yes, we hack write up from before and then here's the PDF that sort of comes along with that. It just kind of has like a quick resource kit for mobile hacking and deep dive these two resources and then you'll be really well set for mobile hacking. All right, that's what we had on this week in Bug bounty segment. Let's get into the show. All right, cool. Well, James, this is the moment I've been waiting for since I started this podcast that I finally get to have the God of research, the legendary James Kettle. So thank you so much for joining today, man.
+
+[00:04:39.12] - James Kettle
+Thanks. It's an honor to be here. I've been looking forward to this for a while.
+
+[00:04:43.19] - Justin Gardner
+Yeah, dude, I'm sorry about the cancellations and stuff too. I feel so bad because I was telling James before the episode, you know, off air, we never cancel. Like on our side, we are very consistent, you know, with critical thinking Podcast. And I just got so sick the day that he was supposed to come on and I was like, oh, I can't, I can't do it. And I had to, had to cancel on him. So thanks for being flexible about the timing too, James. All right, so let's, let's. I can't believe I'm saying this, but you know, rules are rules, James. So, you know, whenever we have a researcher or a technical person on the podcast, we have them sort of give us a bug right to the audience to prove their, their stuff. So, James Kettle, head of research at portswigger research Please prove your worth to the community by sharing a bug. Please.
+
+[00:05:32.35] - James Kettle
+Okay, absolutely. So I found this quite a tricky question. There's a lot of, there's a lot of bugs that I'd love to share, but I'm going to share one that was a personal favorite for me and is maybe a bit possibly underrated maybe. So this is. Where's the CV? I wrote this down somewhere. Here we are. CVE 2020222720 this is a pause based man in the middle powered client side desync affecting Apache httpd oh my gosh, this thing, this thing is, is super cool. It's got all the great elements of a. Of a research grade finding. So I found the issue the like I found the attack technique of pause based asyncs by accident I tried to enforce a like a two second timeout when I was scanning thousands of bug bounty sites and there was a bug. So the timeout was actually like 15 seconds and of those 30,000 different websites there was one website that was vulnerable to a pause based desync and had a custom 10 second timeout. As an aside, this is a great example of why scanning VDPs can be super valuable because that site didn't actually pay bounties. But I would have never have discovered the entire attack class if it wasn't for that one website. But anyway, having found that that was on Varnish. But then when I realized this was a thing I went scanning with an even higher timeout and found that the pause based async technique, which is where you start to send a request and you send the headers and then you just wait and you wait and wait and wait and eventually you get a server timeout response and then what you send after that is interpreted by the server as the next request even though technically speaking you haven't finished the first request. So I found if you waited for 60 seconds that technique worked on Apache. Now exploiting, exploiting this is super difficult in practice because if you want to use it for a classic server side desync, Apache needs to be behind a front end server which has a timeout of over 60 seconds which is relatively rare. And then there's this horrendous race condition as well which makes it really nasty. But I had another thought which was well, how can you make this work as a client side desync? So when there's no intermediary server and it got me thinking about man in the middle attacks. So this is something I, I think bug bounty hunters probably don't look at think about man in the middle stuff very frequently I haven't heard of anyone like making a great living in bug bounty by specializing in attacks that require a man in the middle. But. But my experience has shown that some companies actually do care about this a lot. It basically depends on their threat model. For example, ages ago, like maybe 2009 or something, I found a bug in Firefox where they accidentally whitelisted a development URL. And I said, you've got a vulnerability, you've whitelisted some random Mozilla dev's personal server and I can probably pwn the server and then get code execution. And they were like, no, no, no, we don't believe you can pwn the server. But because it's a HTTP URL and you could do a man in the middle, we'll pay you for it. And they pay me the same amount as finding like a SQL injection in websites. Mozilla, Firefox, like their threat model is governments, right? There are governments that will pwn their users using man in the middle of attacks or monster in the middle or whatever they're called these days. So, so that made me think, hang on, Apache probably actually do care about a man in the middle attack. And in theory, if an attacker just pauses a request at the right moment, they should be able to do this on the encrypted connection. In theory, like I remember some research from about 15 years ago where someone was some academic research showed that if you looked at the TLS packet sizes that someone was was seeing, you could fingerprint them and basically work out which page on a website they were loading just by guesswork, basically.
+
+[00:10:16.50] - Justin Gardner
+Wow.
+
+[00:10:17.62] - James Kettle
+And so to investigate that, I basically had two weeks spare and I knew the theory could work. And then I had to like set up boxes, set up a man in the middle. Like this is way outside my comfort zone. I had no idea what I was doing. It took me ages just to set up and set up a box to proxy the traffic through a different box, like with IP tables. And then I thought I could use like laggy network simulation software to cause the delay necessary for the desync, but it didn't work at the right level. So I had to look up this stuff called Q Disk, which I still don't understand. And this was before AI, so I couldn't get ChatGPT to do it all for me. And it was like it was just mega outside my comfort zone. I set up the firewall wrong and I cut and I blocked off my own. I ended up Delaying my own SSH connection traffic. So whenever I typed something, it took over 60 seconds to actually get to the server. It was a massive mess. But I got it working in the end and it was super cool just to go from that concept and spend two weeks on this one thing and prove, yeah, this is actually possible. I briefly broke TLS on Apache. It was super cool and it even set me up. The other valuable thing was it set me up for understanding that kind of lower level, network level stuff. And I think it's part of what led to the development of the single packet Attack, which uses HB2 to find race conditions and timing attacks better. And I think that's one of the nicest features that we've got in Burp Suite right now. I'm super happy with that.
+
+[00:12:01.16] - Justin Gardner
+Yeah, dude. I think the single packet attack, like, obviously, like we were saying before your. Your research list that I had to go through for this episode was just massive. The single packet attack is like one of the most amazing, like, just principles that I think has come out of your research. It's just very nice.
+
+[00:12:17.61] - James Kettle
+It is super cool. Yeah. And what I loved about that is like a lot of my research, you have to kind of understand and be very deliberate to actually use it successfully. It was a single packet attack. We were able to ship it. Like, you press a button and it does it and you don't even need to know how it works. It will work just as well.
+
+[00:12:37.25] - Justin Gardner
+Even with that, I think I was really surprised as well how simple that attack was. You know, like, it just. There's lots of beautiful pieces of that. And just going back to. You're. The thing you just discussed there. There's so many places that I want to go there. One, you know, talking about how, you know, you. You moved outside of your comfort zone and utilized man in the middle, which shows a, you know, a more thorough understanding of the threat model of some of these. Of some of these targets. But also, I just want to harp on the. For a moment, you said, oh, well, I had two weeks to spare. And I was like, when was the last time I'd like, I want that life, James, where you like, oh, I have two weeks to spare. Might as well just like jump down this chain to find an Apache cve. So I guess like in your. Your flow of research and you're deciding, you know, what do you do, you know, what kind of stuff do you go after? It seems like you have a schedule where you're like, okay, in two weeks, I need to be either start working on this or I need to do this presentation or whatever?
+
+[00:13:38.16] - James Kettle
+Yeah, pretty much, yeah.
+
+[00:13:40.16] - Justin Gardner
+And so, you know, were you at the end of like a flow of research and you're like, okay, I got two weeks until I present this. Let me see if I can pull a CVE of this with, you know, client side based men in the middle decent or how is that?
+
+[00:13:51.59] - James Kettle
+I kind of, I give myself a schedule because if I don't have a schedule, things are fuzzy and then I get more stressed. If I know what I'm doing when and whether I'm on track or not, that really helps. So basically my job, a significant part of my job, is to present at Blackout USA every year. And the deadline for the CFP for Blackout USA is at the start of April. And I presented there a lot of times over the years. Now I have a fairly good feeling for whether, whether I have enough good material for a successful submission to Black Hat or not. So how I found myself there was basically, it was the middle of March and Yeah, yeah, I think it was the middle of March. And it's like, I've written by cfp, I'm happy with it and there's no other kind of loose ends that I need to tie up. And then there's just two weeks before the deadline and I'm like, right, let's get down to this.
+
+[00:14:53.37] - Justin Gardner
+That is freaking awesome. And I actually added another note to our section here. I want to swing back around to that because I think one of the security aside, I think one of the biggest things that correlates to happiness in your career and in your life is having, you know, control over your schedule, having a little bit of freedom. Right? Absolutely. Yeah, yeah, yeah. You know, I've been amazed that you've been able to do this for so. For so long. Like you did 10 presentations, I think, at Black Cat or something like that.
+
+[00:15:24.30] - James Kettle
+That was number 10 just a few weeks ago. Yeah.
+
+[00:15:26.75] - Justin Gardner
+Congratulations. You've been doing this for a long time. Yeah. And you've been able to avoid burnout. You've been able to, you know, work through it consistently. So I definitely want to swing back around to that because it seems like you've got a really good setup there. But before we do that, we did say that at the beginning of this episode we were going to go ahead and acknowledge the whole vs Burp thing and say that we're not going to cover this too much on this episode. But obviously both of us are players in the HTTP proxy wars or whatever and we just wanted to say at the Beginning that what we've kind of discussed off air was that we're both really happy that there is, you know, competition in the space and that we are all working together, you know, to kind of push the space forward as far as getting functional tools for, for hackers to use, promoting research, you know, education. Right. With. With the academy and everything. So I think there's a lot of, there's some heated aspects to it all, but I think, you know, from this side, you know, for us at least, I think we're both happy to see that competition in the space. Did you have anything else you wanted to add to that, James?
+
+[00:16:37.61] - James Kettle
+Absolutely. It. We've got a shared objective of empowering hackers and well, yeah, the software that we use to get there is different, but a space in which there's zero competition is not overly, not overly healthy really. So I see competition as a good thing. We'll see. We'll see where it takes us.
+
+[00:17:04.83] - Justin Gardner
+Yeah, absolutely, man. Totally agree. And with that, I did want to hop into a couple of questions I had for you about Burp Suite. And you know, these are, these are applicable to HTTP proxies in general. Obviously some of the research that, a lot of the research you've done has just been very focused pinpoint on HTTP and HTTP 1, HTTP 2, all of the HTTPs really, you know, but specifically, one of the things that I kind of wanted to get your thoughts on is Repeater's implementation of HTTP 2 is essentially a downgrade, right. Is like you display to the user a HTTP 1 like representation of HTTP 2, which is a binary protocol. And as I started to understand HTTP 2 a little bit better, largely through your research, ironically, I was realizing, hey, this isn't really an accurate picture of what HTTP 2 looks like under the hood. Right. I want to get your thoughts on one, whether you agree with that and two, whether you think that there's room for improvement in HTTP 2 representation to hackers inside of a sort of a repeater replay like environment that promotes a deeper understanding of the protocol or gives more flexibility.
+
+[00:18:29.24] - James Kettle
+Absolutely. Sure. So when I started to do research on HB2, which involved sending requests with HP2 that could not be represented using HP1, it quickly became apparent that there's a lot of, there's some complexity here. So we tried a few different things. What we ended up going with is basically our view is most of the time when you're looking at a HTTP request, the protocol isn't, isn't super relevant to the attack that you're doing, right? You're Just like I want to tamper with the parameter called blah or edit the header with this name or whatever. So for that scenario, which we think is most of the time, that's why we've got this like HP1 style representation of a HTTP 2 request. It's just the easiest way of, like, it's a comfortable, familiar way of doing your normal work because most of the time what the protocol is, is not really relevant to you as an end hacker. But obviously there's exceptions to that. And so the, the way we handle that inside Burp Suite is if you pop out the inspector and go to the headers, then what you can see there is like a bind is, is an accurate representation of what is actually going to be sent. So if, if you do that on a HB2 request, you can see the pseudo headers, you can inject duplicate pseudo headers, you can inject, oh, I didn't know that space. That's cool, all that kind of stuff. Yeah, it's a bit hidden to be honest, so you could easily miss it. But basically using that, you can do a whole lot of crazy, crazy stuff with HB2. It's just hidden there in the inspector for when you want to do that. If you use it, you, you'll find sometimes if you do something like inject a duplicate pseudo header, then you'll lose the main RAW view because it can no longer be represented faithfully using HTTP 1 style syntax, which is. Yeah, we were like, well, this is just accurate representation. At the end of the day, we're building power tools for hackers. We don't want to be lying to people about what's actually happening under the hood. We want to be picking, basically like even presenting a HB1 request in a tool, it's an abstraction, right? Because HP is actually a stream of bytes. That's why, like, pipelining confuses people so much because they're reading too much into the abstraction. And with HP2, what we found is basically you. There's two different abstraction layers that people want to work at. So we surface both of them in repeater. To be honest, we put a huge amount of work into building that. And then I haven't actually seen that many people finding cool HP2 issues where it's looked like they've been using it. But I would view it as it was probably still a good investment for the long term because there's definitely more of these cool issues out there with HP2 and they're just going to surface over time.
+
+[00:22:03.60] - Justin Gardner
+Dude, I wish the audio listeners could see the love with which I'm looking at James right now. That was such a beautifully nuanced answer that considers the hacker in so many ways. Right. Like, you give us what we need most of the time, you know, thinking at the application level. Right. And then you also give us the tool to go a little bit deeper and tweak the protocol stuff through Inspector. And is that, I mean, is that the whole concept behind Inspector? Like, you know, I guess I've seen Inspector mostly as a. As like, you know, I often, when I was using Burp, I would have the, you know, decoding sequences or whatever that were on the right hand side. That was really cool. But then there's also this component of Inspector where it allows you to dive a little bit deeper into the protocol, you know. So is that, is that the kind of concept behind Inspector? Giving tools to go a little bit deeper or.
+
+[00:22:55.65] - James Kettle
+Yeah, that's pretty much it. It's a bit of a power tool for, for when you want to. Yeah, for when you want to maybe decode stuff, encode stuff. Yeah, we're looking at putting other things in there. Maybe in the near future. We'll see how it goes. Yeah. Another example, just a tiny other thing on HP2, right. In HP2. Well, as you probably know, all the header names are actually lowercase. Right. So for our initial internal build, when we represented HP2 as a HP1 request, we had lowercase header names and. Oh my goodness, is it ugly?
+
+[00:23:37.67] - Justin Gardner
+Oh my gosh, dude.
+
+[00:23:39.10] - James Kettle
+Yeah, it's really jarring. So I think that was one of the things that pushed us really early on is like, we hate lying to the user and about what case something is, because that can matter. But on the flip side, it's so ugly that it made us realize really early we need two systems here.
+
+[00:23:59.34] - Justin Gardner
+There's a lot of, there's a lot of nuance here for sure, because like you said, most of the time we don't need protocol level control. We need, we need to be thinking at the application. Yeah, I mean, it's still application layer. Right. But it's like, like, you know, on top of the application layer. Yeah. And, and I think that's a really beautiful and nuanced approach. And I think when I wrote this question down, I was kind of thinking about HTTP 2 as like a totally different protocol than HTTP 1 because it is so different in so many ways, but it's actually still HTTP, you know, like the whole concept is like, okay, there, there's, you know, there's get, there's posts, there's parameters. Right. And these are all similar.
+
+[00:24:40.33] - James Kettle
+It's supposed to be the same thing from the application's point of view, even if that doesn't really hold up in reality.
+
+[00:24:46.01] - Justin Gardner
+Right. So it's kind of like a. Yeah, it's like a pseudo protocol, you know, it's like. I mean, it is. It's a V2 of the protocol. Very interesting. Excellent answer there, James. Thank you so much for that. I think that was really nuanced. The next thing that I wanted to talk to you about, specifically relating to Burp Suite and that whole flow is how are you as a researcher using AI with Burp Suite or without Burp Suite to sort of progress your research? You mentioned before, this was before I had AI, so I had to raw dog it or whatever before. How is that integrating into your workflow nowadays?
+
+[00:25:26.54] - James Kettle
+In a few different ways. So some of them, you know, I'm exploring at the moment, so I can't really talk about stuff I'm going to be publishing in the future.
+
+[00:25:35.19] - Justin Gardner
+Dang it, James. Give us, give us, give us.
+
+[00:25:37.82] - James Kettle
+I can't help teasing things. I would say it's. It's really useful for learning and getting up to speed with topics really, really fast. Like I used it to learn about Unicode encoding attacks and such like, which was always a blind spot for me because there's a crazy amount of complexity there. And I was able to basically get to a much better level of understanding really, really fast using it. Also, in some cases it will just kind of just drop novel techniques on you. I experienced that this year with I'm trying to remember the exact sequence of events, but this wasn't even with deep research. I said, I'm trying to remember the details.
+
+[00:26:28.08] - Justin Gardner
+So I remember you tweeted something out. You were like, AI just dropped something crazy on me and I'm like, oh geez.
+
+[00:26:35.04] - James Kettle
+Yeah, it shared two. I found two cool things with it. I can share one of them. It's in my HP One must die research as like a random technique right near the end. If you send. If you combine the Trace method, I remember that with the Max Forwards header, it works on twice as many targets.
+
+[00:26:59.21] - Justin Gardner
+Dude.
+
+[00:27:00.08] - James Kettle
+Right? It's crazy and I would have never thought of doing that. And if you look in the rfc, which is the classic read the rfc, I don't think it mentions combining those two headers, but I think Chat GPT had seen and you know, maybe in some forum post from 20 years ago, people talking about using the Trace method in conjunction with Max Forwards to like debug what was happening on a server. And so it just spat this technique out. And I tried it and it worked. And it was like, thanks.
+
+[00:27:30.22] - Justin Gardner
+That's the craziest thing ever. I remember seeing that, I think, in your presentation, you know, where you were like, it was spinning out these sort of intermediary headers, which is massive. Like, understanding what's happening. Oh, my gosh. At that. Like, you know, especially when there's auth happening at like the reverse proxy stage, where. And then it's like adding, you know, assigned JWT or something like that in a specific header and you're like, oh, if, you know, I just know what that header is or whatever, then you can try to send a version of it or do some sort of header smuggling, which we'll talk about later. Yeah, the Trace plus Max forwards. Dude, I did not know that was an AI find.
+
+[00:28:07.01] - James Kettle
+Yeah.
+
+[00:28:07.46] - Justin Gardner
+Oh, my.
+
+[00:28:07.94] - James Kettle
+I shouldn't really get the credit for that one. That's Chat GPT. But dang, the thing.
+
+[00:28:12.11] - Justin Gardner
+That's crazy.
+
+[00:28:12.92] - James Kettle
+Yeah. If you use deep research, it gives you like a hundred ideas and 99 of them are just so bad.
+
+[00:28:19.96] - Justin Gardner
+Yeah.
+
+[00:28:20.48] - James Kettle
+And let you know you still need the knowledge because you need to look at you. You can't try out those hundred ideas and IT can't try them out for you yet. So you need to find that one. You need to recognize it. So you still need the knowledge to get the value out of it.
+
+[00:28:35.49] - Justin Gardner
+Yeah, I think. I think another piece that's really big on that, though. And I think you alluded to this in the, you know, Apache man in the middle thing was that it does help validate ideas too, you know, like, I think more than ever now, I can use AI to just very quickly, like, all right, spin up this, you know, configuration, or. I was hacking on an SDK the other day and I was like, you know, I got to, like, set up all this stuff for the SDK and I just handed it to AI and it just built this beautiful, like, POC script that just set up everything in the SDK and, like, handed all the objects off to each other and then got me to my sink, you know, and that has just got to be. You know, I know that that's big for bug bounty hunters, but it's even got to be, you know, massive for researchers that are constantly having to deal with the burden of, like, let me set up this whole architecture to get to test this on ASP and Django and, like, us.
+
+[00:29:27.99] - James Kettle
+To be honest, that's why I always work Black Box, because I can't be bothered setting stuff up and test on live websites, but it's redefining what's possible there.
+
+[00:29:40.85] - Justin Gardner
+Wow, dude.
+
+[00:29:41.66] - James Kettle
+I think.
+
+[00:29:42.09] - Justin Gardner
+James, let me just pause you there for a second. So you're saying you don't do a lot of that setup?
+
+[00:29:47.18] - James Kettle
+No, I basically never set up targets.
+
+[00:29:49.66] - Justin Gardner
+Oh my God, James, the frick. How are you one of the most successful security researchers in the world and don't do any, like, sandbox setup?
+
+[00:30:01.72] - James Kettle
+It's too much work.
+
+[00:30:06.59] - Justin Gardner
+That's crazy, dude. That's crazy because I feel like that's such a pivotal piece. That is such a different take from so many of the other researchers that we've had on this podcast. You know, most of them are really like, hey, dude, put in the time. You know, get a debugger hooked up, you know, like get, you know, and, and, and I mean, to be fair, I guess a lot of your stuff is like, you know, not necessarily finding zero days in like enterprise software or anything like that, you know, but, but you know, it's more protocol level, you know, architectural. Zero days. But still, that's amazing to me that you don't. You just test on their websites.
+
+[00:30:40.03] - James Kettle
+I would definitely say put in the time, but personally I put in the time where I want to put in the time, and that's not installing and configuring enterprise software.
+
+[00:30:50.11] - Justin Gardner
+That's amazing, dude. James, you are living.
+
+[00:30:52.83] - James Kettle
+You are so you. Let's.
+
+[00:30:54.55] - Justin Gardner
+Let's jump into the conversation we were going to have before then, which is like, you've been doing this for a long time. Security is notorious for burnout, especially, you know, when you're doing research and you're just kind of banging your head up against stuff. And you've done 10 black hat talks now, you know, very consistently been pushing out new research on a regular basis. How do you structure your life? How do you live your day to day? How do you avoid the burnout of security research?
+
+[00:31:25.04] - James Kettle
+This is a good question. So I think one key thing here is autonomy. You need to make your own decisions and kind of find what works for you. And that's like, I'm the leader of the research team at Portswigger and that's how I lead it. Everyone on the team has a lot of autonomy to decide kind of what they're researching, what they'll prioritize, what leads they'll chase down and what their day to day looks like. Because I don't think research. Research is a creative process. It's like trying to. Yeah. So I don't think you can just kind of grind it out by forcing everyone to work in the same way. Because I don't think you'll get the same results doing that. So having that autonomy and that choice is really important for avoiding burnout. Yeah.
+
+[00:32:30.58] - Justin Gardner
+Do you just pose to your researchers a question? Is it just do research? What is you. How do you prompt them? How do you. How do you. Because everybody else is going to have, you know, their own method for how to do research. Right. You know, everybody's unique. Right. Some people need more structure, some people need less structure, you know, in everybody on.
+
+[00:32:55.57] - James Kettle
+On the.
+
+[00:32:56.22] - Justin Gardner
+Everybody on the freakin portswigger research team is cranking out research, you know, so. So I guess, you know, all of that could be from excellent hiring decisions and surely that's a component. Right. But you know, what part of the meta strategy, you know, do you think helps people produce good results?
+
+[00:33:17.64] - James Kettle
+I guess there's a bunch of things. One thing is, one of those things is we give people a lot of time.
+
+[00:33:24.68] - Justin Gardner
+Yeah.
+
+[00:33:25.40] - James Kettle
+Like we're basically doing research full time virtually. Like, yeah, we spend. Maybe we spend some of our time, you know, like helping improve Burp Suite and so on. The majority of our time is spent on research. That helps a lot. The main thing that I do, I don't really try to say I don't tell people how to approach their research or what their topic should be really. They would suggest topic and I'll just ask some questions to kind of quickly see is this promising? Is this going to go in the right direction if this goes. If this fail? Like, how much time do we have to invest before we know if this research is going to work or not? If we invest loads of time and then the research fails, do we at least learn something useful in the process that we can apply later?
+
+[00:34:24.69] - Justin Gardner
+We.
+
+[00:34:26.05] - James Kettle
+It's that kind of stuff. It's just like light touch things that mostly come from a lot of time spent researching myself and a lot of lessons learned along the way.
+
+[00:34:35.26] - Justin Gardner
+Dude. Yes. Those are such. That's such good. Those are such good questions to ask, you know, and yeah, that's definitely a part of the reason that guides. Because sometimes you're like, you know, you get a. It's very easy to get nerd sniped or whatever by like, you know, some very weird quirky functionality. But you're like, okay, is the result of this gonna actually be something impactful? You know, is.
+
+[00:34:56.88] - James Kettle
+Yeah, exactly. Like different personalities have different kind of wrong. Wrong turns that they'll be prone to make them to. To making. Yeah. And it's about kind of spotting those, recognizing them in yourself. That's the best place to start recognizing them and just going like, oh wait, I'm not going to fall for that one for the third time.
+
+[00:35:20.94] - Justin Gardner
+Well, it's about improving. Yeah. Like you're saying, you know, it's about, you know, knowing yourself as well as a researcher. I think that's, that's, that's pivotal sort of building on that. I think earlier in your career as a research, as I was going through like the freaking mountain of research on your website, you, you were focusing a little bit more on client side stuff in the beginning. And then as you, it seems to me a little bit as you've matured as a researcher, you've been focusing more on, on, on server side stuff. And not, not to say that that is, you know, the, you know, one thing or the other. Right. There's a lot of mature researchers that focus more on, on client side stuff. But I'm wondering why you. Whether that intention or that decision was intentional or whether that was something that just sort of happened.
+
+[00:36:08.26] - James Kettle
+I definitely, I would say I drifted into it to an extent. I think part of it is, you know, Gareth Hayes has been on my team for 10 years now and he's really good at client side stuff.
+
+[00:36:23.15] - Justin Gardner
+Freaking Gareth, man. Oh my God.
+
+[00:36:25.15] - James Kettle
+He joined shortly after me and we immediately got this dynamic where it's like, well, if it's a client side thing, I can just give it to Gareth and I know. So to be honest, that's probably a core part of the reason that I've been looking at server side more also as like I find this stuff where you've got multiple components and issues that only appear in production, super valuable. As someone working for Burp suite, we have a DAST scanner, right. And we are competing with SAS scanners that look at the code. So when I'm finding novel classes of like desync stuff like that, that stuff that SAS based we can't find. So it's, it's like extra valuable for us because, because our competitors in the SaaS space aren't going to be able to be like, oh, we can find the stuff better than Burp Sweep. So it's an area where I can deliver more value to ports figure more easily too. Also I think over time I just love the black box. I love the mystery. It's like why I don't even like setting things up. Like I love these systems like Akamai where it's like you don't even know how many proxies they've Got in a chain. All you know is it's more than you would possibly imagine.
+
+[00:37:43.07] - Justin Gardner
+Oh my God.
+
+[00:37:44.67] - James Kettle
+It's like that. I think this is part of avoiding burnout white.
+
+[00:37:49.07] - Justin Gardner
+You've got to be having fun and curious, you know. Yeah.
+
+[00:37:54.11] - James Kettle
+And for me, when you're testing something like proper black box, it's like at any time you could be like one bite away from the server, going insane and have no idea. And it's that like that mystique that kind of keeps me hooked and, and motivated on, on research.
+
+[00:38:12.01] - Justin Gardner
+Dude, that's so funny, man. You, you. The black box thing, man, I, yeah, I see it now, I see it now. And I think that is also something that's really relevant to bug bounty hunters. Right. You know, a lot of the time we don't have the luxury of being able to just spin up a local copy of all this. Right. Um, so I think that a lot of, a lot of research stuff, you know, research and bug bounty are adjacent and I think, but not, not the same. And I think one of the things I read somewhere in that mountain of write ups you have was you saying something like security research. A lot of people will say, oh, you know, bug bounty hunter, security researchers, same thing or whatever. Right. I really do agree with you that, that there is a difference here. You know, bug bounty hunters, they're all out there, they're finding zero days, they're doing their thing, hacking on stuff. But research I think is more of a protocol level, an architectural level endeavor in a lot of ways. Well, I don't want to put words in your mouth. Is that how you represented it?
+
+[00:39:12.40] - James Kettle
+Yeah, pretty much. I would define a researcher as someone who is trying to find novel classes of attack or novel techniques, kind of trying to improve the state of the art rather than applying like existing knowledge to find bugs.
+
+[00:39:32.21] - Justin Gardner
+Yeah, I think a lot of bug.
+
+[00:39:34.32] - James Kettle
+Bounty hunters do do bits and bobs of research here and there. But I think part, part of the issue is as a bug bounty hunter, you don't always have a good financial incentive to share just to share your research.
+
+[00:39:48.76] - Justin Gardner
+Right? Yeah. Especially if it's like, you know, in this cloud environment thing. Right. If you see a lot of like reoccurring cloud misconfigurations or something like that, you know, or, or something that affects where things can get in a misconfigured state and at that, you know, makes them more vulnerable to these sort of architectural problems, then it's really big. And I think that, I think a lot of hunters have done a really good job of Taking your request modeling thing and just like beating the shit out of everything with it, you know, like, it's great.
+
+[00:40:20.23] - James Kettle
+I love it. That's exact what I want to have.
+
+[00:40:22.48] - Justin Gardner
+Yeah. Yeah. So that's, that's really awesome. I know the bug bounty community loves you, James, for that reason.
+
+[00:40:28.65] - James Kettle
+I've even seen it with tools like with ProgramMiner, that was the first parameter discovery tool. Like the concept, I think it basically didn't exist until I made that and I just released it. And the number of people that have come up to me and be like, oh, I found remote code execution using this tool. Like, if I was a bounty hunter, I'd be killing myself if I publish that tool instead of keeping it for myself.
+
+[00:40:51.94] - Justin Gardner
+Exactly, man. I mean, the amount of money that has been generated from freaking Param Miner is insane, dude. Yeah, Beautiful. But going back to the black box thing. Yeah. I think, I think there's some researchers, you know, or some hackers like you, like Franz. They're just a lot of, a lot of. They just have a big amount of intuition and curiosity about how these systems are structured. And for me, I think that's, that's really difficult. You know, just sort of talking about myself as a researcher. I think one of the reasons I really like client side stuff is it's so tangible and there and I can very easily identify exactly what's happening. And you know, take these gadgets and train them together, you know, and chain them together and like, you know, produce a result. Whereas, you know, you're saying the opposite of that is what's inspiring to you, where you're, you know, you're banging your head against something, you can't figure out why it's doing the thing. And that is what fuels you.
+
+[00:41:48.21] - James Kettle
+Yes, it's the challenge, it's the chaos. I love it. Like my, basically all of my favorite bugs I found by accident. Right. Like my research. If I had to summarize my approach to research in three words, it's like, make accidents happen.
+
+[00:42:05.50] - Justin Gardner
+Yeah, right?
+
+[00:42:06.38] - James Kettle
+Like that's it.
+
+[00:42:08.38] - Justin Gardner
+Yeah. Two to two thoughts. You know, from what you've said, that sort of chain together with that is like, I think one of the quotes from one of your. I'll read it here. Let me see if I can find it. This is from one of your many presentations. I didn't grab the exact spot, but it says when building automation make it really easy to ask questions of your data set. When you do this, you'll start asking a lot of questions, even the stupid ones, and, and then the results from the stupid ones will surprise you, which gives you interesting research topics. And when I heard that, I was like, dang, that's amazing. Right? And that's kind of what you're talking about here where it's like, you know, you ask questions of your data set, you, you, you, you, and even stupid ones. Right. And then when the results surprise you, that's where you should, you know, dive in a little bit deeper.
+
+[00:42:53.59] - James Kettle
+Absolutely. Yeah. Like that's where the intersection of, of like automation and research. So like automation and human, human power works. Works so, works so well. And kind of that's what's driving my approach to, to AI stuff too. Like, personally I kind of, I see like a bunch of people have this really strong emotional reaction to AI that kind of then dictates how they engage with it. And personally, like I do too. I love it for its power and I hate it for the stress and anxiety that it's causing people. But ultimately my emotions are not relevant to it. It's there, it exists and why not just make the most of it? That's my view on it. And, and it's a step up in automation. But you can compare it with automated scanning. Like, like I saw someone on your channel mention a while ago if we'd kept Burp's scanner to ourselves, we never published it and then we ran it on all the bug bounty targets, we'd be number one of the hacker one by far. Not Expo. Yeah, he's really good at XSS and so on. So, you know, so my advice with AI is like, don't panic about this, like it's just a new kind of automation. A new kind of automation. But also don't ignore it either because it's a seriously powerful tool and like classic automation, I think it works better with human in the loop too. I've always, like, if you look at all of my research, it's about combining human testing with automation to achieve results that are much better than what either can get on their own. And that's why I work at portswigger and not, you know, like there's loads of dast vendors that make scanners, but portswigger is the, is the one that has a tool that really combines human, humans and scanning effectively. And I don't think AI changes that. You've got a lot of companies, you've got a lot of companies that basically aren't in the position, they're like building AI enhanced scanning, but they're not in a position to offer human in the loop because they don't have access to a tool like, like Burp Suite or Caido to build on. So they're forced to build a scanner that's fully standalone. Right. And then they're going to market that as a pen test really heavily and they're going to tell you over and over they're this is better than a pen test. It's going to put all the pen testers out of business because they're not able to build a human in the loop thing.
+
+[00:45:52.34] - Justin Gardner
+Right.
+
+[00:45:53.30] - James Kettle
+They probably know human in the loop is better. That's my view on the whole topic.
+
+[00:46:00.26] - Justin Gardner
+I agree. I mean, it makes sense, right? Why would we not have a human in the loop? Just give the AI, let the AI do their thing and then let the human be like, no, no, no, you're screwing that up. Hold on, go this way. And you're absolutely right.
+
+[00:46:14.09] - James Kettle
+Isn't it? Yeah.
+
+[00:46:15.69] - Justin Gardner
+You know, as a, as a, you know, like you said with, with HTTP proxies, with Burp or Caido, you know, we have a platform on which researchers are, you know, using, looking at the HTTP protocol. They're familiar with all this, they're, they're analyzing applications and then we have an opportunity to integrate AI into that, to enhance it. Right. Versus just doing, you know, an AI scanner or whatever it is. That is definitely the most powerful approach, you know, to all of this. And I did want to grab another quote out of here. I like to cherry pick your, your quotes a little bit, James. It says there's an old cliche that automation is about finding low hanging fruit, but this is dangerous because when used correctly it gives us a platform to stand on to reach high hanging fruit. And that applies perfectly to what you're saying. Right. AI, Burp Suite, Caido, whatever. These are platforms on which we elevate researchers and allow them to function at a higher level to reach those things that are not easily accessible.
+
+[00:47:10.26] - James Kettle
+Right, Exactly. Yeah. There's the strengths of AI and skilled human testers are just not the same. So you've got to combine them if you want to get the best result possible. Obviously, I think AI powered scanning is super cool. I think AI combined with DAST is great and we're working on releasing that. Of course we are, because it's more scalable and so on. But if you want to find those top quality bugs, using both is the easiest way to get there.
+
+[00:47:45.38] - Justin Gardner
+Absolutely. Let me go ahead and jump back into a little bit. The research meta. I feel so bad for my team that has to go through and chapter stamp all of this stuff in the Video because I'll follow these little rabbit holes down. But anyway, team, we're going back to the research stuff. So put that in the, in the, in the chapter notes. So, you know, one of the things that I think is important for bug bounty hunters to understand about research, and I think there is a pipeline there, right, of bug bounty hunters sort of moving into security research. And a lot of the skill set, you know, is. Is intercompatible, and it's a good way to fund your security research in the end. So there's lots of compatibilities there. But I think one of the notes you have here is understanding your true objective with research. As a researcher, can you talk a little bit about how one might find that true objective and why it's important to know it?
+
+[00:48:44.44] - James Kettle
+Absolutely, yeah. Basically, do research is a really vague kind of concept. And my question would be, what is your actual specific goal? Because depending on your goal, you will be wanting to approach it in very different ways. So for example, I would say, like, early on in my research, part of my goal was basically just to make a name for myself, to be honest. But. And I used to think that the. And then my job. Well, then it was my job deliver a presentation at Blackout, right? And you can check that box, but it might be a bad presentation, right? So that's actually not a good outcome. It's probably better not to deliver a presentation than to deliver a bad one. But then what makes a good presentation? So, for example, a lot of people go to presentations because they want to. They want to be inspired, right? So think about what the end goal is like, do you want to inspire people to take the techniques in your presentation and apply them for themselves? That's a pretty cool goal. Like I would say seeing people using a tool you've made or using a technique that you've shared is really rewarding. Or maybe you want them to build on your techniques. For me, that feels even better when someone takes my research and does their own research on top of it. That's creating this like, feedback loop, which is super, super cool. But those two objectives kind of can be intention quite a lot.
+
+[00:50:34.82] - Justin Gardner
+Yeah, that makes sense. And I think one of the ways you promote that as well is you very clearly at the end of your presentations. And some of the other people in the Ports of research team do this as well, where you say, hey, these are future research topics. You know that I was like that I think are really cool. You serve it up on a golden platter to the community.
+
+[00:50:55.00] - James Kettle
+A lot of people still don't Pursue it.
+
+[00:50:57.07] - Justin Gardner
+Yeah, like, like and it's in. Right. You know, I'm glad you say that here on the podcast because I would like, I would like to challenge the community a little bit, especially if you think you're, if you're doing okay. Like a lot, a lot of our listeners are full time bug bounty hunters. Right. And so I would say, you know, if you do see yourself progressing into research at some point as a, as a, either as your progression in a bug bounty hunter and you know, using your research to fund bug bounty or maybe you just want to move in that, in that way. There are very few people taking up James on his, on his, you know, offer in the presentation. Hey, do you do research here? Do research here. And those are very high value leads. Right? Like these, this, this is, this is something James is saying. Yeah, this is what you should go after. Like, you know, as a professional that's done this for, for 10 years, 10 black hat presentations, take these and go. I think it's a really worthwhile investment. And we've seen especially in the, you know, HTTP desync or in smuggling route, you know, how many people have done this, built upon it and found really, really cool stuff.
+
+[00:51:59.69] - James Kettle
+Yeah, we've seen some awesome, some awesome stuff happening in the field. And I think what I would also say to Bounty hunt is this. I can't tell you if you publish your cool technique or your cool innovation or your cool tool that, that, that, you know, people are going to shower money on you directly for doing that. But writing things up to publish them will make you have new ideas. It's that when you try and frame something and explain it to make it accessible to a broader audience, you will have your own breakthroughs as a result of the kind of the cleaner thinking and articulating it better. And then also when you share it, other people will build on it and share back, which can be super valuable. Like in the last year's research, you know that we made over $350,000 in.
+
+[00:52:54.36] - Justin Gardner
+Bounty insane sweetly in them.
+
+[00:52:56.73] - James Kettle
+Yeah, that was 100% because of the collaborations that I did. And the thing that made the collaborations possible was the fact that I've published research on those topics in the past. So I think publishing research is a, is a super valuable. It's a. You are sacrificing value in the short term, but you're gaining it in the long term.
+
+[00:53:21.17] - Justin Gardner
+Yeah. And you know, when you release these things to the community, you're also putting yourself at jeopardy for research collisions. Right. But that's a Risk you're taking because yeah, I research. I say the word research collisions and James eyes go like. But. But you do, you put yourself at risk for that, right? And, and that's a part of the, the, the game. You know, just like dupes are part of the game in bug bounty research collision will happen in. In security research. So I thank you on behalf of the community for still pointing us in various directions after these presentations. I think that's extremely valuable.
+
+[00:54:04.75] - James Kettle
+I have one tip actually, how to avoid research collisions. I learned very painfully because we lost a Black Hat USA presentation on SAML due to a research collision with GitHub.
+
+[00:54:18.61] - Justin Gardner
+Oh, really? Oh, with GitHub? Oh shit.
+
+[00:54:21.40] - James Kettle
+Yeah. Some rude words about that.
+
+[00:54:23.40] - Justin Gardner
+The pain. I can see the pain in your eyes, dude. James, I just want to pause and say I love how passionate you are about all this, right? Like you were almost tearing up a little bit in the Blackpot presentation when you talked about using the slash con slash, you know, to exploit the 0 syncs. And I was like, you could see the passion when you're like, for years I've known about this quirk and then I finally used it. You know, thank you for the, for your passion for all that. But yeah, I'm sorry, what's the, what's the tip on.
+
+[00:54:54.28] - James Kettle
+On avoiding the tip, right? The tip is basically if you see. Sometimes you'll see someone publish a new post on. On. On a technique and you'll be like, that is super cool, it's really valuable. And I've got some ideas for how to take this further. Okay. It's like an amazing research lead. And my tip is it is a good research lead if you're going to publish, to investigate it immediately and publish what you found straight away. But if you're aiming at a conference, you know, you've got to submit to the CFP months and months before. And if it looks that promising, there's a significant risk that someone else has seen the same thing and is also working on it.
+
+[00:55:42.92] - Justin Gardner
+They're going to snipe it.
+
+[00:55:44.73] - James Kettle
+I wish I thought of that. When we read that, we read this awesome research on a SAML technique and we were like, this is great, we can build on this. And we built on it at the same time as GitHub and positive technologies as well. So they published theirs when we were about to submit to Black Hat. So we published ours. We like most up really fast, publish it like two days later. Because they left out a proof of concept and we were like, nah, you guys have proof of concept and Then like three days later, positive technologies had to publish this as well.
+
+[00:56:14.63] - Justin Gardner
+Oh my gosh, dude, it's like freaking research race here.
+
+[00:56:18.55] - James Kettle
+It's horrendous. So my advice is if you see someone something like that, do it fast. Or do what I usually do kind of by accident, which is say that sounds cool and then forget about it for two years and then pick it up and do it. Because if it's been a couple of years, probably no one else is looking at it.
+
+[00:56:34.26] - Justin Gardner
+Yeah. Set yourself a calendar reminder for two years and be like swinging back around to that SAML thing. Um, man, I, I did see that post, the SAML post. I did not get to that in my prep for this episode. So I'm gonna have to circle back around to that and, and yeah, re refresh my brain. SAML is like SAML is whack, dude.
+
+[00:56:53.50] - James Kettle
+And there's this guy that research setting up SAMO environments.
+
+[00:56:57.53] - Justin Gardner
+Right. Exactly like and, and, and yeah man, it's just so much weird stuff in xml. Yeah. And as well. So yeah, it's crazy. Let's, let's go ahead and swing back around to. You know, you've done a lot of write write ups on the metagame of, of researching and you have some tips about how to do research here. Hunt Forgotten wisdom, Forgotten knowledge. Collect diversity. No idea is too stupid. Abandoned comfort. And I kind of want to just jump through each one of these because I really think that these are high value principles and just kind of get your thoughts on each one of them and then ask a couple of questions. So tell us a little bit about Hunt Forgotten Knowledge. Why that really helps sort of fuel your research.
+
+[00:57:47.07] - James Kettle
+Absolutely. So basically people have short memories. People, you know, like social media drive stuff that was published in like the last what, 72 hours?
+
+[00:57:59.17] - Justin Gardner
+Yeah.
+
+[00:57:59.61] - James Kettle
+And then, and then stuff just kind of disappears and everyone forgets about it. So what that means is there's this like hyperfocused lens of attention on the latest thing and people kind of think that, you know, in general a post published a week ago is just going to be more valuable than something part than published six years ago. It's often not true. Obviously. The best example of this that I have is request smuggling. It was literally explained really nicely in a white paper in 2004.
+
+[00:58:38.61] - Justin Gardner
+No way.
+
+[00:58:39.21] - James Kettle
+And when I read the white paper, I copy pasted an exact like payload from that PDF and it exploited everything on Akamai and I literally picked that pit that that payload because they gave you like 12 attacks. I just picked the easiest looking one. The only one I could understand at that.
+
+[00:59:00.15] - Justin Gardner
+Oh, my gosh.
+
+[00:59:03.15] - James Kettle
+It was ridiculous.
+
+[00:59:04.51] - Justin Gardner
+That's crazy.
+
+[00:59:05.34] - James Kettle
+Still see that there's still this super old. There's really old valuable stuff, but people kind of pp and there's. There's this like hidden knowledge. Like there's all these people that understand, like they've read old stuff and they remember it, but they're not going to reshare it because, you know, it's someone else's technique and they're not going to talk about it. So the knowledge is kind of there, buried in the industry in weird niches and crannies. Right. But it's not surfaced. And if you want to get that knowledge, you either need to find like an old time hacker and interrogate them, or you need to read old stuff.
+
+[00:59:46.09] - Justin Gardner
+Wow. Yeah, that's awesome, man. And I do think it would be really cool to have. I don't know how they do this, maybe with AI or something like that, but like have some Twitter bot or something like that that just cherry picks old research from, from like, you know, whatever, whatever sources and then just retweets it at random, you know, intervals, you know, just as boom. What about this one? What about this one? Does this trigger anything with you? You know, for you? Yeah, that would be a really cool.
+
+[01:00:13.78] - James Kettle
+It's all like link rot is making it harder and harder, but Obviously there's. There's archive.org yeah, for that.
+
+[01:00:19.51] - Justin Gardner
+Thank God for archive.org. we all need to go support archive.org, man. Because if that, if that site, I know they're. They're constantly like, give us a dollar. I'm like, here, like, take money. Because if that ever goes away, we're screwed. You know, we lose so much. If that ever goes away.
+
+[01:00:34.86] - James Kettle
+We do preserve. Portsmouth preserves all the. Do we? We preserve all the nominations for all the top 10.
+
+[01:00:44.30] - Justin Gardner
+Yeah.
+
+[01:00:45.03] - James Kettle
+So we do have copies of those, but everything else is toast. And a lot of people don't know. A lot of good stuff doesn't get, doesn't get nominated as well.
+
+[01:00:53.94] - Justin Gardner
+Yeah, man. The nomination list each year too.
+
+[01:00:57.19] - James Kettle
+It's terrific. I have to read all of those.
+
+[01:01:01.80] - Justin Gardner
+It's like, oh, my God. Yeah, dude, I can't imagine for you. Because I complain. I complain every year. Whenever you guys reach the top 10, I'm like, oh, my God. Like this, like the prep for this episode is like, like a full week of reading and researching, right? Like 40 hours. Where normally I put like, you know, maybe four hours into. Four or five hours into prepping an episode, you know, this is like 10x, you know, really. And, and man, I can't imagine how much of a thing that must be for you and the in the team that's, you know, auditing each one of those, you know, going through each one reading it. Jeez, that is, that is, that is. But what a fun thing, you know, that is your job, dude. Your job is to go there and read security research.
+
+[01:01:43.46] - James Kettle
+Yeah, it's a good job.
+
+[01:01:45.23] - Justin Gardner
+I freaking love that for you, man. That's amazing. I did want to ask on this specific, you know, bullet point hunt, forgotten knowledge. One of the things that I advocate a lot in the bug bounty world for mostly for beginner and intermediate hackers is, you know, really trying to spend time with your hands on the stuff. You know, like really get in the HTTP request, tweak stuff, figure out what's happening. You know, really spend time experimenting. As a researcher, I'm, as a high performing researcher, I'm wondering what your perceived ratio of like knowledge gathering or reading versus experimentation is.
+
+[01:02:24.55] - James Kettle
+That's a good question. I would say this has changed a lot over the years for me. When I started out for, I would say maybe, I don't know, five years, I basically read everything I could get my hands on. I was just always reading. I would just read everything even if it was not even super, super related to like web security. I'd like read all of Project Zero's blog posts even though I didn't really understand a lot of that stuff. Right.
+
+[01:02:58.17] - Justin Gardner
+Yeah. That makes two of us.
+
+[01:03:01.76] - James Kettle
+Yeah. But over time, kind of as I'm as I've got more experience and I'm more like if I'm building on my own research, the need to read other people stuff kind of drops a bit. But I enjoy, I still spend it like every day I look at what's been published and I read the relevant stuff. So I still do it daily because people still publish stuff that I find super, super valuable and it gives me really nice ideas. But I would say the these days I definitely spent a lot more time explaining experimenting with things.
+
+[01:03:46.57] - Justin Gardner
+Yeah, it's good to know. Good to know. Next item on the list here is collect diversity. Can you talk a little bit about that principle from a research researcher's perspective?
+
+[01:04:01.61] - James Kettle
+Yeah, it's often basically when you're doing research, you're trying to find things that other people haven't thought of or tried. Maybe they have thought of them, but they haven't tried them. But there's got to be a reason for that. And often it comes down to making connections between quite different Fields or between different perspectives. Like that browser, powered browser, the browser, the pause based man in the middle client side desync.
+
+[01:04:36.01] - Justin Gardner
+That is like a tongue twister, man. You can't. It's like there's like 15 modifiers on that desync. It's like client side man in the middle, like, oh my gosh.
+
+[01:04:46.15] - James Kettle
+That's combining like a server side desync attack with client side exploitation with a, with a man in the middle kind of concept based on something that. From ages ago. So it's that kind of being able to. To make those links will often surface really valuable stuff. It will often let you take something that looks like it has very little impact and turn it into something significant. Yeah, I'm a firm believer that combining black box and white box testing is really valuable, even though I don't follow my own advice in this regard. But I'm definitely going to be looking. At some point I'm going to crack and actually, actually start doing that kind of every.
+
+[01:05:36.36] - Justin Gardner
+Yeah, you got to outsource that shit, James. You know, like you've got, you've got, you've got a, you've got a whole Portugal team. Just be like, hire somebody who's like the setup guy and he just. I think that's called a system. System admin.
+
+[01:05:50.23] - James Kettle
+Who would apply for that job?
+
+[01:05:51.92] - Justin Gardner
+Yeah, dude. I mean that's pretty much what a sysadmin job is, right? Like. Like, yeah. I don't know, man. That does sound like the worst thing ever though. Like set up all of these enterprise software, set up this whole stack.
+
+[01:06:05.44] - James Kettle
+Yeah.
+
+[01:06:05.84] - Justin Gardner
+Oh my God. You couldn't pay a hacker enough to do that. I.
+
+[01:06:09.42] - James Kettle
+No, actually I have a great example. There's someone whose Twitter handle is something like Zed Hero and they've been doing really, really nice cash poisoning research by looking at the source code like in depth of various frameworks. They've been doing really, really nice work. And it's like server side exploitation that's only possible by combining these kind of two different approaches.
+
+[01:06:39.57] - Justin Gardner
+Yeah, going, going after the. I think we've covered a lot of those on the pod. Like going after a lot of the JS frameworks and stuff like that. Going for the cash poisoning. Very, very good stuff there. Yeah. I did want to ask. Relating to collect diversity, obviously, you know, before the onset of AI, there was a lot of like, oh, I really, I think it was a lot more. It was a lot easier for us to have to, to. How do I say this to justify spending a lot of time getting a bunch of different perspectives. Right. Because like you mentioned before now with AI we can say hey give me the, the you know, TLDR of this whole concept, you know, or does this specific thing exist? Right. And it'll, you know, do its magic and try to pull something out of thin air. With, with AI, how has collect diversity changed and do you think it is still as relevant to do versus asking pointed questions to the AI?
+
+[01:07:37.19] - James Kettle
+I think it's kind of just a means to an end of achieving the same thing. One thing to watch out for with deep research is it basically does loads of googling and a lot of the time the good stuff, it doesn't show up on Google because Google services, Google really likes things that were posted in the last year and then this light, they just disappear after that. Which is ludicrous and it's not very helpful for research at all. So if what you're doing is a load of Google searches under the hood, that's not, it's, I mean it's better than nothing but it's not ideal. Whereas what AI has that's really valuable is it's like that tracing where it's like it probably read a Stack overflow post from 20 years ago or something like that. Yeah, Stack Overflow. You know I found some amazing techniques by reading and on Stack Overflow and it's like a developer asking a question and they, if you have the security knowledge and you read the question you're like oh my goodness. You just.
+
+[01:08:41.94] - Justin Gardner
+Exactly.
+
+[01:08:42.47] - James Kettle
+They have no idea. They have no idea. And none of the replies have any idea either.
+
+[01:08:47.94] - Justin Gardner
+Yeah, I think that's so funny also when doing like white, white box stuff, I'm just scrolling through the code and sometimes there'll be a comment in there and you're, and you read it as a security and you're like yep, they're, they, they knew what was happening here. You know, if only they had the hackers lens. You know, they're like some, for some reason this feels off. And I'm like yeah, secure definitely. Stack Overflow is, is a, a gold, a gold mine man. It really is. Next thing you had no idea is too stupid man. This is, this is massive insecurity, right? You, you kind of shout out in your write up, never underestimate the security bystander effect because it's freaking everywhere. And, and I think just hit my mic there. But you know, kind of goes back to what you were saying before is you know, you're serving up these research ideas at the end of your presentation and not a lot of People are, are taking up on them. So diving a little bit deeper, getting that extra, you know, validation, even on things that you're like, oh, that, that, that couldn't work. That couldn't work is, is super important. Is that kind of the concept behind this one?
+
+[01:09:57.06] - James Kettle
+Yeah, definitely. I think the number one people think that the number one mistake that, that you make is picking the wrong research topic.
+
+[01:10:05.78] - Justin Gardner
+Yeah.
+
+[01:10:06.18] - James Kettle
+And I think that's a complete misconception. I think the number one mistake is not trying, is not attempting the topic, telling yourself it's not going to work, and then just not having that shot. You always, you always learn something. If it's cheap to try it out, you should try it out. And if it's really expensive to try it out, try and figure out a way of doing it that's not expensive and then do it anyway.
+
+[01:10:32.28] - Justin Gardner
+That's really good, man. I think one of your no con talks, no con hunting evasive vulns. One of the quotes there is that will never work unless. And then. Right. And you kind of build the presentation a little bit around that. I think that's such a good, powerful question for researchers to ask themselves is like, what, what? You know, first our brains sort of write this concept off and what edge cases could I really be missing here that would make this really simple seeming thing actually happen? It's really good. I did the last item here that I had from your you know how to be a web security researcher talk was abandoned Comfort. And I watched the recent interview you did with Tiberius and you said in the beginning you weren't too hopeful about HTTP request smuggling as a, as a whole concept and then. But you ended up going deeper into that. Is this sort of an example of you sort of abandoning Comfort or is this, you know, I guess the, like, what made you a little bit unsure about that topic in the first place?
+
+[01:11:40.84] - James Kettle
+So when I did my webcash poisoning research, I developed this research philosophy of what you should research is what you're afraid of. That's a great sign of a really valuable research topic. And that works super well for webcache poisoning. And so after the research and I explained that in the, in the intro to the presentation. So then after delivering that presentation, when I was thinking of my next research topic, I was like, you know what, what am I most scared of? And the thing I was the most scared of was request smuggling. Because I watched this presentation from Regularo where he. It made absolutely no sense. And he said, you definitely won't get paid from anyone because it's too Dangerous.
+
+[01:12:27.56] - Justin Gardner
+Oh my God.
+
+[01:12:28.39] - James Kettle
+And the first time that I read that, I was like, okay, I'm just gonna stay away from this. And then when I was thinking, what am I scared of? I was like, it has to be that. That's what I'm most scared of.
+
+[01:12:38.27] - Justin Gardner
+Wow, dude, that's amazing. You know, and I think it, I think that's a really good balance though, right? Because I think on one hand you were really scared of that. You were scared of the impact it would have on, on, you know, the targets, your approach, these black box, you know, ran testing, random sites, that sort of thing. Obviously it's a pretty technically depthful vulnerability, but I think it also aligns a bit with your skills prior to the, the whole, the whole HP request smuggling thing, right? Like you had already done some research on cache poisoning and also host header related attacks, right? So you know that sort of reverse proxy architecture attacking, that whole flow, right, which we mostly only see in production goes back to that whole DAST thing we were talking about earlier. So there's been a lot of pieces. I wanted to sort of challenge you a little bit on this point as far as your research methodology goes, because it seems like reverse proxy architecture has become like a really sort of a safe spot for you from like a research perspective, right? We've seen that with your host header based attacks, you know, back, way back in like, I don't know, 2017 or something like that. We've seen that with cash poisoning, we've seen that with HTTP request smuggling. Do you. How do you know when is the time to abandon that, that comfort zone of reverse proxy based architecture and move to something else versus continuing to push it if, if it still gives, you know. Do you understand what I'm asking there?
+
+[01:14:16.00] - James Kettle
+Yeah, yeah, definitely. Definitely. This is an excellent question. So you're right, like researching request smuggling or cash poisoning is not scary for me at all. Right. It's like the one topic where I have the most confidence that my research there will find some crazy stuff. And so, and when I delivered browser powered desync attacks where I introduced client side desync attacks. So that presentation.
+
+[01:14:48.09] - Justin Gardner
+Crazy, crazy. By the way, I just, I so good, continue that.
+
+[01:14:53.17] - James Kettle
+That's probably my favorite, like personal favorite piece of research because of how technical it got.
+
+[01:15:02.81] - Justin Gardner
+I'm sorry, I'm gonna interject you here as well. I would have thought that would have never worked. Right, That's a perfect example of that will never work because I don't have any control. I'm sending a cross site freaking browser controlled. I'M working within the constraints of what the browser allows me to do with a fetch request and somehow you are able to induce dc.
+
+[01:15:24.25] - James Kettle
+Unbelievable.
+
+[01:15:24.89] - Justin Gardner
+James, I'm sorry, continue.
+
+[01:15:26.64] - James Kettle
+It was crazy. And a whole bunch of that stuff was exploiting client side browser connection reuse behavior. I had no idea how any of that worked. Unbelievable. Chrome source code didn't help at all.
+
+[01:15:38.10] - Justin Gardner
+Yeah, right.
+
+[01:15:40.75] - James Kettle
+So I, like, I love doing that piece of research. It was super satisfying for me as a researcher. But then when I presented it, it didn't land as well as some of my previous talks. And I think there was a couple of issues. One was you needed a lot of prior knowledge in order for it to make any sense. So the kind of the audience that it was valuable to or accessible to was smaller. But also like, in terms of the bounties, it wasn't that great. So it didn't get people hyped for it in the same level. And after that I was like, you know what? I'm kind of getting bored of researching request smuggling and. Or no, it's like I'm still enjoying it, but I don't want to just become this person, just the request smuggling guy. Yeah, right. Yeah, like any more than I already am. So that's why the year after I did Race Conditions, and then the year after that I did timing attacks and a single packet attack and so on. But then most recently, why did I go back to request smuggling? Well, basically I had Alice, so I was like, I've got no sleep. I'm barely functional. I need something. Yeah, that is, I need something that I'm gonna find relatively easy. So that was what pushed me to, to be like. Like, when I started it, my goal, I already knew that the title was going to be the Desync Endgame. I was like, there's, I. I know there's stuff that needs to be wrapped up. There's. There's still people missing loads of findings. We need to kind of. We need to wrap this up. That was my goal with that piece of research.
+
+[01:17:27.39] - Justin Gardner
+Dude, unbelievable. I really love that because it also combines research methodology with knowing yourself, knowing where you are in life, knowing what your capabilities are. You know, you push yourself outside of your comfort zone and you return to your comfort zone when you need to. And I think that's such a beautiful example of how to win the long game. Because so much of all of these, all of these things are, you know, that people run into burnout with bug bounty. People run into burnout with, you know, all sorts of things. But you need to know what you're, you need to know your own limits, know what you're capable of. Not constantly be push, push, push, push, grind, grind, grind. When it's time for you to focus on family stuff, then you fall back to what's easier for you and what's functional but you still stay in the game, you know, like. Yeah, I think that's something I really struggle with because I feel like for a long time I really wanted to just constantly be at the top of the live hacking event leaderboard and constantly be pushing out S tier content on critical thinking and just constantly be just crushing it. But then I realized there's times in life where you've got other things going on. You've got new kids in the house, you've got priorities and you're not going to be able to, to function at your, at your top level. So you make the adjustments and you still produce something excellent. I love that. James, that's really great. Thank you for sharing that.
+
+[01:18:49.36] - James Kettle
+Yeah, yeah, yeah. It's. People also keep asking me on the same topic like when are you going to do more research on HB2? Like when are you going to do some like HB2 end to end attacks, right? And it's, it's this, is this the problem is, right, I can hack HP1 and compromise like 20 million websites, 40 million websites. Right. Relatively easily.
+
+[01:19:17.53] - Justin Gardner
+Yeah.
+
+[01:19:18.10] - James Kettle
+Or I can research HTTP 2 and put in way more effort and probably compromise like 10 websites or maybe I'll like pop one CDN if it goes really, really well. Right. But it will still be one target and it'll be patched and that it won't be as, you know. So it's this challenge of like what's my objective? Do I want to deliver something that you can then use yourselves or do I want to deliver something that you look at and go wow, that's some really hot stuff. But I didn't understand half of it. I can't build anything on it excellent either. So for me it doesn't make sense to research. I can't justify researching HB2 until HB1 is like pretty dead. And that is why I so die dead.
+
+[01:20:08.35] - Justin Gardner
+It's dead. Now post this presentation. James has killed it. That's awesome man. Good, good shit. I think, I think the last place I want to go with this whole research thing. Well, okay, actually two things I got to get got. I got to pause for a second here. I did want to ask you, you know, as, as a person that is running the research team, you know, at portswigger, if you have any advice for, for me, because I, you know, we're spinning up the critical research Lab under Critical Thinking and all of this is just kind of like me taking this podcast and trying to do what I think is cool, you know, and one of the things I think is cool is portswigger research, you know, and, and, and I think it'd be really cool to have more people have the opportunity to be financially incentivized to do research. And obviously we're not at a point in with the podcast where we can hire full time researchers. You know, we just don't have that, that budget. But I do want to like the concept behind the research lab is to, to, you know, grab people from the community that are doing quality research, give them additional distribution by covering it on the podcast and hosting it on the podcast website. Highlight the researcher, celebrate the researcher and then provide some, you know, token of appreciation, you know, as far as like a stipend or something like that goes, you know, to say thank you for contributing this research to the community. And so we've got the team together, I'm setting the stage for all this so you can understand the situation. We've got the team, you know, together. We've, we've got some cool pieces, but it's kind of scattered and it's not something that, you know, we've been really diving super deep into or asking for a lot of time investment on. I guess I was wondering if you have any advice for that, for that structure of research lab or how you think we should move forward with that. How can I help that researcher facilitate what they are researching themselves?
+
+[01:22:13.31] - James Kettle
+Good question. So research is tricky because, yeah, it doesn't make money the same way as exploitation focused stuff does. And if you don't have buckets of time to throw at things then landing, you know, like landing things like conference presentations at top tier conferences is quite hard. I wouldn't. One piece of advice I'd have is most researchers that I've spoken to have a excessively high bar for what they think is worth publishing. Right? My view is just publish it. Publish everything, every tiny little cool thing. Publish it. And please publish it in like a blog post or like not just in a post on X where it's like lost to history after 24 hours. Like just, just get it written down somewhere and over time that, that will accumulate and become really valuable.
+
+[01:23:18.36] - Justin Gardner
+That's such a good answer. And that's exactly what I was trying to tell the research team, you know, and, and, and we've just now sort of got a, an environment set up where we can really make like really quick GitHub, you know, markdown blog posts and just shoot it up. Right. And I, I'm even, you know, as far as like the stipends go for research, really incentivizing, small, quick, dirty. Here's a quick, you know, sweet little trick that I figured out, you know, sort of post because I think those are so valuable and those really help close the gap for a lot of exploits and a lot of, you know, even chunks of research. So that is definitely the hope for the Critical Research Lab is, is like, you know, let's, let's create a platform where we can be putting out. You know, I really, I think Gareth does a really good job of this. You know, it's just like I've seen some of his posts, you know, on, on his, on his website and it's like two paragraphs. Isn't this cool? The end. You know, and I just, I think I want to try to push the community in that direction as well.
+
+[01:24:16.72] - James Kettle
+That's really, that's it. That's where everything goes. I hate writing like 6,000 word white papers. I know how many people read that end to end. It's not, not very many small, small valuable things. Other, other people will look at it and then they'll like, like, they'll like, like it and then like use it for their own technique and then cite you for it and cool things will happen. It's worth it.
+
+[01:24:42.05] - Justin Gardner
+Beautiful. If anybody has, you know, our vision for the Critical Research Lab is, is expanding a little bit here and we're going to accept essentially submissions from the community. If you have a cool piece of research that you want to have, you know, covered on the podcast, on the, on the Research Lab website, then feel free to reach out to us on the discord and we'll definitely take those submissions and we will soon be publicizing what the stipend amounts for that are and that sort of thing as well to give a little bit, a little token of appreciation back to the community. But definitely I want to see a bunch of little small. Here's a cool quirk, use it sort of post.
+
+[01:25:21.27] - James Kettle
+Yeah, it's super cool to see more people paying for research. It's so hard to get paid to do research. There's so few opportunities.
+
+[01:25:30.44] - Justin Gardner
+So yeah, I hope more bug hunters to do that. Thanks man. Appreciate that. Last question on research. Who are some up and coming researchers that you respect their work?
+
+[01:25:42.60] - James Kettle
+Good question. So I'm going to answer this with two people, both of whom have been researching request smuggling. Because obviously that's the topic that I'm the most focused on. Hang on, I wrote their names down over. Okay, here we go. I'm not with names like, I recognize handles, but not.
+
+[01:26:01.85] - Justin Gardner
+Dude, it's so hard, man. It's so hard in this security world.
+
+[01:26:06.38] - James Kettle
+So there have been, you know, but hang off. First I have to caveat this because there's so many people doing awesome research that they then publish in some blog that doesn't get discovered or amplified as much as it deserves by the community. Like, that's why the top 10 exists. It's to try and surface this stuff. But stuff still gets missed out. So I'm missing out a million people. But this is two people I've seen. One is Thomas Stacy, whose Twitter handle is Toxidile. He did some super cool research on using. He found the single packet attack, which was basically developed to find timing attacks and face conditions. He found it actually also helps find desync attacks and request tunneling, which is super cool. There's clearly some kind of race condition involved in there. I love this stuff where it's like, you only even half understand how it works. And I believe he's working on some new research which sounds quite promising, although I haven't managed to get him to give me the full details of it just yet. Yeah, and the other guy is. Yep. And he did some super cool request smuggling research on exploiting chunk extensions, which is. This is one of those things I've heard people saying, are you exploiting chunk extensions or. For ages. But no one was successfully doing it. And he's just come out there and like basically popped a CDN using it. It's insane. Collaboration with him briefly on a target. And I spent days on this thing and it was. It was absolutely mental and it didn't work. But I still had a great time with it.
+
+[01:27:47.26] - Justin Gardner
+Dude, it's awesome. That was such a great write up on the chunk extensions, like, and I love what he says, you know, in that post. He's like, you know, nobody sends this, but all of them support it. Right. Like, that's such a good area for research is if the HTTP server or you know, try to more broadly apply this. Any. Anything processing data. If there's, you know, a very uncommonly used feature that is still implemented, you know, in that.
+
+[01:28:16.71] - James Kettle
+Everyone implements it. So what you're looking for is looking at OFC and find stuff where you're like, I didn't know that feature existed. That is gold Right there.
+
+[01:28:24.86] - Justin Gardner
+And that's the beauty of being a little bit more of an experienced researcher as well. You know, he's like, you know, or at least an experienced hacker. Right. You know, you're looking through all this stuff, you kind of know mostly the most of the ins and outs of, you know, the system, how the web works, that sort of thing. And then you're like, oh wait, I didn't know that that exists. Well, probably most other people didn't know that exists either. And probably nobody's using it. And probably that's where you should double click right and try to get a little bit deeper. I did want to get your, your take on this quote from. Yep. Y cops Wake, I guess is his handle right up. He put, he sort of quotes this law of robust computing. Postel's law. It says be conservative in what you send and liberal and what you accept.
+
+[01:29:11.89] - James Kettle
+It's a disaster, dude.
+
+[01:29:13.61] - Justin Gardner
+I was like, that's exactly what I thought you would say. I was like, this is like, this is where James lives, right? Is that exactly where you live?
+
+[01:29:22.14] - James Kettle
+Yeah. I nearly, when I was designing my slides for hp, One Must Die this year, I nearly titled a slide something like Postals Fuck up. But then I was like, this is a bit mean. That's probably going to upset too many people by sideways. So I didn't do it.
+
+[01:29:39.31] - Justin Gardner
+But that's, that's brilliant, man. Yeah, I think when it, when I see that quote, it makes me so happy. I'm like, yes, that's what we want. Beautiful. So we spent the most of the time already on this podcast talking about just research methodology, you know, understanding how to do research. Now let's get into some of the research itself. I did want to. Oh geez. I said earlier on the podcast, it was 2017. The host header attack stuff that you did was 2013, dude. Oh my gosh, that's amazing. So I guess I was going back through some of this stuff and I think in my personal experience of your research, one of the first things that I, you know, where you came on my radar was when you were doing a lot of these HTTP host header based attacks where you were using these as SSRFs, you know, sort of hit different backend servers. Yes. Cracking the lens. That was it. I thought that was an amazing technique and I know that you, it seemed to me like that was a little bit of the first time that the community at large sort of understood the dangers of reverse proxy based attacks. Was that sort of the same for you as well?
+
+[01:30:52.10] - James Kettle
+Yeah, definitely. Basically at the time Everyone preferred to pretend the reverse proxies didn't exist.
+
+[01:30:57.77] - Justin Gardner
+Right?
+
+[01:30:58.10] - James Kettle
+Because it was like, oh, cash poisoning, this weird alien thing. Like no one understood anything in that regard. And it was, yeah, everyone was just scared of it, basically.
+
+[01:31:10.32] - Justin Gardner
+Yeah, dude, I think it's, I think it's a really cool attack type. And as I was going through I. I pulled one of the payloads out and I just put it in my notes here from your 2013 talk. It was host colon site.comcolonial@asterner.com and I just love those. That syntax with the username and the password is just the gift that keeps on giving, man. It's really, really nice. And I think that a lot of parsers out there will see that semicolon or I'm sorry, the colon and think, okay, this is the beginning of the port segment. But really. And you would kind of think about parsing it that way. But then as soon as you see the AT sign you're like, okay, wait, wait, go back. You know, this is actually the username and password, you know, portion of the URL. So I just wanted to pull that out and readdress it for the listeners because I think that is some really. That is a really cool technique that you brought to light there.
+
+[01:32:07.64] - James Kettle
+Thanks. Yeah, it was good fun. That research on doing password reset poisoning with host header attacks is probably is the first major piece of research that I ever did and it was actually quite eye opening for a super depressing reason, which is so prior to this research I sort of looked down on people that published at conferences because I was like, this stuff's not that good. They're just promoting themselves like they should be spending that time doing research. Right? I didn't have that much respect for them then I published that research and someone working at a company that I'm not going to name because I'm nice basically copy pasted that post, like rephrased a teeny tiny bit and posted it on their site and didn't link to, that didn't link to my blog and now their website. This is a big company, they have way better page rank than my site. So they ranked higher on Google like the next day and then for a period of maybe like eight years. Basically everyone that talks about password reset poisoning cites their post.
+
+[01:33:24.64] - Justin Gardner
+No, dude.
+
+[01:33:26.81] - James Kettle
+And it was only when I made the host header attacks Academy topic that we finally got actually decent, decent ranking again for this technique. So basically my advice is if you're going to do some research, promote it as much as you can. And if anyone tells you not to do that say stuff. You. I'm going to promote it anyway.
+
+[01:33:48.76] - Justin Gardner
+Exactly. You know, the more eyes that get on it, the better. And, and it's better for the security community in general and. Well, I mean, obviously, you know, we're here. The podcast is essentially doing that. Right. Helping. Helping people promote research and helping the research get disseminated to the community. Absolutely.
+
+[01:34:06.60] - James Kettle
+Like we had people getting annoyed this year for publishing HP1Must Die.com and if you read it, they're mad at like, like the curl. The curl guy.
+
+[01:34:18.68] - Justin Gardner
+Yeah, yeah.
+
+[01:34:20.36] - James Kettle
+Post the angry tweet. And they're annoyed because we're marketing the research. But the thing is, if you look at their posts, they're not understanding it because they don't understand the context of the previous research on the topic. And the reason they don't understand the previous research on the topic is because we didn't market it, so they didn't read it. The only reason that they're able to criticize us.
+
+[01:34:43.71] - Justin Gardner
+Yeah.
+
+[01:34:44.35] - James Kettle
+Is because they've actually seen this research for the first time. So to my mind. Well, at least this time around they saw the research.
+
+[01:34:51.78] - Justin Gardner
+Yeah, that's a good lesson learned there for the researchers. Definitely push it, distribute it, get it out to various sources because yeah, basically.
+
+[01:34:59.80] - James Kettle
+You will get flack for it, but just ignore it.
+
+[01:35:02.68] - Justin Gardner
+Yeah, that's good. Hey, take it from James right here. We heard it here on the Critical Thinking podcast. There's your, there's your certificate of approval to go and register your domain name for your new vulnerability type. Did you have. I know, I'm just kind of throwing this question out of the blue, so. Totally, you know. No, I don't have anything else on. This is a perfectly valid answer, but I was wondering if you had any, any thoughts on, you know, additional research in the host header realm. I know that you did utilize it in HTTP 1.1 this year, you know, with the HV sort of fingerprinting thing. Do you have any other leads or things you want to sort of shout out to the community on that front?
+
+[01:35:46.13] - James Kettle
+I think if you told me to do cash poisoning research right now, I would look at using header smuggling to smuggle the host header. I do cash poisoning that way because, you know, with the, with the decent. We're going to talk about this later, but with the decent end game, basically, header smuggling doesn't always result in a, in a desync, so then you've got to look at alternatives. So it used to be if you could smuggle a header, just cause a desync Job done. But now I think other approaches of are valuable. And the host header, like, it's, it's used everywhere. It's, it's, it's, it's like the, the, it's the source that goes into like the most sinks anywhere. Right. Like there was an exploit for WordPress where you like do a password reset with the payload in the host header and get code execution or something along those lines. Like it ends up every, it ends up absolutely everywhere.
+
+[01:36:53.63] - Justin Gardner
+Wow. Yeah. And I think a lot of the difficulty too with the reverse proxy architecture is obviously there's some foot guns with the whole host header thing and V hosting and that sort of thing, but I think you get, you lose a little bit of flexibility, you know, when this reverse proxy is like very specifically looking for a specific host header. But if you're, if you're dealing with direct access to the HTTP server, right, and there's no intermediary, then there's also a lot of weird things you can do with that with the host header that, that will end up in very weird places. Absolutely. Let's sort of building on that, I think we should talk about the, the HV VH thing, which we'll, we'll get to in a second. So let's, let's dive into HTTP 1.1 must die, the desync end game. The talk that you gave at Blackout this year. I was there in the audience clapping, screaming, whistling, you know, so excellent, excellent work, man. Can you give us a little bit of a recap? Well, first let's set the stage. Talk to us for, you know, 30 seconds a minute on what HTTP request modeling is whole concept. And then we'll, we'll dive into specifically the research that you did this year on like 0cl exploitation.
+
+[01:38:10.71] - James Kettle
+Absolutely. So HTTP 1, as you see it represented in a tool with like an isolated request and response is basically a lie. Like it's an abstraction. Underneath the hood, you've got a stream of bytes and multiple HP requests are sent over a single stream and they just kind of wax one after the other directly as a sequence of bytes. And this is a problem because HP1 is a plaintext protocol and as an attacker, there's like maybe five different ways of specifying the length of a message, which means servers can get confused about where each message starts and stops. So that means when you've got a reverse proxy, what reverse proxies generally do is they take requests from loads of different users and then they funnel them over a small shared pool of connections to the backend so if you can confuse, if you can get the front end and the back end to disagree about where each request stops and starts, basically you could append stuff to the start of other people's messages and generally cause everything to go horrifically wrong. For example, the flagship technique is that HP1 has no built in way of matching requests to responses, which means if you send a request that triggers two responses, the front end thinks it loses track of which response goes to whom and it sends random responses to all the users of the website, which is absolute carnage and a very beautiful site every time.
+
+[01:39:52.22] - Justin Gardner
+Yeah, dude, Frick. What a beautiful attack. And how crazy is it to think about just from like a data flow perspective that when you're thinking about this reverse proxy architecture, you know your request is right next to, you know, somebody else's request on that, on that, in that TCP stream, you know, between the, between the reverse proxy and the backend server, you know, and it's like that data is right there.
+
+[01:40:19.50] - James Kettle
+That's it is there. And it's not well understood. Like when I originally did the request smuggling research, one of the people that I reported a vulnerability to responded by saying, that's impossible. How did I give you a proof of concept? We recently published a tool called HTTP Hacker, like a BURP suite extension which actually shows the underlying stream. So if you want to kind of get to grips with this, that's quite useful because it will help you kind of understand what is happening under the hood.
+
+[01:40:53.27] - Justin Gardner
+Yeah, I was looking into that a little bit beforehand and I was like, yeah, this is good because I think that there's definitely, you know, like you said, a lot of us are using the sort of abstracted HTTP like almost pseudo HTTP layer that, that we're using to just kind of hack the applications. Right. So getting that lower level access where we're actually thinking about it as a protocol built on top of TCP I think is really helpful.
+
+[01:41:19.44] - James Kettle
+That's the cool concept is HP1 is a stream. Yeah.
+
+[01:41:25.68] - Justin Gardner
+Okay, so that's the general concepts behind HTTP desync, request modeling, that sort of thing. Talk to us a little bit about HTTP 1.1 must die. What kind of research came out of that talk this year?
+
+[01:41:40.27] - James Kettle
+Absolutely. So I decided to research request smuggling because I was like, I can still see people finding these issues and I haven't had much sleep so I'll pick something easy. And I quickly realized that although kind of off the shelf tools like HP Request Smuggler at the time weren't finding very much on like decently hardened bug Bounty targets. This was just because loads of web application firewalls were doing things like blocking, using regexes to block things with transfer encoding headers and such like so. And they were also fingerprinting the detection probes that HP request smuggler was sending. So I thought, okay, what we need is a different approach, like a completely different approach to finding these vulnerabilities. And I took a cool technique pied by Daniel Thatcher in a presentation I can't remember the name of called HP header smuggling or something like that. Practical HP header smuggling.
+
+[01:42:44.26] - Justin Gardner
+That's the one.
+
+[01:42:45.34] - James Kettle
+And I adapted it like built a more powerful version which used more headers for fingerprinting and so on. And basically what it does is it detects the ability to hide a header from the front end or backend server, which is the kind of underlying primitive of maybe like 80% of request smuggling attacks and do that reliably.
+
+[01:43:08.71] - Justin Gardner
+That's in that I think is when I was sitting in your talk this, this year, I was thinking, you know, and I'll be real with you James, like I'm not a huge, you know, request smuggling exploitation guy. Obviously I'm using Caido, so you know, there's not a lot I could do there with that. But you know, it's just not a big part of my, my methodology. And I totally respect the hackers at every live hacking event, you know, that show up with a request crazy request smuggling bug and pop these crazy crits. But it's not something that's super duper on my radar. And as I was listening to your talk, I was thinking, you know, wow, so much of request smuggling is hinges on this whole concept of header smuggling. And the thing that you, you know, showed with this is extremely applicable to things that are not request smuggling as well, this whole header smuggling concept. And there, because there's so much, you know, data that is being stored in headers and sort of abstracted away in modern day architectures. So I love, I just wanted to highlight for the, for the listener like this is very valuable beyond request smuggling as well. Just understanding how this specifically works so that you can smuggle headers that have authentication based values, all sorts of stuff into these environments. Okay, so that was my little thing there. Can you talk a little bit more about how you did that sort of, that tool to delimit whether requests can or headers can be smuggled or not?
+
+[01:44:38.18] - James Kettle
+Absolutely. So it just sends a few probes. It basically says I like to think of research in terms of asking questions. I ask a question to myself and then I write a tool that asks the question to the target. So what it does is it says, it asks the question, if I use a given technique to hide a header when sending a request to a specific target, do I see a unique response that I cannot achieve simply by sending that header without hiding it, or by hiding it like a different unrelated header. And by doing that, basically it shows, okay, by hiding this header with this technique, you've hit a unique path. And then it uses a massive range of techniques, and it uses a massive range of detection headers too, because, for example, some sites will give you a different response depending on what the host header value is, but some of them basically ignore it completely. So it's good to use a range of different headers, but it's just for fingerprinting. That's the point is, like, the host header isn't being used for an attack, it's just being used as a kind of a gadget to understand what the target server is doing.
+
+[01:46:01.06] - Justin Gardner
+Because a lot of stuff is. And there are situations where those header is not relied upon. Very rare though, you know. And so I think this is a really good way that you demonstrated this. You know, essentially what you're doing is trying to smuggle the host header most of the time, right? You're like adding a space, you know, you know, adding these characters to it, that sort of thing, and then detecting how the various servers along the chain respond. Is that an accurate part of the picture?
+
+[01:46:27.76] - James Kettle
+That's it. I guess the key thing to understand, like why the host header might not work is I consistently make this mistake where basically I underestimate how complex the target is. Like, however many proxies you think the target has, there's always one or two more. Right?
+
+[01:46:45.35] - Justin Gardner
+Wow.
+
+[01:46:46.23] - James Kettle
+And any. And there's special cases for everything, Right. So if you smuggle the content length header. Oh, they've probably got a special case for that. So. Or if you smuggle the host header, actually one of those servers will be parsing the host header in a slightly different way because they want to get that data earlier to work out which upstream backend that they're going to route it to, or something like that. What the overall concept is, you're trying to dial it back as much as possible to the absolute foundation, and then approach it from as many angles as possible to get this data about. Can I hide ahead of or not?
+
+[01:47:27.06] - Justin Gardner
+Yeah. And I think in your presentation, you represent it as hidden, visible or visible Hidden. Right. HV or vh.
+
+[01:47:34.27] - James Kettle
+Yeah, that's how I classify it. Like, is it the front end that sees this header or is it the back end? Now this is an abstraction. There's probably 20 proxies in practice.
+
+[01:47:44.10] - Justin Gardner
+But yeah, that's what I was going to say. It's like hidden, hidden, hidden, hidden, hidden, hidden visible. You know, like, you know, right?
+
+[01:47:50.14] - James Kettle
+Like when you write 0cl, it's a lie. It's like cl h2 0cl.
+
+[01:47:56.51] - Justin Gardner
+Right, right.
+
+[01:47:57.85] - James Kettle
+You just gotta go, what matters. Right? And what matters is, is it the server in front or the server behind that sees this header? Because that affects how you can exploit it.
+
+[01:48:08.17] - Justin Gardner
+Yeah, dude, I frick. I love your presentations because it, you know, I'm learning about this very technical vulnerability, but I'm also just, it's helping me visualize and understand these architectures so much better and think about these from a threat model perspective. Like, okay, front end, hidden, back end visible. There's the mismatch. Right? What can I, what can I do here? And I think I was, I messaged you recently because I was working on a product and like one of the core principles of this software is like, okay, there are certain headers that cannot be specified by the client, right. They get cut out at the intermediary and they get resupplied because they contain authentication information. Right? And I was like, this is, it was right after I saw your talk and I was like, oh man, this is exactly where I need to apply this whole hidden visible thing. Because if I can get the front end to not perceive this as the thing they need to strip out and then, you know, and that's where the, the, the software is that I'm attacking and then get the back end, you know, however many backends there are back there. Because there's a ton of different, you know, softwares that were running on the backside of this, this software to perceive it, then boom, I've just got an AUTH bypass. Right? Absolutely.
+
+[01:49:31.11] - James Kettle
+It's, it's super valuable. If you're interested in that area, check out my research on timing attacks because basically the single most valuable thing I found with that is a way to spot that you can use a reverse proxy to access unintended internal systems. And that's another way of avoiding the same thing because it's like the intended front end will be stripping the AUTH header, but if you go in via a different front end, you can dodge that header stripping and it smuggle headers to that back end.
+
+[01:50:03.85] - Justin Gardner
+Yeah, a different front end.
+
+[01:50:05.38] - James Kettle
+Yeah. Header based authentication is like, without proper secret keys is really quite scary stuff.
+
+[01:50:12.82] - Justin Gardner
+Yeah. Dude. Wow. Lots of cool applicable stuff there. Okay, so hv, vh, there's that component. Talk to us a little bit more about the other pieces in HTTP 1.1 must die. Specifically 0cl and expect would be great.
+
+[01:50:28.67] - James Kettle
+Absolutely. So when I run into a HV scenario where transfer encoding was blocked, I was like, well, how do I exploit this? Because if I smuggle a content length, the front end doesn't see the content length, so it doesn't for the body, so it never gets to the back end. And the back end is waiting for this body and the whole thing times out and the attack fails. And that you can see. Well, if it works, that will be called a 0cl desync. And this is a situation that I previously kind of seen and been like, oh, that's impossible, that's, that's never gonna work. But while researching timing attacks, I realized that actually sometimes servers respond without waiting for the body. And that breaks this deadlock. It makes the attack viable. So basically, if you find this, you need to find a way to make this backend server respond early on. The target that I found this on, this was a vdp and it wasn't even a VDP that lets you like disclose reports to them. So it was like super, super low valuable in that respect. But it was what showed me this, this scenario. And the target was running iis and I found that on iis, if you hit a file name that corresponds to a Windows device driver, it gives you a response. It says the response code is 200, but the body says 404 not found. And the response is early classic without waiting for the body to arrive, which breaks the deadlock and means you can exploit it via a double D sync, which took me a very long time.
+
+[01:52:10.22] - Justin Gardner
+Yeah, dude, that's where you lost me in the, in the presentation. Like. And I went back and I, you know, listened to it again and I was like, shit. Okay. Because I don't that it does get very, very complicated there. But essentially what, what you're doing there is using this exit, this early exit sort of code path, right. With connection to make it not wait for the remaining bytes that it's proceeding from the content length, right? Yeah. And then those extra bytes, like that's where you lose me. How does the desync solve that? The double desync solved that.
+
+[01:52:43.46] - James Kettle
+Okay, so basically 0cl by itself, it lets you chop bytes off the start of the next request because it's perceiving it as the body of the previous.
+
+[01:52:55.69] - Justin Gardner
+Of the previous request because specified by the Content length, which was not perceived by the front end server.
+
+[01:53:00.50] - James Kettle
+Right.
+
+[01:53:01.14] - Justin Gardner
+Okay.
+
+[01:53:02.10] - James Kettle
+So it lets you chop data off. And obviously chopping data off by itself isn't great for an exploit because you need to add your exploit to the request. So this is where the double decent comes in. Right. So you use the fact that you can chop bytes off to chop data off the next request, such that you chop the content length off the next request and that way the next Request causes a cl0 desync and you can inject the body, basically, something like that.
+
+[01:53:40.55] - Justin Gardner
+James, what the frick, dude? How do you. I mean, it's got to be. I think you mentioned this in your talk, but it's got to be really hard to get those requests to align properly, right?
+
+[01:53:48.81] - James Kettle
+Well, the way I did it for the whole research was, yeah, the servers are injecting headers, which means the offsets are wrong. And you have to brute force the offsets and the offsets change when you give the attack to someone else. Like a triage to replicate.
+
+[01:54:02.89] - Justin Gardner
+Oh no.
+
+[01:54:04.81] - James Kettle
+But I found a better way where by injecting in the headers the offset, you don't need to worry about the offsets. So if you look at all my proof of concepts, they've got like weird offsets and stuff. But that's because it was only later that I discovered there was a better, much, much easier way of doing it. So make sure you do it that way and don't just copy the approach I took in the proof of concepts.
+
+[01:54:31.05] - Justin Gardner
+Gotcha. Wow, that's crazy, dude. I just. And you know, while we're on the. On the 0cl, you know, topic, I just wanted to say again, like, I just. I gained so much respect for you as a researcher in that moment when you said. And then I found slash Con, you know, and it was always there and I loved it. And I think you said it was an emotional moment for me, I think is what you said in the presentation.
+
+[01:54:56.36] - James Kettle
+It absolutely was. Because basically I used to be a pen tester and every time I did a directory brute force on a target running iis, this slash con would show up and I'd be like. But I couldn't do anything with it by itself. It's harmless.
+
+[01:55:12.67] - Justin Gardner
+And now you have caused lots of harm with it, James. Well done.
+
+[01:55:16.43] - James Kettle
+Yeah. Over a decade later, I was like. It was literally the first thing that I tried.
+
+[01:55:21.31] - Justin Gardner
+Dude, that's amazing. Last topic on. On HTTP 1.1 must die expect header. That. That was crazy shit, dude. What. What the heck is going on with the Expect header?
+
+[01:55:34.44] - James Kettle
+This One took me, this one took me by surprise. I started using the Expect header because I was trying to detect. What I wanted to do was detect that you could do a zero CLD sync with automation without having to successfully guess early response gadget because you know, that's like work I'd rather do manually because I might be finding novel gadgets and stuff. Right. And so I figured out you could use Expect to do this. But then when I started using Expect, weird things started happening. And then I got this message from, from some other bounty hunters like, like Sweetly Medusa and BS Hop. And they were. They'd also noticed that Expect had made weird things happen. And then I realized that I actually published a payload using EXPECT a few years ago in Request smuggler. But for some reason, either I just didn't bother testing it out myself and I just published it, or when I did test it, for some reason it didn't find anything. But actually the Expect header is bonkers. It's this thing of. It's a thing. It's in the RFC everyone supports. Adds a ton of complexity. If you try and implement it yourself in a proxy, you'll discover how horrific it is.
+
+[01:56:49.52] - Justin Gardner
+Yeah. What does it even do?
+
+[01:56:51.80] - James Kettle
+What it does is it breaks sending a request into a two part process in order to save bandwidth. So this. So as a client you're meant to go, I want to send a really big request. The server goes, oh, that request is too big, don't send it. And then you stop before sending the body.
+
+[01:57:11.43] - Justin Gardner
+Okay.
+
+[01:57:11.98] - James Kettle
+Or the. Or the server goes, yeah, that's fine. And then you send the body. So it's absolutely bonkers because it like gets right into the heart of a HB1 server state machine and the content length parsing and all of that stuff. And as you can see from the number of vulnerabilities found using it, it basically breaks everything. And no browsers support this curl is the only tool that supports this freaking curl.
+
+[01:57:39.44] - Justin Gardner
+Our enemy that says this is overhyped. That's hilarious. That curl is the one that supports it.
+
+[01:57:48.09] - James Kettle
+Indeed.
+
+[01:57:49.15] - Justin Gardner
+Yeah. I love that you just kind of in your presentation you're like, yeah, just kind of throwing spectator in there and sometimes it'll do stuff like. I thought that was great.
+
+[01:57:58.35] - James Kettle
+Yeah, it came out of nowhere. This is a great area for further research. Yeah, I didn't put much effort into doing more research with it because just sending it by itself, we just got absolutely flooded with findings.
+
+[01:58:11.31] - Justin Gardner
+That's amazing, dude. What a crazy thing. All right. HTTP 1.1 should be dead. We killed it.
+
+[01:58:23.13] - James Kettle
+We need to kill it. That's the message. It's not dead, but the community working together, we could kill it.
+
+[01:58:28.17] - Justin Gardner
+It really does need to die. And it doesn't need to die on the front end, it needs to die in the back end between the reverse proxy and the origin server, Correct?
+
+[01:58:36.89] - James Kettle
+Yes. Right.
+
+[01:58:37.93] - Justin Gardner
+Yeah. Very cool. So I guess did you have anything else you wanted to comment on or that you thought the community might. Might find interesting from that talk? Obviously, you know, they should go watch the talk themselves. But as far as like TLDRs go.
+
+[01:58:53.53] - James Kettle
+Yeah, I think. Well, one other thing that might be useful that I didn't really talk about in the talk because there was time is it surfaced this. It surfaced this interesting kind of difference in approaches when I work with these other bounty hunters, which is that I discovered the 0cl basic concepts in a like a very kind of methodological, like theoretical manner. Like I always like, okay, I can see what's happening. Front end doesn't see the header. Back end sees the header. How can I exploit this? I'll do xyz, right? So then I started working with these bounty hunters, right on the expect thing. But I'm not telling them about 0cl desyncs, right? Because I don't really know these guys super well at this point. The trust isn't fully established. I don't want it to leak or my blackout goes to the bin like the SAML one. But then I could see the expect header was causing 0CLD 6 and they were like, we can't exploit this for any more than a dos. And I'm kind of telling them like, let's look at those ones, dig a little deeper. Like I can help you with these ones in a little bit, right? And then eventually they find the one on. I think it was GitLab and the server happens to. When it. Instead of giving like a normal bad request response, it actually tells you why it was a bad request. So it will say something like invalid header name and then print out like a fragment of the body or a fragment of the status line. So because they saw that, they were able to figure out the same attack concept but from a completely different, different angle. Basically. If you throw crazy stuff, basically servers will actually give you the answer. You don't always have to approach stuff from this theoretical understanding. Like that's one way of finding things, it's a valuable way. But you could also find it the opposite way and you'll find different things. Like both approaches are super, super valuable. That was something that this research really Taught me.
+
+[02:01:06.06] - Justin Gardner
+That definitely is. Yeah. A very James like approach to research here, you know, like as well, you know, like I know that you like I was thinking through this whole like slash con thing and apparently you thought of that, sprayed it out there, you know, and got the service to respond with it. But yeah, I think trying to rely on, on getting those, hitting a lot of targets with the ideas and seeing which ones will actually give you more information back. I think that does, I mean there's definitely pros and cons to that though as I'm thinking through it I'm like, you do have to parse through a lot of stuff. You know, I know you've got your, your data set of like, you know, 30,000 servers or whatever you normally throw stuff at. But, but I think you do need to sort of go through each one of those results very granularly versus like setting up a specific environment. But you do get such vast amount of, you know, you could never set up all of the things that they, that these production servers have in place.
+
+[02:02:01.90] - James Kettle
+No, no, like all those CDN issues, you can't set up those CDNs. Like those things are happening inside their own systems.
+
+[02:02:08.86] - Justin Gardner
+Yeah.
+
+[02:02:10.39] - James Kettle
+And they're like writing posts saying like well I don't understand what's happening inside their systems and it's like, but I'm still hacking them.
+
+[02:02:17.93] - Justin Gardner
+Yeah.
+
+[02:02:20.25] - James Kettle
+Both approaches, like having the theoretical knowledge is really valuable but don't, don't not try something just because it's theoretically impossible. Basically you've got to be open, open minded to like you never fully understand everything and you never will. It's, it's, it's too complex. You kind of got to be humble really.
+
+[02:02:40.60] - Justin Gardner
+Yeah, absolutely. So moving, moving to like some more general request smuggling based questions. You know, you say HTTP 1.1, it's gotta die and we should be using HTTP 2 for all, you know, intermediary to backend communications. And I'm wondering, is HTTP 2 really the solution? Because there's different layers of abstraction to HTTP request modeling and you know, maybe the first layer is, is you know, getting a header smuggling and then a disagreeing in, you know, where the, where the HTTP request ends or not because of the, you know, smuggling of the header. But sort of at the end of the day the bigger principle is a mismatch in expectations between multiple servers in the chain. And I think that my theory is that that will always exist no matter what protocol we're using because no HTTP servers are going to completely agree on how HTTP 2 even should be implemented. So do you anticipate that we'll see a good amount of request smuggling esque vulnerabilities in the HTTP 2 realm as well once we switch to that on the back end.
+
+[02:03:54.89] - James Kettle
+So I think HP2 virtually cures request smuggling. And that's defining, that's defining request smuggling as I can send a request that influences the next request or a request from somebody else that's defining as something that breaks request isolation. Right. It basically fixes that because there it removes all the ambiguity about where a request starts and stops because of length, like, because like it's like tcp. Like I don't know what the last time that that like as like a massive, like someone was able to compromise 20 million websites because TCP library got confused about the length of a TCP packet? Yeah, I mean don't get me wrong, I'm sure that how you. That used to happen back in the day, but basically it's like, you know, the length of the message is from like the fourth byte to the eighth byte. That's it. It's just those bytes. How do you send two lengths? It's not possible to send two lengths. How do you send an ambiguous message when it's just these bytes to these bytes? Like you know, maybe you can do an integer overflow or something if you're super lucky. But you're talking about like basically memory corruption kind of bugs virtually. Like they're going to be rarer, they're going to get spotted and patched out and as soon as stuff's reasonably hardened, it's going to become really rare. But as your point, it's not going to fix things like header smuggling. So ambiguous requests are still going to be useful for exploits. Maybe you can do header smuggling, maybe you can do cash poisoning. Those attack classes I think are here to stay and will survive widespread use of upstream HP2. And also HP2 is super complex and it's got crazy things like HPAC. So the compression used in HP2 is stateful depending on the previous messages sent to the connection, which is like why they've gone too far in the name of performance when doing that. And the end. And the end result is some absolutely crazy bugs. Like there's a cve. I don't think the actual full details are public, but CVE 2020 332731, you can cause something almost like a desync using HPACK.
+
+[02:06:34.93] - Justin Gardner
+Oh my gosh, dude.
+
+[02:06:36.52] - James Kettle
+So that's kind of not pretty. So I definitely believe there are super cool bugs in HB2.
+
+[02:06:43.47] - Justin Gardner
+Oh yeah, yeah. Absolutely.
+
+[02:06:44.88] - James Kettle
+And I look forward to the time when I can actually justify doing a good amount of research on it.
+
+[02:06:49.07] - Justin Gardner
+Yeah, I asked you this question because I was at this Google Live hacking event recently and Ben Callis was there, the guy that built HTTP Garden and has been doing a bunch of request smuggling stuff. And I love this guy. This guy is hilarious to me because like, the first time I met him I was like, oh, this guy is interesting because he's at this Google Live hacking event, hacking something with printf and netcat. And I'm like, you're not going to use, you know, like burp or Caido or whatever. And he's like, gotta, gotta control the, gotta control the bytes. And I'm like, okay, all right, dude. So I was talking to him and he was, and I asked him like some off question about the sort of similar concept header smuggling. He starts telling me about HTTP 2 and he's like, do you mind if I tell you a little bit about HTTP 2? Actually, no, actually, he let me know in advance. He's like, all right, I'm going to take you down the rabbit hole. You sure you want to do this right now? And I was like, is close to the end of the event? Sure. And so the man whips out a presentation on HTTP 2 that he's like, I'm going to give this talk at work next week. And then he goes through the whole thing explaining to me like all of the weird shit in HTTP 2. Like, you know, there's like this, this I'm gonna have on the pot. So I'm not even gonna try to explain it all, but it is, it is extremely nuanced and very weird how like, you know, this, this cache of like headers exists and like, it's super weird. So I imagine there will be a good amount of ambiguity in various implementations across HTTP 2 as well.
+
+[02:08:24.25] - James Kettle
+Yes. Yeah, I think ambiguity will be there. Crazy implementation bugs will be there. Basically. There's lots of cool stuff for hackers there still. It's just not, it's just not like the absolute goldmine of compromise of millions of websites with very little effort. That is HTTP 1.1.
+
+[02:08:44.93] - Justin Gardner
+I guess also this, I forget the technical term for this, but, you know, HTTP 2 does them the, you know, message length thing, right, where it's got these different cells and it says, okay, you know, this is the length of the message, blah, blah, blah, blah. You see this a lot with binary protocols. Yeah. And I mean, just kind of thinking through it, obviously. I think this is a. One of the things Request modeling brought to light is that the delimiter based system is broken and really you do, you do need to move to this like sort of message link based thing. Would you say that that's true in general? Because so many, I've seen so many things pop up where protocols are being exploited. Taking the principles of request smuggling and bringing it into SQL into all of these other things.
+
+[02:09:30.36] - James Kettle
+Yeah, the delimiter like text based protocols, delimiters, definitely not good as that SQL research that you mentioned, I believe it was called SQL isn't dead. Was it DEFCON last?
+
+[02:09:45.32] - Justin Gardner
+Yeah, it was like 2024 DEFCON.
+
+[02:09:47.73] - James Kettle
+Yeah. So it's super cool research and that, that's like for me that, that's like the future of request smuggling basically that kind of thing. It's going to be that level of effort and it's going to be that kind of like relatively constrained impact compared to what we're doing right now. But it's like yeah, hell no, you can still achieve high impact.
+
+[02:10:09.10] - Justin Gardner
+Well, because if I remember correctly, I think that was integer based overflows. Right. Affecting the message length. Right. And then you know, if you have some. And then you know the message gets kind of cut off and then the next part is perceived.
+
+[02:10:21.68] - James Kettle
+Yeah, it's chaos. It's chaos.
+
+[02:10:24.05] - Justin Gardner
+It gets a lot more.
+
+[02:10:24.89] - James Kettle
+That research was though like how much more difficult it was to get to an exploit. Right. Like with requests, with request modeling, with H1 you get your desync and then it's just like easy rolling. Whereas the amount of effort, like there were some targets where he was able to cause like the equivalent of a dating but still couldn't achieve much impact just because of quirks about how the server was.
+
+[02:10:50.77] - Justin Gardner
+Yeah. And how the binary protocol is. Yeah, the binary protocol is built out. You know there's a lot, it becomes a lot more like binary exploitation where you've got to like spray and stuff like that. It was, yeah, it was, it was a beautiful talk. But it, man, it gets a lot more complex research. Yeah, yeah, I guess you already, you know, you kind of shouted out hpac. Is there anything else that comes to mind as far as HTTP 2 goes of like that's sketchy, that's weird. You know what? And I don't want to make you give away your areas of research that you're going to go after next time you deep dive http2, but is there anything else that kind of comes to mind there.
+
+[02:11:29.18] - James Kettle
+There was one thing I saw was I did post a While ago on HB2 connection contamination where web Browsers will, if I remember correctly, send requests intended for different websites over a single connection because they think the front end server can support all those different websites.
+
+[02:11:54.48] - Justin Gardner
+Like. Like a V hosting thing.
+
+[02:11:57.13] - James Kettle
+Yeah, exactly. So there's. Yeah, there's definitely some kind of broken and scary stuff in that area. Basically.
+
+[02:12:07.53] - Justin Gardner
+That's super whack. I wonder if they do it off of like TLS certificate or something.
+
+[02:12:10.73] - James Kettle
+Yeah, yeah, exactly.
+
+[02:12:11.97] - Justin Gardner
+Oh my gosh.
+
+[02:12:13.34] - James Kettle
+So if the site presents TLS certs for two sites and you try to connect to both sites, they'll both get sent to that website and I think it will like skip. It won't even bother doing a DNS lookup for the second website. It doesn't care where that website is because it knows it can talk to it. Here again, it's this, like they care so much about performance that they're putting in things that from a security perspective just sound absolutely insane.
+
+[02:12:36.75] - Justin Gardner
+Oh my gosh. Yeah, man, I do. We might have to cut this or whatever. But I think that is super interesting because you could like, I'm thinking like, like how can you get it routed to your site versus the, the other side if you're in like a V hosting environment? And I was thinking there's a lot of ambiguity about the dot at the end of a domain name. Right? You know, like if you. Everything is like you know, www.google.com. really, you know, and so there's.
+
+[02:13:03.85] - James Kettle
+If you could register this chaos.
+
+[02:13:06.05] - Justin Gardner
+Oh my gosh, dude, I'm sorry. Yeah, that's. That is crazy. That's a very good shout out. Okay. Marathon podcast episode. I appreciate it. I do have one, one last little section I wanted to hit, which is I would like to understand more about HTTP pipelining and where that's helpful. And you did just release an article on HTTP pipelining and I saw it this morning. Somehow I missed it when I was prepping for this episode. I was sitting in the hot tub this morning reading through our doc and I was like, oh shit, look at this. This is exactly what I was going to ask, but can you give us maybe a little bit of like a TLDR on this article and help us understand what kind of scenarios HTTP pipelining can actually be helpful to result in request smuggling or other types of vulnerabilities.
+
+[02:13:58.80] - James Kettle
+Absolutely. This is a little bit tricky because it's a ridiculously nuanced topic.
+
+[02:14:06.72] - Justin Gardner
+Sorry, James, to put you on the spot there.
+
+[02:14:09.11] - James Kettle
+As We've already established, HB 1.1 reuse this connection by just putting the requests back to back on a single string, right? And that's called keep alive or connection reuse. And one kind of thing that's sort of a feature, sort of accidental, sometimes not accidental, sometimes is what this means is you can send like three requests in one go or two requests in one go back to back without waiting for the replies, right? And generally as you just interpret the replies in the order that, that they come back and it will work. And that's called pipelining. Okay. So it's not usually a deliberate feature. It's more like just because we use sockets and like underlying operating system socket libraries just buffer things. So the application layer might not even know that you're pipelining, or the server might not know that you're pipelining. But what that means. So when you're doing request smuggling, you're often sending two requests in one go, right? You're kind of trying to do that deliberately. And if you do that, if you take like burp repeater and put two requests back to back and send them to a server that's like fast, like send them to a static file on an NGINX server, you will see 2 responses come back in the single repeater tab. And it looks like, oh my goodness, I've completely broken the server. I must have found request smuggling. But it's actually, that's how HTTP works. It doesn't actually indicate a vulnerability. Right. So I guess what I would say is most of the, like that behavior is really common. It's on nginx on static farms by default. So most of the time that you see two responses in one, I wouldn't say there's any evidence that there's a vulnerability there.
+
+[02:16:17.07] - Justin Gardner
+Right.
+
+[02:16:20.11] - James Kettle
+And if you want to find request smuggling, basically and have it guaranteed, make sure you're sending your requests over separate connections. Because if a request over one connection is influencing one over a separate connection, that proves completely this is like proper request modeling. The problem is that that's not the end of the story, which is that not that simple. Some front ends only reuse the connection to the back end if the connection to them was reused. So this means you have to reuse the connection to the front end in order to like find the vulnerability. Okay.
+
+[02:17:01.52] - Justin Gardner
+Oh, geez.
+
+[02:17:02.31] - James Kettle
+And that's where. That's why I called the post, Beware the false false positive, because it looks like a false positive, but it might actually not be a false positive. Right. So in the post I share some strategies for how to identify this kind of request smuggling vulnerability, which I refer to as connection locked vulnerabilities and you can do some funky stuff with timing. And I made a custom action for Burp suite that you can run and it will try and tell you if it's pipelining or if it's a real vulnerability, but it's still kind of guessing so it won't be right 100% of the time. Basically, if you want to prove that you've got a connection locked request smuggling, you need to elicit a response from the server with the smuggle second request that you cannot elicit directly. That's the proof because the power of the attack is it lets you do things like cache poisoning, it lets you bypass front end head of rewrites, it lets you send, you know, malformed host headers that might get blocked by the front end and so on. So that's what start looking for. If you see this behavior. Yeah, yeah, it's quite advanced.
+
+[02:18:24.87] - Justin Gardner
+That's kind of, that's kind of what I was thinking with this is like, you know, just thinking outside of request smuggling, like can we use HTTP pipelining to bypass if things like getting headers stripped out or something like that, you know, is something going to be looking at that TCP stream and be like, oh yes, it's an HTTP request that, that's allowed, let the whole TCP stream through and then. But that actually contains two HTTP requests.
+
+[02:18:51.71] - James Kettle
+Okay, so this is, it's even more. There's kind of two different things here. What I was just talking about you, you need a desync for that to work. There is a desync, it's just not a desync that's exploitable to affect other connections. But. And yet if you can do that, you can bypass front end security. Spoof headers do cool stuff, but the attack that like if you just do pipelining like with like normal HP requests on a server that doesn't have a desync. Well, some servers do in fact treat the first request on a given connection differently. So I call this a connection state attack. And one common one, like the most common one that I've seen in the wild is called first request routing. And basically they look at your first request host header to see where. Which backend to send the request to and then they send all the subsequent requests on that connection to the same backend. So that's amazing for doing host header attack poisoning.
+
+[02:19:53.73] - Justin Gardner
+That's a really good. Yeah, it's nice art, James. That's a good.
+
+[02:20:00.13] - James Kettle
+I'm going to release the custom action that supports this in about a month's time, but we have to add a feature to Burp Suite to make it possible, but it's on the way.
+
+[02:20:08.45] - Justin Gardner
+Wow, dude, that's really cool. Yeah, I think that is a really interesting way to approach this because I knew that pipelining pipeline was just giving me weird vibes. Like I'm sure that there's something that's just looking at a portion of the. This, the data and then just sort of yielding it all down into the same, you know, TCP connection and stream. So there, what you're saying is that there definitely are servers that are looking at the first request in a, in a stream and making decisions based off of that?
+
+[02:20:41.72] - James Kettle
+Yes, yes. Generally, if you want the attack that, any kind of weird attack to have the best chance of success, put it on the second request on the connection. In practice, that's super clunky right now, but we're shipping an update. Just going to fix that.
+
+[02:20:58.90] - Justin Gardner
+Wow.
+
+[02:20:59.27] - James Kettle
+There's going to be a button and you press the button and it sends your repeater request, but it smuggles it behind like a nice looking request.
+
+[02:21:06.59] - Justin Gardner
+That's pretty cool. That is pretty sweet. James, this. This has been amazing, man. This has been a lot of really awesome information. Thank you so much for coming on the pod. Did you have anything else you wanted to sort of shout out or mention before we close?
+
+[02:21:21.28] - James Kettle
+No. Thanks. It's been great to be on here.
+
+[02:21:23.68] - Justin Gardner
+Yeah. Dude. Frick. One of my favorite episodes ever. That gg, dude. Gg. Good pod. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'. All. If you want more Critical thinking content or, or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there. On top of masterclasses, Hack alongs, exclusive content and a full time Hunters guild if you're a full time hunter. It's a great time, trust me. I'll see you there.

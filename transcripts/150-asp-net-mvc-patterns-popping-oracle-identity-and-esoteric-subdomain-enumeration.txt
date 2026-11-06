@@ -1,0 +1,674 @@
+Episode 150: ASP.NET MVC Patterns, Popping Oracle Identity, and Esoteric Subdomain Enumeration
+Source: https://www.criticalthinkingpodcast.io/episode-150-aspnet-mvc-patterns-popping-oracle-identity-and-esoteric-subdomain-enumeration/
+======================================================================
+
+Title: Transcript - Thu, 27 Nov 2025 15:30:28 GMT
+Date: Thu, 27 Nov 2025 15:30:28 GMT, Duration: [00:58:22.68]
+[00:00:00.88] - Justin Gardner
+I love it when you pop a  vuln  quick.  You know...
+
+[00:00:05.59] - Joseph Thacker
+that's like the opposite of imposter syndrome. It's like, oh, I'm a God. You never forget for a split second. You're like, I'm the best. y
+
+[00:00:11.03] - Justin Gardner
+best. y Dud. All right, hackers. I was just looking into this and I think I figured out how Threat Locker elevation control works. Okay. So when a user launches an elevated processor, they try to. Threat Locker agent will hook that into its own elevation flow. So we don't see any UAC prompt or anything. The Threat Locker admin will be able to grant that process elevated permissions for a certain amount of time or whatever. Very granular control there. And then the Threat Locker agent on the user's device injects a modified process security token which will elevate that process directly. This is awesome because it avoids things like UAC, which leaves NTLM hashes and stuff like that in memory. Right. In LSAs exe, it creates a time bounded elevation. Right. And it does the elevation to the process rather than to the user. Really great stuff. But of course there's always like maintenance mode and that sort of thing if you have to get in there and do a bunch of administrative activities. Great stuff by Threat Locker once again. All right, let's go back to the show. Sup, hackers? We got the this week in bug bounty segment real quick and we've got a couple items here. First one is that the Adobe team wanted us to let you know that they are going to be at BSIDES London. They're a Platinum sponsor this year and they would like to meet some of the community out there in London. So if you're going to be at BSIDES London, drop by, look for people that are wearing Adobe SWAG and go up and say, hey, they'd love to connect with you all. The next one up was this one right here, which is a HackerOne report on Cloudflare that recently got disclosed. And I wanted to shout this out because of how beautiful this bug is. It's entitled Bypass of cloudflare's Cache Keys and WAF via Header Overflow. And essentially what happened here is that the attacker was able to provide a large amount of headers right 94 in this scenario. And this would overflow the maximum number of headers for Cloudflare's cache key. And the cache key is the thing that determines what a unique page is as far as caching goes. And you can see some of the things that are in Cloudflare's cache key by default are things like the X method override header, XHTTP method override header, the sort of things that will break the backend probably if, if they're included. Right, and they shouldn't be cached with the main asset. But if you were able to provide one of those after a certain number of headers that exceeded made it exceed the max number of 100 headers, including the internal headers added by Cloudflare, then you would be able to sneak those in and get your resource cached with the malicious HTTP method override key or header in there. And that would result in stored XSS or dos. I just thought this was a beautiful one to shout out. And like, man, whenever these things pop up on Hacktivity, I'm like, wow, that's been sitting there for so long. And we could have found that just by sending a bunch of headers. Beautiful. All right, last but not least for those of you on YouTube, you can see that I'm wearing this sick, like ugly Christmas sweater that Wiz sent us. So I just wanted to give a shout out to the Wiz team. Thank you for this beautiful. What is it? It's like Arctic Intelligence, you know, AI Security ugly Christmas sweaters. So I'm gonna be wearing this one all holiday season. Thanks, Wiz team. All right, let's go. Let's jump into the show. Alrighty, man, we're rolling. Happy Thanksgiving.
+
+[00:03:49.41] - Joseph Thacker
+Yeah, Happy Thanksgiving. And for some reason you think that half the world won't know what that is, do you?
+
+[00:03:54.50] - Justin Gardner
+I don't know, man. I mean, it's, it's an American holiday. I don't, I don't think it's a given that, that people will know what that is.
+
+[00:04:02.06] - Joseph Thacker
+Yeah, I feel like that people have probably heard of it and know what it is even if it's not celebrated.
+
+[00:04:06.25] - Justin Gardner
+But maybe.
+
+[00:04:07.36] - Joseph Thacker
+Yeah, maybe.
+
+[00:04:07.80] - Justin Gardner
+I just feel like I don't know the holidays for a lot of other countries. That's fair.
+
+[00:04:11.52] - Joseph Thacker
+Yeah, that's fair.
+
+[00:04:12.47] - Justin Gardner
+But I guess like a lot of businesses and stuff do operate off of like US holidays and stuff like that. So.
+
+[00:04:18.16] - Joseph Thacker
+Yeah. So anyways, Thanksgiving is a holiday where people talk about what they're thankful for and eat specific types of food.
+
+[00:04:24.00] - Justin Gardner
+Yeah. What are you, what are you thankful for this year, man?
+
+[00:04:26.56] - Joseph Thacker
+Oh, that's a great question. So it's my first year doing full time bug bounty, I think. I think I've doubled my annual goal, so praise God for that. Yeah, it's amazing. So. Yeah. But outside of that, I think from the hacking community, I'm, like, extremely thankful for, I guess, openness of information. Like, I think that. I think that the openness of, like, GitHub, for example, has made AI models incredible at coding. And I just get benefit from that every single day. And then. And then I just think in the hacker community, like, we didn't have to develop. The hacker community didn't have to develop in such a way where people wanted to share information. I think all the time about how people travel to conferences all over the US for basically zero pay to share niche research to like 15 people in a room and sometimes it blows up.
+
+[00:05:14.79] - Justin Gardner
+Exactly.
+
+[00:05:15.11] - Joseph Thacker
+But, like, they're really excited about it. They've been prepping all year, dude. Like, they've been working hard in their off hours. They have a salary job, and they're going to go and present at this conference in D.C. to 15 people in a small room about their little niche area of research. It's like, man, the security industry is really cool in that regard.
+
+[00:05:29.17] - Justin Gardner
+It is, man. It is the dissemination of information. Yeah, for sure. People just love talking about it. I think people are really passionate, you know? Yeah. Which. Which makes sense. Yeah. Dude, I'm thankful for having you on the team this. This year.
+
+[00:05:41.97] - Joseph Thacker
+Well, thank you.
+
+[00:05:42.76] - Justin Gardner
+It's been amazing to be hosting the podcast with you. I'm also grateful for the whole CTBB team. They just are unbelievable. So I know they're editing it right now. I can. I could see their little stupid smiles. So thank you guys for all of your hard work and for the CTBB community as well. Dude, like, this community is so awesome because, like, one of the things we were thinking about when we. We built this community in the beginning, Joel and I were like, man, I really wish this community existed so that we could be a part of it, you know? And then I'm just sitting there, like, in the discord reading all this stuff, and I'm like, man, this is great. Like, wait, this is my. My baby. Like, this is so awesome.
+
+[00:06:18.66] - Joseph Thacker
+It really does feel like you get to, like, reap the rewards of the awesome thing that you built. When people are, like, sharing novel research, when they're collaborating, when they're popping bugs, when they're, like, sharing their bounties and their success stories that that community has contributed to. Right? Yeah, I was thinking about that recently, too. Obviously, we have a few different things we're kind of doing for promo for Thanksgiving and Black Friday that I want you to mention after I say this, but I was actually thinking about, man, how Cool. It is that we are in an industry where we get to actually pat the backs of our friends in ways that are financially meaningful to them and their family. Like me. Like, me and Douglas Archangel were hacking on a thing this week, and I thought about that. Like, he got me invited to a, you know, to a private challenge or whatever, and it resulted in, you know, five plus, or I think it's going to result in five plus figures of bounties. And it's just like, wow, that is so cool that I have a friend who, like, kind of, like, shares that type of. That type of, like, I don't know, blessing or gift with my family on, like, a regular basis. It feels crazy.
+
+[00:07:17.77] - Justin Gardner
+Private program invites or, like, challenge invites and stuff like that are pretty meaningful. Gretme got me into one the other day, and I was like, dang, we crushed this. This is great. Thanks, man. Like, and it's funny for. For him because, you know, he was my mentee for, like, right. I don't know, a year and a half, two years, you know, and then I'm like, yes, I'm reaping the reward of my.
+
+[00:07:38.07] - Joseph Thacker
+Exactly.
+
+[00:07:39.68] - Justin Gardner
+So.
+
+[00:07:40.39] - Joseph Thacker
+And just even small leads, though, like, the reason why my mind jumped to this is because, like, there's a small scale of that that happens in our community in the Critical Thinkers chat or in the Guild chat, where people are just posting leads, and it's like, hey, I think I have a gadget here. Can I turn into a bug? And then people are like, oh, here's the bug. And then they both get paid. And so it's really cool because it's like a gift to both people that, like, had they not had that connection, nobody would've got paid.
+
+[00:07:59.31] - Justin Gardner
+Yeah, it's beautiful, too. I mean, especially in the CTRS tier, a lot of people will drop stuff all the time, like, hey, you know, how do I solve this? And then somebody gives them the answer and it's like, well, that just paid for 10 years of CTVV.
+
+[00:08:08.95] - Joseph Thacker
+And I was like, exactly. Yeah, exactly.
+
+[00:08:10.60] - Justin Gardner
+All right, here we go. So, yeah, well, going back to the Black Friday thing, though, what we're gonna do, just as a part of Black Friday, for those of you guys that don't know, Black Friday is like a, I don't know, consumeristic shopping consumer Day, call it that, where all the, you know, companies try to give deals and stuff like that. And essentially what we're going to do is we're just going to give out five to 10 free swag codes for Black Friday in the CTR's discord surrounding Thanksgiving and Black Friday. So if you guys are interested, hop into the critical thinkers tier where we're going to be dropping those swag codes and get some. And we're also going to do a raffle for the new paperback version of Gareth Hayes JavaScript for hackers. Okay, so he's. Gareth is doing a little promotion, I think, surrounding Christmas and surrounding the holidays, releasing the paperback version of his amazing book JavaScript for Hackers, which I recommend all of you guys listen to and have recommended to you multiple times already. Yeah, so here's the paperback version right here. We're going to do three copies to existing critical thinkers. We're going to raffle those off, and then we're going to do three copies to new critical thinkers that join surrounding Thanksgiving and Black Friday. So be on the lookout for those Black Friday and Thanksgiving opportunities.
+
+[00:09:29.21] - Joseph Thacker
+Such an appropriate price there of the book.
+
+[00:09:31.09] - Justin Gardner
+Yeah, yeah, dude, I 1, 3, 3. Dude, I didn't even notice, man. Oh God, am I a hacker? I don't even know if I'm a hacker anymore, dude.
+
+[00:09:40.80] - Joseph Thacker
+Jeez, Funny. The Kindle version or the audiobook version should be like $137 or something.
+
+[00:09:45.80] - Justin Gardner
+Yeah, true. All right, man, let's. Let's jump into the content. I'll go ahead and take the first one since I'm already sharing my screen. The first one that I wanted to cover with you guys today was Searchlight Cyber's research on CV2025 61757, which is Oracle Identity Managers pre auth rce. And guys, this one was such a simple bug. Like, it's just a beautiful example of like what you can do when you actually take the time to get access to source code. Okay, so as usual, Searchlight Cyber team doing research, picking apart enterprise applications, they grabbed the source code for Oracle Identity governance suite and started tearing it apart and found a bunch of ear and war files. The first thing that I kind of noted about this write up was that they do what lots of us hackers call the find the endpoint game. I think Sam Herb was the first one that coined that in my knowledge at least. And essentially they knew about a file help pages main jspx and they were like, okay, well we know that that file exists from just playing around with the app, so let's go find where that is. Right. So they grept through all the war files and found it deep within the file system there. And then they started tearing apart the jars surrounding that and found that Oracle IDM UI shell jar was the jar file that had all of the main functionality for the application in there. So they started looking at all the routes and stuff like that, and they noticed that a couple of them were unauthenticated. So they tried to reach them, reach out to them, but they hit a 401 and they're like, what the heck is going on here? These are unauthenticated routes. Like why are we hitting a 401? And so they take a peek back at the web XML file and find that something that we love to see, guys, that all of the security constraints for these routes are being implemented by one central security filter, which is like bad news. Okay, so this is like a good overarching principle that you could take into other enterprise applications. And this is the. I'm just going to read a quote from the write up right here. At Searchlight Cyber, we have found that central filters like this are almost always bypassable. The reason tends to be as follows. The security filter handles every route in the application, but there's almost always a set of routes the developer wants to allow for all users, including unauthenticated ones. So we saw here, just like a traditional story of auth bypass here, where they found that the developers were trying to let access to all waddle files through and they were able to hit any arbitrary route by just tacking semicolon waddle at the end of that route.
+
+[00:12:47.02] - Joseph Thacker
+Such a classic example of just like a filter that's regex based that you can just find a funny bypass to, Right?
+
+[00:12:53.42] - Justin Gardner
+Exactly, man. Exactly. But one little gotcha that they did have here was of course they started with question mark, but then actually they were using get request uri, not get request URL, so it had to be in the actual path itself.
+
+[00:13:09.60] - Joseph Thacker
+Interesting.
+
+[00:13:10.63] - Justin Gardner
+But then Java comes to the rescue with path parameters. So they were able to just do semicolon waddle and then getrce via hitting a route called groovy script status, which takes some groovy script in and compiles it and then tells you whether there's compilation errors, but it doesn't actually execute the code. So they had to know. They solved that problem to get RCE by knowing that Java annotations are processed at compile time.
+
+[00:13:40.28] - Joseph Thacker
+Oh wow, that's cool.
+
+[00:13:41.73] - Justin Gardner
+Yeah. So even though the code wasn't actually run, the annotation, the custom annotation that they defined was being run because those are run at compile time and they were able to get arbitrary code execution through a annotation that they passed into that endpoint. So dude, that's pre Op gg dude.
+
+[00:14:02.53] - Joseph Thacker
+Yeah, yeah. The goal, the dream.
+
+[00:14:04.94] - Justin Gardner
+Yeah. Beautiful. So shout out to the SL Cyber team. That was an awesome write up.
+
+[00:14:09.22] - Joseph Thacker
+That was like published yesterday or today.
+
+[00:14:11.25] - Justin Gardner
+Yeah, I think it was pretty recent.
+
+[00:14:12.77] - Joseph Thacker
+Yeah. That's awesome.
+
+[00:14:14.22] - Justin Gardner
+Yep. We'll link it in the description.
+
+[00:14:16.22] - Joseph Thacker
+Sweet, dude. I brought us a write up from HX. Many, many people know HX01 as the SSO or OAuth guy. I don't know if you've ran into him in a while. He was the life hacking circuit for a little bit, but.
+
+[00:14:31.27] - Justin Gardner
+Oh yeah, yeah, I've seen this.
+
+[00:14:32.67] - Joseph Thacker
+Yeah, yeah. So I'm gonna share my screen real quick. It's called who still needs or who Needs a Blind xss and so it's kind of interesting. I think this is like years incoming. I remember like actually playing with this exploit back with HX and Eric back in the day like a couple years ago. I'm friends with both them. Both of them. I think that there's a third person. Yeah, Sajib. And so basically what they did was. And you've seen this before because we've used it with AI stuff but they're using the import HTML Google Docs function.
+
+[00:15:08.62] - Justin Gardner
+Google Docs function. Okay.
+
+[00:15:09.86] - Joseph Thacker
+Yes. To basically concatenate the, you know, the top left data. But you could do any data, you know, in a, in a real attack scenario with their server so that automatically leaks. Obviously. I'm sure that a lot of people have probably heard of this strategy and if not, it's really neat. Basically Google Docs, when you open the tab, if there's an import HTML will make like a client side fetch request. Very similar to AI related image markdown volumes route where there's like a client side from the, from the victim's browser fetch with that data and it includes the dynamic data from the table and so it gets leaked. I was actually going to ask you before I go on to this, is there a word for that whole class of attacks like you know, like image source import HTML or is it just called like a client side?
+
+[00:15:51.00] - Justin Gardner
+These are cs. Are you talking about like CSV injections in particular here? Because that's pretty much all you do with CSV injections is like, you know, exfil data via like a HTTP function or something like that?
+
+[00:16:03.53] - Joseph Thacker
+No, no, I'm talking about like, like, you know, like for example, if you have an AI application that's rendering markdown images into like an image source tag, the, the browser, the, like the victim's browser is making a client side fetch to a attacker server in order to leak the data. And that's exactly what this does. But it's a completely different mechanic. Right. Like this is like some sort of like you know, fancy JavaScript in the, in the Google sheets thing that's doing it rather than like an image source tag for markdown. But at the core component they're both leaking it via a dynamic URL coming from the client side browser. And so I didn't know if there was like an overarching term for both of those.
+
+[00:16:38.02] - Justin Gardner
+Not that I can, not that I can think of, man. I mean like just leaks via, you know, HTTP request I guess. But like, you know, even something like it's not really like a client side or like a cross site leak because it's not necessarily done that way. Right, yeah. Anyways, yeah, it is an interesting vuln category though.
+
+[00:16:55.78] - Joseph Thacker
+Yeah, they're similar in that way. And I would be interested in if it, if something like this could be used with import HTML with like an image thing for that image refer vulnerability like that zero day that was in Google. Obviously it did work in markdown to image source and AI apps, but I'm curious if it would work in something like this. Anyways, I digress. Basically their goal was to spray this type of payload import HTML with, you know, with a domain that they owned with a concatenation of the data so they could prove, you know, data exfil across a bunch of different locations, across a bunch of bug bounty programs to see if they would get callbacks to their server. If anybody's ever tried this with Google Forms, it sanitizes it and there are lots of other apps that sanitize it. So I did want to, I did want to call out and they, they didn't get a lot of success initially, but success came days and weeks later when that data was then used at some point by an employee down the line. And so there are two ways that this happened that they found. One was employees exporting CSVs from CRMs like Salesforce or Zendesk or HubSpot. These may have things that escape it locally when you view it. Well, I mean none of these are going to run a Google Docs function anyway. And because they're not Google Docs, they don't have a reason to sanitize the data. And then when you import into certain ways from Google Docs it does get sanitized. But what they found was that if you one, when you copy and paste it, it doesn't always do it. And then two automation tools like Zapier work auto and other custom integration insert the rows directly into Google Sheets. So things like this. So this is like a zapier for the listeners. I'm just. There's a screenshot on their. On their blog post that just shows like a zapier extension that allows you to take a CRM lead from Salesforce and basically automatically put it into Google Sheets. So anyways, they got a bunch of hits. The funniest one, which I just have to mention on the pod before we move on, is that a bug Bounty Hacking event form was one of the. Was one of the exploits they saw. And look, it looks like as. Please provide researcher information. Something about being invited. So I'd be really curious to know which. Which company this was, but.
+
+[00:19:06.77] - Justin Gardner
+Dude, that's hilarious, man.
+
+[00:19:08.70] - Joseph Thacker
+Pretty cool.
+
+[00:19:09.57] - Justin Gardner
+Yeah, I think that, I think that blind, you know, injections like this always, they just boggle my mind when they work. I'm like, oh my gosh, I just can't believe that happened. But yeah, totally. I mean, I could definitely see how Zapier connections or something like that, you know, would really make that happen because there's no reason to have it sanitized, you know, when it, when the row is getting inserted. So. Yeah, that makes sense. But man, that's such like a shadow it thing too though, is like if your team is like, your marketing team is like spinning up a form and then they connect it to Zapier and then it leaks all the information submitted by the form. You're like, like, what is it? The company's gonna be like, okay, guys, all right, yeah, here's the bounty, you know? But like, what, how do they fix that? You know, like, yeah, that's true.
+
+[00:19:56.27] - Joseph Thacker
+This is something that I can see not getting paid from some programs because there's not like a code based fix, right? It's like, tell your employees not to do this silly thing. But if it is via a zapier extension, then maybe it would automatically get paid because you can go import the data in a better way, right?
+
+[00:20:08.35] - Justin Gardner
+Yeah, yeah, potentially. Good, good, good shout, man. Yeah, I like to see when people talk about it more than just theoretically, they're like, okay, and then we went and submitted every single Salesforce form that exists or whatever to see where this data would end up back in Google Sheets or whatever.
+
+[00:20:24.91] - Joseph Thacker
+Yeah, exactly. I think HX kind of had the idea, but then reached out to Eric and I'm pretty sure they've been doing this for at least more than a year. So I think they've probably sprayed it everywhere and gotten a good Number of bounties from it.
+
+[00:20:35.71] - Justin Gardner
+Yeah, that makes sense, man. Good stuff, guys. Next one on the list that we had here was actually a Crit Research Lab post, which guys, I've been so pleased with the results of the research lab. We came up with this idea to sponsor research by people in the community and we've gotten some really good finds out here. This one is entitled ASP. NET MVC View Engine Search Patterns by fsi. And essentially the concept of this research is that FSI takes a look at the scenario where you have arbitrary file write on a ASP NET environment, but you can't access the files that you're writing because there's no paths that allow you to access ASPX files or CS HTML files, so you can't get code execution. So what he did in this scenario is, and he breaks it down in a lot more depth in the actual blog, but he hooked procmon up to the actual. Exe that was processing all of these hits and found that it was attempting to read a bunch of paths of files that don't exist when he hit a certain model view controller path in the ASP. NET framework. Right? So essentially there's like a default file that it will try to read, you know, that ends in dot, csh, HTML or whatever. When you try to hit some of these. What? What is it? Let's see if I can find the one right here. When you try to hit a path like slash model slash view or slash controller slash view right here. And then it will take that, it'll take your controller name and your, and your method name and then it will craft a, an actual file that it tries to read from the file system and executes that code. Right? So if you've got access to like the MVC interface, right, but you can't access the actual file itself, you can use your arbitrary file. Right. To write into one of these, you know, files that, that the system looks for by default. And then it will go ahead and process that and run that code as the result of this mvc, you know, interface here. So I thought this was really great research. I love it when researchers dive deep into specific frameworks that we see all the time, like asp.net right?
+
+[00:22:59.31] - Joseph Thacker
+Yeah.
+
+[00:22:59.68] - Justin Gardner
+And give us a write up of exactly what's happening under the hood so that we can know better how to exploit some of these niche scenarios.
+
+[00:23:05.40] - Joseph Thacker
+Yeah, a million percent. Because all it takes is just one person putting out this research. And now everyone who comes across a similar situation knows how to, like, further the exploit you know how to actually get the next step or the amount of impact.
+
+[00:23:16.84] - Justin Gardner
+Exactly. And one of the things he was saying specifically here is that a lot of times what you'll see in these web config files is that only specific file extensions are allowed or the dot file extension is allowed, which means an empty file extension. And that correlates really well with the MVC environment. That's why he had this very limited allow list and he was able to use that to still arbitrarily execute code via CSHTML file. Right. Pretty awesome.
+
+[00:23:54.44] - Joseph Thacker
+And on the topic of the research lab in general, like you said, I feel like we were excited about it and you launched it and then we didn't really do a lot with it for a while, but then over the last two months it's just been like bam, bam, bam, bam. So it's been so good.
+
+[00:24:06.59] - Justin Gardner
+Yeah. It feels like every episode we're talking about something new. So if you're interested in trying to figure out some ASP Net MVC stuff, then this is a great, a great write up. And if I remember correctly, I think I've got an unread message by FSI right now trying to do a follow up to this. So you might see a follow up on the lab research website.
+
+[00:24:27.61] - Joseph Thacker
+And I don't know if it was him or someone else, but we have had some people say, hey, instead of this little token bounty, can I just get some swag? And so if you're wanting to earn some swag, you can also do a small write up for swag.
+
+[00:24:38.90] - Justin Gardner
+Totally. Yeah. Yeah, definitely down to give CTVB swag instead of, you know, the 25 to $50 that we do for a lot of these write ups and micro research.
+
+[00:24:48.66] - Joseph Thacker
+Yeah. Okay, sweet. Um, the next one you said, what the heck is this? And I said, wait until we're on the pod to talk about it. Uh, first of all, it has a really cool name. It's called Heretic. Um, but it is AI related. So I'm gonna share my screen super quick for the viewers. Um, interesting.
+
+[00:25:03.33] - Justin Gardner
+Okay.
+
+[00:25:03.94] - Joseph Thacker
+Oh, you're already skimming it.
+
+[00:25:05.42] - Justin Gardner
+Just skimming it. I'm sorry, man. I'm sorry, dude, Blow me away.
+
+[00:25:09.27] - Joseph Thacker
+No, it's fine. No, it's actually just extremely cool new research and it does stand on the shoulders of giants. So basically there's a thing called obliteration and it's a way in which there are people who remove the safety alignment from open source models. Obviously this has pros and cons. We're not here to debate the ethics of it. But it's often useful for security researchers and hackers because some of these models will be very resistant to helping write payloads and do that sort of thing. And so kind of having this strategy to obliterate or kind of remove the safety alignment from top open source models in the future will be really useful for people like us and people like our community that want to use open source models for exploit writing. And this is basically the latest and greatest breakthrough in that. Generally when you obliterate a model, it reduces the quality of the model by a huge amount. And I don't understand what all these words mean. A lot of this is AIML speak, but basically the KL divergence is what they say goes down significantly.
+
+[00:26:07.41] - Justin Gardner
+But.
+
+[00:26:08.25] - Joseph Thacker
+And they basically solved that. So they solved it where now you can obliterate the model but leave the quality really high. And this, this repo makes it totally possible for anyone to do it like just with like just run. It's basically just running the script. You don't have to do anything fancy and it kind of just figures everything out for you.
+
+[00:26:25.41] - Justin Gardner
+Wow, dude.
+
+[00:26:26.41] - Joseph Thacker
+Yeah, they did it on Gemma and Quinn. But one of the coolest things is basically they have a list of harmful prompts and the default Google Gemma 31212 billion parameter model refuses 97 of the 100 harmful prompts. So there's probably just three like duds in there, right? Like things that aren't actually harmful or whatever in their data set. But then after it's obliterated it only rejects three.
+
+[00:26:49.51] - Justin Gardner
+Dude, that's pretty sick.
+
+[00:26:52.64] - Joseph Thacker
+Yeah, it's really, really cool. The fact that, and they say down here at the bottom that it's built on top of auto obliteration, obliteration PI and a bunch of these other things that they prior art basically that kind of inspired them and made the technique possible. But it's just a really cool breakthrough. A model to be like quote unquote, you know, fully jailbroken or fully.
+
+[00:27:12.77] - Justin Gardner
+Yeah, yeah, I think that's, I think that's going to be, I think within the next year or so we're going to see a lot of the stuff that we want to be able to accomplish in cybersecurity, being able to be done by local models. And then of course you would want to do it at a local model for sure, you know, like and having to fight with it to like, you know, hack.
+
+[00:27:31.25] - Joseph Thacker
+I promise. I'm a bugman hunter and this is the scope. Hey, you want to, you want a tiny trick that I think has been working for me a Little bit lately. Often I do actually want like a header, an X bug bounty header in my requests, but I've been putting that in the very first request. Anytime I ask these like agentic frameworks, whether it's codecs or cloud code, I'll be like, and you know, make sure you append this header to any request you make. You know, and so then it writes it into the script and then it's less, it's just more like it's less likely to reject you. Because I've noticed that Sonnet 4 or 5, if I'm not careful, will often reject me where Sonnet 4 didn't. So I do think that they are trying to make their models safer over time. Actually, on that topic, Anthropic does have a private bug money program you can just like fill out a form to request access to. And they do quite well. I think we've talked about them on the pod once or twice, but some of my, some of my red teaming friends all got payouts this week and they were pretty significant payouts. You know, it was like 18,000, 14,000, 12,000. And then like, you know, a couple that were like 2, 4, 6. And this is for jailbreaks. This is not for like security vulnerabilities, it's for safe safety issues. Right. And, and so anyways, yeah, I just wanted to mention that because I do think the companies are continuing to care more and more about safety and that's, that's going to make it harder and harder for us to generate payloads later. So things like this heretic are really cool, dude.
+
+[00:28:46.08] - Justin Gardner
+That is. Those are some serious bounties for jailbreaks. Like five figure bounties.
+
+[00:28:50.84] - Joseph Thacker
+It is, yeah. And these people are not people who are like into Bug bounty before. So for them it's like kind of like, you know, hooking them.
+
+[00:28:56.73] - Justin Gardner
+So they're seeing the beauty of it all. That's exactly, dude. Freaking bug bounty, man. It is unbelievable believable. It really is. Yeah. All right, so you go. Yeah, I got the next one. This one is here. Let me go ahead and share this. This is actually a presentation that I stumbled upon as I was just scrolling through Twitter and the guy that retweeted it was sojal sec0x0 social. I don't know if it's his presentation because there's nothing in the actual presentation that says who this is. But the title of it is Lesser Known Techniques for Large Scale Subdomain Enumeration. I was like, okay, let me just like, you know, thumb through this really.
+
+[00:29:39.02] - Joseph Thacker
+I glazed over this. I didn't look at it because I thought it was gonna be stuff we've all seen before.
+
+[00:29:42.63] - Justin Gardner
+And then I was like, okay, let me just look at this really quick. And technique number one was ents and no errors, which is something that we've talked about on the pod before, but actually is what I would categorize as a less known technique for doing subdomain enumeration. And essentially what this will tell you is whether there is a node without resource records, but there are descendants. Right. So if you've got justin ctpb.rhinorator.com and you hit ctbb.rhinorator.comand there is descendants, it'll tell you whether or not whether there's a record that's below it. Right. If there's Justin ctppb. So this is a really helpful piece for knowing whether you're getting good coverage. And this was something that I think we covered in the masterclass with NBK in the exclusive content for their critical thinkers. But I did want to shout it out as well that anybody that's really into the subdomain enumeration game and wants to get really, really good coverage, knowing how to utilize these ents and no errors will help you make sure you're getting coverage and identifying and not, you know, and not wasting time trying to get access to records that are, that don't have any descendants. Right. You don't want to be brute forcing underneath something that doesn't have descendants.
+
+[00:30:59.85] - Joseph Thacker
+Right.
+
+[00:31:00.98] - Justin Gardner
+So I thought that was a cool one to shout out. Have you heard of that one before, Joseph?
+
+[00:31:04.66] - Joseph Thacker
+No, I have not. And is this like independent of whether it's a wildcard or not?
+
+[00:31:11.05] - Justin Gardner
+That's a good question. I'm not actually sure if it's. If it has wild car. I'm not sure how wild cards affect this actually. That's something to look into. Yeah.
+
+[00:31:19.60] - Joseph Thacker
+Because that's what my mind goes to is like it's often nice to fuzz or look for domains where there's wildcard.
+
+[00:31:25.97] - Justin Gardner
+Yeah, but you can detect wildcards, you know, like, but, but I mean, are you talking about an exception?
+
+[00:31:33.32] - Joseph Thacker
+Well, I'm just saying like this would be like another case, like if you're, if you're building some system. Right. It's like, yeah, well, let's make sure we run like a common file name or like known words that are associated with an organization whenever there is a wild card. But then this would also let you know that you need to do it in other non wild cases too. Did, did you Say this tells you that the descendant is Justin or. No, it's.
+
+[00:31:55.15] - Justin Gardner
+No, it. It tells you that there is a descent.
+
+[00:31:57.39] - Joseph Thacker
+Yeah, that's what I'm saying. So then you do have to kind of like go fuzz for it, right? Or is there some way to then pull it?
+
+[00:32:01.71] - Justin Gardner
+Yeah, no, there's, there's not a way to just pull it. Well, actually, okay, now that you mentioned that there, there is a, another one which is very interesting, which is NSEC zone walking. And, and I've heard of zone walking before. I thought that was like, you know, an older technique and I think, you know, a lot of times it's not working nowadays and sometimes it does work. But essentially this one is. I'm just going to read this line from the presentation. NSEC is a DNSSEC record type that proves non existence of a DNS record by pointing to the next existing name.
+
+[00:32:34.35] - Joseph Thacker
+Oh, that's cool.
+
+[00:32:36.35] - Justin Gardner
+Which is crazy. And, and obviously, you know, that has its problems, but apparently there's NSEC 3 now which returns hashed names instead of actual subdomains, but that's still super helpful. Right, so you can take those hashes, pull them offline and then try to.
+
+[00:32:56.25] - Joseph Thacker
+Like, you can maybe crack them. Yeah, yeah.
+
+[00:33:01.01] - Justin Gardner
+So that's, and that's going to be a lot more efficient than trying to, you know, brute force for.
+
+[00:33:05.18] - Joseph Thacker
+Oh, and there's already a total link there for the cracking. That's sick.
+
+[00:33:08.01] - Justin Gardner
+Yeah, yep. NSEC 3 map is what it's called. So this one I actually really hadn't heard of. I don't know how often this is used. I've not tried this technique before, but definitely something worth looking into. And I feel like, you know, worst case scenario, you know how many records there are, which is, which is a cool thing to know, you know, and you've got the set of hashes that might just, you know, crack. Boom.
+
+[00:33:31.28] - Joseph Thacker
+Dude, that's so cool. Yeah, I mean anyone who does big recon definitely needs to install Insect 3 map and start cracking those hashes. If they can find that for any domains. That's really cool.
+
+[00:33:41.22] - Justin Gardner
+Yeah, for sure. And then number three was ICANN's CZDS, which is centralized Zone Data Service. I love this. It's just, it just says, you know, anybody who is interested in getting a access to the zone files for participating top level domains can just request zone files for a whole TLD, also known as nafi.com. yeah, exactly.
+
+[00:34:05.70] - Joseph Thacker
+Right. Just a place to go request zone files. That's amazing.
+
+[00:34:10.32] - Justin Gardner
+Yeah, yeah. So very interesting. I wonder which TLDs are on there. I haven't had a search.
+
+[00:34:16.48] - Joseph Thacker
+Sorry, sorry, one second. I'm gonna go register for this portal. Okay. Not joking. I really want to, but.
+
+[00:34:25.05] - Justin Gardner
+Oh my gosh. Yeah, so, I mean, but it'd be interesting. You know, a lot of times some of these companies will be like, trying to do something cool with their domain name. You know, like do like the first part of their name. Like, for example, we own Kai do at Caido. Right. Like, what the heck is the do you know tld? And does this centralized zone data service have all of the zone files for that whole.
+
+[00:34:50.30] - Joseph Thacker
+That would be crazy.
+
+[00:34:51.82] - Justin Gardner
+Yeah. So could be some really good wins there if a company is using an obscure TLD.
+
+[00:34:58.30] - Joseph Thacker
+Yeah. Do you think it's only obscure TLDs? I guess it would be for any main ones. It would be ginormous.
+
+[00:35:02.61] - Justin Gardner
+Yeah. There's no way they're giving out like.comzone files or something ridiculous like that.
+
+[00:35:09.09] - Joseph Thacker
+Is that even possible? Do you think that exists? Is there a DB of like all.
+
+[00:35:13.01] - Justin Gardner
+It's got to. It's got to because that's how the DNS architecture works, you know? So I think, I mean, I guess they. They distribute it out to authoritative name servers or whatever, but either way it's. It's helpful.
+
+[00:35:24.05] - Joseph Thacker
+Yeah. That's cool.
+
+[00:35:25.42] - Justin Gardner
+Good.
+
+[00:35:25.73] - Joseph Thacker
+Find it. I'm glad you ended up skimming that. Like I said, I just glazed over it and I should not have.
+
+[00:35:29.73] - Justin Gardner
+Yeah, I thought that was cool. All right. You got something else on the list here.
+
+[00:35:34.11] - Joseph Thacker
+Yeah, of course. Yeah. I was going to mention. This is like maybe two things I'll mention both Gemini 3 and anti gravity.
+
+[00:35:39.63] - Justin Gardner
+Oh, yeah.
+
+[00:35:40.23] - Joseph Thacker
+People probably already saw this, but Gemini 3 dropped yesterday, I think, and it's just like crazy good. I mean, on a lot of benchmarks, it's like the first big gap. You see these little tiny steps as new models come out. And for some of these, it's like a huge leap for some of these benchmarks. And obviously benchmarks are not everything. There are a bunch of models that do well on benchmarks that then kind of struggle when you go to use them. I've heard that's true on Kimi T2 or whatever.
+
+[00:36:06.59] - Justin Gardner
+Yeah.
+
+[00:36:07.96] - Joseph Thacker
+But I mean, obviously Google puts out great models. And what's absurd about this is you can go use it on AI.dev right now for free. Literally any in the world. Just go to AI.dev and use it for free. And you can turn thinking on Hi there. And it's great.
+
+[00:36:19.00] - Justin Gardner
+No, wow. I didn't.
+
+[00:36:20.44] - Joseph Thacker
+Yeah.
+
+[00:36:20.71] - Justin Gardner
+And.
+
+[00:36:21.00] - Joseph Thacker
+And I Think even like just normal Pro subscribers can go to gemini.google.com and turn on thinking with a little drop down. And so yeah, you basically have a thinking model of the best model in the world. I think more people should be throwing crazy problems at Gemini 3. I do this all the time. I'm specifically doing it in this area of research with Markdown to HTML with Valentina right now. I'll basically give it a bunch of existing payloads that work for some cool subset of libraries for generating XSS or CSS injection or whatever and say, come up with some more ideas and then I'll put in my tester and then I'll be like, come up with some more ideas. This didn't work just over and over again, right?
+
+[00:37:00.30] - Justin Gardner
+And this gotta hook it up to an agent, man. Get it on like Gemini CLI or something.
+
+[00:37:04.46] - Joseph Thacker
+That's true. Yeah. What I want, yeah, we can talk more about that after. But the way I used it yesterday actually was generating more paths. Right. We talked about that a million times. But I think Gemini 3 is going to be even better at that than the other models. So I gave it like the site tree of a banking app I was hacking on and was like, I have to find some other secret things. Actually this is something kind of interesting that you might have something to say about for the audience on like a way to hack better. It's an app where it's clear that the pages are being totally rendered server side and then served. So like there's no single page app like Voodoo I can do on my side to like, you know, be able to see more functionality or try to like know what paths exist or what objects exist. It's like all executing server side and I'm sure there's a bunch of different technologies that do that, but anyways, so I was able to basically find like four or five pages by asking Gemini 3 to come up with some paths that are most likely to exist given the ones that it can see do exist. And most of them didn't result in a bug, but one of them did. It was like a delete user endpoint and whenever I hit it it was like, oh, I can't delete this user. But then it loaded the full page and showed me all of the users and all their serial numbers and all their usernames for everyone in my org. And as a low privilege user I was able to execute that. So pretty cool.
+
+[00:38:21.69] - Justin Gardner
+Dang, dude, good find. Yeah. In answer to that question, like that definitely makes it more tricky. I'm so used to single page applications nowadays and just like, you know, thumb through the JavaScript and like grab pretty much all the routes that are going to be utilized. But I mean, I also think that's a little bit of like a, you know, something that we, we think that we've got all the routes, but we actually don't have all the routes.
+
+[00:38:44.50] - Joseph Thacker
+That's true, that's true. I do fuzz a lot of APIs for that reason.
+
+[00:38:47.30] - Justin Gardner
+Yeah, I actually don't and I should. But the scenario that you mentioned made me think of a live hacking event that I like absolutely destroyed it in like this is a couple years back, I think this was 22 and I think this is still one of the highest earning bug bounty events I've ever been in. And I found this app, it was an older app, it was doing exactly what you said and everything was vulnerable. Nobody had just gotten access to this thing, super high paying program and it was, everything was vulnerable. I was just having the best time of my life and I was like, I have to find every single bleeping page on this app, right? And so I went ham, right? And I was like, I was looking at the routes and I was like trying to figure out the patterns. So my first tip there is like, look at the patterns. You know, figure out, you know, sometimes this is a tip from inhibitor 181cosmen. You know, look at how the path in the URL correlates to class names in the, you know, in the actual HTML, how it correlates to like form identifiers. You know, try to correlate between path and, and URL or path and like attributes of the HTML. But what I did actually was I just took all the documentation, pulled out all of the words, figured out all of the patterns, you know, like, okay, you know, this word goes here, this one's capitalized, there's a dash, you know, here's the verb. You know, categorize each word by like, what, what part of speech it is, you know, that sort of thing. And then just had a Python script just generate like a massive, massive list and then threw it at it. And it just like it found like 15 more. Like 15 more. I mean, definitely mid five figures in bugs from that little script. And like, yeah, yeah, I'm going to.
+
+[00:40:33.25] - Joseph Thacker
+Go run that, I'm going to go do that. Yeah, I've done that before for other things, but that's a really clutch technique that probably a lot of people aren't necessarily doing where when you're fuzzing for lots of things, whether it's API endpoints, whether it's parameters or whatever. If you find their pattern and then create a script that creates a bunch of examples of that pattern, that's the best way to do it.
+
+[00:40:52.76] - Justin Gardner
+Yeah. And I think. I don't know, sometimes they don't follow the patterns, especially in the vulnerable apps that are just thrown together by six different, you know, developers or whatever. But sometimes they do. And when you do, especially when you're in those situations where it's like everything is going to be vulnerable. If you can find it, you got to hit it.
+
+[00:41:11.03] - Joseph Thacker
+It's worth it. Yeah. Yeah. This one's one of those ones, like, there were some pages that are called, like, Page X, Y, Z. You know, like, they have other ones called, like, I had user, delete, user, and there's like Page xyz, and that's modify using, like, what are you thinking? Why did you create Page xyz?
+
+[00:41:24.15] - Justin Gardner
+But. Oh, my gosh, dude, that's crazy. Yeah. Well, good luck, dude.
+
+[00:41:28.76] - Joseph Thacker
+Oh, sorry. On that Gemini 3 front really quickly. Thank you. I did want to mention they launch at the same time as something called Anti Gravity. People on the pod probably don't realize this, but there was a whole bunch of drama around, like, Google acquired Windsurf's intellectual property, but not their team. And a bunch of the team kind of got screwed, but then they were like, scooped up by a company called Cognition. Long story short is they got the intellectual property of the app Windsurf, which is basically like a cursor clone. And it was like, for 2.4 billion. And they have now rebranded Windsurf as. What's it called? Anti Gravity. Yeah, and it's totally free right now. I don't know how long it will be free for, but if anyone wants to go use it, they could go use it for free right now. So if you've been like a holdout on Cursor or Claude or Codex or whatever, it's basically just a VS code fork, but now maintained by Google, which is pretty sweet. And it's like an agentic coding platform.
+
+[00:42:21.07] - Justin Gardner
+Dude, I can't be. I cannot imagine being a holdout on Cursor, you know, like, how much time are you sacrificing?
+
+[00:42:28.03] - Joseph Thacker
+I think about this all the time. Even just people who don't have, like a subscription to any of the services who just try to use the free tier and not get any of the extra features. Like, you can find bugs in these, which is sweet. And also, you're just like, you know, saving $10 or $20 to like lose hours of your life.
+
+[00:42:43.23] - Justin Gardner
+Yeah. Of your time, man. You know, it's like, oh my gosh. But, you know, and it's not thing. I don't know, maybe for some people it is things they enjoy, but for me it's not things I enjoy. Like, I trade my time for things that I like to do, you know, that are menial tasks. Like, for example, I could pay someone to come wash my dishes every day. Right. But it'd be expensive. But, you know, I kind of like being in the kitchen and washing my dishes and, you know, looking out my window and, you know, having the counter be nice and clean when I'm done.
+
+[00:43:10.38] - Joseph Thacker
+It's therapeutic.
+
+[00:43:11.73] - Justin Gardner
+Yeah, it's a little therapeutic. The family's around, you know, the kids see you doing house tasks, you know, and that's the thing about, you know, having, being a little bit of a high earning person. My, my brain goes into like, you know, optimization mode. Like, yeah, actually I should pay someone to do that. But no, I mean, I should be, you know, a human, you know, like.
+
+[00:43:30.73] - Joseph Thacker
+Yes. So I think it is different culturally too. Like, I've heard that like a lot of, a lot of hackers in like Spain or Portugal or other places of the world, like, they get a lot of joy actually out of hiring someone to do their housework because they're actually providing jobs to people who really need those jobs locally to them. Whereas in the US it's like not really a scene as much that way, I feel like. But, but, but yeah, I mean, in general, I think that like you said you love hacking, you love popping like sick bugs. And so if AI writing a script that removes the friction, as you often say, in order to like retest something way more often, it's like now that's probably what you're using AI for the most, right? It's like you're making, you're helping AI to reduce the friction so you can find more bugs.
+
+[00:44:08.26] - Justin Gardner
+Exactly, exactly. Yeah, dude, it's definitely necessary. I freaking love cursor, dude. I really do.
+
+[00:44:15.48] - Joseph Thacker
+I don't use it anymore. I'm still cloud coding Codex, like every day, all day, dude.
+
+[00:44:18.67] - Justin Gardner
+Like, I, I don't know, man. Like, I don't like that. I have a hard time seeing what Claude Code and Gemini Cli actually have done. Right. Like in cursor, it's so nice with the, with the green and the red, you know, what they removed, what they added. And if I think I was truly vibe coding, where I'm just like, do it.
+
+[00:44:35.96] - Joseph Thacker
+Yeah.
+
+[00:44:36.44] - Justin Gardner
+You know, then I would, I would use that. But. And I do sometimes, like when I'm really like, I know that it can one shot this. I'm just going to like throw it in Gemini Cli really quick. And it one shots it. And it's fine, you know, but. But when I'm actually doing like large scale code changes and stuff like that, I always use cursor because I need to, you know, review what, what it's done every time and be like, no, no, no, no, no, you didn't need to tweak that. Leave that the way that it is, you know.
+
+[00:44:59.88] - Joseph Thacker
+Well, I will say this. Not. I often feel like I am argumentative. Right? No, no, no.
+
+[00:45:05.44] - Justin Gardner
+Hit me, man.
+
+[00:45:05.92] - Joseph Thacker
+Well, what I was going to tell you is actually when you use COD code inside of cursor, it does show you all the diffs on all the pages and all the tabs. It's all integrated perfectly.
+
+[00:45:14.61] - Justin Gardner
+What do you mean? Cloud code inside of cursor?
+
+[00:45:16.53] - Joseph Thacker
+Just like open up the terminal.
+
+[00:45:20.13] - Justin Gardner
+What?
+
+[00:45:20.94] - Joseph Thacker
+In cursor? If you run cloud code in the terminal in cursor, it will show you all the disks, it'll open up the tabs.
+
+[00:45:26.53] - Justin Gardner
+What kind of lunatic is doing that? How many layers of AI are you nesting in here?
+
+[00:45:32.09] - Joseph Thacker
+Dude, there's lots of people that do that. Maybe I'm wrong about it being. I'm pretty sure it's in cursor, but maybe it's in VS code. But basically, if you have an ID open, like if you have a VS code fork open and you're using cloud code, it will show you all the tabs so you can see all the files just like you probably want out of cursor. And so anyways, it's probably worth a.
+
+[00:45:47.30] - Justin Gardner
+Try, but like cursor has like that review button where you can click it and it goes through like each. Yeah, that's fair, you know, and it walks you through it. I don't know. I feel like that's pretty nice, but I didn't know you could do that. That is kind of interesting.
+
+[00:45:57.63] - Joseph Thacker
+Yeah, that is neat.
+
+[00:45:59.23] - Justin Gardner
+So that's pretty cool. All right, I've got a couple more items and then we'll call it for.
+
+[00:46:02.86] - Joseph Thacker
+We gotta shout out our boy Vitorin.
+
+[00:46:04.63] - Justin Gardner
+Yeah, let's. Let's take a look at that really quickly. So Victor, I don't know. Vitor.
+
+[00:46:10.86] - Joseph Thacker
+Victor Vitor, but just call him Bus Factor.
+
+[00:46:13.51] - Justin Gardner
+Yeah, Bus Factor has this awesome website up called Bug Bounty Daily. You guys gotta go check this out. Like if you. I feel like this is where I should just be going right Right off the bat and just clicking through all of these and like that's true. Yeah, just reading these every day. But this is a feed of Bug Bounty articles and essential resources that is being updated each day. He's got an email subscribe button now you can submit content if you want your content hosted on Bug Bounty Daily. It's kind of like a news aggregator there.
+
+[00:46:44.84] - Joseph Thacker
+He's also seeding it with old stuff. So he had me send him like my, my very best write ups from my blog. So it's pretty.
+
+[00:46:52.28] - Justin Gardner
+Yeah, it's, it's really high quality stuff and it's by somebody who is, who knows their shit, you know, which is different, trust me. So, yeah, I would definitely recommend checking this out and getting, you know, subscribe to that if you're going to try to keep up with Bug Danny content. Because it is, I mean it's a lot. Sometimes you miss stuff on, on Twitter or, or whatever. And I think this is a good place to grab the high quality stuff.
+
+[00:47:16.07] - Joseph Thacker
+I know I'm always mentioning stuff. It would be also a pretty cool resource like set up as like a rag database. Like if you're asking about AI bugs, like it would look across all those write ups be really cool.
+
+[00:47:25.55] - Justin Gardner
+Yeah, I think he's working on that.
+
+[00:47:26.92] - Joseph Thacker
+Okay, sick.
+
+[00:47:27.67] - Justin Gardner
+Yeah. Hey, actually on that note, and I don't know if I'm getting like too technical, like into the weeds of AI stuff.
+
+[00:47:33.88] - Joseph Thacker
+Too technical on ctbb.
+
+[00:47:36.19] - Justin Gardner
+I know, I know that's not what I meant to say. But like it's AI stuff versus like.
+
+[00:47:39.80] - Joseph Thacker
+You know, better than hacking stuff.
+
+[00:47:41.51] - Justin Gardner
+Yeah, bug bounty stuff. But I don't know exactly how like vector embeddings work and, and I can.
+
+[00:47:48.32] - Joseph Thacker
+Explain it like one minute. Okay, go ahead and finish your question first.
+
+[00:47:51.15] - Justin Gardner
+Yeah, let me, let me ask. So what I'm, I'm wondering is whether it is impossible or whether it is possible to generate your vector embeddings locally and then send those up to an LLM or whatever and whether that is possible to reverse those embeddings back to the actual text that they, that they came from.
+
+[00:48:15.69] - Joseph Thacker
+So the short answer is I'm not a super professional expert on this, but yes, everything I've ever heard is that you can reverse embeddings and you definitely can run embedding models locally, but most people do it via API because they run slightly bigger embeddings model like OpenAI and stuff. There is a company called, I think it's called Cyborg DB that is very passionate about this whole encrypted Embeddings thing. I had a call with them recently. Basically they encrypt and have. They had a parent signing key and then smaller keys per index. So then like it's like encrypted. I mean everything's encrypted at rest. Right. But it's like, it's like encrypted when it's sitting there live on the file system. So if you're like a company or whatever and you have you know a ragdb and you don't want, once it gets, if it gets popped for the attackers be able to access everything then you would, you could use their system and they would not be able to access it all. So you can like kind of store the embeddings encrypted.
+
+[00:49:14.90] - Justin Gardner
+Yeah. That's very interesting. That's kind of what I was thinking about for it. I was thinking about it from multiple perspectives. One was, you know, if I'm trying to avoid, you know, a bunch of cost, would it be better for me to you know, do this embedding calculation on some data locally and then send it up? And also, you know, I know that private compute for AI is like a massive problem. Right. Like if we can figure out a way to do private, you know, LLM. Right. Without the model providers to see it.
+
+[00:49:49.15] - Joseph Thacker
+Yeah. The math for the similarity of like the lookup of like what's most similar related to my input is all local and cheap.
+
+[00:49:56.67] - Justin Gardner
+Okay.
+
+[00:49:58.03] - Joseph Thacker
+And you can use your own local rag database. It's called chromadb. It's by far the most popular one.
+
+[00:50:01.86] - Justin Gardner
+I've used it before. Yeah, yeah.
+
+[00:50:03.19] - Joseph Thacker
+So what most people script actually does though is it calls OpenAI's embeddings for your data but then it stores the embeddings locally and then it does the comparison locally.
+
+[00:50:10.76] - Justin Gardner
+Okay.
+
+[00:50:11.57] - Joseph Thacker
+So like that's, that's no big deal. And all it's doing is doing a cosine similarity difference link. So if you imagine like a 3D plot and there's two points in it, it's like. Or there's 10 points and you have a new input point which point is the closest to your point. Right. It's going to be the most similar. That's all it's doing. Yeah. And so basically if anybody's curious what embeddings are, I'm going to do that one minute explanation I told I would do for Justin. So an embedding is basically just taking any arbitrary length of text and turning it into a, you know, a number. Right. In that graph that I was just talking about. And it can be as small as like one word or it can be as big as like a whole paragraph, right? And so there's lots of optimizations there on like it can be a whole page, it can be as much text as you want. But and so I think there's often like what are you wanting to match for? Right? So like if you're looking for an answer from an faq, you would want to embed each question and answer or whatever. So then when a user puts in a question, you would find the most similar question and go ahead and pull that question and answer out of that similarity search into the AI. And then that way the AI can basically like have that as context. So if that actually is the real question, it can answer it depending on no matter how many typos the user has in their query or whatever, it's still going to find it because it's going to be similar. But then obviously the AI will know that that answer, that question answer that was pulled from the RAG database is not the same as the user's asking, it's just similar. And so it might be able to speculate or tell it, it doesn't know or what have you, but that's how it works.
+
+[00:51:31.00] - Justin Gardner
+Very interesting, man, very interesting. I feel like I gotta go a little bit deeper on this and I know Drop did a presentation at defcon on some RAG related stuff, so I need to go check that out.
+
+[00:51:41.71] - Joseph Thacker
+I do think there are some cool implications. Like if you embedded all of the requests in the site tree of like kaito for example, and then you were asking like login, like you just typed in the word like login requests and it pulled like the most similar 5 URLs that were like associated with the word login because the path contains the word login or because there's like username and password parameters in the body or whatever, that would probably work. So there's cool things you can do with it.
+
+[00:52:03.11] - Justin Gardner
+Is that, is that, is that similarity calculation local?
+
+[00:52:08.23] - Joseph Thacker
+Yes, the similarity is local and easy and cheap and even the embeddings are often cheap. Now you will have to have an embeddings model on your computer, but if you're willing to just like, if you don't think the data's sensitive and you don't mind to ship it off to OpenAI or Google for the embeddings. It's also cheap. Like it's way cheaper to embed text than it is to like run an LLM. So none of this is that expensive. But I do think it would be expensive if you were doing your whole HTTP history. That's why I said the sitemap, because to do a few hundred or a few thousand is no big deal. But you don't want to run this on 50,000 requests.
+
+[00:52:35.13] - Justin Gardner
+Right? Right, right. That makes sense. Okay. All right, well, the brain's gonna spin on that. I got something to talk to you about off air about that afterwards. But yeah, let's. I'm gonna hit this last item, this last news item here. Actually, I'm not gonna bother sharing my screen for this one. You guys have probably all heard of Asset Note Surf Utility. This is a utility that they built to hand it a bunch of domains and then it takes those domains, tries to reach out to them. And anything that's not reachable either because it's an internal IP or because it's an external IP without HTTP or HTTPs exposed, it puts into a word list for you to try to hit with blind SSRF or ssrf, right. To prove that you can hit internal hosts. So really awesome tool. Super simple, love the concept. We were, Emil and I were kind of vibing on something the other day and actually ended up just building a, you know, vibe coding a, a copy of Surf for Caido directly. Because oftentimes you're going to be using Automate to like, you know, run this actual, you know, or SSRF exploitation. So we're like, ah, makes sense to just do it in Caido and then just press Upload as Word list, you know, and then it pushes it into your files list. So we went ahead and built that. That's at Caido Community slash Surf. Probably by the time this airs we'll, we'll have it pushed to the Caido store. But definitely it makes it a lot easier for you to go ahead and take your massive domain list and then just convert it to a really easy accessible list of URLs that you can pass into your SSRF to prove that you have internal access. Internal network access.
+
+[00:54:11.78] - Joseph Thacker
+Yeah, you said Caido community surf. It's GitHub.com Caido community surf. Yep.
+
+[00:54:17.13] - Justin Gardner
+Yes, that's right. Yeah, that one.
+
+[00:54:19.40] - Joseph Thacker
+Sweet, dude. My last thing was very, very small. It was just a small, humble brag. I was excited about it. Douglas messaged me yesterday. I get off. I like, I prioritize family like you. I get off at like 4:30. Yeah, he messaged me at like 4:28 and was like, hey, I got this private invite, you know, do you want to look at it? And of course my hacker brain's like, oh, yeah, I definitely really want to look at this. And my kids are, like, walking in from the neighbors, and we're, like, supposed to hang out and eat dinner. I'm like, yeah, just. Just one second, one second, guys. I pull it up, and within, like, three minutes, I had already found that it could render a markdown image. And I'd already made, like, a really nice payload that would, like, get it to actually respond with, even though it had, like, some guardrails. And then was like, just go figure out delivery. Go find delivery. And then eventually, a few hours later, he's like, oh, yeah, I got it in this, you know, this user profile field. And so if an admin ask about their users in this app or whatever, it'll automatically pop it. I just felt so good.
+
+[00:55:07.82] - Justin Gardner
+Yeah, freaking love that, man. Like, I love it when you pop a vuln quick.
+
+[00:55:11.78] - Joseph Thacker
+Yeah.
+
+[00:55:11.94] - Justin Gardner
+You know, I.
+
+[00:55:14.42] - Joseph Thacker
+That's like the opposite of imposter syndrome. It's like, oh, I'm a God. You know, for a split second, you're like, I'm the best.
+
+[00:55:20.26] - Justin Gardner
+Yeah. Yeah, Freaking love that, man.
+
+[00:55:22.53] - Joseph Thacker
+Hey, one thing we didn't mention earlier that I did want to mention. Not only are we gonna give away swag pack or, sorry, swag promotional codes or free codes in the black or in the C tiers chat next Friday for Black Friday, but we may or may not have some exclusive new swag coming out soon.
+
+[00:55:39.76] - Justin Gardner
+Yeah, dude, that's going to be a blast. We had a meeting with the team this morning to kind of design it and get all that figured out. I don't know if it'll be ready by Black Friday, but maybe they can save their code.
+
+[00:55:48.32] - Joseph Thacker
+How long will the code last? That's the question. Well, people will probably redeem it instantly.
+
+[00:55:51.80] - Justin Gardner
+So they got to use it. I don't know. Maybe we'll figure something out for that, but. Yeah, or we could build a little service where it. Like, if you're the first to hit.
+
+[00:55:58.44] - Joseph Thacker
+It, then you save it and you can use it in a week or two.
+
+[00:56:00.80] - Justin Gardner
+Exactly. Yeah. Then you get.
+
+[00:56:02.11] - Joseph Thacker
+Because it is the perfect Christmas gift. If anybody's looking for things that they're trying to tell their parents. I always struggle to think of things as an adult like, that I don't just buy for myself. You can recommend your parents or friends or family or something. Get you something from the merch store.
+
+[00:56:14.90] - Justin Gardner
+Yeah, totally, man. Yeah. Well, that's a good point. We probably should have mentioned that earlier in the episode. But, hey, for those of you guys that wait till the end of the episode. You listen to the whole episode, you.
+
+[00:56:24.86] - Joseph Thacker
+Reap the reward, the juicy information.
+
+[00:56:28.34] - Justin Gardner
+All right, that's a wrap. Yeah.
+
+[00:56:29.75] - Joseph Thacker
+Cool. Yep. See you guys. Peace.
+
+[00:56:31.34] - Justin Gardner
+Peace, y'. All. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching today to the end, y'.
+
+[00:56:36.55] - Joseph Thacker
+All.
+
+[00:56:36.76] - Justin Gardner
+If you want more critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there. On top of the master classes, hack alongs, exclusive content and a full time hunters guild if you're a full time hunter. It's a great time, Trust me. I'll see you there. Alrighty. My guy. Happy Thanksgiving.
+
+[00:57:01.15] - Joseph Thacker
+Dude, what's up? Happy Thanksgiving.
+
+[00:57:03.76] - Justin Gardner
+Pretty good, man. This is going to be a good. Oh, you said Happy Thanksgiving, not how are things?
+
+[00:57:09.92] - Joseph Thacker
+They do sound really similar.
+
+[00:57:12.01] - Justin Gardner
+They do.
+
+[00:57:12.73] - Joseph Thacker
+They did.
+
+[00:57:14.09] - Justin Gardner
+I like reverse processed it. Okay, Richard, we're cutting that. We are cutting that. Okay. Don't do anything weird with that. Alrighty. My guy. Happy thanksgiving.
+
+[00:57:37.88] - Joseph Thacker
+Dude. What's up? How are things going?
+
+[00:57:45.71] - Justin Gardner
+Pretty good, man. This is gonna be a.
+
+[00:57:52.51] - Joseph Thacker
+A.
+
+[00:57:54.76] - Justin Gardner
+Oh, you said Happy Thanksgiving, not Howard Thanksgiving.
+
+[00:58:03.88] - Joseph Thacker
+They do sound really similar.
+
+[00:58:12.92] - Justin Gardner
+I like reverse processed it.

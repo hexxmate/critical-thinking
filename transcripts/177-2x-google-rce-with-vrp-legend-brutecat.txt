@@ -1,0 +1,747 @@
+Episode 177: 2x Google RCE with VRP Legend Brutecat
+Source: https://www.criticalthinkingpodcast.io/2x-google-rce-with-vrp-legend-brutecat/
+======================================================================
+
+[00:00:00.32] - Justin Gardner
+I don't know. I can't remember any dates or whatever, but I can remember. I can remember that weird header or that password. I can remember the password of my first domain admin that I popped, you know, like, but I can't, I can't remember. I don't I don't
+
+[00:00:14.08] - Arvin Shivram
+I don't I don't remember my, I don't remember my own mom's birthday, but I remember, I remember this one. Critical thing.
+
+[00:00:32.21] - Joseph Thacker
+dude, hey, what's up guys? Before we get into the show, I wanted to mention something super quick from our friends at ThreatLocker. And I actually think you all are going to think it's pretty awesome because so much of bug bounty is often, you know, kind of quoted as like, yeah, but hackers will never exploit that because they can just get in via phishing. Well, that's actually true. You know, most of the time whenever companies get breached, it's because phishing or access to that user's account. Or, you know, they do something like do a whole bunch of push notification 2FA, and eventually a user gets so much fatigue they approve it. But they have a solution for this. ThreatLocker has a thing called Zero Trust Cloud Access, right, which prevents access to cloud resources or SaaS resources based on the device you're logging in from. So if a user gets phished, right, they put in their credentials, they get phished or they get vished, They, the attacker has their credentials. Maybe they even have a way to get the MFA because they did some sort of SIM swap because they have a hookup at Verizon or AT&T or whatever, right? So they have the credentials, they have the MFA, they still can't get in because the Zero Trust Cloud Access like will basically straight up allow or deny people access to resources based on the device you're logging in from. So if you're an enterprise or a company and you're concerned about the highest risk, which really is phishing, this is a way to add another like basically impenetrable layer to preventing it and secure securing your network. Yeah, back to the show. All All
+
+[00:02:01.45] - Justin Gardner
+All All right, dude. I guess we'll cut right in. I don't know, man, if you want to release the episode, we'll release the episode. But this is some crazy shit you're about to talk about. So Brute, thanks for coming on, man. I really appreciate it. Obviously, you've done a lot of— to be honest, that one blog post that you put with the REC to Proto was like a life-changing thing for me when hacking Google. So you have nothing to prove, but The tradition is the tradition. So let's go ahead and start off with a bug before we get into your introduction.
+
+[00:02:34.72] - Arvin Shivram
+So thanks so much for having me in the pod. So yeah, the first bug I'll cover here is remote code execution in Borg, right? So Google Cloud Production. So this bug is actually super interesting. It's my first RCE. Well, it's two RCEs, but the way I found it was, so I had this whole AI scanning setup, right? So my AI scanner would scan all the APIs in the entire, entire Google, and it would let me know if like any of them have a potential bug, right? So this scanner actually notified me about a few endpoints in this, in this API. So cloudcrm-ipfrontend-pa.googleapis.com, it's a mouthful, but yeah, this, it was super interesting because the first endpoint I found was like this endpoint, it took in like a GAIA ID and it would return an email. So this kind of like reminded me of like my old research or whatever. So this by itself was kind of cool, but I looked through the other endpoints in this API, right? And I saw some really weird endpoint. There's like this endpoint where it was called get proto definition. So in Google, everything is Protobuf, literally everything. So even the request that you send, it's just Protobuf. It's just a Protobuf message, right? So if you can leak the type of this Protobuf message, you can then use this get proto definition endpoint and it would just dump the whole Protobuf there. So that was super useful. I wanted to scrape this, but I asked Sam and they're like, nope, you're not allowed. So I had, yeah, I got stuck there, but I would have loved to archive this for the whole Google.
+
+[00:03:55.59] - Justin Gardner
+Yeah. Oh my gosh, dude. I, I, that I have chills just thinking about that. Like now every, every, cause like to be honest, man, one of the hardest things about hacking on Google is literally just dealing with the Proto JSON, Proto Buff nonsense that they kick out all the time. There's so much obscurity in there that, you know, it's just, it's horrible. So. Man, having the keys to the kingdom like that, that must have felt great.
+
+[00:04:20.51] - Arvin Shivram
+Exactly. And I think mostly Google is— people think it's a hard target, but I think it's just security by obscurity for a lot of it. Because how do you know which endpoints to hit or whatever? It's not like a traditional target in the sense that most other apps or whatever. In this target, it's super weird. You have to just— recon is probably the most important thing in Google, right? So that's why I published the Direct2Proto research, which is essentially this tool where you can hit any endpoint and uses like JSON plus Protobuf. It's like this GSPB. It's like a super weird content type, but for some reason Google's backend will leak a bunch of error messages. So you can probe it with random payloads and it will start dumping everything at once. Protobuf. So you can use this and build out the whole request Protobuf with this, right? So this is super useful for a lot of my research. But the only problem is that it only works for APIs that have this specific content type enabled, right? Which a lot of APIs don't. So this would have allowed for dumping the Protobufs for those, or even batch execute, or these kind of weird APIs. They're all Protobuf, but how are you supposed to know what each parameter is? It's just super confusing. But yeah, with this, you could have done that. So I mean, I did use it a fair bit here and there for some of the research I'm working on to kind of see what each of them are, but I couldn't touch too much on it. Yeah, but anyways, I looked more into this API because it was super interesting., and I saw that there was this weird endpoint. It's called list quota queue. So it was taking a filter parameter. So in Google, right, the most annoying error that I keep getting is invalid argument. So for hacking server side, you just use— it's a super generic error. It doesn't tell you anything. If you hit the same error in intranet inside Google, right, it will actually dump the full stack trace, but they don't give that to us. So we're kind of screwed.
+
+[00:06:00.02] - Joseph Thacker
+That's interesting.
+
+[00:06:01.74] - Arvin Shivram
+I was looking at the parameters that I could supply in this API, and one of them was like a filter parameter, right? And filter usually means it usually follows some sort of like AIP standard, right? So I looked up the standard of this filter and I was trying a bunch of stuff. I tried various different things and eventually I tried like client ID is greater than 123 or something and that just worked.
+
+[00:06:24.12] - Justin Gardner
+Oh my gosh. So this is like a filter language that you're getting. In here that you can inject.
+
+[00:06:31.10] - Arvin Shivram
+Okay. Yeah, it's some sort of— I'm not too sure how it looks like on the backend, but I assume it's just some implementation of this AIP, right? So because everything in the AIP seemed to work here.
+
+[00:06:39.69] - Justin Gardner
+AIP 160 linked this. Yeah, okay.
+
+[00:06:42.93] - Arvin Shivram
+Interesting. Yeah, I tried that, but the problem was it would say some error like, oh, this— we can't convert the response to JSON because I'm guessing they didn't— they didn't set up a JSON conversion thing for this. They didn't have a Protobuf or something for this. So yeah, that was a problem. So I didn't know how to get past that at first. Then I kind of realized that, yeah, I can just use alt equals to proto, right? But even that had its problems because you can't just supply Protobuf in a JSON or like a— okay, so this endpoint uses client6.google.com, right? And client6.google.com is like an alias to googleapis.com. But the difference is you can use cookies with it. That's what's kind of useful about it. But the problem is you can't use Protobuf responses directly into client6.google.com because Google freaks out about it. I'm not too sure why. I'm assuming some sort of XSS prevention. I don't know, but they don't allow you to—
+
+[00:07:37.13] - Justin Gardner
+There's some— when you say Protobuf responses, you mean binary Protobuf, not the ProtoJSON?
+
+[00:07:44.75] - Arvin Shivram
+Yeah, exactly. Okay, so they just freak out. But so I remember this one trick, right? So I'm sure— do you guys know who Izzy Pereira is?
+
+[00:07:54.45] - Justin Gardner
+Yeah. Oh, yeah.
+
+[00:07:57.01] - Arvin Shivram
+Yes. Okay, so I love this guy's content. So he had some random video uploaded, I think one of his talks in Bug Squad, right? So I literally went through every single second of that whole talk and took down notes and everything. Everything he says is gospel. So I was taking notes constantly. And one of those notes in one of the second of his hour-long video was this header, X-GOOG-encode-response-if-executable-base64.
+
+[00:08:21.24] - Justin Gardner
+Wow, dude. Okay, okay. So now you've got this header that allows you to mutate the protobuf that's coming out of the backend.
+
+[00:08:29.31] - Arvin Shivram
+Yeah, exactly. So it converts it to base64, which is allowed for the frontend or whatever. So it's allowed for client 6 at google.com. So once I had this, I could then dump the response in base64. It was massive, by the way. It was super big. The server took like 10 seconds to even respond back. And then I just used like the protoc command line tool and I just like dumped everything. I mean, I was able to also use the same, remember the getprotodefinition? I could just use that to just kind of find the proto definition for this. And then, and I was able to decode it back. Wow.
+
+[00:08:58.47] - Joseph Thacker
+Did you, so, so did you get to this stop like point where you needed that header and then you went and did the research to find it? Or did you already have that research like saved off and then you just like, when you were kind of scrambling, then you found it?
+
+[00:09:10.50] - Arvin Shivram
+I mean, it just came to me because I remembered it. I remember that because I took down all the notes, right?
+
+[00:09:15.36] - Joseph Thacker
+Yeah, basically you had it up in the noggin. No AI there, just he had it.
+
+[00:09:19.25] - Justin Gardner
+That's the classic, that's the classic, like, you know, hyper-focused hacker mentality is like, I don't know, I can't remember any dates or whatever, but I can remember, I can remember that weird header or that password. I can remember the password of my first domain admin that I popped, you know, like, but I can't, I can't remember. I don't I don't
+
+[00:09:38.08] - Arvin Shivram
+I don't I don't remember my, I don't remember my own mom's birthday, but I remember, I remember this Exactly, exactly, dude.
+
+[00:09:42.89] - Justin Gardner
+It's that hyper, hyper hacker focus. That's a great tip though. When converting, if you're getting raw Protobuf out of a client6.google, right? Then, or I guess you won't be, but you can get this out with this, which is pretty cool. And so let me ask one clarifying question here though, because you said Google APIs, right? Of course, googleapis and client6.google.com have a, you know, relationship there.
+
+[00:10:12.19] - Arvin Shivram
+If— were were
+
+[00:10:12.78] - Justin Gardner
+were were you saying that googleapis.com, you can get the raw proto out? Uh, but you can't do it on client6.
+
+[00:10:19.57] - Arvin Shivram
+But you can't use first-party authentication. This whole endpoint was working with first-party auth, which is a cookie auth, right? So you can't, you can't use it with Google APIs. That's a problem.
+
+[00:10:29.42] - Justin Gardner
+Hmm. Okay. So, so if you tried to hit the same endpoint on Google APIs, it wouldn't work because first-party auth doesn't work there. So you had to do it through Client 6.
+
+[00:10:40.32] - Arvin Shivram
+Exactly. Okay.
+
+[00:10:41.79] - Justin Gardner
+Yeah. Wow. Very interesting, man. You, you know, a lot of these little, these little quirks of Google. This is once again, I can't believe you're sharing this, but thank you so much. We really, we, this is very helpful. So, all right. You, you finally get the response out, base64, you protoc to get the actual raw data out.
+
+[00:10:58.34] - Arvin Shivram
+And what do you see? So inside there it was a bunch of random stuff, like random workflow, internal workflows. So I was looking at what exactly it seemed to be, some sort of task. So a Googler can configure a task, right? And then this is the execution log of the task, right? So I was seeing some weird spanners syncing to Salesforce. So spanner is like Google's internal database. I mean, they have the cloud product for it as well, but they use this everywhere. So it was already quite interesting. So at this point, I already reported it because I don't want to touch too much. I've had experience in the past where I went too far or whatever, so I don't want to risk anything. So I just reported. Then I keep looking after that, right? So I sent the report, but then I wanted to see even deeper because, see, they're executing tasks here. So can I execute my own task? Because that would be pretty interesting. So I looked through the discovery document, right? So I was scanning through the whole document and I noticed one thing that was super interesting. Generic stubby type task v2. So this instantly set off red flags for me. 'Cause so if you know anything about Google, right? So Stubby is their internal RPC format. So okay, just a refresher or whatever. If you send any request to a Google API, right? It's actually just sending to some sort of RPC. So some of these RPCs are exposed or some of them are internal, right? So let's say I send a request to compute.googleapis.com or whatever. So that server that's handling that Borg task or whatever, it can also fetch other RPCs to fetch whatever it needs and then it returns it back to you., right? So it does this through stubby using a production account. So something like whatever prod.google.com, right? So if you can somehow execute arbitrary stubby queries, you can reach all these internal RPCs that would otherwise not be exposed publicly. Wow. Right. So it's a massive—
+
+[00:12:40.79] - Joseph Thacker
+so it's kind of like an SSRF at Google because I know they famously told me like, oh, we don't really have SSRF, but being able to make arbitrary stubby RPC calls is basically the equivalent of an SSRF at Google., right?
+
+[00:12:51.88] - Arvin Shivram
+Yeah, exactly. And in fact, I would say like an RCE in Google, most people like think of RCE as like, oh, I've shell access to the server, right? But in Google, it doesn't really work that way. Like even if you have remote code execution on a Borg task, which is like if you manage to like any sort of Google application, if you get code execution, it's on a Borg task. But what is the real impact there? Sure, you can see what's being processed locally, but that's still like a sandbox environment. The real impact here is the stubby access, which is why they pay so much for, for stubby, right?
+
+[00:13:19.78] - Justin Gardner
+Okay guys. So we really need to take away from this here that anytime you see stubby, you need to be very interested, which is very interesting because I actually, um, one of my bugs that I've had, I submitted recently to Google, it utilized a stubby endpoint and I was like, I don't, like, I don't know why this works, but it works. And so anyway, we'll have to compare notes on that afterwards because I haven't gotten any disclosure permission on that. Maybe you can do something with that that I couldn't. But that, that is really interesting, man. So just to clarify, you know, traditional architecture for RCE is, you know, you get a shell, you take over the server, whatever. Google, uh, you know, infrastructure architecture is a little different. All of these APIs are being mapped back to a central RPC sort of environment. And, uh, you know, typically it's taking an API endpoint and mapping that to an RPC call, but there might be some scenarios where you can take an API call and map it to an arbitrary RPC call. And that is where you get really impactful RCE on Google. Is my understanding that correctly?
+
+[00:14:23.92] - Arvin Shivram
+Yeah. If they have some weird proxy thing which just proxies stubby queries exactly like— this kind of sounds like it would do. Generic stubby type task. Sounds like I can just send anything I want. So it was pretty interesting. Yeah. So I was looking forward to this and I was trying to see, okay, is there a way I can configure this task or whatever? So I tried creating a task and at first I wasn't able to. I had to fill in this whole payload or whatever. I have the discovery document, but you see, you still don't know what to put in there, right? So you can have the comments, you can kind of hint at you of what putting there, but still you still have to guess the parameters half the time. So I was trying a bunch, but I wasn't able to do it. But I noticed I was constantly getting invalid argument, which is a generic error. But I looked at the workflow execution log that I leaked earlier., and I saw there's some client ID default there. I'm not sure what that means. So I just copied that and pasted it, and it just worked. So I was able to create this workflow. Wow, nice. So once I had the workflow, I mean, I was trying to— okay, can I just run this workflow now? But no, it's not that easy. When I try to run it, it tells me, oh no, you have to publish it first, right? And when I try to publish it, it tells me, oh sorry, the publisher can't be the same as the last editor. So this kind of stopped me because I thought that— oh, and it was even saying something like, oh, you have to raise a request for approval. What does that mean? Do I have to I could send in some Googler and have them approve it. They're not going to approve it for me. So yeah, I kind of hit a roadblock there. I was trying a bunch of different stuff to kind of bypass that, but I was pretty stuck here. So I was stuck here for maybe like a month, right? Literally like a month. And because of that original report that I did, right, when I initially just leaked the workflow execution logs, so they already started to patch out all these endpoints. So that was a big problem for me. But anyways, I was in some random Discord chat, just out of nowhere, right? I just happened to ask, another researcher in the same Discord group that, hey, do you need any Protobufs or anything? Because I have an endpoint. I can just get any Protobuf for you because they didn't fully patch it yet. Right. And then it turns out this guy had the exact same thing. I was like, what are the odds of that? Some random guy in a chat has the exact same endpoint. And then we started DMing. I was like, is it the Cloud CRM API? Yeah, it's the same API., and we realized we were stuck at like two different points. Okay. So he was kind of looking at it a whole different aspect. I didn't even like think of this. So he realized that this API, right, is very similar to this product called Application Integration, which is like the public GCP product, right? It's like the internal version of it. And he was looking into this Application Integration a lot. So he found these same endpoints from the JS files of that product. Does that make sense?
+
+[00:16:56.49] - Justin Gardner
+Yeah. Where did you find this guy, dude?
+
+[00:17:00.41] - Arvin Shivram
+Bro, I just introduced to him not that long ago by some friends.
+
+[00:17:04.74] - Justin Gardner
+Gosh, dude, that's crazy.
+
+[00:17:05.66] - Arvin Shivram
+And it just happens to be—
+
+[00:17:06.68] - Justin Gardner
+It's not even like, you know, it's just like— like—
+
+[00:17:07.81] - Joseph Thacker
+like— like— There's a lot of sub-communities, Justin, a lot of little sub-hacker groups, you know? Yeah. And Brukat, you acted like that was kind of an anomalous thing that you all had found the same thing, but literally every time I messaged you with something, you're like, oh yeah, I already know that. I've already seen that.
+
+[00:17:21.46] - Justin Gardner
+Yeah, same, same. So it's like, yeah. yeah.
+
+[00:17:23.40] - Joseph Thacker
+yeah. yeah. I'm pretty sure that's not that uncommon that there's an intersection there finding the same thing.
+
+[00:17:28.09] - Justin Gardner
+Yeah, but you know, but it's different if it— when it's us to Brute Cat versus Brute Cat.
+
+[00:17:32.41] - Joseph Thacker
+That's true.
+
+[00:17:33.00] - Justin Gardner
+You know what I'm saying? Like, you gotta, gotta, gotta give, give credit where credit's due here. Um, okay, so this is the internal version of the public, um, service for running these, uh, you know, application integration tasks.
+
+[00:17:47.93] - Arvin Shivram
+Yeah, exactly. So I was looking, I was looking more into it. So he was able to— but he couldn't figure out how to create the workflow because he didn't know that client ID default thing, right? Because he wasn't able to leak the whole workflow execution log or whatever that I was able to do. He was trying different parameters. He just never created the workflow. He kept saying invalid argument. But I knew how to create the workflow. But he knew how to kind of get past that because he was super— he knew this whole product in the back of his head. He completely knew application creation, but I didn't know anything about it. So I sent him— we compared notes. I sent him exactly how to create the task. Right. And then we were working together. So, okay, so at this point we had a bit of a problem. So while I could create the task before, right, I can't actually do that anymore because they patched the endpoint, right? It just returned permission denied because of the patches of the initial bug that I reported. So we were trying to see like what ways we can do around it. So for some weird reason, this API is kind of weird. I've never seen this before, but they have like duplicate endpoints. So they have like, let's say, get proto definition and then that one's blocked. But workflow support/get proto definition, that one works.
+
+[00:18:50.91] - Justin Gardner
+What?
+
+[00:18:52.09] - Arvin Shivram
+Wow.
+
+[00:18:52.50] - Justin Gardner
+And all these were in the discovery doc?
+
+[00:18:55.35] - Arvin Shivram
+Yeah, all of them. They're all in the discovery doc. Wow. So yeah, so I found that. But the problem was the only endpoint that didn't have a counterpart was the create workflow one. So we were screwed. Yeah. So we were literally stuck here. But then I sent the thing to Shrug because he was messing around with it and somehow he created the workflow. I was like, what? It doesn't work for me. How does it work for you? Then we realized that the fix wasn't rolled out to all the Google servers. So he was from Canada, right? So it worked for him but not for me because I'm from Singapore, right? So that was super interesting. So he was able to reproduce it super easily. He's able to create the task. Then we realized that he sent me like— so Google has this— their DNS system is kind of interesting. So depending on which IP address you resolve www.googleapis.com it like returns like a different IP address, right? And this IP address is linked to like a, they call it like a 1e100.net domain. So it's like something.1e100.net. So basically he sent me his 1e100.net domain and I put it into my like Burp or whatever, the target, and I was able to do it easily. So then we were like figuring out like this whole, this whole like thing to create this stuff.
+
+[00:20:04.30] - Justin Gardner
+So that way you can sort of pin what, what host is dealing with your request. So you can buy—
+
+[00:20:10.74] - Arvin Shivram
+it's not as direct as that. It's kind of like you can pin it to a specific country, I would say.
+
+[00:20:15.09] - Justin Gardner
+Okay.
+
+[00:20:15.11] - Arvin Shivram
+It's not like a specific server, right?
+
+[00:20:17.31] - Justin Gardner
+Yeah.
+
+[00:20:17.35] - Arvin Shivram
+Okay. So anyways, we were trying to figure out how can we publish this now? So he realized that we could add a different Gaia to some add ACL endpoint. I didn't even notice this. I don't know why, but he could add a different Gaia there. Then you could use that Gaia to approve your own integration or your own workflow, whatever., and then you can like publish it. And then we ran the workflow and it actually executed. Oh Oh
+
+[00:20:41.56] - Justin Gardner
+Oh Oh my gosh, dude. That's, that you must have been so like hyped when that happened. The The
+
+[00:20:47.76] - Arvin Shivram
+The The adrenaline rush was crazy.
+
+[00:20:48.69] - Justin Gardner
+I, I'm sure you just, at that point you just like flip your desk and you're like, oh my gosh. So what's crazy to me though is that he knew, you know, how, how to change that, um, access control. That ACL. And I'm trying to find it. I've got this, you know, the write-up open here. But it was like a pretty obscure key that he needed for that. So I'm very curious how he came up with that key. But I guess that's a little part of it. He He
+
+[00:21:18.42] - Arvin Shivram
+He He was just guessing.
+
+[00:21:19.27] - Justin Gardner
+Yeah.
+
+[00:21:19.96] - Arvin Shivram
+Wow. Yeah, we're just, we're just playing around, right? Trying to see what works.
+
+[00:21:22.90] - Justin Gardner
+Wow. Yeah. And I guess there's probably maybe these set of strings as well in the, um, in the Application Integration app in Google Cloud. So maybe he's kind of taking some of the, the stuff from there and then trying it on this, you know, internal version.
+
+[00:21:41.71] - Arvin Shivram
+Exactly right. And, and actually another thing is the— for the stubby task, right, we had, we had to fill up the parameters for it. So it wasn't as easy as just like executing the task. Like, what do I put inside this task? It doesn't— there's no documentation I can refer to. For the parameters. So we actually figured out that the application, the public application integration, if you tried to configure the task there, it wouldn't work, but it would leak the parameters. It would tell you, oh, you need this server spec or you need this method parameter. So using that, we were able to slowly piece out exactly what we needed for the request. Then we also figured out, we looked through random discovery documents and we were able to find some random GSLB address. GSLB alkaline base. That's the one we use. And, and like, so Ezekiel Pereira, remember I mentioned him, right? He had this like RCE from Super Llama. So we, we look at the writeup for that and we just like took some random like stubby method. I think, I think we use like a server status of get services.
+
+[00:22:34.27] - Joseph Thacker
+Yeah.
+
+[00:22:34.51] - Arvin Shivram
+Right. So we took that and we tried it and that's how we managed to get the whole thing working.
+
+[00:22:38.14] - Justin Gardner
+Dude.
+
+[00:22:38.90] - Arvin Shivram
+Wow. Yeah.
+
+[00:22:39.96] - Joseph Thacker
+Wasn't there some other bug or something, Justin, at one of the live hacking events we were at where someone used a GSLB address and they had to like also find it or do like fuzz for it or something? To be To be
+
+[00:22:49.33] - Justin Gardner
+To be To be honest, that, that is so far over my head with some of this stuff. I don't think I even remember it. So that is really impressive that you guys were able to piece that together. I guess I need to go back and review some of this guy's, you know, YouTube videos or talks and stuff like that because there's gold there if you, if you know where to look, apparently. So So
+
+[00:23:10.07] - Arvin Shivram
+So So for listeners that don't understand, like GSLB is Google Service Load Balancer. It's like they're, internal DNS sort of thing where you can sort of reach to a specific host. So Alkaline Base is like this. Okay, so Alkaline is Google's internal framework for creating APIs. So these APIs tend to be super insecure. It's like this easy way for a Googler to spin up an API.
+
+[00:23:28.68] - Justin Gardner
+It's like a dev thing.
+
+[00:23:29.61] - Arvin Shivram
+Historically, they've had so many bugs. But yeah, we just happened to find this one address. I mean, it could have worked for different ones, but yeah, so we had this working.. But like, and we, we sent in the report to, to like Google, but they, they like told it like just 1 hour after we sent the report. So we realized that like everything stopped working cuz the, the fix is fully rolled out. So if we had done this like 1 hour later, we wouldn't have been able to prove anything. No No
+
+[00:23:56.80] - Joseph Thacker
+No No way. That's That's
+
+[00:23:57.52] - Arvin Shivram
+That's That's crazy. It was super clutch.
+
+[00:23:59.17] - Joseph Thacker
+That is super— Yeah. For stuff like this, I can't help but think, and some, and some of the stuff we're gonna talk about later today with like the reports you put in, like some, some of the writeups you have are like, you know, 3 reports covered this and paid out a total of $30,000 or whatever. How do you decide kind of where, like on Google specifically, where to draw the line with like why, like why would you throw it all in one report versus why would you kind of break it up? Because like this one, like I'm curious, like once you all got that stubby, uh, that stubby RPC call working, did you just throw it on the report you already had or did you all submit another report? You know, I'm just really curious how your mind thinks about like when to combine them versus when to report them separately for Google's program specifically.
+
+[00:24:35.57] - Arvin Shivram
+So that's actually a really good question. So you have to be kind of careful here. So generally, I would say in this specific case, if I tried making a different report, they would kind of like lump it all together because it's the same API, right? So there's no point of making different reports. So I get duped like the previous report, so I get duped or something, or the new one might get duped. So if it's the same API and the API is pretty small, like just a couple of methods here, like I would like to think that you should probably just do it the same report. But if it's a pretty big API, like maybe like 100+ methods,, I would split it up into different reports. I mean, think it really, it's really nuanced. It's hard to like tell straight away. You could, you could be losing out on bounties. Like in this case, like that initial bug I reported, I don't think they paid for that. They just like the RCE like overrode everything. Mm. So you have to be a bit careful there. Wow.
+
+[00:25:18.61] - Justin Gardner
+Yeah, dude, it, it, it's a little tricky, man. I'm running into this a little bit with Google too, is like they, they actually do pretty decent due, due diligence, uh, when you submit your reports sometimes, you know, and they'll fix stuff that's adjacent and, and, you know, same similar root cause stuff. So a lot of that stuff will end up getting duped back. But I, but I also feel like just as a critique of the Google program, I feel like that is not incentivized as well for you to like prove full impact across multiple different environments, right? So if you've got, you know, 8 different things that are vulnerable here, you're not really— they don't incentivize you outlining that. In your report very well, you know.
+
+[00:26:03.46] - Arvin Shivram
+Exactly, that's super well said.
+
+[00:26:05.57] - Justin Gardner
+Yeah, so, so I would like for them to— I would like to see either a multiplier, you know, they, they do multipliers for their report quality, which I think is a super important thing to, to do, um, and they do multipliers for other stuff, but then I think they're sort of, um, on the fly, uh, you know, at will, uh, extra bonus that they can add for things like having multiple instances that are vulnerable is very limited, a grand or two. So I definitely think a multiplier would be there, would be better there so that it encompasses the impact that you can have if you've got a massively critical vulnerability that spans multiple different API endpoints or services.
+
+[00:26:48.51] - Arvin Shivram
+So generally in such cases, what I actually do if I find two different bugs and let's say I find the first one I reported, but the second one doesn't help me get any additional impact. Like, it's just another different issue. So I'll actually just not report the second one. I'll wait till they fix the first one, then I'll report the second one. And that always works out. Yeah. Yeah.
+
+[00:27:04.97] - Joseph Thacker
+Yeah. Yeah. Yeah. And I think if anybody's listening and thinks that that's like weird or offensive, this is like exactly like you want to create a system. Like, we should all work towards creating systems that like encourage the most ethical behavior, you know. And so like, you know, I would tell Google or, and I know people that do the same exact thing on HackerOne programs and bug crowd programs. This isn't exclusive to Google. Like, Hackers are obviously going to try to provide the most for their family that they can, you know. And so that's the way the system should be set up. And so, you know, what should actually happen there is you should be able to report both of those and they treat them independently or whatever, you know, especially if they're separate fixes, which they obviously were because you just proved that by waiting.
+
+[00:27:39.44] - Justin Gardner
+Right.
+
+[00:27:39.64] - Arvin Shivram
+Right.
+
+[00:27:40.20] - Justin Gardner
+So, yeah. And, and you give them the opportunity to realize that, hey, maybe the due diligence isn't always done as well as it should be. Right. So, so, you know, you shouldn't always dupe these back. Right? Because look, now I've just reported another adjacent service and that, that is, you know, not fixed, right? And, and so, yeah, I think that that pokes holes a little bit in the like, we're going to do our root cause analysis sort of situation. And, you know, in my, in my experience, I've done that and I've been, you know, I've gotten another bounty for it and I've also gotten burned by it, you know, like I've, I've submitted a bug and they fixed all of the adjacent ones as well, you know. And, and I was like, okay, well, they did do their due diligence this time. Uh, but then I've also, you know, reported it, another one later, and then they haven't fixed it. So it is a little bit of a roll of the dice, but I think it's the best way to show exactly whether the root cause analysis that they're doing is, is, um, producing the results that it should, right?
+
+[00:28:38.51] - Arvin Shivram
+I know this, this doesn't always work, but for the most part, what you should try to do, at least for Google, is I mean, at least for now until they change this, but you should try to find as much impact as possible, right? So even that means sitting on it for a day or two, just try to find as much impact as possible, report the most impactful thing and that's it, right? So then you can wait and report those less impactful stuff if they don't patch it. So that way you can save yourself.
+
+[00:29:02.00] - Justin Gardner
+Yeah, I totally agree. So calling that service list, on the prod. Probably got to be such a crazy moment. You must have been so hype. But that's not the end of the story here. So tell me how this continues to get another crazy bug out of Google.
+
+[00:29:24.54] - Arvin Shivram
+Okay. So when we first tried, when I first saw this RC, I was super tempted to play around with it and stuff like, oh, can I do stuff? But yeah, I was quickly told that no, I should just stop touching this. But Yeah, so I had to leave it there. So I was kind of sad because I really wanted to try all these internal RPCs or whatever. I've collected them over, I guess, like the year or whatever that I've been hunting Google. So I wanted to play around with them, but no, I couldn't. But anyways, it's fine. I was working on a bunch of other stuff, right? And maybe like 3 months later, I was improving my scanner and I was targeting Google Cloud at this point. So a lot of the Google Cloud APIs. And for some reason, this integrations, application integration popped up again. So my scanner figured out there was this problem across the whole application integration API. So you could put /project, like your project number, but reference someone else's UUID and it just works. It's like some super dumb IDOR. And this works for all the APIs in this whole, all endpoints in this whole integrations API. Right. But the problem is, how do you get this ID? Because this ID is like a UUID, right? So I was going to screw you. So I tried because if you just report this by itself, it's not going to be too impactful, I would say, because there's no way to prove to get that UID. So they're going to downgrade it a lot. So I was saying, okay, is there any way I can sort of leak this UID? Right. So I was looking through like the whole Application Integration and this is where I was like really playing around with it. So I saw there's like this feature called like test cases. So you can create a test case for your integration. So just for anyone who doesn't understand, Application Integration is kind of like no-code, like automation workflow. So you can like drag and drop stuff. And like connect them together. So let's say I take something from like one place and, and send it to another place. So that's kind of how this application integration works. So they have a test case feature where you can create a test case for a specific integration. So I can test just this one part of this integration, like this, this is like a send email task board. So I could create a test for that and like test that. But this test case thing was super weird. So when I created my test case, I looked at like how it was listing the test cases. So it was like some RPC list test cases. But I decoded the Protobuf because it was sending in Protobuf and I saw it was sending workflow ID equals to and then my workflow ID as some filter. But why is that client side? That should be server side, right? So that was super weird. Then I was like, okay, so surely if I remove this filter, it's not going to dump everybody's things, right? So I just removed the whole filter and it just dumped the test cases for everybody in the whole GCP who uses this product. Holy Holy
+
+[00:31:44.39] - Justin Gardner
+Holy Holy crap, dude, that response size on that must have been massive.
+
+[00:31:49.20] - Arvin Shivram
+Okay, so yeah, it was pretty massive, but I think there was like a page size or something, so I had it set as like 1,000. But yeah, I got a super big response and I instantly know something is wrong. And I could see all these like @google.com because it's like all these Googlers that make their own integrations.
+
+[00:32:04.96] - Justin Gardner
+Oh no, that's crazy, dude. Oh my gosh.
+
+[00:32:08.70] - Joseph Thacker
+I would definitely have just submitted it there. It's really funny to me that you're like, no, I need to get this UUID out.
+
+[00:32:15.75] - Arvin Shivram
+Oh yeah, I'm not going to— I don't want to stop there because it's not going to be a good bounty. I want to escalate the impact as much as possible until before I report. So I was trying to see, okay, can I get the UUID from this? Because now I leaked all the test cases, right? It should be in the path, but for some reason there's like a dash there. Where my UUID— the UUID is supposed to be, it wasn't showing it. So I was kind of stumped here because I thought I could stub it and get it working, but no. So I was trying to see, okay, what way can I have around this? So right now what I can do is I can list all the test cases. I can execute the test cases using the test case ID with the same dash as the integration UUID. But I can't actually get the whole integration because I can't get the integration UUID, if that makes sense. So I was trying to see how I can lead that. But then I realized, wait, can I just use the same filter parameter as earlier and then just do a binary search on that so I can fix it to a known test case? Then I can just use binary search and keep trying all the different stuff until I can leak out the whole UID of the guy who owns the test case.
+
+[00:33:17.39] - Justin Gardner
+Wow, dude. Does that make sense? Yeah, that makes sense. Frick, I love that, man. Those filter injection, filter-based binary search things, those are amazing. It feels so good when you pull that off, man. Oh my gosh, I love it.
+
+[00:33:31.69] - Arvin Shivram
+No, literally. So I had Claude write up the whole script and it just did it first try and I could see the little animation of it. Slowly pruning it. It was awesome. Oh Oh
+
+[00:33:41.30] - Justin Gardner
+Oh Oh my gosh, dude, I haven't had one of those since Claude has been around, but I do remember the last time I coded one up manually and I finally, the last time I did it, you know, it required a bunch of weird, you know, statements in there with like different parentheses to get the order of operations correct. And it was like when it finally, you know, you could tweak one variable and it would, you know, show yes or no. I was like, oh my gosh, yes. So it's amazing.
+
+[00:34:05.57] - Joseph Thacker
+I would have never thought to use this on a UUID for some reason. Like I just wouldn't think of it as being something that could binary searched with greater than, less than, but clearly it can.
+
+[00:34:16.65] - Arvin Shivram
+No, because it's the same filter AIP thing, right? It's all the same thing. Yeah. So you could use the same logic there and do the binary search. I mean, I was stuck here for a bit. It took me maybe a day to figure out this whole binary search thing. I don't think even Claude figured it out. I had Claude working on this. Can you try to escalate this impact? Can you try to see if there's any way we can leak it? But no., but I had to manually figure this out. But yeah, so once I had this working, I got the UUID. I was able to then do IDORs across this whole thing. So I could just take over some guy's integration. I can view all their integrations. I can do all this kind of stuff. But see, remember earlier, right? Those test cases had like @google.com or something. So I was thinking, what if there was like these internal integrations or whatever, but they were using this application integration, but they're using some sort of internal task type., right? Can I like somehow like use that and like steal their integration and execute that task time? So I was trying to see in that angle, right? But I had to be a bit careful as well because I, you have to draw a line, right? I can't, I can't like, I can't like iterate your customer data because they're gonna like, they're not gonna accept the report. So I had to send everything I had so far and just, and like, and just tell them to look for it. But like, I wasn't satisfied in that. Like, I don't want them to look for it. I wanted to find it myself. So I was looking deeper. So what is exactly stopping me from creating my own integration? If I try to create an integration with like the same stubby type task, is it— what is stopping me from doing that? So I tried it out and I was actually able to create the integration. But when I try to execute this integration, it will just like time out. Like it'll just say, oh, like this thing has timed out after like 120 seconds and it doesn't say anything else. So it's kind of vague. But I looked at the same test case feature. What if I create a test case for my stubby integration and then execute that test case. So first I was playing around with all the different internal test types. I wasn't even playing around with stubby. I was using some weird Python task or something. So I was trying that Python task. Then I got some super— so when I pressed the play button for the thing, the test case I just made, I got some super suspicious error, insufficient disk space or something. It looked like some Linux error, the standard Linux error when you run out of space on your box. So I was like, what is going on here? There's something weird here. So yeah, I was— then I was looking at like, okay, so this is probably reaching some sort of like execution backend, right? Yeah, I think that's the error here. No space left on device. Gosh, Gosh,
+
+[00:36:37.90] - Justin Gardner
+Gosh, Gosh, dude. What? No space left? Yeah, Java IOException, no space left on the— this is the sketchiest thing ever.
+
+[00:36:45.42] - Arvin Shivram
+Wow. And it was showing the UI as well, like a big, big red like notice, like No space left on device. Oh my gosh. So yeah, then I was like, okay, can I try the stubby one? But the stubby one would just give me some super generic error, like, oh, unknown error, and that's it. Doesn't tell me anything else. But I figured out I could look at the workflow execution logs, and that had a stack trace. So I fetched the whole stack trace, and I saw a super suspicious error. It was like, Uber Mint verification failed. Like it was an RPC security policy error and it had a bunch of stuff like that. So this error in Google usually means that like the product account you're trying to reach doesn't have like an RPC security policy defined for the RPC you're trying to hit. So it's not whitelisted for the RPC or something. So because it's a different product account than the other one, right? This is like a completely different product account. So I'm guessing this one didn't have access to Alkaline Base or what I was trying here. So this was, this already told me that it's definitely hitting like stubby. So I checked with like Sam if I could like escalate this anymore. Like if I can try to keep testing this, right? Then they like, they checked it and it was fully exploitable. So I had to stop everything here.
+
+[00:37:54.07] - Justin Gardner
+Wow, dude, look at that execute stubby call. Oh my gosh, that is beautiful. And they said, all right, back off.
+
+[00:38:03.01] - Arvin Shivram
+We'll take it from here, dude.
+
+[00:38:06.36] - Joseph Thacker
+Wow.
+
+[00:38:08.57] - Arvin Shivram
+You have to be super careful. I've heard of this rumor going on around whatever, where some guy took his RCE too far and then they voided the whole thing. So I don't want to play too much. I better just report this and let them deal with it. But I was looking at the stack trace. You could kind of see how the source code works because it leaks out everything in the stack trace. So I kind of figured out how it's setting these different parameters and stuff. So yeah, I reported this. I didn't hear back for almost a month. So at this point, I was wondering why is it taking so long? Because the other one was rewarded in just a few days. But it turns out this one got 75,000. So there's like 3 different tiers in Google's VIP rewards. So 50,000 is for an unprivileged production user, right? But if you get 75,000, that means it's a highly privileged production user. 100K would be complete admin in Google Cloud, right? And see, in many cases, in my opinion, right, even if you have an unprivileged user or whatever, you can usually privilege escalate through different RBCs and stuff, but they won't let you test that, obviously. But it's definitely probably possible. So they just look at, I guess, the permissions of the product account. But in this case, I was speaking to Kote, right? They're super vague about this. They won't tell me more about this, even though I keep pressing them on this. But apparently there's some sort of escalation that even I didn't a show here that you could do and you can get even more impact. So that, that's why they, they rewarded the 75K tier.
+
+[00:39:34.53] - Justin Gardner
+Wow, dude, very, very cool. That is, uh, quite a story. And I think probably this is the longest intro bug that we've ever had in the history of Critical Thinking, but totally worth it. But But
+
+[00:39:47.55] - Joseph Thacker
+But But completely, totally worth it. Totally Totally
+
+[00:39:49.09] - Justin Gardner
+Totally Totally worth it, man. Um, absolutely inspiring.
+
+[00:39:52.21] - Joseph Thacker
+Uh, a double RC on Google.
+
+[00:39:54.01] - Justin Gardner
+Yeah.
+
+[00:39:54.57] - Arvin Shivram
+Dang.
+
+[00:39:55.17] - Justin Gardner
+No big deal. That's insane. So I did take some notes and I do have some, some questions to go back to on this. Um, but before we do that, I do wanna give you the proper introduction. Um, as we mentioned, guys, this is BruteKat. You can get his, uh, his, on his blog at brutekat.com. Um, it's on, on Twitter, it's just @BruteKat, right? Yeah.
+
+[00:40:15.69] - Arvin Shivram
+Yeah.
+
+[00:40:16.03] - Justin Gardner
+Um, and you're also doing some consulting now, right? Tell us a little bit about that.
+
+[00:40:22.15] - Arvin Shivram
+Yeah, I mean, I've just recently started doing a bunch of— yes, I set up my own company, BruteCat Security. So you can just go to brutecat.com/hunt if you want me to pentest your stuff. I have a whole AI thing, the same AI that I used for pentesting Google, right? I've kind of worked that out for pentesting other companies as well, and I've had tons of success with that. So if you want me to run it on your company, just feel free to reach out.
+
+[00:40:43.38] - Justin Gardner
+Nice, dude. That's awesome. And yeah, I mean, This guy is the pinnacle of Google hacker. Like, just I've read all of his blogs multiple times. So dude, really excited to have you on the pod.
+
+[00:40:57.96] - Joseph Thacker
+Let me blow everybody's mind real quick. Yeah, literally out here. I was telling my wife that we were coming to interview you and I was like, yeah, this guy's amazing. He's been hacking Google for forever. He's like one of the GOATs. And then I see it in our, in our doc, how I got into Google mid-2014. I know, 2024, mid to late 2024. No, in my head, for some reason, you're like this, like always epic Google hacker that's been around for 10 years. And I'm like, wait a second, he started hacking Google 2 years ago. What am I doing in my life?
+
+[00:41:25.13] - Justin Gardner
+Exactly, dude. So exactly. That's how I feel too. And yeah, well, it's funny you mentioned your wife because I said it. I said the same thing to my wife and she knew who he was because I talked about his research before to her. I was like, yeah, man, this guy, Brewcat, he came up with this crazy way to like let me access Google APIs a little bit better. So that's pretty funny, man. Going back to the write-up. So I wanted to ask you a couple of things. One, you mentioned that you were using your AI to guess the parameters for these requests, right? So what sort of additional information have you given Claude to enable it to, you know, do these guesses correctly? And how do you get it normalized to your account? Like where you have different objects created and that sort of thing.
+
+[00:42:21.80] - Arvin Shivram
+Okay, I could touch on this now, but probably be better if I talk on this later because I have a whole thing I can raise. You want to cover it in that section? Yeah, we should probably cover it then.
+
+[00:42:30.42] - Justin Gardner
+Okay, let's do that then. And then the other thing that I had here, you already covered GSLB, but the Google SRE Handbook is quoted multiple times in this. In this write-up. I mean, have you just read this whole thing cover to cover?
+
+[00:42:47.46] - Arvin Shivram
+Yeah, I've read it like 5 times. The first time I read it, I didn't know anything, but I kept reading again and again. And not just this. So I read a bunch of stuff. I would read Beyond Prod and their whole documentation there. They documented so much stuff. I've even read about as much stuff as I can, all different papers about— because Google releases a lot of these papers and it's. It's about the whole internal infrastructure. If you can like read that and learn it and bring those tips into the hunting, it's actually super beneficial.
+
+[00:43:14.84] - Justin Gardner
+Yeah. There's just so much to figure out with Google cuz it is architected very much, you know, different from any other company that I've seen. Okay. So the Google SRE Handbook, you mentioned something called Beyond Prod, and then do you have any other resources that you really gained, you know, got a lot out of when prepping for I guess, hacking Google infrastructure?
+
+[00:43:39.96] - Arvin Shivram
+I would say that, okay, they do have some papers on Chubby or this kind of internal stuff, but mostly just these two resources that you mentioned. Okay. Those are the— if you just want to get started, you should be reading this. This is the minimum requirement. Okay, nice.
+
+[00:43:53.09] - Justin Gardner
+Well, I'm going to go get those, go read through those because I have referenced the Google SRE Handbook a couple of times, but I haven't actually read it cover to cover. So I think I'll have to go back and do that. Sweet, man. Well, that was a whirlwind. So just a couple of takeaways from that write-up. If you're using Client 6 and first-party auth and you're getting a Protobuf response, you know, or you're not getting a Protobuf response out and you think you should be, then you can use the Google-encoded response if executable header to get it out as Base64. You've got the whole request proto. We did sort of a head nod to that, because you found Request Proto as a Service there. But there's this whole primitive, essentially, gadget that you've outlined on your blog about how to do an error-based oracle to leak the JSON, the ProtoJSON request structure. For these Google APIs requests. And we should be on the lookout for anything related to stubby. No matter— if you see stubby, you need to like lock in because there could be some really impactful stuff there.
+
+[00:45:08.69] - Joseph Thacker
+And it should be said, it should be said that Request to Proto is also a project on his GitHub. Yeah.
+
+[00:45:14.05] - Justin Gardner
+Oh, for sure. Yeah. Beautiful, beautiful project. Anything else that you think we should have as takeaway from from that write-up?
+
+[00:45:23.55] - Arvin Shivram
+I think it's pretty well said. And like you mentioned, if you see any sort of stubby, right, you should try to find a way to reach that. There's so many potential RCs. In fact, if you look at all the Discovery documents, if you try to grep for stubby, you'll find a bunch of stuff like that. And you can grep for like GSLB, grep for these kind of keywords and see if there's anything referencing that because that could potentially be a way you can get access to this, right? And they have so many webhooks. Random stubby webhooks. I'm guessing the Googlers made it to make their life easier, but the same thing can be used for us hackers, right? So you want to try to find as many of those as possible. And in fact, it may not even be in the discovery document directly. It could be embedded inside some service. Let's say you're hacking on some GCP product, right? And maybe you got access to the tenant project or something and you have a shell or something. If you see anything inside there that's referencing stubby, that could be another thing, right? It It
+
+[00:46:11.82] - Justin Gardner
+It It doesn't have to be in the discovery doc because they've got to tape this they've got to tape everything back together with these RPC calls, right? So if you've got any sort of primitive, you know, inside of, you know, the shell in your own org in that product, and that thing can do anything, right, you know, then it needs to tie back out to RPC calls at the end of the day. And if they don't do that in a secure way, then you could get arbitrary RPC call execution. Very interesting. And then the last, the last call out that I had here that I did forget in my notes was take a look at the AIP-160 filtering spec and just realize that that is something that is used pretty widely across Google because you can run into these bugs where you can create these, you know, filter binary searches, or at least, you know, be able to notice when there is a filter being used and you might be able to use that to access other people's information.
+
+[00:47:05.28] - Joseph Thacker
+One thing, one takeaway I had, which I always associated with like old Yahoo stuff is just that— is the whole load balancer thing. Yeah, like, uh, you know, I don't think that people should intentionally try everything like from different regions or 100 times or whatever, but I do think if you ever try something and it works and then you're, you know, later on you're trying to reproduce and it doesn't work, you can think about the fact that, oh, maybe it's because I was connected to a VPN, or maybe, you know, if it's working for a buddy and not for you, you know, it may be due to the fact that it's going through like a different load balancer., and yeah, I need to send this request like this.
+
+[00:47:38.71] - Arvin Shivram
+Yeah, so the way— yeah, exactly. See, the way Google does their requests, right? It's like, when they do a fix, let's say you report a bug and they fix it, like, their fixes roll out gradually. It's not like an instant rollout for many cases, right? So if you can, you can use this trick usually and find like some host or something that you can use to route the request through and reach a server that hasn't had that fix rolled out yet. So this is like a way to kind of bypass it temporarily.
+
+[00:48:01.67] - Justin Gardner
+Very nice, man.
+
+[00:48:02.86] - Arvin Shivram
+Very nice.
+
+[00:48:03.61] - Justin Gardner
+Cool. All right, so let's jump into how you got into Google VRP, and it starts with an obsession with YouTube, it looks like, which I think many people can relate to. So give us, give us that story.
+
+[00:48:17.34] - Arvin Shivram
+Okay, so it wasn't necessarily obsession with YouTube, but that was pretty related. But it was mostly obsession with like OSINT stuff. So I was, okay, I was a complete noob, by the way. Like, I didn't know like anything what was going on. Like, I just wanted to I thought it was super interesting that these OSINT tools existed where you can sort of find out information of any guy you wanted. Right. So I wanted to see, like, Google was pretty interesting because if you can— everyone has a Google account pretty much, right? I don't think there's a single person that doesn't have a Gmail, right? So if you can somehow leak information off the Gmail, like maybe have a Maps review or like a Play review or something, that'd be pretty— it's pretty fun, right? So I was looking into this, right? And I saw this random website. I think it was called OSINT Industries or something.. But this website was pretty funny because you could input an email and it would find the YouTube channel tied to the email. So I was like, how does that work? Because I'm like, how do you dox me from that?
+
+[00:49:05.65] - Joseph Thacker
+That's a bug. You're like, I know that's a bug, right?
+
+[00:49:09.36] - Arvin Shivram
+Yeah. So a lot of these OSINT stuff relates to actual bugs. But yeah, I was super interested in this. I was super obsessed with it. I was trying to figure it out. Then eventually I think I went to some super ancient Discord server for for this guy, and I saw some screenshot that he sent, and inside there, there's like a path of his home directory or something. He had some terminal open and you could see the path there, and it said something about profile card. So I was like, okay, this has to be related to this because he was talking about that whole YouTube thing right before this. So then I was like, okay, what is a profile card? I looked through everything to try to find profile card references, and turns out profile card is like some super weird YouTube feature. If you have like a— okay, this first one is only for mobile. If you went to like YouTube, any sort of YouTube video in the comment section and you tap on the profile there, it would load this kind of like mini card and you could like see subscribe or whatever, right? So this is called a profile card. So it didn't exist in the web yet, but I was curious how it worked. So I set up like a whole— like I read some tutorial or something and I set up a whole like on my iOS phone, I could like sniff the traffic through like Burp. And then I was like looking through all the different requests. And it was in Protobuf, so I couldn't read it. But I noticed the ID there looked a lot like a Gaia ID, which is like a Google account identifier. So I was like, so I can just pass in any Gaia ID here and it's just going to return the YouTube channel. And it worked. But I was also thinking, if it's able to do that, how is it getting the Gaia ID? Right? Because surely it's getting it from somewhere. And then I looked more into it and it turns out whenever to load the comments of any channel page or whatever, it had the Gaia ID of every single user tied to that. Oh Oh
+
+[00:50:41.21] - Justin Gardner
+Oh Oh my God. See, the See, the
+
+[00:50:42.88] - Arvin Shivram
+See, the See, the thing is Google, they have two different types of guy IDs. They have an obfuscated focus guy ID, right? So focus obfuscated guy ID, foggy, that's what they call it. But they also have an unobfuscated guy ID, right? So like the raw guy ID. But the thing is, see, many teams, the teams across Google, they think that they can just safely release this obfuscated one. But the truth is that you can many times convert this obfuscated one to an email or convert this obfuscated one to fetch some other information. So It's a big issue across the teams at Google because Google is so big, right? They don't realize that one team thinks it's not safe. The other team thinks it's perfectly fine. So they did a massive screw up here. Like, in fact, you could probably go to Wayback Machine and look through that. I bet you would find like, I, I, I, so many channels there. So yeah, this was interesting. But so I had this for a while. I built it to my little tool or whatever. I could like sort of do that, but I didn't even think of it as like a bug. Like, I wasn't even trying to find bugs, to be honest. Like hacking Google. In particular, but I was just trying to find this OSINT stuff. But then I noticed they rolled out this fix to, like, first of all, they rolled out this feature to web. So instead of web, you can tap on it. And a ton of people found the same thing because it's super easy to see the request on web as compared to iOS, right? So then I saw they started rolling out the patches for this. Instead of supplying the Gaia ID, they started doing some channel ID or something instead. The reason why it was a Gaia ID to begin with is because this comments backend in YouTube is like from G+ days. So back in the day, they didn't want to lose those comments that were made in the G+ days. So it's still a Gaia ID backend. Like, your comments are tied to your Google account. It's not tied to your YouTube channel. So if you move your YouTube channel to a different Gaia account, it's going to lose all the comments because it's all tied to this. Interesting. So, yeah, I was looking at that and then I was able to— yeah, so they've sort of patched the whole thing. Then I was kind of stumped. I wanted to find another way to do it. So I was looking through all the APIs with a friend and we were trying to see, is there any other way we can leak these guy IDs? And we figured out there was this one endpoint. If you had a live chat and you tap the three dots on the side of a live chat, on a live chat viewer, let's say they write a message, you tap three dots there, it opens this context menu. You can block the guy or report the guy or something. And this block functionality. Like, how does the block work there? Because, like, how does it— what does a block mean? If I block a guy here, is it blocked across all of Google? Because then is it tied to the guy ID? So turns out if you, like, if you block the guy and then you look at your list of blocked people through the People API, it just lists the guy ID there. So you just have another way to do it.
+
+[00:53:15.46] - Justin Gardner
+Dude, that is such a good trick, and I've used that multiple times. I think I actually shouted it out on the pod a couple weeks ago.. But going through that abuse report functionality to de-anonymize people is super clean and it works almost every time I've ever tried it. That's a big conceptual takeaway that spans multiple targets, I think.
+
+[00:53:41.15] - Arvin Shivram
+So then I was looking at how this thing worked request-wise, right? And turns out you don't even need to block the guy. If you just open the three dots, it preloads the guy ID of the guy., and it was even worse because you don't even need a live chat message. You can just change the channel ID to whatever channel ID and it just returns the guy ID. Really? Oh, wow. Yeah. At this point I had the guy ID, but how could I get more impact? Sure, you can list the Maps reviews or the Play reviews or whatever, but I want to get the email at this point. Wait a second.
+
+[00:54:07.34] - Justin Gardner
+Wait a second. Just clarifying. You said he doesn't even need to comment. You can just change the channel ID and it drops the guy ID of every viewer.
+
+[00:54:16.34] - Arvin Shivram
+So, okay. What do you, yeah. What What
+
+[00:54:17.69] - Joseph Thacker
+What What do you mean by change the channel ID?
+
+[00:54:19.96] - Arvin Shivram
+Yeah. Say, say it again.
+
+[00:54:23.03] - Joseph Thacker
+I said, what do you mean by change the channel ID, Brookhart?
+
+[00:54:27.03] - Arvin Shivram
+Okay. So pretty much in the, in the, the three dots, right? If you just tap on that, it loads this context menu for that user, right? So you can just change a user ID to any user in the whole YouTube. It'll just load the three dots for that user. Does that make sense?
+
+[00:54:39.63] - Joseph Thacker
+Oh, he's saying in the request that, in the request that gets sent when you hit the three dots. If in that request you just change it to the channel ID, aka the user ID of any user, then it will just immediately respond with the guy ID. I I
+
+[00:54:50.13] - Arvin Shivram
+I I see. I I
+
+[00:54:50.98] - Justin Gardner
+I I see.
+
+[00:54:51.76] - Arvin Shivram
+Okay.
+
+[00:54:52.13] - Justin Gardner
+Gotcha. That makes sense.
+
+[00:54:53.26] - Joseph Thacker
+Continue. There's always so much assumed knowledge whenever you're interviewing experts. Like when you say channel ID to me, I'm thinking like channels that people publish from, but you know, everyone on YouTube has their own channel ID because like, and so anyways, yeah, right. It's funny.
+
+[00:55:05.86] - Arvin Shivram
+Yeah. Yeah. So yeah, I had this, I had this like primitive or whatever I could get. I could get the guy ID., but I wanted to see how I can escalate this further. So I was looking through all these different apps in Google because there's so many weird apps. They've had so many leaks before in the past, right? You could just open like a— this is back when Google Hangouts existed. You could open a Hangouts chat with somebody and it takes in the Gaia ID and it just returns. It just opens a chat with their email, if that makes sense. So there's probably some leak out there. So I was looking through all the super old apps. I found this app like Pixel Recorder. It was like this this niche app where if you have a Pixel phone, you can have recordings and sync it to the cloud. So I had this app and I synced it to the cloud and I went to this recorded on google.com or something. And at this point there's like a share functionality. So I just tested it out. Can I share? What if I share this recording? And it took in the obfuscated guide ID and it returned the email because it adds a guide and then you could— this is the people added and it has email there. So now I had the full chain because I could just leak the Gaia ID, then leak the email, and now I have the email of any YouTube channel I want, or any YouTube user for that matter.
+
+[00:56:07.76] - Justin Gardner
+Wow, dude, that, that's intense. So channel to Gaia, Gaia to email, right? So you get that chain and then you leak the email out.
+
+[00:56:16.86] - Joseph Thacker
+Wow. That chain is like something that a seasoned bug bounty expert would, uh, report, and it's just his first Google bug.
+
+[00:56:23.32] - Justin Gardner
+Yeah, I know, right? Yeah, like, that's such a, such a crazy thing, dude. Very good work. Yeah, I think the OSINT background really, that's a great, that's a great transition, right? Because you're so focused, you're focused very literally on like leaking data that is useful, you know? Um, so you don't get as many reports where you're like, oh, I can leak this completely unrelated thing. You're like, oh, okay. Email.
+
+[00:56:48.57] - Arvin Shivram
+Yep.
+
+[00:56:48.84] - Justin Gardner
+That's useful for sure. So, So,
+
+[00:56:50.69] - Joseph Thacker
+So, So, um, that's leaking, leaking into top bug hunters seems to be such a clear route. Like there's obviously all the game leakers. Yeah, have done the exact same thing on like, uh, Epic or Fortnite and stuff, for sure.
+
+[00:57:03.03] - Justin Gardner
+So then you just kind of, after this, looking at the doc, it kind of seems like you just went ham on YouTube, right?
+
+[00:57:09.67] - Arvin Shivram
+Okay, so, okay, but I'm not done with the story yet. So it wasn't complete yet because see, the problem with this Pixel Recorder was when I shared the recording or something, it sent this super long email, oh, this guy has shared a like recording with you. So it's super like messy, like I don't want that. The victim seeing that. If the victim sees that, it lowers the impact so much, right? And my OSINT tools, there's this general rule in OSINT where if you have something that works, it shouldn't notify the guy. If it notifies the guy, it's like a red light. So I was trying to see, okay, is there a way I can stop this notification? So I tried to see, okay, the parameters. There's no parameters to not uncheck the notify, but I thought about it. What exactly is in the notification email? There's a title of the recording in the title of the subject of the email., and there's like the recording, like whatever description or something. But if the title probably has some sort of limit, right? If, if you reach a limit, it just probably won't send the email. Cause it's, right. So I just, I just like wrote like a 1.2 million character like title and I created the, the Pixel recording, then I shared it and there was no email.
+
+[00:58:09.26] - Joseph Thacker
+I, I don't want you building OSINT tools for anyone.
+
+[00:58:12.40] - Justin Gardner
+Okay. Stick Stick
+
+[00:58:12.67] - Joseph Thacker
+Stick Stick to bug bounty, buddy. Because that if, if there are OSINT, uh, builders who are out there who are as smart as you, they're gonna be able to pull off some crazy stuff.
+
+[00:58:20.11] - Justin Gardner
+Yeah, wow, that is a good, I love how the solution can be that simple sometimes. You're just like, yeah, what if the email was really, really, really freaking big? You know, like.
+
+[00:58:31.71] - Joseph Thacker
+This is making me regret so much. I feel like there's so many like sensitive actions that you can take on behalf of other users that are often like mitigated by basically notification emails. And now I wanna go back and retest all of those.
+
+[00:58:41.53] - Arvin Shivram
+Totally, totally.
+
+[00:58:42.94] - Joseph Thacker
+That was so smart.
+
+[00:58:44.42] - Arvin Shivram
+Wow.
+
+[00:58:44.76] - Justin Gardner
+Great finding, dude.
+
+[00:58:47.09] - Arvin Shivram
+So at this point I was like, okay, this is surely like a VRP level bug. Like I should probably report this to Google. Like I don't think I should be having this. It looks too broken. So yeah, I looked into like, how can I open like a security report or something? So I sent in the report. It was like a super like messy report. I didn't even know what I was doing. So I just wrote out like all the steps of the how to get this working and I sent it off, right? Then eventually, so they took quite a while to get back. I think it was around November or December of 2024 or something like that. I don't remember the exact timeline, but something like that. So it took quite a while because it was like a holiday period, I guess. But eventually they got a nice cache. I had to debug with the treasure. I think there was some weird case where the treasure wasn't able to actually test it and it didn't work for him because he was trying to get the tree dots working for his own channel, which doesn't work because you can't block yourself, you feel me?
+
+[00:59:39.11] - Justin Gardner
+Right.
+
+[00:59:39.38] - Arvin Shivram
+You can only block other people. So that just didn't work. But yeah, in the end we sorted it out and it got like a nice cash. So this was my very first Google bug. So this kind of got me into this whole thing. And I think it was rewarded in the end like $10K or something. Right. It was like pretty big bounty. I mean, so I was looking more into this thing. I was still looking at— I still focused on OSINT. I didn't actually care about like DRP hacking entirely. So I was looking at how I can— I had this database or whatever. I was scraping a bunch of YouTube data because it was quite interesting to me, getting all this big data stuff. Can I list all the comments of some guy? Because if I scrape all the comments, can I list all the comments from this specific channel or this user? So I was doing that. And from doing that, I learned so much about Google APIs. So I think that knowledge was super valuable. So first of all, I figured out what Protobuf and gRPC was. I could hit requests directly with gRPC. Like all this wasn't documented properly. I had to find some, like, I found some how-to RPC, like markdown page that like Google released, but even that didn't explain gRPC too well. Like there's a difference between Proto over HTTP and gRPC. I was using gRPC itself because I wanted this to be as fast as possible. Because if you're doing it at the scale of like YouTube, you have to, it has to be fast. Then I figured out like, oh, there's like this header, x-goog-field-mask. So I can like, I can just reduce it to exactly what fields I want, right? The comment text or whatever.. And this is where I learned the 1e100.net trick where you can load balance across all different, all YouTube or all different hosts on Google so that way you're not just hammering this one host. And Google also had rate limits. But at this point I figured out, I was doing a lot of research and I realized that you can use IPv6 to bypass this whole rate limits because rate limits are normally per IP address for unauthenticated requests. But they didn't consider the fact that in IPv6 IPs are super cheap. You could just get like a /64 or something, has so many IPs, like billions of IPs, and you could just use that and rotate between each IP, and then they can't stop you unless they do like a subnet ban. But at this point, that didn't exist. So you could just kind of do this and bypass the entire rate limits.
+
+[01:01:37.53] - Justin Gardner
+Wow, dude. Yeah, I remember back in the day when I was in the recon game, there was this problem where you couldn't Google dork very effectively in an automated way. And the solution that we had to that back in the day was get a /64 IPv6 and then use that to hit Google and do your search until it blocks you and then just rotate the IP. But I guess they've probably fixed that now with subnet bans.
+
+[01:02:06.19] - Arvin Shivram
+Oh yeah. So the fix they have now is they do, I think it's like a layered approach. So if you try to use /64, they'll ban the /64. Then if you try to use a /48, like it slowly increases the subnet size of the ban. So I think it's a smart approach, but I mean, it's still possible to get like a— you can still rent out like a super big ISP-level range or something. Or if you have a shared range with other customers, right, that could also be another way. It's super hard to block this. I don't think IP is a really good way to—
+
+[01:02:32.94] - Joseph Thacker
+Yeah, I mean, you could just buy proxy rotation, right, through some of those more shady services and it will just rotate every request through a bunch of different residential IPs and you'll just never be blocked.
+
+[01:02:42.03] - Arvin Shivram
+Yeah, that's true. Yeah, exactly. So yeah, that was kind of what I was working on. But through this whole process of trying to like how I can get as much information as possible from a YouTube channel, I was looking through all the APIs. So at this point I found this Recto Proto thing, right? It's like this tool where I can just probe, I can use this JSON plus Protobuf and I can just probe like 1, 2, 3, 4, 5. I just send that in like array and send that to the server. It starts leaking a bunch of error messages which tell me the whole Protobuf message, right? So I can reconstruct the whole Protobuf that the request has. So this leaks so many internal things that would otherwise not be seen anywhere. So I was looking through all the channel endpoints and I found this one endpoint, like the get creator channel. So if you go to your YouTube channel and you, I think, click on the Earn tab or one of the tabs, it fetches information about your own channel. So it uses this get creator channels endpoint. But you can also use this to fetch other people's channels, but for restricted fields. You can supply specific fields that you want to fetch and it would only be like the public fields. So I was thinking, is there any sort of parameter I can use here? So I leaked, I used to wreck the proto and I leaked all the parameters and I saw something like include suspended is true. So that sounds like you would think it means the channels are banned, but that's not what it was. It just appended some random content owner association. I don't know what this was. So I was trying to figure that out. It added some content owner association with some ID. Right. So I started looking into this. What is a content owner? And I went through this whole rabbit hole. So turns out content owners are like this CMS account on YouTube. It's like this god mode account. They give it to a few enterprises and they essentially can strike anyone they want. They can monetize any channel they want. They can clean your content. It's a super sensitive tool. So this tool or whatever can link channels to it. Right. And this would leak the association with that tool. And the way these rights management tools work a lot is they have like, if I'm like a big company or whatever and I want to contact another company, I need to find your email or something to contact you, right? So they have this endpoint, like some endpoint to sort of get the email of the other company. But it's just a conflict. It's like a notification email. You set this as a public email. It's not like some sort of account email. You can put it as whatever, like @yourcompany.com, right? So it's just intended functionality. But so this requires a CMS account to do in the first place.. But then I looked deeper into YouTube, right? And I realized that, you know, the copyright match tool that a lot of YouTube channels have, so you can see like other people claim your content. Like, how does that work? It's probably just Content ID in the backend, right? So is it making a secret CMS account on the backend? And it sure was. So it made some like weird CMS account on the backend. It's like some, like, I guess they had to do that in order to make this hack work to get the Content ID working for that. So then I realized that I can leak the ID of that, right? And what is the content, the notification email set for that account? Is it like, because you can't set that anywhere, right? And it turns out it goes to the account email of the YouTube channel.
+
+[01:05:35.09] - Justin Gardner
+Nice, dude.
+
+[01:05:38.05] - Arvin Shivram
+So I was able to do this whole chain. I could sort of leak this initial ID, then I could convert this ID and leak the conflict notification email, which would be the channel's email. And then I had the email for basically any YouTube partner I wanted to.
+
+[01:05:52.65] - Justin Gardner
+Wow, dude. Yeah, that is a good chain. So there's that, there's that aspect there of like, how does this value get populated when the account is created automatically? I like that. So, so that's just trying, I'm always trying to take these principles and kind of bring them up to a higher level, I guess. So even in those situations where you can create, you know, let's say an email that's adjacent to, to the one associated with your specific account. If you can figure out a way for that to access it in its default state, right before the user has set it, then that might be associated with the main account. That's very good. That is an awesome principle.
+
+[01:06:29.84] - Arvin Shivram
+Exactly. Yeah. So that worked out here. So I think this got even higher bounty than the other one. I don't know. It's kind of confusing because their abuse VRP caps out. The first one got rewarded as abuse, but this one got rewarded as the normal VRP. So it got like 20K, but the other one was 10K. I mean, I don't know, man. Like, I feel like they should increase the rewards for the abuse.
+
+[01:06:47.84] - Justin Gardner
+Yeah, dude, I don't abuse. That is one of the things that we've, we've, we've kind of bumped up against with them often. I'll share this situation that I had where, um, you know, I was able to enumerate the phone number for any Google account. And, uh, but it was through essentially a ma— uh, a— what is the word I'm looking for? For a— not magnified, but like a brute force that is powerful across multiple requests, right? Like I can send, you know, 10,000 in one request. And so, you know, it was, it was pretty low traffic. It was like, you know, 60,000 to 100,000 requests to leak a full, a full, you know, 10-character phone number. But somehow that got put in abuse, even because of its like brute forcing something. I'm like, but this, at the end of the day, it still leaks the same phone number. Like, if there's an API that just responded with this phone number, then you would say it's Google VRP all day. But if I have to send, you know, 60,000 requests and to leak it, you know, then it, then it's abuse. I don't, I don't understand. It's a little bit of a weird setup they have there.
+
+[01:08:02.59] - Arvin Shivram
+But even if they wanted to do this, in my opinion, they should like match up the abuse rewards to be like equal to this, because you can have an abuse bug or abuse a bug or whatever, a super high impact, right? Like Like
+
+[01:08:11.90] - Justin Gardner
+Like Like you mentioned. So So
+
+[01:08:13.46] - Arvin Shivram
+So So it doesn't make sense that the rewards are capped at like $13K or $10K or something. But the, the VRP of the other, like Google VRP is, is not capped like that.
+
+[01:08:21.31] - Justin Gardner
+Yeah. Yeah.
+
+[01:08:22.42] - Arvin Shivram
+It's interesting.
+
+[01:08:22.77] - Joseph Thacker
+Yeah. I, I hate that. Like the, which maybe this is only the Gen AI stuff, but the API keys that gave internal access to internal AI models historically were treated as like abuse API leaks and they paid $500 for them. I will say The ones this year did pay better, but still for the type of, uh, impact there, again, I think that in Google VRP it would have paid a lot more. Like if you could just like take over a Google account that had access to those same models, they would pay you like $50K, right? But because it's like an abuse bug, then it's like capped at like $9K or $10K or something.
+
+[01:08:57.67] - Justin Gardner
+We've had the Google team on here to talk about that in the past and they're like, guys, abuse is for when, you know, Google VRP isn't going to pay you at all. And I'm like, see, I don't think that's true. Like, you know, cause I don't think that you would not pay me to be able to link the phone number of any arbitrary Google account. Right. Like that doesn't make any sense. So, uh, I don't know. There's definitely some, some, some tweaking that, that needs to be done there. And I'll say, you know, I've said it on the pod. I'll say it again. I often, almost every bug, to be honest, push it back to Google, you know? And I would say a lot of time they do. Adjust the bounty at the end of the day after more rationale. But I, uh, it is frustrating to me that I have to push it back every time and be like, no, this is this tier. No, this is this data sensitivity. No, this is not abuse. This is, you know, and it, it takes time, man. It's not an insubstantial amount of time that, uh, that you— it takes to do these debates.
+
+[01:09:56.75] - Arvin Shivram
+So yeah, it's super tiring as well because like you report a bug and you think that it's just gonna be smooth sailing, but nope. Yeah, you have to, you have to keep like fighting against guess and appeal it and talk back and forth. It's just super annoying. Like, you can't just report it and be happy. I think other, like, programs— I'm not too sure, but I'm pretty sure other programs would report the same— report the same thing as you mentioned as like a normal tier. It wouldn't be like abuse and then some lower payout. It's odd.
+
+[01:10:18.82] - Joseph Thacker
+It's odd, dude. Justin, you were just talking about how you leak phone numbers, and then I scroll down here in the doc and literally Brrrkatt has found the same thing back in early 2025.
+
+[01:10:27.82] - Justin Gardner
+Okay, all right. But he didn't have to do it via some con evaluated abuse way. He He
+
+[01:10:32.14] - Joseph Thacker
+He He did it in a real way. I don't know.
+
+[01:10:33.92] - Justin Gardner
+There's IPv6 bypass there. He might be brute forcing stuff too. What What
+
+[01:10:37.46] - Arvin Shivram
+What What is it? Is it brute force as well? Yeah, it's the same thing. No, but which year did you find it?
+
+[01:10:42.07] - Justin Gardner
+I found it like super long ago. I found it, uh, it must have been, it must have actually been late 2025, but mine was on—
+
+[01:10:49.68] - Arvin Shivram
+Oh wow.
+
+[01:10:50.64] - Justin Gardner
+Okay. So, uh, Richard—
+
+[01:10:52.19] - Arvin Shivram
+Oh, I know about that. No, but that's like— Yeah, that's like—
+
+[01:10:55.00] - Justin Gardner
+Yeah. Well, yes. Mute that too, please, Richard. But yeah, yeah. So So
+
+[01:11:01.31] - Arvin Shivram
+So So no idea about that. I just didn't report it because I didn't want to like— because it was part of my OSINT thing. Yeah, I could kind of like get that.
+
+[01:11:07.32] - Joseph Thacker
+You burned his OSINT tool, Justin.
+
+[01:11:08.82] - Arvin Shivram
+What are you doing?
+
+[01:11:09.78] - Joseph Thacker
+Sorry.
+
+[01:11:09.89] - Justin Gardner
+Well, I don't even— who knows if they even fixed it because it's abuse, you know, but whatever. So anyway, hit us with what you got for this phone leak.
+
+[01:11:19.40] - Arvin Shivram
+Okay. Yeah. So anyways, so this phone leak is for like the account recovery number, right? So basically everyone has this set pretty much. So I was looking through the JavaScript, all these Google pages, right? For some reason, some of them worked without JavaScript, which is kind of odd to me because in the modern web, right, you don't really see many things that work without JavaScript, right? So I was just playing around with it. I wasn't expecting anything. So I went to the login page. The login page didn't work, but for some reason, this forget password page or something, it just worked, right? And also it wasn't forget password, it's like forget username or something. Yeah. So this page is working and the forget username functionality is super interesting. So you can enter like a full name, right? And then you can enter like a phone number and it tells you if it matches together. So is there an account which has this full name and this phone number? And it worked without JavaScript. So this was like a huge red flag because if you think about it, JavaScript is how— okay, so do you know what BotGuard is?
+
+[01:12:11.35] - Justin Gardner
+Have you heard of it? Yeah, yeah, I've heard of BotGuard.
+
+[01:12:14.17] - Arvin Shivram
+So it's like Google's obfuscated proof of work, right? So they use this everywhere they want to stop botting because the idea with it is by the time you spend all this time to reverse it, there's a new challenge already. So it takes super hard to reverse it and it's a proof of work as well. So it takes a lot of compute power if you want to generate this token, right? So this is how they prevent it. But they can't do this without JavaScript. They need JavaScript to load the challenge, but everything seems to work without JavaScript. That was super sus. And I knew a bunch of these weird login pages that worked without JavaScript as well. Like youtube.com/tv, for the longest time, you could do a login without JavaScript, but they patched that. But this one wasn't patched, right? So I was looking at it and I was thinking, okay, so can I just brute force this? So, okay, this is something super interesting. Maybe you realize this, but many services like PayPal, they leak so many digits of your phone number. So if I go to paypal.com and if I do a password reset of your email, they'll show me, oh, do you want to text this number? Like +165 and then just, just 4 digits censored. Everything else is revealed.
+
+[01:13:12.78] - Joseph Thacker
+I've never thought about how that— this is probably some super useful bit of information for OSINTers.
+
+[01:13:17.22] - Arvin Shivram
+Yeah.
+
+[01:13:17.55] - Joseph Thacker
+But yes, of course we know exactly what you're talking about.
+
+[01:13:21.13] - Arvin Shivram
+If you think about it, if you chain enough services, you could probably just leak the whole phone number. Right. But But
+
+[01:13:26.18] - Joseph Thacker
+But But even if not, if you're doing some sort of like, um, node-based mapping of people, right? Because like, that's obviously a big problem is like linking profiles and stuff. Even those 3 digits might be useful enough to like link, like like 60% of profiles or something in like an OSINT database, which is kind of interesting.
+
+[01:13:42.18] - Arvin Shivram
+Yeah. So I was looking at how this works. So I could take like, I only need the brute force digits or something for the PayPal one. And that sounded super easy to do. So I wrote out some script or something and I was able to get it. So it worked. But then I wanted to see, okay, can I take it steps further? Can I just brute force the entire phone number? Right. But at this point there was, okay, there's a bunch of issues. Okay. So first of all, How do I know which country code your phone number is? Because there's so many different formats, right? It could be like +1, it could be +65 for Singapore. But turns out if you look at the password reset, it's like some form that they write the phone number in, like a bunch of dots, dots and a space and something like that. You can use that and reverse engineer and figure out which country it's from. So then you know which plus code it is. So that's the first way. And you can get the last digits from the password reset or whatever. It shows the last digits on Google., right? Then the other, the other problem was how do I get the full name? Because if I'm going to brute force this, I need to have a full name to fix on and then brute force it, right? But I didn't know a way to get a full name. So, but after I looked through like a bunch of weird services, okay, so for this OSINT thing, right, Google has been like trying to get rid of all these full name leaks for the longest time. So they've been stopping as many leaks as possible. So this is like a big thing that they tried doing in like, I don't remember exactly when, I think it was like April of 2024. They tried like duking all the different leaks, but I found for some reason you could share a Looker Studio report with somebody and then it leaks their full name or something if you share ownership.
+
+[01:15:09.14] - Justin Gardner
+Doesn't remember his mom's birthday, but remembers the date that they stopped doing the full name leaks on Google.
+
+[01:15:17.47] - Arvin Shivram
+So the reason this works is because if you think about it in Google, you can always see the Drive owner's name, right? Like any sort of Google Drive. So I think they have this consensus where if somebody owns a document, you can see the name of that person. But for some reason, they didn't consider the fact that Looker Studio doesn't require the other guy to accept ownership. You can just transfer it and he's not the owner. The guy doesn't have to prove it. For Drive, the guy has to approve it first. So this kind of allowed me to leak the full name of the person. Then I could chain it together. So I could now brute force it. So I had a whole working proof by PSC. I was like, ready to report it. And then I tried again. It just stops working. Like, what? They fixed it. I was screwed here. I had everything ready and they screwed it. But then I was like saying, okay, is there any way to kind of salvage this? Is there some bypass or something I can do? So I was super disappointed. I was looking through the JavaScript version of it and I saw they passed through some BotGuard parameter. So they passed in a real BotGuard token. So I was like, what if I do this on the Node.js endpoint? Like, if I pass in a BotGuard there, what happens there? So I just tried it for fun and it seemed to just work. It just didn't have any sort of limit. Like, you hit one barcode token, you could send infinite requests with that one token.
+
+[01:16:29.52] - Justin Gardner
+Wow, that's crazy.
+
+[01:16:31.56] - Arvin Shivram
+So I could compute it myself. I could do the proof of work once, then I could use the same token infinite times, then the whole thing worked again. So for any Google account, if you have a recovery phone number, which is everyone, you could just find that number, right? So that was pretty interesting. And I actually demoed this to a bunch of journalists because they were super interested in this because there's a lot of impact here for SIM swapping. If you think about it, if you have a guy's phone number, that's probably the hardest part of the SIM swap, right? You can just use a rogue telco provider or something and then SIM swap a guy and steal their crypto or whatever. So the phone number is the hardest part and this just gives you the phone number. So a bunch of journalists were interested in it and they ended up covering it. I think there's a bunch of articles on this. You could get any US number in like 1 hour. So I did a live demo to them as well. They sent me their email, I got the phone number and sent it back to them.
+
+[01:17:16.47] - Justin Gardner
+That's great, dude. Oh man, I love it when you get to do when you get to actually exploit it and show it. Did you report this one to Google as well, or is this one you decided to just go the full disclosure route on, or both?
+
+[01:17:30.39] - Arvin Shivram
+Oh, no, I reported to Google. But while the report was like, they haven't fixed it yet, I was able to do a demo to journalists, right? But I didn't give them the info about the exploit itself. I just kind of did it on their email because they could send it to it, right? So I had this whole embargo, and in the end, we released the article. And it was pretty, it was pretty cool. But, but yeah, this was reported under abuse. I think it was like $5K, $5K bounty.
+
+[01:17:52.68] - Justin Gardner
+Yeah, dude, see, that— does that not just feel off to you? Like, I feel like the value of a Google, you know, Google account to phone number mapping is like so much more valuable than that, uh, for exactly the reasons you said. Like, what a powerful exploitation tool for malicious actors.
+
+[01:18:13.52] - Arvin Shivram
+Exactly. I don't know why they did that. I guess it's because of the abuse problem, but, but oh well, I mean the same thing with Google VRP, right? Would be like, it would be like probably like a $30K or something like that. Totally.
+
+[01:18:24.26] - Justin Gardner
+Right. Wow, dude. Very good. Yeah, dude. I gotta go back and look at that report again from, from before and be like, and cause I went back and forth to them like 4 or 5 times about it, but they didn't keep it at, pull it out of abuse. So, all right, man. I think the last one, or maybe we'll do one more section before we cut for this week. but, um, I want to hear you talk about the discovery docs and your experiences with that, because I just, speaking personally, Google ran a grant back, I think end of 2024, I want to say, where, uh, they gave a bunch of discovery docs, you know, to the, to the hackers and the hackers, you know, were able to use these to attack. And we found out that you can get these actually from hitting, you know, $discovery REST. But then since then there has been a bunch of changes to that after my eyes were opened. And, you know, it's not quite as simple anymore. So what kind of tips and tricks do you have for Discovery docs?
+
+[01:19:22.25] - Arvin Shivram
+So for this, okay, for Discovery docs in general, I wasn't actually part of this grant, right? So I didn't have access to the Discovery docs or anything, but I found it through an entirely different approach. Like I was just looking through this OSINT stuff and I was looking at the People API because this People API was super interesting. You could look up a Gaia user and see a bunch of stuff about it. You could look up a guide ID. So I was also looking at that, but I couldn't figure out all the parameters from just guessing from the request. I had to get a doc. So the doc outlined everything, had comments, everything. So this is kind of how I found Discovery docs. Like back in the day, you could just do— I mean, back in the day, I mean like 2024, you could just do like $discovery/rest and it would just give you a doc. But recently, I mean, I think within the last year or so, they've nuked all of this. So you can't just— because they had some like scandal or something that was related to like Content Warehouse API. So they accidentally released a bunch of protos and like they also started locking on discovery documents because of it. And yeah, it was a big thing. But, but if you're smart, there's still a way around it. Okay. But I'm not going to say here, but if you can figure it out, it's possible. You can still get a discovery document from many APIs.
+
+[01:20:21.51] - Justin Gardner
+Interesting.
+
+[01:20:21.82] - Arvin Shivram
+Okay. Just think about, think about the RPC angle of it. Okay.
+
+[01:20:25.89] - Justin Gardner
+Hmm. I'm going to churn on that. I'm going to churn on that a bit.
+
+[01:20:30.92] - Arvin Shivram
+So yeah, anyways, I was looking through the Discovery document, but the thing is you need the keys to access them, right? You can't just access the Discovery document by itself. A lot of them require an API key. So I spent this time going through all the different various sites. I was doing this manually at first, right? I would just go to all the different sites, capture all the keys I could get, and I had this database. It was like a humble database of like 200 keys. And I was able to— sort of leak a bunch of documents. And that's when I published an article as well. I wrote the whole thing about the discovery documents. I didn't even utilize it that much. In hindsight, I should have done more stuff there with hacking it, but I just kind of left it there and I did other stuff. So that's kind of like the whole discovery document thing I did at first. And for YouTube, the discovery document was interesting because you can't just do /discoveries/rest because they did a weird thing, a weird rule where they blocked all get request or something. Like, you could— you can't do any GET request, but the GET request had to be done for this discovery document to work, right? Because it's /discoveries/rest. So how did I get— how did I get that working? So it turns out you could use some like X-HTTP method override, so you can send a POST and then convert it to a GET, and it just leaks the document. So I had— it was a super big document. In fact, this is the biggest discovery document that exists in Google. It's the YouTube document. So it had all kinds of APIs inside, and I was able to like trace back and find that YouTube exploit that I had or include suspended. I saw it there. And I'm sure there's still tons of exploits you can find on YouTube. If you look at this doc, there's like hundreds of methods. It's super big. There's even this whole testing CTP inner tube endpoints. They're super suspicious. Maybe you should look at that.
+
+[01:22:04.28] - Justin Gardner
+Dude, whenever you get one of those docs and you start parsing through it, it's like I just feel like a kid in a candy shop. I'm like, oh man, I can't wait to you know, work through all of the functionality of these things. When, when you get a primitive like this, when you get a, a way to get insight into these APIs, uh, on any target in a reliable fashion, that is such a high signal that you need to be paying very, very, very close attention there.
+
+[01:22:34.51] - Arvin Shivram
+Exactly.
+
+[01:22:35.14] - Justin Gardner
+Yeah.
+
+[01:22:36.40] - Joseph Thacker
+On Google specifically, it is a little overwhelming though.
+
+[01:22:38.97] - Arvin Shivram
+Oh, for sure. For sure.
+
+[01:22:41.48] - Justin Gardner
+100%. Um, yeah, so I think the Discovery docs, they're in this proprietary format, but there's also conversions that you can do to, um, like Swagger and stuff like that. Have you had, uh, is that what you use, or do you parse out the actual raw Discovery doc itself and, and put it into a format that's readable for you?
+
+[01:23:00.96] - Arvin Shivram
+So I wouldn't actually do that. I wouldn't actually convert it to Swagger because you're going to lose a lot of stuff. Exactly. Because the way the Windows Documents are formed, it's like Protobuf messages, they're converted to JSON. Right. It's not a standard Swagger format because it's super weird. It's a Google's own format. If you do this, you're going to lose a lot of comments or enums or something like that. You don't want to lose it. You want to parse it exactly like it is. So yeah, that's something to know.
+
+[01:23:23.10] - Justin Gardner
+Do you have a preferred method of doing that or do you just have your custom solution?
+
+[01:23:29.38] - Arvin Shivram
+So I built a whole front end for doing this. I have a front end where I can upload any Discovery document and it shows whole thing. I'll explain more about that later on. But yeah, that's kind of how I parse it myself. I don't actually— I mean, you can probably make some custom tool or command line tool or whatever, but frontend was the easiest for me because I wanted to build a way I can sort of upload a discovery document, list all the methods, see which one I want, have first-party auth already enabled for it, copy it, and immediately start testing it. So I built out this whole thing.
+
+[01:23:57.31] - Justin Gardner
+Very nice, man. Yeah, I definitely want to double-click into that. Let's, let's see. Uh, we've got one more thing left, but before I think we're gonna cut for today, um, do you wanna talk about Google API hacking at BugSwap Mexico, uh, in this, in this one, or should we push that to next week?
+
+[01:24:14.25] - Arvin Shivram
+Next week. Okay, let's do it.
+
+[01:24:15.78] - Justin Gardner
+So, all right, that's a wrap, dude. Thanks for coming on this episode. We're gonna, we're gonna tease, uh, next week's episode. Um, you know, there's, there's a lot of really, really crazy shit that BruteCat has been doing on Google, and he's gonna show how he uses his AI to hack the APIs that are associated with Google, take advantage of these discovery docs and API key correlations and put all that together to net over $500K in bounties. So, you know, we don't— we try to avoid part 1, part 2 sort of situations on CTBB, but I think this time we're going to— we're going to make exceptions. So So
+
+[01:24:50.05] - Joseph Thacker
+So So he basically did what me and Justin did, but way better.
+
+[01:24:52.90] - Justin Gardner
+Yeah, but like, you know, 5 times better.
+
+[01:24:55.64] - Joseph Thacker
+Way better.
+
+[01:24:56.36] - Arvin Shivram
+Yeah, that's amazing. Sweet.
+
+[01:24:58.96] - Justin Gardner
+All right, well, we'll see you guys next week.
+
+[01:25:00.11] - Arvin Shivram
+Peace.
+
+[01:25:01.61] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more critical thinking content or if you want to support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild. If you're a full-time hunter, it's a great time. Trust me. I'll see you there.

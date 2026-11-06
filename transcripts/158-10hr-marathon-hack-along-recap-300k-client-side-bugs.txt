@@ -1,0 +1,611 @@
+Episode 158: 10hr Marathon Hack-Along Recap + $300k Client-side Bugs
+Source: https://www.criticalthinkingpodcast.io/episode-158-10hr-marathon-hack-along-recap-300k-client-side-bugs/
+======================================================================
+
+Title: Transcript - Thu, 22 Jan 2026 15:58:18 GMT
+Date: Thu, 22 Jan 2026 15:58:18 GMT, Duration: [00:58:32.42]
+[00:00:01.12] - Justin Gardner
+And actually that's a really interesting point. You know, I think after you get in the live hacking event scene and you've seen like show and tells of other people's bugs and you've like went and talked to them a little bit, you kind of have like a Rolodex, for lack of a better word of like, oh, this bug, this person.
+
+[00:00:38.07] - Justin Gardner
+Sup hackers? We've got an exciting announcement. Threat Locker Zero Trust World Conference is back in 2026. It's going to be March 4th to March 6th in Orlando, Florida. It's freaking gorgeous down there too during that time. And yours truly is going to be there. I'm going to be there on Wednesday, March 4th. I'm going to be leading a hands on hacking workshop on. I'll be one of many. So there's lots of fun hacking workshops you can get involved in and it's going to be a great time. There's tons of sessions, workshops, other people there to network with. It's going to be a great conference. So if you're local to Orlando or if you're up for the travel, this is a great way for you to use that employer training budget that you've got. Also for critical thinking listeners, there's a discount of $200 off. You can use the code ZTW, right, for Zero Trust World, CTBB 26, ZTW CTB 26. When you register, that'll be on the screen and in the description as well. It's going to be a great time. I hope to see you guys there. All right, let's go back to the show. Yo, dude, that was a crazy hack along we had in the Discord yesterday.
+
+[00:01:40.70] - Joseph Thacker
+Yeah, it was. Yeah. I think, you know, obviously we talked about me doing hack alongs last year and we didn't actually do any, so. But it is nice we have a masterclass coming up. I'm teaching a masterclass on FFUF this this month. But d my brain felt like absolute spaghetti while I was doing it. It's so hard, really hard. I think that I definitely would have put way more time into prep had I thought that had. It felt more like normal hacking. Like I definitely. It didn't feel like normal hacking at all. It felt like I was just like totally scatterbrained. Like because it's like you can't keep a single train of thought on what you're hacking on because you're switching to, well, one you're trying to think like oh, I need to talk. Then you're trying to switch and reach out. And then you also have other people talking to you like in the form of. Which is actually helpful, right? Having the other kind of co host at the time talking to you to bounce ideas off of. But man, too many input streams to my brain.
+
+[00:02:31.13] - Justin Gardner
+Yeah, so. So for any of you guys that didn't catch it in the discord, we did a charity hack along a, a 10 hour long marathon hack along in the CTPB discord. And the way that we had it structured is we had five people doing two hours each and we, we tried to have at least one other like sort of co host there while the person's hacking. Because when for any of you guys that have not actually like tried to live narrate your hacking while you're hacking, it is so hard. It is hard.
+
+[00:03:02.94] - Joseph Thacker
+It's much harder than expected.
+
+[00:03:04.34] - Justin Gardner
+Extremely hard. So shout out to Monke and Exorcist, doctor and Bus for, for jumping in there along with me and Rezo to do that. And yeah, I mean the hack along team exercise, Doctor and Bus factor and I, you know, we've had our reps so we know what to expect going into it. But you and Monkey were cutting your teeth on this, I think.
+
+[00:03:27.43] - Joseph Thacker
+My goodness, it was rough. Yeah, it's. Yeah, I mean you have to learn, you have to learn at some point. But yeah, you're all sections were very clean in regards to it being like clearly good technical output and staying on topic with one thing and achieving one goal and so. Yeah.
+
+[00:03:43.11] - Justin Gardner
+Yeah. Well the handoff between Doc and I was great because you know, he did, he did a lot of, he did a lot of prep work in his first two hours. You know, found this amazing scope, got things set up, figured out a threat model and then you know, sussed most of the exploit and I just kind of got there, you know, and was able to close it out in the last like, you know, in my two hours. And then we got those, we got two reports in from that, from those two and then we kept plugging along and I think we'll get one more. We're like very close to getting our third like full exploit submitted for the, for the charity hack along. So it was exciting, man. I do have some technical takeaways. Did you have any that you wanted to bring up or should I just jump right into mine?
+
+[00:04:25.56] - Joseph Thacker
+Yeah, go ahead, jump into yours. But I do have some things to bring up about it.
+
+[00:04:29.27] - Justin Gardner
+Yeah. Okay. So you know, first thing up here was when you are doing so one of the bugs that we found, you know, without going into too much detail, was a post message based race condition. Okay. So what was happening is there was an iframe being loaded on the page and the top level page would then send a sort of initialization message down to the iframe. Okay. And what we could do in that environment was we could race condition it from a third party page from an attacker controlled page and send our post message and then hijack control of the iframe. The problem is when you do a window open, a lot of times it will throttle your JS execution environment and you just won't be able to either you won't be able to send the messages from your attacker control page because it's not the one that's being displayed. Yeah, dude, we both got the critical drinking mug. Let's go. Or you will not be able to receive messages as quickly because that page is in the background. Right?
+
+[00:05:37.50] - Joseph Thacker
+Yeah.
+
+[00:05:37.98] - Justin Gardner
+So it's a little bit of a problem and we fought with it for a little while. And the solution that we came up with for this actually is do window dot open with a width and height parameter which will create like a pop up window, you know, that has that window open and also the tab behind it open. Right. And then both windows are sort of visible to the user. So Chrome is like, oh, I need to make sure that both of them have like a fully functional JS execution environment.
+
+[00:06:05.37] - Joseph Thacker
+Yeah.
+
+[00:06:05.81] - Justin Gardner
+And then the, the post messages go brrr. And like, you know, you see 10,000, you know, post messages sent immediately.
+
+[00:06:13.29] - Joseph Thacker
+So is that like a, was that like a new tactic that you hadn't used before?
+
+[00:06:16.56] - Justin Gardner
+I. I hadn't seen it before. I'm sure somebody's done it, you know, but like that was just us kind of ideating in the moment, you know, and observing that our execution environment was getting throttled. So that was a fun takeaway for me.
+
+[00:06:29.85] - Joseph Thacker
+Yeah, actually, so as you were talking, I was like, oh man, there are lots of good takeaways. Like, basically things that I thought were exciting or interesting while we were hacking are things that our audience would think are really exciting. So on this target, there was this kind of neat way that you could get half auth. And I don't know if you were paying attention during that time. So I'll go ahead and tell you about it and you might think it's really interesting. Yeah. So if you tried to log in, let's say we were hacking on example.com, if you. But it's a SaaS platform. If you try to log in with an email address that is like resoxample.com it would take you to their okta page instead of the traditional login flow. Okay, now when you now when you Navigate back to example.com and click Login again. If you log in with any other email you are now in a different state because you got some sort of partial cookies from that first going to okta. And what that allowed us to do was we could create, we could, we could log in under any email. So I was logged into the SaaS app as razo google.com as like in some sort of partial auth state. Right. And we didn't end up finding a bug with us. I almost guarantee there's bugs here because it feels so wrong and so weird I'm sure but, but I thought it'd be good for the listener to think just like how I threat model it. So my mind immediately went to what works and what doesn't hear and are there any places where there are like recommended teammates or recommended, you know, you know, documents or recommended things you can join in case there's any kind of protection that are domain based. Now all of a sudden you're kind of like past that and this, this SaaS company we were hacking on has a parent SaaS company that they were acquired by. And so if you actually went to manage your profile it would take you to that parent SaaS website still logged in as that partial auth as@google.com.
+
+[00:08:14.81] - Justin Gardner
+Youm.
+
+[00:08:15.10] - Joseph Thacker
+Would think this is fascinating. We should actually look at this later because I think you would think it's really interesting. So but what we did, and I think this is like a good takeaway for the listener is one do weird stuff like that. If you can ever get into a part auth state it's obviously very valuable but then it's like what do you do next? So what, what I did next, which I think was the right move was basically pull all of the API endpoints and all of the even like single page app endpoints and then basically try to nav to them or fuzz them with that partial auth like with the cookies and the bearer tokens that we had to see. Like because let's say you know, example.com or like let's say@google.com let's say that I could pull other members from at Google or other documents from at Google route because I have auth where I actually have like a signed cookie or token that is signed with an at Google email address in There. And so that may give me some sort of access to at Google data inside of this SaaS platform. And so anyways, I went down that route and I thought it was really interesting and yeah, we should look at it later, dude.
+
+[00:09:11.25] - Justin Gardner
+Totally. And whenever you say this bug like three, three hackers come to my mind. Okay, you've got oxacb, right? He's done a ton of stuff with this sort of exploit. You've got cash money and erosion, right. These guys are like the, the you know, crazy dude.
+
+[00:09:28.89] - Joseph Thacker
+Here's how you want to explain.
+
+[00:09:30.65] - Justin Gardner
+Yeah, so you know, and actually that's a really interesting point. You know, I think after you get in the live hacking event scene and you've seen like show and tells of other people's bugs and you've like went and talked to them a little bit, you kind of have like a Rolodex for lack of a better word of like oh, this bug, this person, you know, and, and so that's definitely some sketchy environment and functionality you got there. And I've seen people manipulate that so many times. Especially like you said in shared auth environments, right, where you are able to like take your partial auth from this app and then like single sign on into some other app where they just sign a JWT and yeet it over to the other, the other app. Right. And then they have a lot less context.
+
+[00:10:09.84] - Joseph Thacker
+Yeah, yeah. Like Kieran was convinced that it wouldn't really work like to like do like login with other places with SSO because we didn't have like true SSO. But that parent SaaS company, they own lots of little companies or lots of little products. When I went to every one of them, I had partial off on all of them. So there was some sort of parent off there and then the. Yeah, I don't know I was gonna.
+
+[00:10:28.62] - Justin Gardner
+Say, but it's, it's, it's, it's tricky man. It's a fun bug to exploit and definitely a good attack vector. And that, that was one of the things that was really cool about the hack along too is like Doc did a bunch of prep, you know, beforehand to find us really interesting scope, which I really appreciated, you know, like he came in like hey look, I started looking at this company, this is the scope we need to look at. And boy was he right, you know.
+
+[00:10:51.24] - Joseph Thacker
+Yeah.
+
+[00:10:51.51] - Justin Gardner
+And because of that, you know, we were able to pop two bugs in like three hours, you know, which was really cool. So shout out to Doc and Bus for putting it together. Like our hack along team is amazing. And, and yeah, it just like you said that being able to narrate while you're hacking is such a unique skill and those guys are really, really cranking out some reps in that.
+
+[00:11:13.76] - Joseph Thacker
+Yeah. And Yuji too, for helping us organize all of it. Yeah. So it was bus idea. He usually helped orchestrate things and we got it pulled off.
+
+[00:11:20.09] - Justin Gardner
+But dude, I would like to bring. Side note, but I would like to bring the whole team on the pod at some point. Dude, I feel like the pod needs to meet like Richard and Yuji and.
+
+[00:11:29.61] - Joseph Thacker
+Yes, that'd be a really good episode.
+
+[00:11:31.69] - Justin Gardner
+The whole squad.
+
+[00:11:32.97] - Joseph Thacker
+If we think it'd be too much right. At once. We could just like do segments. Right? It's like do a UG segment, do a Richard segment. That'd be really cool.
+
+[00:11:38.61] - Justin Gardner
+Yeah, we could, we could. Or we could like do a. Maybe we'll do like a behind the scenes episode of the pod for, for the, the critical thinkers on.
+
+[00:11:46.21] - Joseph Thacker
+Talk about how we're doing prep and all the things. That'd be good.
+
+[00:11:48.37] - Justin Gardner
+Yeah, that'd be fun. All right, so back to the takeaways. The other takeaway is an interesting code pattern that I saw here. And this is the one that allowed. This is one of the code patterns that allowed us to do the race condition exploit. There is this code pattern that I saw in the JS where it says, okay, if the message is coming from a certain window reference, then allow it through. Or if they have the secret. Right. And then the flow would be the secret would always come from that allowed frame reference and then it would set the secret and then anybody who had the secret could talk to it. Right. The thing is, because you've got an OR statement there, even if you're sending from another frame reference, right, it's going to fail that first condition. It's going to go to the second condition and see if you have the secret. Well, if the top level frame hasn't set the secret yet, the secret defaults to undefined. So if you just don't provide a secret, then it just lets you right through. Right. So yeah, I just think that's a really interesting pattern. Anytime you see a secret being set, you know, as a part of the flow, you've got to think about how are they doing auth before that set. Yeah, right. And. And you know, maybe there's a, a precondition. Right. You know, the frame reference thing. But if they're also checking the secret, you know, then what does that secret initialize to is a really good, good pattern and a way to get off bypass.
+
+[00:13:20.19] - Joseph Thacker
+Dude, this would be a little bit meta. And I don't know, there's like a very small subset of people that would really enjoy it. I would love to watch it, though. I think it'd be interesting to see you watch back your hack along just like certain segments, like when you were scrolling through JS code and walk the, walk the audience through what's going through your mind. Because there were like two or three times whenever you were just like, you know, in Chrome dev tools and you were looking at the, at the JavaScript and you were like, oh, I want to look at that. Oh, I want to look at that later. And it's like, you didn't tell why and that's fine, right? I mean, it's impossible to articulate everything, but in both those moments I was like. Because that happened over the span of like 10 seconds. You said that two or three times. And I was like, what about this? JavaScript is interesting to him. Like, I know he's not able to fully grok everything that JavaScript is doing in that three seconds. Like, you know, you can kind of follow along, but there was clearly indicators there of things that were very interesting to you that almost made your, like, eyes go wide. And I don't think it was like sources or sinks. It wasn't typical stuff that most people like, key in on. And so I was really curious what was going through your head at that moment. And so it'd be interesting if you do, because there's so many YouTube videos where people do like, watch alongs or whatever.
+
+[00:14:22.95] - Justin Gardner
+Yeah, it's kind of like, you know, with those video game people, right. Where they'll do like, like vod. Vod reviews or something. You'll have like, like professional player watch the VOD from like the, the, you know.
+
+[00:14:33.59] - Joseph Thacker
+Yes. And they'll say, at this point, he's looking right here. Because when that popped up, he knew he needed to skip those three steps or whatever.
+
+[00:14:39.99] - Justin Gardner
+VOD reviews for hacking. That's an interesting concept. Maybe we'll, we'll toy around with that in the, in the discord. Huh? That's fun.
+
+[00:14:46.95] - Joseph Thacker
+I like, because, like, it's hard for you to articulate everything that's going through your head when you're doing it. But in retrospect, when you can go as slow as you want, you can say like, oh, yeah, right here. This was the key piece of information that made me think this was vulnerable or what have you.
+
+[00:14:58.12] - Justin Gardner
+Yeah. Or if, you know, maybe even someone from the community was like, hey, here's A VOD of me trying to do a hack along, essentially, right. Narrating my own methodology. And I can say, okay, well you know, here you're, you're burning time going down this route, but you really should have just validated the attack vector first by doing this, you know, and then you would have seen that that wasn't going to work and then you would skip it, you know, and then you would have saved all that time. Right. So that's a, I mean, especially with client side stuff that's doable. With server side stuff it's like, okay, you're just churning through attack vectors. You know, most of the time I.
+
+[00:15:28.62] - Joseph Thacker
+Was, okay, I'm so glad you said that. That was my next point. So it's really interesting. I felt like that was bad hacking. Maybe not bad hacking, but less interesting hacking. But it's kind of what you all do with front end too. But I felt, I felt self conscious about it. Like, like just like, let's say, you know, I'm doing a hack along and I'm like looking at a request and replay and I'm just like, modify parameter, send it, modify parameter, send it, go down, change the body, send it. Right? And like some of those things I could automate with Shift if they're like very rote. And some of those things you can send to automate if it's like, oh, just try a whole bunch of special characters in this one spot. But a lot of times it's not that. It's like, let me change this field, let me add a field, let me change the path, you know, let me manipulate this header or whatever. And I think. So do you think that there are different styles that are more conducive to hack alongs or like life hacking or do you think I just need to like get over that and that's actually interesting enough for the audience and it should be done.
+
+[00:16:21.92] - Justin Gardner
+Yeah, well, certainly I think there's both, but I think there's tiers to it as well. Like for example, Matt brown stuff on YouTube with hardware hacking. Like he's got such a great niche for that because you can take it the whole, the whole way. Right. The problem with our hack alongs is like we had to do multiple times yesterday. You get to a point where it's too close to an actual live vulnerability and you've got to cut the stream for a couple minutes and submit the report. Right. You know, whereas with, you know, with Matt Brown stuff you can do, you know, hardware hack alongs on a device that you, you know, you own, that's your property and you can show how it's done. You know, so there's that. And then I think, you know, client side stuff is a little bit in the middle. Certainly server side stuff is a lot of like, all right, try that attack vector, try that attack vector. And churning through that is really good for the listeners, I think, to see. Um, but client side stuff is a little bit more like, I need this primitive, I need this primitive. Here's the code, right? Here's why this isn't going to work. Here's why this could work, you know, So I think you're able to justify your, your, you know, hacker intuition or your methodology a little bit more on client side because you have the source code.
+
+[00:17:27.69] - Joseph Thacker
+Because it's a little more open source. Yeah, basically open source is, or I guess white box hacking is a little bit more interesting because there's more aspects to it instead of just like fire and forget. Fire and forget, fire and forget.
+
+[00:17:38.68] - Justin Gardner
+Exactly, exactly. Yeah, that's kind of what I think about it. All right, last one here was, I wanted to shout this out. One of the areas that I think my eyes were open to during a Google Live hacking event is vulnerabilities in the permission settings that a browser has for peripherals. So your camera, your microphone, etc. Sometimes on many websites, we delegate those permissions to the website. Always. We're just like, you know what, fine, we're on Riverside. Riverside, you can always access my camera and my microphone. You don't need to ask every single time. The problem with that is when these sites then further delegate those permissions down to an attacker controlled iframe. And I saw this in a Google Live hacking event, really, really interesting stuff. And we were able to exploit this in the hack along as well, where you're able to craft an iframe such that the allow HTML attribute on iframe is set to microphone and camera. And then if that iframe is embedded in a page that has that access the microphone and camera, or microphone and camera access perpetually, then that access will be delegated down to the attacker control diaphragm. So essentially what you can do is you can just redirect the user to a page where your attacker controlled iframe exists, hijack those permissions, and take a picture or record from the microphone.
+
+[00:19:11.32] - Joseph Thacker
+Do you think that in an ideal Chrome architecture that that wouldn't be allowed, that iframe shouldn't be able to inherit it, that it would actually reprompt the user? Like, hey, this iframe is trying to load those permissions. Do you actually want to approve or deny again?
+
+[00:19:25.50] - Justin Gardner
+I do, I do. I don't.
+
+[00:19:26.98] - Joseph Thacker
+That feels right to me.
+
+[00:19:29.09] - Justin Gardner
+We're gonna have to bleep that, Richard. Bleep that. I don't think any target should be able to delegate your camera and microphone permissions to a third party without your permission. Right, I agree, yes.
+
+[00:19:43.81] - Joseph Thacker
+I mean, I don't think they're gonna fix that anytime soon. So go use this on all your bug bounty targets. But in general, I think that's the right design.
+
+[00:19:50.23] - Justin Gardner
+Yeah, it's legacy now, you know, they can't, they can't fix it unfortunately. You know, the backwards compatibility is going to break it, but yeah, it's a little bit unfortunate for sure.
+
+[00:19:59.91] - Joseph Thacker
+Is this something you can actually grep for through JavaScript files? Can we create like a scanner for this almost? It seems like it could be, yeah.
+
+[00:20:07.47] - Justin Gardner
+I mean, just kind of using your understanding of the business logic also would work where you can say, okay, you know, this website does get access to my camera and my microphone. Right. So you know, does it, does it load up? Maybe I should look for there. Yeah, exactly. And, and do those iframes have the allow attribute? Because you know, the thing is, is like that allow attributes pretty rare but sometimes they just like throw it on there and I don't think they understand, you know, what the implications of that are. And you know, maybe they'll come back and say, hey, that's intended. But you know the PSE I built was pretty convincing, right? Where it's like.
+
+[00:20:45.27] - Joseph Thacker
+Yeah, and that just doesn't make any sense if you're in like an ecosystem where it's user built apps.
+
+[00:20:49.59] - Justin Gardner
+Yeah, exactly.
+
+[00:20:50.51] - Joseph Thacker
+Yeah. Even if, even if it's only company accounts, it's like not every company can be trusted. Right?
+
+[00:20:56.07] - Justin Gardner
+Yeah, exactly, exactly. Okay, so that's a wrap on the, you know, hackalong recap. Did you, did you have anything else from the hackalong?
+
+[00:21:06.72] - Joseph Thacker
+No, the one thing I was going to say was man, I thought the thing that I missed that I forgot earlier, I re remembered, but I've already forgotten it again so we'll move on. Dude, yesterday was a complete blur. Which we did have like a kids appointment in the morning. That was like a lot of information and all the things. But yeah, I mean after the hackalong last night we actually had like Bible study last night. I couldn't think. I kept doing this exact same thing where I started to think of things and they would just evaporate out of my head and I'M blaming the hackalong.
+
+[00:21:35.09] - Justin Gardner
+For all of it. That's so validating, dude. That is so validating to hear because I like left that yesterday and I. And. But you know, and then there were a lot of us there that were there for like four or six hours or whatever.
+
+[00:21:45.58] - Joseph Thacker
+But like, it doesn't help that I was listening in way for a long time before I joined.
+
+[00:21:49.43] - Justin Gardner
+Right, exactly. And then, and then you, you know, you leave and you're like, okay, now I just gotta like. Essentially I realized, hey, my brain is gonna be fried, so I'm just gonna go work on a bunch of like admin tasks, you know, and just did a bunch of like boring shit for the rest of the day. Um, okay, so if you want to catch that charity hack along that's in the Critical Thinkers Discord CTB Show/ Discord, you can join and get access to that recording. It should be up by the time this episode airs. Some of it.
+
+[00:22:16.78] - Joseph Thacker
+Some of it's scuffed warning, but Justin's section is not. So that's the most important part.
+
+[00:22:21.34] - Justin Gardner
+Yes, that's true. All right, let's jump into some of the other content I did want to cover. Share this window. Yeah, that works. I came across an old Write up by InsertScript who is an excellent client side hacker and it taught me something about post messages which is always something interesting to me. I did not know that you can get E source on a postmessage event to equal null. I know that you could get the origin to equal null by putting it in a sandboxed iframe, but I did not know you could get E source to equal null. So the way that you do this. And also I'll give credit where credit is due here. This technique was discovered by Security mb, who I believe is a googler.
+
+[00:23:15.85] - Joseph Thacker
+Six years ago.
+
+[00:23:17.61] - Justin Gardner
+Yeah, no, it was a long time ago. Yeah, but it's still relevant. And the way you do that is you do an iframe with no source and then you do frame zero eval and you run your code and then immediately after that you do inner HTML of that frame to something else. And what that will do somehow is that post message that gets sent will have event source null, which is really helpful for scenarios where. And this ties back into the hackalong where you've got. It's being compared to something that is uninitialized because null is equal. Equal to undefined.
+
+[00:23:59.36] - Joseph Thacker
+Undefined.
+
+[00:24:00.65] - Justin Gardner
+In the JavaScript world, if you're seeing a loose comparison, then you can utilize this to bypass event source checks. Which is one of the most robust checks in the post message world. So very cool technique here from Security mb.
+
+[00:24:17.94] - Joseph Thacker
+Yeah, that's awesome. How did you find that?
+
+[00:24:20.90] - Justin Gardner
+I think somebody, I think insert script tweeted out a like poc of it. He's like, yeah, just, you know, I wrote, wrote this up, but I hadn't done a poc. So here's the poc. And, and so I kind of went back to that and saw it and I thought that was pretty cool to shout out on the pod.
+
+[00:24:36.90] - Joseph Thacker
+These little gems, these little nuggets are what I want my like AI assistant to basically be able to reference when I'm asking questions about like tough stuff like this, you know.
+
+[00:24:47.54] - Justin Gardner
+Yeah, well, I, I think, you know, I think what Bus is doing with like bug bounty today if we can just go back and get like a mass reference of every single like bug bounty related blog or something like that, I mean that's just going to be such a valuable source for AI to just slurp it up, you know. Did you like my sound effect there with that?
+
+[00:25:09.76] - Joseph Thacker
+I did like that.
+
+[00:25:13.45] - Justin Gardner
+Okay. Oh, I did have something else here. I realized also that I not only am I using fuff like a caveman. Thank you. You know, social media team that made that the headline of a YouTube video that went like did numbers, but also I realized that I am hijacking the body of iframes like a caveman. Because if it's same origin, you can just do what he does right here. You can just do frames eval. Right. How did you do that in the past? What I would do is like for example, the open face iframe sandwich scenario where you've got an attacker controlled page with an iframed third party with xss and then you've got a victim page with an iframed third party. Right. And then you reach over with your XSS into that victim page and control that iframe. The way I was doing that was just reaching over and then doing something like writing an SVG with an onload handler into that dom. But really, you know, because it's same origin, you can just reach over to the frame reference and do dot eval.
+
+[00:26:16.27] - Joseph Thacker
+Eval.
+
+[00:26:16.79] - Justin Gardner
+Yeah, yeah. And it will just run the code over there. So I realized that the other day and then I saw him using this technique here and it reminded me to shout that out on the pod just in case anybody else was doing it the dumb way like I was.
+
+[00:26:29.36] - Joseph Thacker
+There are probably so many things where people are just using tools suboptimally and stuff. Like that. I think that this is one huge use case for things like ctbb. It's just like you would never know if you didn't hear someone else say how they do it.
+
+[00:26:41.84] - Justin Gardner
+Totally, totally. And so on the same vein, we also have he tweeted out another PoC insertscripted and this one is really useful in CSP environment, which of course, you know, I love. I love CSP T. One of the controls that the browsers have been putting in place is that if you redirect off of a CSP T, sometimes it'll drop the authorization header if you're going to a different host. Right? Which is super annoying because you're like, you know, you get the CSP T you hit, you finally find a redirect, you hit your host, and you're hoping for just an easy ATO by snagging that authorization header. However, here we can see right here. This page showcases that the authorization header is dropped by modern browsers in redirects, but other custom headers like xc, Serve, Token, or not. This behavior is relevant for client side path traversals where the subsequent API request uses the Authorization header or other custom headers and the API suffers from an open redirect. The rule is if the original request is not targeting a same origin endpoint, include the authorization header in case of a redirect. If the original request is targeting the same origin endpoint, drop the authorization header in case of a redirect. So an origin is strict, Right? So if you're on www.site.com, you've got a CSBT to API.site.com. right. If you hit a redirect, the authorization header will be included because that's not same origin. Right. It's a little tricky because redirects are less common on APIs than they are on main domains.
+
+[00:28:14.31] - Joseph Thacker
+Yeah.
+
+[00:28:14.55] - Justin Gardner
+But useful nonetheless to know that you're not always just screwed with if it's in the authorization header. If it's. If it's, you know, hitting a origin where you know that it's not same as the originating origin, then you will actually be able to get the authorization header through the redirect.
+
+[00:28:32.72] - Joseph Thacker
+So you do want your redirect to live on the domain that you're trying to pass.
+
+[00:28:38.64] - Justin Gardner
+Don't want it to.
+
+[00:28:40.08] - Joseph Thacker
+Oh, you don't? So in this case, in your example, you just said you want the redirect on API.or you want the redirect on www.
+
+[00:28:47.36] - Justin Gardner
+You want it on API.gotcha. because that's not same origin as www, right? Does that make sense.
+
+[00:28:52.56] - Joseph Thacker
+Why would it drop it on same origin? That feels like, kind of weird. You would think. I don't know, just like intuitively, you.
+
+[00:28:58.04] - Justin Gardner
+Know, if it's www, right? And then it's sending to www, it's like, oh, it's sending to itself. Oh, it's redirecting to a third party. Now that's weird. Let's drop it. Right. But if it's a, you know, and it's not same site, which is interesting, I would assume it would be same site, but it's not the same origin. Yeah, so yeah, just good to keep in mind that even if it's same site in different origin, you're still going to get that follow on the redirect. Really great research. So this is.
+
+[00:29:24.75] - Joseph Thacker
+So this is also a reason why you wouldn't want to roll your own auth. Like you want to use the authorization header if you're a developer because the browser is building in a little bit of protection for you in certain use cases. Whereas if you did X dash authorization, you would not get that protection.
+
+[00:29:41.66] - Justin Gardner
+Correct. Yeah. So architecturally that's a safer, A safer decision. And you can still leak things like X CSRF token or whatever, but, you know, definitely not as impactful as just dropping your auth token.
+
+[00:29:52.46] - Joseph Thacker
+Right, yeah, for sure.
+
+[00:29:55.25] - Justin Gardner
+All right. Did you have one you wanted to hop to?
+
+[00:29:57.74] - Joseph Thacker
+Yeah. Sweet. I'm trying to think. Okay, cool. Yeah, I'll do a non AI one first. Joel and I, I don't think you know about this yet. Do you know about this?
+
+[00:30:08.43] - Justin Gardner
+No.
+
+[00:30:08.78] - Joseph Thacker
+Joel and I. So yeah, you know the previous co host, Joel, techno geek. I reached out to him because my neighbor was thinking about buying a specific Iot device and was asking me if it was safe. And I was like, they asked me because they knew that I do hacking and AI stuff. And I started looking into myself. I didn't have a whole lot of time to look into it, but didn't find too much on the website of things. But I saw that the controller was basically a mobile app and I thought this was a very interesting company. So I messaged Joel and said, hey, dude, you should take a look at this this weekend if you had a chance, if you're interested, don't spend too long on it or whatever. And he was like, okay, yeah, sure, I won't. But yeah, I would love to. And I said the same thing to Matt Brown about the hardware, device.
+
+[00:30:56.78] - Justin Gardner
+And dude, classic Joel, getting nerd sniped as heck. Dude.
+
+[00:30:59.99] - Joseph Thacker
+Oh my gosh. I woke up the next day. So this is On a Saturday, I wake up the next day, a few hours later, I check my phone and it's like, wtf, man? And there was just a login with Google button that you click and it sends you straight to the admin dashboard to see all the users, all their pii, all the conversations they've had with the AI and all you had to do. There was no exploitation necessary. You just clicked on log in with Google, dude. Wild.
+
+[00:31:27.75] - Justin Gardner
+Oh, my gosh.
+
+[00:31:28.71] - Joseph Thacker
+So anyways, we're talking.
+
+[00:31:29.82] - Justin Gardner
+I love that about Joel so much though, man. Like, Joel, it was so awesome, you know, when I had him on the pod as well, because, you know, we have these adventures where I would just send him like this, this link and then, you know, he wakes up at like 4 in the morning or like 3 something in the morning. He's very early bird. So you wake up and then he's already like, yeah, you know, I, you know, went down this rabbit hole and I'm like, what the heck, dude?
+
+[00:31:51.85] - Joseph Thacker
+That's funny. Joel is like the equivalent of my VPs fuzzing for me overnight. You just wake up and Joel has something interesting for you.
+
+[00:31:57.05] - Justin Gardner
+Yeah, throw it to AI. Throw it to Joel. Third to Matt Brown.
+
+[00:32:00.33] - Joseph Thacker
+Exactly. No, yeah. It actually was a web thing, so I was frustrated that I didn't find it. But we've got some disclosure coming soon, so everybody will get to see what we're talking about.
+
+[00:32:11.70] - Justin Gardner
+Nice, man, nice. We are running close on time. I know we have a cutoff today, so let's push through these next. Yeah, it's one quick, really quick shout out. Defiant tweeted something nice out here. When you have a CRLF in the location header, which is one of the most common places to do it, if you control the full location and you can start the location with a new line character, you can actually get XSS even on a 302, which is something that I had not realized.
+
+[00:32:42.19] - Joseph Thacker
+I never knew that either.
+
+[00:32:43.63] - Justin Gardner
+Yeah, because normally, you know, CRLF in the location header on 302, really hard to exploit. Not. Not a lot of primitives you can use, but if you can actually just give it an empty location header, that will actually render HTML.
+
+[00:32:57.95] - Joseph Thacker
+How many times have people found this and thought it was unexploitable?
+
+[00:33:00.50] - Justin Gardner
+Yeah, dude, there's like, you know, a bunch of comments on here saying, yeah, ah, dang it. I like hacked this up big time. That's my bad. So good stuff here. I'm going to jump right into this next one real quick.
+
+[00:33:11.82] - Joseph Thacker
+Yeah, sure.
+
+[00:33:13.80] - Justin Gardner
+So guys, Yusuf Samuda, I guess I just don't like monitor his blog the way I should. He's been on the pod, one of the most prolific client side hackers.
+
+[00:33:23.60] - Joseph Thacker
+Amazing.
+
+[00:33:24.13] - Justin Gardner
+Constantly posing or like pwning Meta, right? Like just wrecking them. And so he released a blog post of like 300k in XSS on Meta via this conversion API gateway. And I just wanted to say like, this is excellent scope. Like they open sourced a server side solution that they had to create when the, you know, cookie tracking thing kind of went away on Apple a little bit. So he starts looking at this and like clear as day there's like this event listener that doesn't have any origin check and it allows you to write in a, you know, local storage key that is later used to like load a JS file which seems like it should be GG right from the beginning. But of course Meta has a bunch of like crazy defense in depth mechanisms with CSP and Coop. So he finds a place where he can bypass the CSP by finding like a route that has additional third parties that are in the csp. And he also finds a way to bypass Koop by oh, okay, so crossover. He bypasses Coop by doing this weird trick on Facebook's Android webview where you do window name equals test and window open into test and somehow that allows you to have yourself as the opener. Which is weird. But the crazy thing that I realized when you look at this attack flow summary is that he uses a hijacked third party iframe, but he doesn't have a frame reference so he can't do that client side. So what actually happened here for this exploit almost certainly is he actually got RCE on the third party and took over the whole third party web server, hijacked the iframe. Right? I don't know for sure. It could have been a subdomain takeover. I find that very unlikely. But he didn't have a frame reference so he couldn't pollute the XSS or the iframe from the client side. He had to do that from the server side.
+
+[00:35:35.80] - Joseph Thacker
+It just says we exploited a vulnerability in one of these third party components to completely hijack the iframe and later send the malicious post message from there.
+
+[00:35:44.69] - Justin Gardner
+The only other alternative I could think of, no, it couldn't be cookie based stuff because he also hosts a JS file on the third party so he had to shell this third party, which is crazy. So very interesting attack flow here, definitely worth reading. The TLDR of the situation is, you know, he finds an XSS via the Post message. Very clean post message exploit. He bypasses CSP by finding a relaxed, you know, CSP page that also has the script on it. He pwns a third party, hijacks an iframe to bypass Koop, manipulates a Facebook Android webview component to make sure that the window opener exists, which is something that was required for this exploit. Sends the post message from the hijacked iframe that he got by RCE that loads a JS file from the third party that he owned by RCE and is now hosting a JS file there. And then that JS file loads on meta's domain in pops xss.
+
+[00:36:48.34] - Joseph Thacker
+Well dude, I wish I could just like open his brain like a toolbox and just grab all the little tools, like all the little gadgets, like all the little pieces of information about like how to bypass CSP on meta, how to bypass coupon meta, how to like do this on meta. You know what I mean? Like all those little things.
+
+[00:37:02.09] - Justin Gardner
+Totally. Yeah. And this was a 65k bug, I believe. And yeah, I mean the persistence needed to find that piece about the Android webview, like that's.
+
+[00:37:13.17] - Joseph Thacker
+How long has it been in his pocket? That's what I don't know. Right.
+
+[00:37:15.65] - Justin Gardner
+Well, yeah, he could, it could have been in his pocket or he could have gone and pushed, pushed, pushed, pushed, pushed, pushed, pushed until he found a way to have an opener on a coop page. Like.
+
+[00:37:26.92] - Joseph Thacker
+Right. Is that kind of a zero day? Like, is that kind of like a thing that most like, you know, people don't know about, like some sort of like new gadget? What is there a word for that? You. We need to come up with a word for that, Justin. Like if there's like a new way, like the new way to. Or that thing that was found in 2020 by that Google engineer where they could like set it to null. Like it's basically like a zero day gadget. It's like here's a gadget people didn't know before that now unlocks a style of attacks that we didn't know could happen.
+
+[00:37:50.26] - Justin Gardner
+That's a good, that's a good, good point. Zero day gadget. Yeah.
+
+[00:37:53.23] - Joseph Thacker
+There's no like word for that.
+
+[00:37:54.26] - Justin Gardner
+Yeah, no, no, I don't think so. It's, it's really that those are very valuable and that's kind of what we're trying to get. Right. On the research lab for ctb.
+
+[00:38:02.30] - Joseph Thacker
+Right, exactly.
+
+[00:38:03.38] - Justin Gardner
+Uh, so you know, if you go to lab, CTB show, we're really trying to, to encourage people to submit micro Research there with little zero day gadgets. Right? Like this is the way you can do this. This is the way you can do that. Right? And create a sort of a repository of that, which would be great. Okay, second bug. This bug is kind of nuts, man. Essentially what it looks like is happening here. And, and we. I have, unfortunately I have to be kind of brief on this one, but this, this page that this conversion API gateway that Google or that Facebook had to stand up because of the pixel changes allows you to pipe events through the server side rather than through the client side because of the pixel problems. And essentially what it looks like he found is a place where you can do dynamically generated js. And he grabbed the actual source code for this gateway from Amazon ecr, decompiled the jar and found a place where they are like creating a JSON object by string concatenation. So then he submits there's an IDOR in the gateway, it seems, where you can configure a rule for any pixel and it takes one of the fields from that IDOR and puts that directly into the rule generation, which is done via string concatenation for JSON inside of dynamic JavaScript. And then it allows him to essentially just poison any pixels JS file that's insane. And just run arbitrary code on everything.
+
+[00:39:47.40] - Joseph Thacker
+Wow. How much did that one.
+
+[00:39:50.44] - Justin Gardner
+That one was 250k.
+
+[00:39:52.36] - Joseph Thacker
+Yeah, that's.
+
+[00:39:53.21] - Justin Gardner
+It's also just a sig bug. Yeah, super sick. So shout out to Yousef. Yeah, these, these are excellent write ups. Anybody who. Yeah, I mean anybody really should go read Yousef's blog until you understand it, you know that is mandatory reading.
+
+[00:40:11.09] - Joseph Thacker
+Yeah, I love that dude.
+
+[00:40:13.26] - Justin Gardner
+All right, man.
+
+[00:40:13.69] - Joseph Thacker
+All right.
+
+[00:40:13.94] - Justin Gardner
+What you got?
+
+[00:40:14.46] - Joseph Thacker
+I know we've got like a couple more.
+
+[00:40:15.69] - Justin Gardner
+I'm sorry, I'm sorry. One last thing. Quote from the end of this article. Both vulnerabilities described here stem from the same root problem, treating analytics infrastructure as low risk code. When JavaScript is shared across projects, domains and customers, it becomes a part of the platform's trusted computing base. At that point, origin validation, strict CSP design and safe code generation are no longer optional. They are existential requirements. Totally agree.
+
+[00:40:42.13] - Joseph Thacker
+What percent of your bugs over the last year? Let's say client side bugs were either used or broken or manipulated in some way. Third party plugins or third party code or analytics code very often. I was going to say you mentioned it all the time.
+
+[00:40:58.59] - Justin Gardner
+Right?
+
+[00:40:59.07] - Joseph Thacker
+Yeah, you mentioned that a lot.
+
+[00:41:00.59] - Justin Gardner
+It is quite a bit, yeah.
+
+[00:41:02.59] - Joseph Thacker
+All right, sweet. We got like a minute or two before you got a dip. I know one thing, really cool Trail of Bits. We can put the link in the show notes. It's just an X post, but Trail of Bits released a cloud skills announcement. And one thing that's kind of crazy is Claude just released something yesterday where basically there's like infinite MCP access. Basically it will never pollute more than 10% of your context with tools and MCP. And so if you have a ton of them, it will do some sort of rag on the tools and skills it has access to and MCP that has access to and only pull in the ones that are relevant to your query. So now you can fill it chock full with as many as you want. I don't have this issue, but some people out there are probably installing MCPs like they're candy or something and they just have like a thousand of them and then it's polluting their context. So they're now limiting, limiting that to 10% of the context. But yeah, if you don't know, Trello Bits basically does security research and there's a bunch of really cool skills in here. I have not dug into all of them, but anyways, I got a bunch of them like audit, context building, burp suite, project parser, sim grep, role creator, constant time analysis, you know, reverse engineering, development, team management. There's like a ton of really cool skills from a company that does really great research and they released it in the last day, so. Really cool.
+
+[00:42:17.15] - Justin Gardner
+Yeah, dude, that's awesome. We'll drop that link in the description. Um, hey, I just got a message. I'm good.
+
+[00:42:23.88] - Joseph Thacker
+You're good to keep going for a few minutes?
+
+[00:42:25.28] - Justin Gardner
+Yeah, I am.
+
+[00:42:26.11] - Joseph Thacker
+Sweet.
+
+[00:42:26.92] - Justin Gardner
+Yeah.
+
+[00:42:27.88] - Joseph Thacker
+Cool. I'll go ahead and roll to another one since you've got two more. You might have three. You've got a lot on your list.
+
+[00:42:33.96] - Justin Gardner
+I do have a lot. I'm sorry, I got excited. There are a lot of good write ups. But yeah, dude, go ahead. You take your next one, I'll go after that.
+
+[00:42:40.36] - Joseph Thacker
+You're fine? Yeah, actually I don't have too many. Yeah, the. So Zwink the ad Dominator posted something. Let me. I'll share my screen on this one.
+
+[00:42:52.23] - Justin Gardner
+Screen. This one? Dude. Yeah, this was a great, a great tweet.
+
+[00:42:56.78] - Joseph Thacker
+So this is really, really interesting. Obviously this is a $55,000 bug and you know, actuators are still everywhere, which is absurd, but they really are. Especially when you're getting into like deep and legacy paths on like old, on, you know, legacy targets. Like I'm just going to throw out names like Yahoo or whatever. Like companies like that that have had a bunch of old architecture, a bunch of old stuff. When you're fuzzing for them, you know, clearly they don't always show up. Sometimes you see like 400 threes or 400 ones or whatever. But I just thought an encoded like hashtag symbol was like such a weird thing to work here. I had. I hadn't seen that before and it makes me want to go refuzz like every company ever that has legacy paths like this. Because what I'm considering doing is creating a list. What's kind of cool is Jason shared this thing hack tips. Hopefully it'll switch straight to this. Basically this hack tips repo is just kind of underpopulated. But Jason Haddock released a list of actuator endpoints and everybody knows these actuator endpoints. But there's also a 403 bypass here. And then these are built into 403 bypasser plugins on both BURP and Kaido. But just go grab all of those and then kind of like pre apply them in every variation to all these actuator endpoints. Now of course you're not going to get hits if you're just fuzzing this at the root, but I want to have all those such that when I do fuzz deep in an API path, those are like automatically on my word list, right? Like a bunch of variations like basically every possible variation of these actuator endpoints with all the 403 bypasses already appended. And that does kind of. Well one. I mean if people aren't looking at Zwink's write ups, I think you definitely should because they're like very simple, highly effective vulnerabilities. But I, but that did yeah make me want to fix that about my current fuzzing and it was like a perfect time to kind of re mention the FFUF masterclass. So I've been prepping for it and I have leveled up. I need to show it to you. All of this like a bunch of different stuff that I'm doing ffuf and it's pretty sweet. So yeah, I'm excited about that.
+
+[00:45:05.82] - Justin Gardner
+Yeah, that, that'll be good. I think that you know, adding. So just for the audio listeners, I'm not sure if we read the whole thing. The, the. The path here was slash actuator/heap dump percent 23. Right. But. And it was.
+
+[00:45:19.71] - Joseph Thacker
+And it was out of. That was after some other path. It wasn't just at the root and.
+
+[00:45:23.94] - Justin Gardner
+It could be just after random path. My thought is probably it's after a path and then a path traversal is my thought. So definitely hit those actuator endpoints on all of these various paths. Also append path traversals before that with backslashes with semicolons and you might be able to find some of these actuator endpoints. I think it's also really important to highlight here that combining multiple techniques here is probably going to get you the best result. Right? Yeah. Path, you know, doing it as a subpath, adding a path traversal, authenticated and then adding. And then adding a, you know, character encoding or something like that.
+
+[00:46:05.65] - Joseph Thacker
+Yep. Did you and authenticated. Yeah, like so. So if you're at a deep path where people aren't normally looking and you're authenticated and you know, because there's usually wonky routing on a lot of these API paths where it's actually V hosting under the hood or whatever like you said, like Justin just said, sometimes you'll want to patch reverse back up to the root because it's on some other server that's running the spring boot actuator. But you know, you're, you're not at the root so you actually don't have access to those endpoints. So now you're like. Yeah, basically you need to be authenticated deep into some of these paths and then also find something that actually bypasses the WAF rule or whatever is blocking you.
+
+[00:46:42.96] - Justin Gardner
+Yeah, yeah, absolutely, man. Good, good shout there. All right. I'm going to cover one by, by flat security. These guys are freaking great. I've got a couple of buddies that work for them. Yotak obviously is, is the guy that's writing this one.
+
+[00:46:59.34] - Joseph Thacker
+You were just talking about how they seem to like gobble up so many great researchers over there.
+
+[00:47:04.30] - Justin Gardner
+Oh yeah, yeah. I mean if you're in Japan, they're going to, they're going to try to slurp you up. Yeah. But this research was phenomenal and very much Sasuke Ryotak, it's very much like him, you know, to, to do this research. The TLDR of the situation was in cloud code. There are allow lists. Right. Which will. You're able to run commands without getting permission from the user for a certain set of commands. Like Echo, you know, sort said that sort of thing. Right. And so, you know, udyotech just comes in here and just destroys it. Right. So he found eight different bypasses and I'm going to try to grab the high level techniques from each one of them and apply Them. So first one here. This is awesome scope, right? You know, understanding where the threat model is for CLAUDE code and realizing, okay, can I bypass this permission check here? Really good scope. He looks into how it's implemented and it's regex. Okay. So whenever using regex to parse a command, you should pay extra attention there because there's so many gotchas and you can't just say stuff like, yeah, they can use the man command. That's fine, right? Because you've got stuff like this man. Dash dash HTML equals touch temponed.
+
+[00:48:25.21] - Joseph Thacker
+That totally makes sense that you can pass bash into the dash dash HTML tag to execute rce, right? Yeah, makes sense to me.
+
+[00:48:32.57] - Justin Gardner
+I just looked at this for a second. I was like, why does the HTML. But it says there's another dangerous option called HTML that allows users to specify command to render the manual pages as HTML. Right. So it's allowing you to define the renderer. Yeah, of course. Yeah. Then he does it again with Sort, because Sort allows you to define a compression program. He does it with history, like using the dash A and dash S options, and just completely bypasses all of those. Moving down to the next one. He also does a bypass using Git, because CLAUDE code allows you to do some git commands, but it filters out malicious arguments. One of them is Unload pack in Git LSremote. The cool thing about this is that Git actually parses abbreviated arguments. I didn't know this, but you can use, you know, dash, dash, upload, pa and because there's nothing else besides PAC that you could mean, there's some autocomplete code in the git source code that will actually convert that to dash pack.
+
+[00:49:49.36] - Joseph Thacker
+Can I just say, I'm so glad we don't work on the defensive side of things.
+
+[00:49:52.40] - Justin Gardner
+I know, dude, that feels so frustrating.
+
+[00:49:55.59] - Joseph Thacker
+Like, how can you even predict that? You know, it was like, oh, this random thing is.
+
+[00:49:59.96] - Justin Gardner
+Yeah, yeah. It's much more fun being on this side where we're like, we can nitpick, you know? Exactly. Versus, like, you have to be perfect, you know? Right.
+
+[00:50:07.76] - Joseph Thacker
+It is.
+
+[00:50:08.88] - Justin Gardner
+Yeah. So anyway, he was able to bypass this. I think this is a really applicable technique. So if you guys are hacking on anything with Git related to git, which a lot of things are built on top of git and you have the ability to specify an argument, you might be able to use this autocompletion technique.
+
+[00:50:28.01] - Joseph Thacker
+To get around some sort of like, blacklist.
+
+[00:50:29.80] - Justin Gardner
+Yeah, exactly, exactly. He does it with said, apparently dash slash E at the End of SED will just let you run commands, which I didn't know. And then he this is another one that I wanted to shout, which is a very, a very cool technique. Xargs is one of the whitelisted commands, but there's a very limited amount of things you can do with it. Echo, printf, wc, grep, head and tail. The problem is that it does allow you to specify flags, but it assumes that those flags will consume the next argument, which it doesn't always do. So in this scenario, xargs, T touch echo, right? It is assuming that touch is the argument going to get slurped up by T. But T is just a boolean flag, right? So touch is actually the next item, you know, in xargs which allows you to just run any command. So that like that different interpretation of command arguments allowed him to bypass with xargs and then also with rip grep Absolute pwnage man. Yes, frick.
+
+[00:51:43.46] - Joseph Thacker
+Okay, last but not least, I have no idea if Ryotac used it. This is also one of those, like really good use cases for LLM to come up with lots of like to generate ideas for how you could bypass these, you know.
+
+[00:51:54.32] - Justin Gardner
+Totally. Yeah. All right, number eight, we're going to link this article in the description. I don't know that I can explain this, but I've never seen this before in my life, so go check it out if you don't understand what I'm saying. He bypasses this one using BASH variable expansion. And apparently because I've heard of BASH variable expansion, right, you do the dollar sign, the curly brackets, and then you put something in there.
+
+[00:52:20.44] - Joseph Thacker
+Yep.
+
+[00:52:21.80] - Justin Gardner
+Apparently there's also a AT P modifier that you can add into this, which will. Let me read it. This is possible because variable expansion supports the AT P modifier, which parses the value of the variable as a prompt string. In bash, prompt strings support special escape sequences, including command substitution. So he's able to essentially convert a string into command substitution string, which allows you to run arbitrary commands. So what the frick?
+
+[00:52:55.11] - Joseph Thacker
+Yeah. So there's variable expansion with an app modifier that has a command substitution payload in it. So when app is applied to the variable, BASH interprets it as if it were a prompt string, which then does the command substitution, which then allows it to execute.
+
+[00:53:10.69] - Justin Gardner
+Yeah, what the frick? You know, so crazy stuff here. And then.
+
+[00:53:17.01] - Joseph Thacker
+And then he also sets the variable to the dollar sign.
+
+[00:53:20.21] - Justin Gardner
+Yeah, yeah, you see that right there, you know, and then he appends that dollar sign in front of the, you know, Dollar sign, parentheses, Right, Right. Crazy, crazy stuff. So this is definitely a good read. These are the kind of things that will get you rce. A lot of times people ask, like, how do you get rce? What's your technique for getting rce? Like understanding quirks of stuff like this and then finding functionality where they're doing something funky like passing it to a command line, you know, a shell or something like that. This is the kind of stuff that gets you rc.
+
+[00:53:53.25] - Joseph Thacker
+Yeah. Actually, I think this would be really interesting if you did have a place where something was going to command line to apply a bunch of these techniques. Because I bet it would bypass protections that people in the past have been stumped by.
+
+[00:54:03.36] - Justin Gardner
+I'm sure you know what I mean. Yeah.
+
+[00:54:06.07] - Joseph Thacker
+Yeah.
+
+[00:54:06.48] - Justin Gardner
+All right, you're up next. What you got?
+
+[00:54:10.71] - Joseph Thacker
+I think that's everything.
+
+[00:54:13.28] - Justin Gardner
+Is that it? Okay, you want me to do this last one?
+
+[00:54:15.28] - Joseph Thacker
+Yeah, do your last thing. And then I've got one closing comment.
+
+[00:54:17.76] - Justin Gardner
+Okay. All right. Last one is a write up by Watchtower Labs. They've been putting out some good stuff, guys. We've covered them on the pod many times. Um, so definitely something to keep an eye on. This one is entitled do Smart People ever say they're smart? Which is a pre authorce in Smarter Tools, Smarter Mail.
+
+[00:54:36.34] - Joseph Thacker
+Oh my goodness.
+
+[00:54:37.86] - Justin Gardner
+Yeah. Which is. I just love reading their write ups too because they're so punchy. You know, you read it and they're like, oh, well, you know, are they that smart? And they have this meme. Let me scroll down here. Where's the. Yeah, they've got the like, you know, history.commeme with the aliens guy.
+
+[00:54:54.44] - Joseph Thacker
+Yes.
+
+[00:54:54.84] - Justin Gardner
+And then. Yeah, and then they've got. Where's the other one? Oh, down here, the office meme. You know, where the manager's shaking his hand. So very fun. The write up is a pre auth RCE and Smarter Mail. And it's, it's pretty vanilla, guys. You know, like essentially they, they signal it by looking at the patch and oh, there's a GUID validation that's added to the patch that pretty much tells you exactly where the vulnerability is. Right. So they start looking into how this GUID is used. It's in the API upload route, right? And there's a multi part form data where you can upload an attachment to Smarter Mail from an unauthenticated context. The GUID is then embedded into the file name, which you can see right here. And then you can use that to do path traversal and traverse all the way back up and write a web shell. And so the final exploit is pretty simple. You've got the, you know, GUID definition here with a bunch of patch traversals. You've got the resumable file name that provides the file extension. And then you. You write your web shell inside of that form data or multipart form data upload and that gets written to the the web. Pretty awesome find.
+
+[00:56:23.48] - Joseph Thacker
+Pretty simple.
+
+[00:56:24.92] - Justin Gardner
+We should. We should probably be reversing patches more often and using AI to do that extremely efficiently.
+
+[00:56:30.69] - Joseph Thacker
+Yeah, yeah. I think that I've seen lots of research around how. How good it is at that and we've talked a little about Caleb Gross's research on.
+
+[00:56:37.57] - Justin Gardner
+Yeah.
+
+[00:56:38.09] - Joseph Thacker
+On Rank for doing that specifically. So then going and find the code blocks that are changed that, you know, apply that fix. So, yeah, we definitely should. My one quick thing was, whenever we talked about.
+
+[00:56:50.42] - Justin Gardner
+I'm sorry, one more thing on this, I just realized this is what I was talking about with the punchy things. At the end it says. At the end it says. As an aside, it seems that Smarter Mail scans all attachments with ClamAV as shown in the below screenshot. However, either ClamAV is unable to recognize a basic web shell, or Smarter Mail is unable to process claim AV results. That's funny.
+
+[00:57:14.65] - Joseph Thacker
+Yeah, that is funny.
+
+[00:57:16.17] - Justin Gardner
+Yeah. I just thought it was fun that they scan it and then they either don't do anything with results or clamav can't detect like a super basic web shell.
+
+[00:57:23.61] - Joseph Thacker
+Exactly. There's either. There's some bug there which obviously can obfuscate, but the fact that it couldn't even detect the plane was sad.
+
+[00:57:29.61] - Justin Gardner
+That's sad.
+
+[00:57:30.17] - Joseph Thacker
+No, yeah, I was going to mention that.
+
+[00:57:31.32] - Justin Gardner
+Go ahead.
+
+[00:57:32.09] - Joseph Thacker
+I asked my wife, I was like, you know, what do you think is my favorite worship song? And she mentioned that for a long time, and I think it probably still is. It was like king of my heart. So for people who are waiting on that.
+
+[00:57:42.98] - Justin Gardner
+Yeah, we talked about that. Was it two weeks ago when this will air? Probably. Yeah, two weeks ago.
+
+[00:57:47.15] - Joseph Thacker
+And I got some comments saying that they, the people on X ED has. For those of people who had not heard of Force Frank, they've been jamming to it.
+
+[00:57:53.34] - Justin Gardner
+So Force Frank is like, catchy as heck, dude. It's crazy. All right, man, I think that's a wrap. Yeah.
+
+[00:58:00.26] - Joseph Thacker
+Yep. Sounds good, guys. Thanks.
+
+[00:58:01.78] - Justin Gardner
+All right, peace, y'. All. That's Bob, and that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'.
+
+[00:58:08.57] - Joseph Thacker
+All.
+
+[00:58:08.76] - Justin Gardner
+If you want more Critical Thinking, content. Or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there. On top of master classes, hack alongs, exclusive content and a full time Hunters guild. If you're a full time hunter, it's a great time. Trust me. All right, I'll see you there.

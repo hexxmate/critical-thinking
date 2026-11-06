@@ -1,0 +1,674 @@
+Episode 159: Avoiding Downgrades on Google Cloud VRP with Cote and Darby Hopkins
+Source: https://www.criticalthinkingpodcast.io/episode-159-avoiding-downgrades-on-google-cloud-vrp-with-cote-and-darby-hopkins/
+======================================================================
+
+Title: Transcript - Thu, 29 Jan 2026 15:11:22 GMT
+Date: Thu, 29 Jan 2026 15:11:22 GMT, Duration: [01:46:53.60]
+[00:00:01.04] - Darby Hopkins
+Selfishly, it's to our benefit to pay you a little bit of extra time to put some of that extra work into your report so that we can more quickly understand the impact, reproduce, get you a reward faster.
+
+[00:00:39.95] - Justin Gardner
+sup hackers, we've got an exciting announcement. Threat Locker Zero Trust World Conference is back in 2026. It's going to be March 4th to March 6th in Orlando, Florida. It's freaking gorgeous down there too during that time and yours truly is going to be there. I'm going to be there on Wednesday, March 4th. I'm going to be leading a hands on hacking workshop on. I'll be one of many. So there's lots of fun hacking workshops you can get involved in and it's going to be a great time. There's tons of sessions, workshops, other people there to network with. It's going to be a great conference. So if you're local to Orlando or if you're up for the travel, this is a great way for you to use that employer training budget that you've got. Also for critical thinking listeners, there's a discount of $200 off. You can use the code ZTW right for Zero Trust World CTBB26ZTW CTBB26. When you register, that'll be on the screen and in the description as well. It's going to be a great time. I hope to see you guys there. All right, let's go back to the show.
+
+[00:01:37.62] - Brandyn Murtagh
+What's up  Hackers? Is Brandyn , gr3pme  here here for this week in Bug Bounty. And we have two articles from HackerOne and some exciting news about no Con go a few. So let's jump in. First up we have an article with none other than our very own Reso and hackawan with Luke Stevens, AKA Hack Luke. And this is AI Red Teaming explained by AI Red Teamers. Now when I saw this on Twitter it did make me laugh a little bit as I was thinking the same but never actually thought to comment about it. But the term AI Red teaming has been thrown around so many times I have lost count whether you're on Twitter in research articles, whatever it could be. And this article aims to clear up some of the ambiguity around the term. So Hakluke posted a poll on X and the results probably have people more confused than it did. Give anyone answers if you did see these polls at the time. Now people are asked when you hear AI red teaming, what do you think? Um, 43% jailbreaking. Testing, LLM testing an app that uses AI or actually red teaming with an autonomous AI hack bot. As you can see, the results are pretty varied. Luckily, very luckily, we have an expert on the pod rezo to go through and actually clear this up a little bit. And his comment on this thread made me laugh so much at the time. But to clear up, AI red teaming is actually when you are attacking a real world application that uses and implements AI features. So imagine you're on a target that has some AI functionality, whether it's enhanced crawler or chatbot, an agent, any sort of AI powered workflow. Once you start attacking that and testing it, that is the simple definition of AR red. Oh, and here we go, the actual simple definition. AI red teaming is a practice of attacking systems and applications that include AI components in order to identify real security weaknesses. Now, hopefully that clears it up because I've been in many conversations as of late when some people think AI red teaming is you are on a red team operation which is AI enhance of tooling other people. Wow. I mean, the poll spoke for itself, but it's pretty much spread all over the place. But luckily Hackawan brow this article to clear that up. Now, if you are a hunter and you're looking for some additional scope like I've been doing lately, have a look at some of these bigger targets which are implementing AI slowly into their ecosystems. It's a very good, it's a very rich attack surface and I recommend doing it for some AI red teaming. Now the next one. This is perfect if you do plan to do some AI research, and that is the HackerOne Good Faith Security Research Initiative, which we've all been protected by for a very long time since 2022. The gold standard safe harbor, it's called, has now been extended to cover AI. Now you might be thinking, weren't we already covered by that in the original one? And the short answer, I think legally, no. There's a lot of ambiguity around AI research and AI safety. But now luckily there is a framework out which covers this and make sure that we are safe if we do decide to do some security research on AI. So they have linked their standards as well about what this covers and how you're protected. I won't go into it entirely, but the good news is now as of 2026, we are covered. If you do want to do some good faith, and that is the key here, good faith security research on AI. So definitely check it out if that is your jam. If you're thinking of doing some AI research yourself, but we're covered. Now finally, we have got a Null Con exclusive life hacking event with Adobe. Now nullcon is in Goa from 28th of February to 1st March, so quite a big conference. Now, Adobe are going to be here doing an exclusive live hacking event. If any of the listeners will be there, definitely consider it. Check out. There's some pretty cool prizes to be won. There's not much information on the site about it yet, so you're going to have to check out in person. They've told us there's going to be some very, very nice prizes for the top three AI related vulnerabilities. Now, I'm not sure what they are as of yet, but if they say it's going to be good, I have no doubt it will be. So definitely check that out. Now that's it for this week in bug Bounty. We now have a very cool episode coming up with Google. It's Enjoy.
+
+[00:06:38.62] - Justin Gardner
+All right, guys, today we've got the Google Cloud VRP team with us. We've got Darby Hopkins and Michael Cote, or just normally Cote. Right, Cote. That's it. That's it. And the goal of today's episode is to teach you guys how to optimize your money that you make when hacking on Google Cloud vrp. There's some nuances to the Google system that are not there in other parts of the bug bounty world. So we're going to kind of explain how to succeed in hacking on gcp. We're going to run through some scenarios and how they align with their table. And we're going to get some insights from the crazy live hacking events that you guys have had over the past, what, only like, year and a half of running the program, right?
+
+[00:07:22.76] - Michael Cote
+Yeah, we launched internally in July of 2024 and externally at the. I think you might have been there in Malaga in October of 2024. So that's kind of when we went fully live.
+
+[00:07:37.23] - Justin Gardner
+That's crazy, man. I'm so sad I missed that event. I didn't get to participate in that one. I had a family vacation scheduled. But I've heard it was legendary.
+
+[00:07:44.82] - Michael Cote
+Very fun. Malika's beautiful.
+
+[00:07:46.99] - Justin Gardner
+Yeah. All right, well, let's jump right into it. You guys recently had a crazy live hacking event with, you know, $1.6 million in rewards, 160 plus reports submitted. That's an amazing accomplishment. Can you guys tell us a little bit about how that event went and how we as hackers can. Can, you know, get at some of those? I assume, you know, must have been systemic Issues that were ranging, you know, in gcp.
+
+[00:08:19.01] - Darby Hopkins
+Oh yeah, yeah. I can talk a little bit about kind of what happened on the back end that, that event. So that, that was one of our bug spot events. So Google, our various VRPs do bug swaps throughout the year. That one was specifically focused on cloud and we have five or six products in our scope. So first cloud focused bug swat since we launched in October 24th. And that happened in June of 25 out in Sunnyvale, California. And let me tell you, it was explosive for us internally, I think we launched, we opened up the submission window three or four weeks before the live hacking event. Woke up that morning, immediately, 25 bucks in the queue, which is big for us. That's a lot just from like a small set of researchers. And then it only grew from there and throughout the month. I mean, our submission window was only open for four or five weeks and we got 160 reports just in the scope of that bug swap. Not to mention all of the other reports we were receiving as part of our normal submission. It was crazy.
+
+[00:09:33.03] - Justin Gardner
+That's crazy. Yeah. I will say, you know, four weeks, Four weeks is a while for these life hacking events. You know, a lot of times what we see is, you know, two weeks, two weeks and some change, sometimes even as little as 10 days, you know, so I'm sure that contributed to it. But like, either way you cut it, you know, 160 reports and 1.6 million rewarded is a crazy life hacking event. And I was drooling on the outside of that. I was like, oh, I got to get in on that next time. So could you tell us a little bit about what happened there? Because, like, as a hacker on the outside, I want to think, you know, I want to look at that. And I'm saying, okay, look, some, some hackers, they really understood the threat model. They found, you know, something that, you know, might be applied in multiple, you know, different areas throughout your scope and they just, boom, you know, pounded it into the ground. Right. Is how you kind of get that many reports through. So can you lift the veil for us a little bit on what kind of reports you were seeing, what kind of impact these people were going for, that sort of thing.
+
+[00:10:41.10] - Michael Cote
+Yeah. One of the really interesting pieces about this one was again, so you're right, like normally it's like a week before, two weeks before we open the submission window, it ends at the end. But this one, we're like, all right, let's open it wider. But we also, for the first time we had Two enterprise level products that typically don't see any researcher reports because they're so expensive to hack on.
+
+[00:11:09.91] - Justin Gardner
+So exclusive scope as well here.
+
+[00:11:11.67] - Michael Cote
+Okay. Yeah, like we did. So it was basically not seen by researchers before. A little sense. And so I think they. We heard beforehand that they were drooling at the opportunity because we got them credentials. So there were shockingly among those there was. Some were dupes but there were a lot of. We saw RCEs, we saw privilege escalations, we saw really interesting like these run as viewer attacks within some of our products where very, very interesting. Way more unique reports than I would have expected.
+
+[00:11:50.37] - Justin Gardner
+That's awesome. So okay, so I'm hearing some privilege escalation. I'm hearing some actual server side RCE on some integrations. The run as thing is really interesting and of course fascinating for any very.
+
+[00:12:01.54] - Michael Cote
+Interesting hacker to look at.
+
+[00:12:03.99] - Justin Gardner
+Darby, did you have any comments on that as well?
+
+[00:12:06.71] - Darby Hopkins
+Yeah, more specifically on privilege escalation we saw a few reports exploiting service account impersonation. This is kind of a common thing that we see on cloud vrp.
+
+[00:12:18.54] - Justin Gardner
+Let me write that down.
+
+[00:12:21.42] - Darby Hopkins
+Common thing on Google cloud vrp. I'm sure. Common thing on AWS and Azure as well. This is just kind of how cloud works. But for this particular bug swat, a few of our top reports exploited those types of issues very deliberately and very successfully. Like highly privileged default service accounts.
+
+[00:12:42.03] - Justin Gardner
+Very nice.
+
+[00:12:42.91] - Michael Cote
+Taking advantage of one was especially interesting. And we'll probably provide a link to. He's actually publishing it today or tomorrow.
+
+[00:12:50.60] - Justin Gardner
+Oh heck yeah. Go out with this episode. Awesome.
+
+[00:12:53.48] - Michael Cote
+Yeah, he, he found something that we hadn't been able to prove. Like we thought it was. And there were like so many similar reports that we were basically going to say like oh, you can impersonate this. But so what? Like basically you're. There's no increase in like what you can actually achieve from it. But he showed like oh, from this you can actually achieve like impersonate another server account which is like much higher privileged which got actually like like 10 people, 10 researchers were worded at the event. So he was very popular.
+
+[00:13:26.85] - Justin Gardner
+Dude. Yeah, dude. That's amazing. That's. Oh, I'm sure. Oh. So other people submitted reports they were missing a little bit of their. Of their, you know, chain. This guy completed it and everybody got rewarded.
+
+[00:13:37.73] - Michael Cote
+Yes. And we weren't able to like we knew something was there but we couldn't. We. We had no way to. And he found just the, the one that you could impersonate that got everyone.
+
+[00:13:48.64] - Justin Gardner
+Oh man. Shout out to this legendary guy, we're going to put it in the description as legendary guy when he publishes that write up. That's amazing.
+
+[00:13:57.61] - Darby Hopkins
+Can we mention his name? I mean his name is up on our blog about this event. We can probably call him out.
+
+[00:14:03.76] - Michael Cote
+Do it.
+
+[00:14:04.16] - Justin Gardner
+Who is it?
+
+[00:14:05.45] - Darby Hopkins
+Jacob Damaraki.
+
+[00:14:06.76] - Justin Gardner
+Ah, Jacob, of course.
+
+[00:14:08.37] - Darby Hopkins
+Yeah. J.D. nice. I think he won our most creative surprising report award.
+
+[00:14:17.50] - Justin Gardner
+Awesome.
+
+[00:14:17.77] - Darby Hopkins
+For that buck spot event.
+
+[00:14:18.82] - Justin Gardner
+Jacob, shout out to you man. I, as, as a hacker I so appreciate those people that complete the chain, you know, and other. And also I think that speaks to Yalls program as well, where you're like, okay, this guy completed it, you know, and these other people that have parts of the chain, you know, present or maybe even in different areas that also works for them. So we're gonna, we're gonna make sure they get paid.
+
+[00:14:42.46] - Michael Cote
+We try and like, and honestly like we tell people this and sometimes I don't know that they believe it, but we do pay out the max impact that we can prove in this case, like while we looked, we couldn't find anything once he was able to show it like everyone got rewarded based on now this new. And they all had unique starting points. So which allowed us to then go back and say, oh you could you even though like the singular mitigation like by not allowing them to impersonate anymore. But yeah, very.
+
+[00:15:08.62] - Justin Gardner
+That's amazing. That's, that's really good. And I, I, I love that, you know, and I have seen that time and time again with Google employees coming through like looking at my bug, applying their knowledge of the product, you know, and understanding the full impact there, which I think is great. And that's even better, you know, when we're at these live hacking events because you guys bring the product team out there sometimes, right? So we're sitting there with the people that wrote the code and we're like this, you know, that. And then they're like, oh yeah, you shouldn't have access to that, you know, and they really understand depthfully, you know, what the impact is. And they can explain it to us, which helps us download so much easier. Because one of the main challenges for hackers, especially in a complex environment like gcp, is fully understanding the product, the threat model, the intricacies of everything. And if you've got a product engineer with you there, it's so much better.
+
+[00:15:58.38] - Darby Hopkins
+Yeah, I'll second that. I mean Kote and I work for Google. We are cloud security engineers and it's even hard for us sometimes. We have a few hundred products in our Scope. And we rely on our product teams a lot. I mean, pretty much every single bug that comes through that we validate, we do our initial triage reproduction, make sure there's actually something here. It then gets filed with our product teams and they will kind of look at it, agree, like, yes, this is a valid issue. We can employ a fix here. So we. We rely on their product expertise a lot and we kind of collaborate on rewards oftentimes.
+
+[00:16:42.33] - Justin Gardner
+That's great. I. I do have some questions about that because in prepping for this episode, guys, you know, I did a call with them and we were talking about it, and they gave me permission to, quote, unquote, grill them on the workings of, you know, GCP vrp. And I have some. I have some questions that I'm excited to hear you answer. And. But I think overall, you know, the posture is, you guys. I mean, you guys are a relatively young program, obviously experiencing wild success. And I think one of the things that has contributed to that is your willingness to grow and to listen to feedback from the hackers. And actually, even after this live hacking event that you guys had, you released a lot of changes to your VRP policy page and bounties to make things more understandable and helpful for the hackers. So I think that's a great step in the right direction. I was wondering if you could give me a quick summary of what the changes I think it was in September of last year maybe were, and how those clarify your threat model for hackers.
+
+[00:17:44.86] - Michael Cote
+Before that, though, I do want to say, while we are young, thankfully, and everyone is familiar with the Google vrp, it's not like we started from scratch. I won't call them up by name, but the Google VRP is excellent at what they do. They're really well embedded in the community. So they were a hu. Huge stepping stone to like, quickly hitting the ground running.
+
+[00:18:05.49] - Justin Gardner
+Yeah, and they're the OGs, you know, they've been around for forever and a Google VRP has, so a lot of good experience. Pass along there, Darby.
+
+[00:18:13.21] - Michael Cote
+Do you want to go into some of the reward changes?
+
+[00:18:16.36] - Darby Hopkins
+Oh, yeah, yeah, That's. That's my passion. I. Yeah, we started off with kind of a rewards table. Speaking of the Google vrp that was heavily based on their tried and true model for, you know, this is core Google products like Workspace that fit under the Google vrp. So when the cloud VRP kind of split out, our rewards table still looked a lot like theirs. I mean, a little bit more honed in on kind of the cloud attck Surface. But as time went on, right. It had been roughly a year since we'd been operating, since our internal launch in July of 24, about a year when we had our bug SWAT event in June. And it kind of just. We were spending a lot of time in our rewards panel discussing some of these even lower severity bugs. Like, I think we had an S1A category previously that was really broadly written. And almost every time we would have an S1 bug, which, by the way, that's like, most of them, we're like, huh, I wonder which category it fits into. Well, based on the language, it's S1A. But then it doesn't really feel that high impact. Right. And we were spending so much time discussing just where to fit the bugs into our rewards table. Right. We want to be fair. We want the researchers to understand as best they can why we rate things the way that we do. We want to be transparent. So along with the time that we were spending in panel, which was just not really effective, and also to help researchers kind of understand where we're coming from, increase transparency, we kicked off a pretty big initiative to update that table.
+
+[00:20:08.38] - Michael Cote
+S1A was the worst. If we couldn't understand, like, and debated incessantly about it, how are our researchers ever going to understand S1A versus S1B?
+
+[00:20:18.48] - Justin Gardner
+Yeah, and it also, as a researcher, one, I have a bunch of questions about that I'd like to pepper you with before we move along, explaining the Google system of S0, S1, S2, and also the other ratings that you guys have. But totally when you have a broadly worded category there and it's also a little bit higher up in the table, you know, that is like our shit as hackers. We're like, yes, that's where I'm going. You know, I'm a find one of those, you know, and then, and then, you know, you find something that you think matches that category, but then, you know, it's like, well, the impact isn't really there, but it matches the category. You know, that puts us. Puts everybody in a bad situation because you guys are looking at this and you're like, this doesn't really make sense. And the researchers disappointed and. Yeah. So I'm glad to see you guys did some, some reworking there.
+
+[00:21:13.23] - Darby Hopkins
+Yeah, 100%. And we never want researchers to feel like, I mean, I think that you experienced this firsthand, Justin. Right. Submitting a report. Actually, I watched one of your previous, your recent episodes and you were talking, I think, probably about our Vegas event Right, Maybe. And how it didn't go as expected. And we had gotten that from researchers before. This will always be and forever be a thing with bug bounty. But that's what we wanted to try and reduce was that feeling of disappointment, like hey, maybe you don't understand the impact of this. Or I was expecting to get 10,000 out of this bug and I only got 5 or 3k, which still a lot, but not 10. So we made a lot of changes to the table to increase specificity. Right. We want it to be a little bit more objective with our definitions on the rewards table and make it like very clear, like this, clearly within this category while still kind of maintaining the ability to be a little bit flexible on our end. Because especially with cloud, a lot can change the impact of the issue. Like where the attacker is starting totally. What data, what specifically what type of data they can access on the back end of that exploit can change a lot.
+
+[00:22:34.56] - Justin Gardner
+Absolutely.
+
+[00:22:35.84] - Darby Hopkins
+Yeah. And we will change it more, I guarantee. Yes.
+
+[00:22:40.76] - Justin Gardner
+Yeah, that's perfect. That helps the growth there. I do have a couple things I want to swing back around to with regards to having success hacking on Google. What kind of quirks there are to your environment, how do we get things set up as a researcher and really understand the app? But before we do that, I think it is helpful for the listeners to understand what we're talking about when we say S1, S0, tier 1 P1, all of these Google specific in some ways terminologies. So can you talk a little bit about what S0S1 means versus C0C1 and then also explain how your tiering system works in Google with the various products that you have?
+
+[00:23:27.33] - Michael Cote
+Yeah, so that's zero. You can typically think about it as like unauthenticated. So can you go in and take data from someone in which you have like no permissions, no relationship between, between the two accounts? S one you start from like an authenticated position. So like our less least severe is like I forget what it is now. S1F maybe where it's like a single service. Like hey, you already have permissions in that service and you can escalate privileges and that'll be like our least severe. Which like the most severe would be like S1A where it's like complete. You already have permissions in the project but you can come go like complete project takeover. And S2 is like severity two is kind of like our catch all like least impactful. Something needs to be changed. But not necessarily you're not exfiltrating data or in the way that you might expect.
+
+[00:24:30.69] - Justin Gardner
+I see. Okay, so S0, we're talking about stuff where you have no permissions to the, to the data that's being affected. And I just want to clarify on that. You said unauthenticated and I'm curious whether that means unauthenticated as in I have no cookies or unauthenticated as in I, I have no rights to this organization. But I, I still am able to use like a self sign up, you know, GCP account.
+
+[00:24:56.51] - Michael Cote
+No rights to the organization. Yes.
+
+[00:24:59.00] - Justin Gardner
+Okay, great. So it doesn't really necessarily matter whether I'm logged into Google or, or, you know, as long as I, I don't have access to the data at all, I'm not in the org, then that would fall a little bit closer to S0 as long as it's accessing data, right?
+
+[00:25:12.20] - Michael Cote
+Yeah, yeah, that's a hundred percent correct. I will say like there's always like something that you talked about earlier, like the discretion. While we're clear our overriding goal is to always fairly and consistently reward researchers. We have had reports where it seems like idor tax. So like always s0 in this case it was a we can exfiltrate the time you started training and model. And I think this person like we went back and forth arguing maybe like five or six appeals before we had to say like, no, this is just like, you're right, technically it could be S0, but what are you going to do with that information? And the answer is really nothing. It doesn't lead to anything. It should be fixed 100% but it has to go to that S2 level. It doesn't necessarily. The impact isn't there for like a. I think our lowest S0 is like 7,500.
+
+[00:26:13.75] - Justin Gardner
+Okay, I'm writing some notes on that. Okay, that makes sense. So we're understanding S0 is a little bit more no rights to the org. S1, we've got some rights to the org or the project or the entity and then we're bypassing those. And then S2 is some things that should be fixed but have smaller security impact. And then when we move from server side bugs to client side bugs, we're now in the C arena where we have C0 and C1. Can you explain a little bit about that?
+
+[00:26:48.65] - Darby Hopkins
+Yeah. C in this case stands for client side. It's S on the top half of the table. It could be service side or severity. You could use either or. But C0C1 is severity levels or client side issues. So we actually See those a little bit more rarely on Cloud VRP. But C0 and C1 are still a little bit generalized compared to our S categories up top in the table. Actually be helpful if we could kind of point to it right now.
+
+[00:27:25.69] - Justin Gardner
+But yeah, I can share my screen. Hold on. There we go.
+
+[00:27:28.00] - Darby Hopkins
+Sure.
+
+[00:27:28.64] - Justin Gardner
+I should have, I should have shared it before. That would have been better. We also try to, we also try to, you know, keep it largely audio compatible for the audio listeners. But we can, we can show here, you know, so we've got S0 right here, this, these categories and then S1 down here we've got, you know, some access to the organization and these are defined in these headers. Area, area. Right, right here. And then we've got C0 and C1 down here which is I guess, I guess the difference here would be executing client side code versus other exploitable client side issues where you're getting access or you're not getting access, it seems like.
+
+[00:28:03.26] - Darby Hopkins
+Right, yeah. In general, our C0 is can you execute code on the client of your victim? That's essentially what it is. And C1 is a little bit more of a catch all. Um, so you know, those XSS type vulnerabilities, if you can demonstrate actual JavaScript code execution that's impactful, big asterisk can get you something that would qualify for C0. Which, that, that category does still have a pretty high reward.
+
+[00:28:40.52] - Justin Gardner
+Yeah, $20,000. And, and I imagine, you know, an XSS on Google Cloud should have a pretty high reward because of the, of the impact there. You know, if you can, you know, if you get someone to click a link and they're logged into gcp, you can get RCE on, you know, a lot of their instances. Right. You know, by, by just, you know, pushing client side commands from the user's browser, you know, through Web shell or whatever, or Cloud shell. So that makes a lot of sense. And then up at the top we've got our tiering levels here. So can you guys talk a little bit about those and how those affect the reward as well?
+
+[00:29:15.52] - Michael Cote
+Yeah, these are pretty straightforward. It's basically, there's like an internal algorithm that goes basically like by the revenue and how many people are using it and the API calls and a lot of things that go in to say like how much basically it's incentivizing people to, we want to find more vulnerabilities in our tier one products. This is our way to incentivize, like hey, should be hacking on on this more. So the IT1 or Tier 1 products are the things that we, I won't say care most about, but from like a, we want to incentivize the most amount of research into where the IT3A, which is like acquisitions or like the IT3B which is like if it's not in our table at all and you find it there, it's probably going to be it 3B.
+
+[00:30:05.83] - Darby Hopkins
+And I'll, I'll, I'd like to build on that a little bit just to add on. This is the reason why we care about tiering in terms of security.
+
+[00:30:17.28] - Justin Gardner
+Right.
+
+[00:30:17.60] - Darby Hopkins
+We have in cloud hundreds of products. Kotei mentioned the number of users, Right. So if use cloud storage as an example Tier one product, because so many users directly use cloud storage, but also other Google Cloud products interact with cloud storage. Right. So this has a wide ATT and CK surface. So when you find impact in cloud storage as an example of tier one, you're finding that it's more highly impactful than a tier 3 product that maybe is only used in one product. It's not used cross cloud maybe has a smaller user base. Right. So this is why we employ tiering in our rewards table.
+
+[00:31:08.69] - Justin Gardner
+That makes sense. Okay, so, and one of the things that I'll shout out here, and I think I've mentioned on the POD before, but from personal experience, you have to be very careful when you are, you know, hacking on Google products because there could be a certain section of the application where it's a tier one, right. But then a sub, you know, application of that or like a sub component of that is a tier three, right. And that drastically changes your, your reward that you would get for, for hacking on that. So I just wanted to shout that out to the listener as well. And, and I think there's a really cool opportunity here for either the Google VRP team or some member of the community to write a plugin that parses, you know, the tier, the tier list that is listed in Google's scope or in their policy here and allows you to understand, okay, what product am I likely on right now? What tier am I hacking on for any given HTTP request, but also for, you know, when you're looking in the application, you could have it in, you know, a Chrome extension or something like that as well. That could be really cool.
+
+[00:32:12.99] - Darby Hopkins
+Yeah, love that idea. And if anybody watching here wants to do that, our tier list is public, let us know. And yeah, we've, we've talked a lot about tiering internally as well, Justin. And you know, on the topic of us taking feedback, one of our colleagues specifically is working on kind of updating and consolidating some of our tiers, product tiers, for example. Right now to your point, we have a lot of kind of sub products and features that are different tiers. It's a lot to manage for our researchers and that's the last thing that we want is to make it harder to hack on Google. Right?
+
+[00:32:53.20] - Justin Gardner
+Yeah, it's a little bit of a, it's a little bit of both though. I think for the listener, just to be honest with you guys, is like this adds complexity, but this also is something for you to defeat as the hacker. Right. You know, you, you, because of the complexity, other hackers are going to have difficulty with it too, you know, and, and that difficulty leads to more untouched scope and that difficulty leads to less people being willing to put in the work. And frankly the top earners in bug bounty that I've ever seen hack cloud products. And so this is where, you know, you know, Google Cloud, aws, Azure, you know, all of those are ripe targets for making yourself a very, very high earning hacker. And so you guys got to be up to the, up for the challenge.
+
+[00:33:42.75] - Michael Cote
+Also the complexity, it also adds complexity for us, like the interconnectedness of all our products. So I think. Do you mind me talking about your. I think what? No, go for it. Your Vegas event specifically. I remember there was a lot of talk about it back and forth in the panel because. So you were on scc, I believe.
+
+[00:34:01.55] - Justin Gardner
+Yeah, I was, yep.
+
+[00:34:02.44] - Michael Cote
+And you basically like we have a suite of tools. Like not all of our products have a suite of tools, but this one does. And you clicked on something and we, you're like, hey, like I thought this is part of SCC and we talked a lot about in the panel of. Oh man. Like what? From a user perspective, if a user was going and clicking on this would what would they expect? Would they expect you to be like, no, it's not an SEC product, but I'm in that product. Clicking on the links. What do you mean it's not sec? Ultimately it was like one very hard decision, but we ultimately decided like just from a fairness and like, like how do you know? Because that's also a standalone product.
+
+[00:34:41.44] - Justin Gardner
+Right.
+
+[00:34:41.76] - Michael Cote
+How do we determine from a rewards perspective fairly and consistently like what a product is? And then we ultimately decided it has to be the root, I think for that, for the event because you know, it's a researcher event. I think we rewarded you like the, like the bonus and all that that would be in scope. But that made Us like rethink the other part is like S1F is like single service. S1C is like multi service. That interconnectedness and like the impersonations and the service accounts that you can achieve. And like because of all that interconnectedness can raise rewards for researchers. There's a lot more opportunity because of that to go from one service to another and when that happens, we reward more.
+
+[00:35:26.80] - Justin Gardner
+Yeah, certainly you know that out that outcome for me in that event I was happy with and I think largely overall, you know, despite there's some confusion and some duress, you know, like I've like, or big stressed out a little bit about it. You know, at the end of the day we talk through it, you know and, and we get resolution and I've been happy, very happy overall with the outcome of my reports. Right. Um, which I think is, is, is, is different than a lot of programs. You know, some programs it's just clean, clean cut, you know and you just, you know it, it fits in a box and you pay the bounty and whatever. Right. In some other program it, it's, you know, you're, you're fighting for, for every single little thing and stuff like that and, or your voice isn't heard. Right. Um, one of the things I really do appreciate about Google is we have a good amount of back and forth and I, I never don't feel heard. You know, hey, if I'm not happy with the outcome, you damn well know I'm heard though, you know, like.
+
+[00:36:22.46] - Darby Hopkins
+Oh yeah, no, we, I mean appeal like if, if you don't think that your reward is fair or your rationale does not make sense, let us know. I mean all of every researcher's appeal comes back in front of the panel which consists of myself, Kotay and a swath of other security engineers on cloud. And we will do our best to either reevaluate, make sure that we got it right and also explain it to you in a way that makes sense. Yeah, like we, we don't always get it right. Right. We're people at the end of the day and we rely on our researchers expertise for a reason. That's why we have bug bounty.
+
+[00:37:01.59] - Justin Gardner
+Yeah.
+
+[00:37:02.00] - Michael Cote
+I'll add like our panel is super empathetic to researchers. Like I think that you know, half our panel maybe were researchers and hacking on Google before Google hired them. One of the people on the panel, like when again there it's very nuanced, way more than I would like. But he will frequently say like when we're advocating between two different ones, it's like 5075. He's like, I'm always, he always says, I'm always happy to pay the researcher more. Yeah, I would honestly pay every single report, but we would go absolutely bankrupt. It wouldn't be fair to everybody else who's not getting that. But like, it has to be consistent.
+
+[00:37:40.48] - Justin Gardner
+Yeah, no, that makes a lot of sense and I think that's a great point. And I know for sure the hackers that you're talking about that are on your panel that are excellent hackers and are actively hacking on bug bounty programs while they work at Google. So it's definitely good to have hacker representation there.
+
+[00:37:57.53] - Darby Hopkins
+Last thing I'll say about tier as well, I would urge our researchers to not be afraid to start on our tier three products. Right. Like, yes, the rewards are lower, but to Kotei's point, those lower tier products can lead you to higher tier product impact because of the interconnectedness. And also, I mean, yeah, tier three does reward less, but it's, you can get a pretty high reward. We just rewarded a 50k payout on a tier 3 bug just the other day. Right. So. Which is nothing to scoff at.
+
+[00:38:35.13] - Justin Gardner
+Yeah, totally. I think that's a great point. And I also wanted to ask you about transitions between tiers because if I remember correctly, at one of the live hacking events that I've been to, there was somebody who was able to compromise some serious data and it technically was an acquisition, but that acquisition had been integrated fully into a higher tier product, it seemed, and I'm not sure where that report landed on the tier table, but the bounty was great, you know, so at what point does an acquisition move, you know, from an acquisition to a higher tier product upon integration?
+
+[00:39:16.94] - Darby Hopkins
+We actually just recently wrote an internal precedent on this. It's not publicized because it's kind of rough. Right? I mean, Google's buying products left and right. Yeah, but it's rough like roughly I think 3ish years after acquisition, which is kind of a fuzzy date to begin with. Sometimes we'll kind of just consider the product for a higher tier. It won't be in that, it 3A category.
+
+[00:39:50.17] - Justin Gardner
+Okay, that's great, that's good to know. Yeah. And I think just as a, you know, for the listeners. Yeah. I mean look, look at these full integrations, you know, where everything is under a, a high tier product, you know, but, but the code, you know, or the implementation underlying is, is telling you a different story, you know, Like, I think you guys know what I'm talking about where stuff is kind of, you know, duct taped together and, and you, you see that. I mean even with Google, you see, you see it because especially when you, you've got a company that is buying a lot of stuff like you guys do.
+
+[00:40:24.55] - Michael Cote
+And there's a reason why, like there's an ITA it 3A because they're not on the Google stack. We consider much more hardened than like many of our acquisitions. So there is like less rewards, probably more opportunity.
+
+[00:40:38.55] - Justin Gardner
+Totally. Yeah, that's a great point.
+
+[00:40:40.80] - Darby Hopkins
+I will say. I mean even our older acquisitions. Hot tip. Look into those products.
+
+[00:40:48.48] - Justin Gardner
+Yeah. Oh for sure.
+
+[00:40:49.69] - Darby Hopkins
+There are bugs to be found.
+
+[00:40:52.65] - Justin Gardner
+That's great. Let's, let's. I'm glad for you clarifying all that. Let's take a second and talk about the panel and then we'll jump back over to some success tips with, with hacking on gcp. So we've talked a little bit about the panel process in the past for the viewer that hasn't seen those episodes the way that reports are, um, and you guys can feel free to interrupt me or correct my explanation at any point, but the way that this works is a team of Googlers come together, they review a group of reports in a meeting and that's how the, you know, bounties are deliberated. And it normally comes to a unanimous consensus. Right. Among. Among the team and you get the reward. And then when you appeal, those appeals also go back to up to the panel. And the panel reviews the, your. Your case, they review the reward and they decide one way or the other to make a decision on that. How is that explanation? Did you guys have anything to add there or modify?
+
+[00:41:51.94] - Michael Cote
+Yeah, I will say it's not usually 100% agreement. It's always 100% agreement. We require it to move forward. There's a lot of debate. I'll say the also like of interest would be to your research community. Like the person leading that panel will take about like four to six hours going through maybe 15 reports that we want to discuss within panel. So like significant amount of understanding for each before actually getting to panel. So they dived in and like hey, like they were able to get this service account, like who generally has it, like what can they do with it, what data is available from it. So there's a lot that goes into every single report, quite a bit of time. But again, appeal as much as you want. It goes right back to the same panel.
+
+[00:42:39.57] - Justin Gardner
+Yeah.
+
+[00:42:39.98] - Darby Hopkins
+And that analysis is on top of the initial triage that happens on your bug where the issue is reproduced and assessed by a second team and then assessed again by the product team. Right. So this is almost like a fourth layer of review that your report goes through before it gets a reward.
+
+[00:42:58.78] - Justin Gardner
+Awesome. Yeah, that makes sense. Okay, so we've got the panel. I do have some, some more questions about that. But first let's, let's, let's jump back. I wanted to talk to you guys a little bit about like the recommendations for the researcher on getting these services configured and getting data in them and stuff like that. Because I know you mentioned with the live hacking event, there's a lot of scope that you need like enterprise access to, you know, you need data from, you know, all these different sources to get populated to be able to do testing. What kind of tips do you have for us on that front?
+
+[00:43:37.32] - Darby Hopkins
+Yeah, on quick caveat. I mean again, cloud is kind of a little bit difficult to get into in my opinion. As opposed to like Android or something. Right. I mean most people know how to use a phone. You kind of have a baseline knowledge for cloud. It's usually businesses who are directly interacting with cloud products. Right. So it can be harder to get into if you've never used a cloud product. Luckily Terraform exists. I would use and Terraform has a lot of code samples especially for our core products to quickly spin up instances like gke especially really difficult product to get into. If you're not familiar employee Terraform. Use our setup documentation not only to make your life easier, but also from a rewards perspective. The more closely you as a hacker are matching the common customer kind of environment, the more successful you'll be.
+
+[00:44:44.51] - Justin Gardner
+Yes, that's a true.
+
+[00:44:45.88] - Darby Hopkins
+And we added a special downgrade in our rewards update from last September to capture some of these cases. Right. So we were seeing some of our researcher submit reports with a really wacky kind of configuration that we'd never seen before. We know not very many of our customers actually use use the product the way in which the hacker is using it, which, I mean, still a valid issue, but it's not going to be as impactful on Google Cloud. Right. If you're not using the product in the way that most customers are. Right.
+
+[00:45:25.32] - Justin Gardner
+That's the whole point.
+
+[00:45:28.44] - Darby Hopkins
+So following our user guides, I mean, I don't want to say that our user guides are perfect and will help you and help you understand the back end, but as far as getting started on Google Cloud, definitely start there and your rewards will be higher if you find a bug that way.
+
+[00:45:47.88] - Justin Gardner
+Yeah. And also just add to that for the listener, like that is a big part of the challenge for this scope, don't be afraid to spend a lot of time configuring the product. I think a lot of hackers get antsy when they're not churning through attack vectors. Right? You know, and I totally get that, but you got to understand with these products that are. That are very, you know, deep, you got to spend a lot of time configuring, getting data in, understanding before you can actually start understanding what kind of attack vectors are valid or even being able to ideate properly on attack vectors. I think that's really a really important piece. Kote, did you have any. Oh, Darby, do you have another comment here?
+
+[00:46:28.05] - Darby Hopkins
+Yes, sorry, go for it. To add on to that, to what you just said. Not a lot of hackers, I think, are spending that time to dig deep into the product, which means Cloud probably has a lot of bugs ready for the taking. And our top researchers who are getting these 50, 70, 500k reports are the ones who have dug deep into our. Especially our newer products, right, like the AI products like Vertex AgentSpace XYZ. They have a deep understanding of how that works. They spent time reviewing our documentation, finding holes, and then they find a swath of issues. Right. So that kind of upfront load of learning the product. Yeah, I've seen researchers, right. They get started on Cloud, they start on a certain product, and then we get five or six reports, and they're all valid. Right. So some of that upfront work can really lead to big payouts in the end, and especially because not a lot of people are putting in that upfront time.
+
+[00:47:39.55] - Justin Gardner
+Totally. Kote, thoughts?
+
+[00:47:41.63] - Michael Cote
+No, see, Darby nailed it.
+
+[00:47:44.11] - Justin Gardner
+That's perfect. Yeah, I think that. I think there's a lot of nuance to these systems, but one of the biggest ones is put in the time, understand the app, get data in there, you'll see the attack vectors coming through. That's great. Y' all jumping back to the panel a little bit. I know we're. We're getting all over the place, but we're back on track. Jumping back to the panel. I had a grill you question on this. Yeah, you mentioned this person. I think in the past, you've called them the DJ that is running these panels. As far as I understand it, when a report comes in, it gets assigned to a specific queue off the bat, you know, and maybe this would be a good question as well for Google VRP and abuse. But one of the things that I've seen is, you know, that queue that it gets assigned to in the beginning, a representative from that Organization will be the DJ that is assessing, you know, and, and explaining these bugs to the panel. Right. And I'm wondering whether that that results in the depth that we're, that we need as hackers to get the DJ and the panel to understand the specific vulnerability that we have. For example, if I submit a bug, it goes to abuse queue and it's, and it's, you know, because it's a, I don't know, something that triggers abuse. For example, for a little while your prompt injections, all prompt injections went to abuse queue. Right. Then you know, we have abuse. Explaining a GCP bug to the panel, which I'm not super confident is the best thing. Can you explain some nuance there or am I missing something or is that how it is?
+
+[00:49:25.63] - Michael Cote
+So for when we. I call it panel shop. So like first, like why do we do this? So typically when we send to another panel. So like anything cloud comes to us just right off the bat if we have to send to abuse. Abuse has their own dj, they have their own like technical. They're going to do the same in depth analysis as we would on those bugs. And we're very comfortable with like security engineers diving in the impact and understanding their rewards tier. So like we always have to be consistent with our rewards. And the reason I know like we have a lot of, from our top researchers, I get like this question more than others. Like why are you sending to abuse? Why are you sending to oss like your rewards are slightly higher? I want it in your panel. The answer is like that's the only way we can get you paid at that point. Like it doesn't fit in our table or it's a very low reward. Like it's within our table. Because we have to be consistent within our table. We are going to pay you low. So we, if it's possible that you will get paid more from another panel, we always give it to them to only give researchers more money like that.
+
+[00:50:34.36] - Justin Gardner
+I hear that, I hear that Cote. I'm gonna, I'm gonna push back on that a little bit though because what happens, you know, from, from our perspective is a report gets, comes in and it gets sorted to a specific queue. That's not the cue we want in the, in the, in this scenario. Right. Let's say it get, you know, I'm hoping for gcp, it gets routed to Abuse, you know, gcp. Unless abuse says GCP might pay this more then GCP never sees it. Right?
+
+[00:51:00.71] - Michael Cote
+Correct.
+
+[00:51:01.90] - Justin Gardner
+But we work together know about gcp. They don't understand the product level, you know, I mean, and all these, all these people are Google engineers.
+
+[00:51:09.59] - Michael Cote
+Yeah, they're all Google security engineers. In which case like, again, it's about adherence to their, like their tier and they understand their rewards table and their rewards criteria much better than we ever will. Like they understand and they understand like our rewards table and they, the only reason they're sending to somebody else is to maximize the rewards for the researcher. That is 100% the reason.
+
+[00:51:37.19] - Justin Gardner
+Unless it gets sorted incorrectly in the beginning though.
+
+[00:51:39.44] - Darby Hopkins
+Right, I want to clarify that part. So the sorting incorrectly in the beginning is, I want to say, nearly impossible.
+
+[00:51:49.65] - Justin Gardner
+Right.
+
+[00:51:50.01] - Darby Hopkins
+Of course this is being done by humans. But if your report is concerning cloud or a cloud product, which by the way, we have a large swath, it will enter our queue. Okay. Even if the initial triager, which by the way is like level zero. So this is like even a fifth level overview is they are not going to assess that initial impact. They're like, hey, is this cloud? Send it on to the cloud people. And then when it gets to our panel we will decide on a reward and at that point it can be sent to abuse if we don't think that we can reward under our table. So the case that you're talking about, this example where a bug is initially entering some other VRPs queue, like open source abuse and then being routed to cloud, usually not the case abuses, we're typically routing to them versus them routing to us.
+
+[00:52:54.84] - Justin Gardner
+Yeah, that makes sense. And I think maybe I'll get some other representatives from the other parts of Google as well on here because I think this issue, like you said, relates to them a little bit more than it relates to you because GCP is gcp, you know, and they're going to route it to gcp, right, and then you're going to send it back to abuse. So yeah, I think that makes sense. And I know that your, your overall, you know, disposition is to try to get the hacker rewarded. So if it, if it can't get rewarded on gcp, then you send it to abuse, you send it to somebody else to see if it can. I'm just worried about the situations. And as a hacker I would like to have a little bit more of a locus of control of I want GCPIs on this, on this, you know, bug, or I want, I want Google VRP eyes on this bug. Even if it gets routed to Abuse right off the bat, I don't want abuse saying, hey, this isn't us, this is Google. You know, I want Google saying, this isn't us, this is abuse.
+
+[00:53:51.07] - Michael Cote
+Does that make sense, by the way? So the initial. The initial routing, that is exactly how it happens. So someone within the Google VRP makes a determination and it's super easy to send between the different panels. So, like, they make the initial L0, as Darby called it. They make the initial determination. It's immediately looked at between on that abuse or cloud or Google. And because we reproduce every issue that comes in, we say, like, oh, is this. So they have to do a confirmation because we're not qualified to reproduce issues that are not really for us and assess the impact of it. And so we'll immediately reroute it to those, like, appropriate programs.
+
+[00:54:34.40] - Justin Gardner
+I see.
+
+[00:54:35.59] - Darby Hopkins
+And I'll add, I think you as a researcher have control here. Okay, like, oh, I thought you were.
+
+[00:54:42.92] - Justin Gardner
+Talking about me as a researcher for a second. I was like, oh, shit. Why are they talking about me as a researcher? I know I'm not a good boy. I know, Darby.
+
+[00:54:49.48] - Darby Hopkins
+Like, you know, yeah, you and everybody else, you, meaning the community, have control over some control over your report, right? Like if, if you are not pleased with the result, right? You see that panel decision and it says, the abuse vulnerability rewards panel, and you're like, what the heck? I wanted this, right? It. Under the clouds table, you can post a comment on the bug, you can appeal and say, hey, respectfully, this seemed to have cloud security impact. I think it might fit under this category in their rewards table. Could this be sent to the cloud VRP for reevaluation? More than likely it'll make it over to us. I mean, not that that I've seen that happen, because I don't think that that misrouting happens very often at all. But you, you as the researcher, have control over that, right? Every single comment that you post is read by a human. And if you have a problem, please raise that.
+
+[00:55:52.59] - Justin Gardner
+Yeah, I will. Don't worry, I will. You guys know I will. The last. The last live hack event that we had, you know, I spent probably an hour, maybe, you know, 45 minutes an hour sitting outside of the. The war room with, you know, Darby and Kote, like, debating a bug for both myself and another person. Because of course, you know, when, when you're a podcaster, people are like, all right, that dude can talk. Go advocate for my bug. You know, so we had great conversations and, and landed at a good spot, I think. So the next question that I wanted to ask was 60 minute, 60 minute panel, 15. 15 bugs, 4 minutes a bug. You know, you guys get a Lot of you guys get a lot of thorough put in the Google program. How often are you doing these panels? How often do you get through all 15 bugs in 60 minutes and how does that affect like your pipeline getting, you know, backfilled a little bit and affecting SLAs.
+
+[00:56:56.11] - Michael Cote
+So we have two panels a week, one like with the European camp time zones and one like more American time zones to try and get through as many as we can. We, I will say normally we don't get through 15. I'll say the easiest ones are like, if it's obviously low impact, obviously high impact. These are really easy. I think the thing that bogs us down are the ones that are like, hey, this is, oh like discussing whether it's working as intended. Like a lot of these. And again, something you mentioned earlier about digging into the product. If you can point to product documentation about like why you believe something isn't working the way it should be. Like that is like one of the best arguments that you can make on our panel because we do take into consideration like what would the average user think? Like, are they going to expect that you can with this privilege escalate to this other thing? And if their admin. A lot of times that's why we downgrade the heck out of like, if you start with admin, because usually the answer is yes. But if you can point to documentation where it specifically says, like, this is our security boundary. We were just going through this another one and like you would not expect this, then you're going to much more likely your case is very good to get rewarded.
+
+[00:58:15.15] - Justin Gardner
+That's a great point. Yeah, I think that's valuable to understand for the researcher and I, I did want to circle back around as well to the, you know, nature of the panel shop and whether that is different from the actual panel. Can you speak to that a little bit?
+
+[00:58:36.86] - Michael Cote
+The panel shop? Yeah. So like we typically, or whoever it's initially assigned to will definitely generally make a recommendation of like, hey, we think this is. And usually it's credit or working as intended within the product. But imagine it's like a billing abuse issue that doesn't really fall within our rewards criteria. Typically 100% should be rewarded or like not rewarded but fixed. But we can't really pay it in adherence to our table. Then we'll say, hey, abuse, we think this is credit because XYZ for our panel. Will you be able to pay it here? Like the. The basic TLDR of the impact and of the issue. Please make it an assessment yourself.
+
+[00:59:16.67] - Justin Gardner
+Okay. Okay, so we've got panel, and then we, you know, it goes to the panel shop. If we're. If. And is that a panel as well? Or is that just like, okay, another panel.
+
+[00:59:27.00] - Michael Cote
+Like, it'll go to their abuse panel or the OSS channel.
+
+[00:59:30.32] - Justin Gardner
+Darby, you look like you disagreed with what he just said.
+
+[00:59:33.03] - Darby Hopkins
+Panel shop.
+
+[00:59:34.15] - Justin Gardner
+Yeah.
+
+[00:59:34.55] - Darby Hopkins
+Is not its own panel. Panel shopping is like an action that, that Kotei is talking about.
+
+[00:59:40.23] - Justin Gardner
+Oh, I see.
+
+[00:59:40.96] - Darby Hopkins
+I think that's. That was where you're misunderstanding me because. Yeah, so when Kote says panel shop, he means like in our normal panel meetings, if we can't reward it, we will panel shop and figure out where it can be reward.
+
+[00:59:54.80] - Justin Gardner
+Okay. Okay, so then you'll pass it to other panels for rewarding.
+
+[00:59:58.73] - Darby Hopkins
+Same group of people.
+
+[01:00:00.01] - Justin Gardner
+Excellent. Okay, that makes sense. Let me see if I can pull up another question here specifically relating to the panel before we move on to. Yeah, I think we're going to go back a little bit to. To the policy. And I also want to give you guys some. Some freeform time, you know, after we get through a couple of these questions to talk about, like, how hackers can start optimizing their reports when writing reports and that sort of thing. And you guys looking at the doc here, you guys did a ton of prep for how, like, tips on how hackers can get rewarded more for their. For the reports, which is excellent. Before we get to that, though, I would like to do talk about downgrades and upgrades or, you know, additional rewards on top of your bonuses. That's the word. Can you explain what things might result in a downgrade that we should avoid? And then we'll transition to how our reports can be extraordinary and receive, you know, 1.2x multiplier.
+
+[01:01:09.86] - Darby Hopkins
+Yeah, yeah, yeah. Common downgrades involve what prior access the attacker had.
+
+[01:01:18.42] - Justin Gardner
+Right.
+
+[01:01:18.75] - Darby Hopkins
+In this hypothetical scenario that you're reporting to us that the attacker needs in order to perform the exploit. I see you have kind of user interaction here as an example. That's another one. So this is beyond the behavior that the user would normally take in the product. Right. Is it clicking on a link, clicking on a button that's kind of not normally seen on the screen? We could downgrade for that as additional interaction that just. It makes it harder for the attacker to successfully exploit the victim's environment.
+
+[01:01:55.44] - Justin Gardner
+Let me, let me jump through a couple of these and I'll ask pointed questions about each. So the first one is impact. That's one step down applied for minor impact. Subjective, you know, but hopefully our, our Reports are, are showing good impact. And maybe we could bolster this by writing our impact section very thoroughly. Right. Prior prior access, we talked about that one user interaction. The one that I, I did want to highlight here in this one was this quote right here. This applies to interaction beyond the normal usage of the affected product. Okay, that is a really awesome statement to make because sometimes there are things that require user interaction, but that is really like natural in the product. For example, this wasn't gcp, but I had a scenario where I had a bug. You know, user would submit a ticket. As soon as the person processing the ticket clicked the ticket, something would happen, you know, but then they're, they're counting that as user interaction. Like I had them come to my malicious attacker page, you know, client side attack button. It was, it was, yeah. So I mean there's, there's, there's difference there as well. Right. But you know, delivery mechanisms do change throughout these, these things. And if it, I believe the user interaction should either have multiple tiers or if user interaction is required and that is an essential part of the product, that that shouldn't be counted against the researcher. What, what is Google's thought on that scenario?
+
+[01:03:25.55] - Michael Cote
+Interestingly enough, for like client side attacks typically, and it may or may not be documented on this page, but we generally consider like full payment immediately upon opening. There are rare cases where you're like, hey, everyone does this like, and that is to get full. We usually only see like user interaction or primarily with these client side attacks where it takes one or two additional clicks. Where we consider most client side attacks like as soon as you open it, you're already done. For these other like your exact scenario, we have removed it when it's such a common use case that like as soon as you're just not brainwashed but like conditioned to. As soon as you open this link, hey, you're going to a dashboard, you must click this button and that's your always your workflow. In that case, it depends, but sometimes we'll remove that user interaction.
+
+[01:04:23.09] - Justin Gardner
+I love that, I love that because that also speaks to a high quality poc. Right? One of the things that's crazy about the whole GDRP thing is that people always click accept cookie without even thinking. And so that's one of the ways that I think hackers have harvested a required click without even using, you know, your brain in some of those scenarios. Right? What, what, what do you guys think about that? Like if a user has a really high quality POC where you're just, you Know, like you said, brainwashed into clicking this button.
+
+[01:04:55.26] - Michael Cote
+Call it out. Like, make your case. Like, honestly, like there are 300 products we get reports on. Plus make the best case that you can. The easier you make it for like, hey, the impact, the attack, preconditions, all of this. Like, and I think we're going to go into that later, but make it easy sell. Like, hey, this is just normal everyday workflow. The product only works this way if once you open this, you click it and we'll have to review, of course. But that makes a much better case than just saying you do this and you let then the panel basically decide your fate.
+
+[01:05:39.13] - Justin Gardner
+I like that. So that is taken well into consideration. I like that. And I think that's another reason why us as researchers just speaking to the community here, we should have a toolkit for these sort of things. Like we should, There should be a GitHub repo out there. I don't know how we don't have this. That has a, you know, GDPR except cookie button that, you know, you can easily iframe, you know, clickjack into clicking whatever you want, you know, like that. That should totally be happening. So we need to build that. All right. Exploitability is the next one. It says downgrade applied because the attack is still possible, but the vulnerability is difficult to exploit in practice. What is, what is difficulty to exploit? What is difficult to exploit mean here, Darby, if you, if you could take this one.
+
+[01:06:26.50] - Darby Hopkins
+Yeah, 100%. This is another one of those kind of subjective ones. So this is beyond user interaction. But I mean it's, it's anything that just decreases the likelihood of a victim being exploited. Right. This is kind of a likelihood downgrade.
+
+[01:06:49.05] - Justin Gardner
+Okay. So specific conditions, preconditions for the attack perhaps, or.
+
+[01:06:55.03] - Darby Hopkins
+Yeah, yeah, I'm trying to think of some examples, but precondition is a great example. So this is aside from prior access and user interaction. But like if the, if the victim has to have some setting enabled.
+
+[01:07:12.00] - Justin Gardner
+Yeah. Or like maybe it only affects victims with, you know, an uppercase letter in their username or something like that. Is that a good example of that?
+
+[01:07:21.26] - Darby Hopkins
+Great, great, great example. Right. Of the. The victim's environment has to be in a very specific state for the exploit to be possible. So like maybe a time based attack, if there's a limited window where the exploit succeeds, that's where we might use this downgrade.
+
+[01:07:40.71] - Justin Gardner
+What if that is the case? But we've created a really reliable like race condition exploit.
+
+[01:07:47.96] - Darby Hopkins
+If it's. Listen, even if it's reliable, we're basing this off of the standard use case for whatever affected product we're talking about, right? So if the majority of Google Cloud customers, you know, this setting, for example.
+
+[01:08:05.32] - Justin Gardner
+Is, well, that's a little bit more uncommon configuration, right. Rather than exploitability. Or is that exploitability?
+
+[01:08:12.63] - Darby Hopkins
+They're linked, but different. Like if, if we're talking about a setting that is not enabled by default needs to be enabled, it's not necessarily an uncommon configuration because it's already like an available setting in the product. But now we're just kind of splitting hairs.
+
+[01:08:27.82] - Justin Gardner
+But let me ask, let me ask one, maybe something that would clarify between the two, if I may. So, so what I'm trying to get at here is one of the things that really hurts the heart of the researcher is a scenario where the attack is very complex, but we've done it. We've threaded the needle, we've created the exploit that works really well. And yeah, it does. You know, it's complex as heck. You know, but what I'm asking is, will we be downgraded for threading the needle here because it's a, a difficult attack scenario and only, you know, a limited set of attackers would have the capability to exploit that.
+
+[01:09:06.22] - Darby Hopkins
+The short answer is no, you will not be downgraded for that. This is meant to capture limitations on the victim side, right? Like how many available customers are actively in a state where they might be exploited by this vulnerability. Right. So even if you're the only attacker in the world who knows how to do this, you have insane skills and your POC is super complex and you threaded the needle. If only 100 Google Cloud customers are operating in the very specific state that's needed to make this vulnerability exploitable, then that's on a lower tier than maybe 100,000 customers being actively vulnerable.
+
+[01:09:55.67] - Justin Gardner
+Sure. Okay.
+
+[01:09:56.59] - Darby Hopkins
+Those are cases where we might use this downgrade.
+
+[01:09:58.75] - Justin Gardner
+That makes sense. So you guys are using some metrics on your side to, to determine what amount of customers are in this, this state, and that is what contributes to exploitability. Whereas uncommon configuration is something where, you know, you look at the documentation and this is not like a configuration that you guys are particularly, you know, encouraging or you allow the product to be configured in that way, but it's not something that, that is recommended. And that is where we get the uncommon configuration downgrade.
+
+[01:10:32.68] - Darby Hopkins
+Yeah, correct. Like an example of that might be you're using some super niche extension in your product that maybe only 5 of our customers are using. That might be an example of uncommon configuration.
+
+[01:10:50.76] - Michael Cote
+Yeah, a good example of Exploitability might be like bucket squatting, where in some cases like hey, as soon as you instantiate the product, this bucket is created and you need to go, the customer needs to go and delete the bucket and then it's squattable, but only maybe in the time window between you go and try and reuse that same like feature which would automatically recreate it. And so you have to convinced somehow social engineering or they just have to do it and you have to know and you have to do it again before they use the feature. If all those have to be true, then like exploitability would be the downgrade.
+
+[01:11:33.56] - Justin Gardner
+That makes sense. Okay, that makes sense. And as far as uncommon configuration goes, what are some things that we can provide as the researcher to avoid this downgrade? Like if we can we provide you with documentation, sample code, you know, that sort of thing. And will that help us avoid that?
+
+[01:11:54.77] - Darby Hopkins
+Yeah, 100%. I mean we don't even mind if you link, if you quote our own documentation at us in your report. If you say, hey, your own documentation recommends that customers configure their product in this way. So just by the way, in case you were thinking that this was uncommon, which it might look like it is at the surface, your documentation specifically encourages customers to do that, which inherently makes it a common configuration then for our customers. Yeah. So feel free to parrot back our documentation at us or even, I mean even if it's not provided by us, we'd be happy to kind of look into some resources that you found that.
+
+[01:12:39.60] - Justin Gardner
+That's a great point. If like this, the top like stack overflow answer or something like has that then then maybe we. This all contributes to the likelihood that that configuration will be put in place.
+
+[01:12:49.84] - Darby Hopkins
+Yeah, yeah.
+
+[01:12:51.43] - Justin Gardner
+Very, very good. I like that. That's excellent. And, and yeah, I think that understanding those, those nuances and going the extra mile to configure stuff and in the way that is consistent not only reduces your risk of getting uncommon configuration, but it also helps with like getting the setup done right. So just really follow the guides, you know, set up the product like that rather than going in there and trying to figure it out yourself and getting yourself into some weird, you know, configuration. And then you'll avoid uncommon configuration downgrade and it'll make your setup easier.
+
+[01:13:26.18] - Michael Cote
+That's important. Like you have to put it in the YOLO mode for it to work. Yeah, uncommon configuration that we might expect. So things of that nature.
+
+[01:13:34.63] - Justin Gardner
+Yeah, okay, that, that makes a lot of sense. Moving, moving from those downgrades then over to upgrades or bonuses we have novelty as, as an upgrade, which I imagine is, you know, a novel type of attack that you guys haven't seen. I don't know that that one needs much discussion, but the report quality dimensions I think are, are really interesting piece of Google and, and essentially what you guys have here for the audio listeners that we're sharing on the screen is a matrix of characteristics of your report. And your report will be downgraded to 80% of what it would have been if it really, really is missing all of these pieces. And the normal is 1x. So you're just going to get the value, but you also have the ability to write an exceptional report which will get you an extra 20% on top of your report if we check all of these boxes. So what are, what are some tips from you guys? Maybe Cote can answer this one on how to like write a, an exceptional report here because some of these, you know, some of these are built into your template that you provide us when we're submitting a report, but some of them are not. And I'm wondering whether that's intentional, you know, trying to get people to fax your attention or, or what's going on.
+
+[01:14:56.88] - Michael Cote
+So, and I find this interesting because I have one example in a little bit but the read it and know it. I, I know researchers spend, I think we did some research on like something like 16 hours finding a vulnerability or report and sometimes more. The report is such a small percentage of that like go through like we often see like missing attack preconditions. Like we might downgrade you because if you call out that it's admin. But we're going to figure that out anyways because we're going to have to reproduce your report. Make sure you're hitting all these notice it's not like vulnerability description. It's not like amazing quality. It's effectively described. We want you to be short and to the point. I'll also say the more you use AI typically the longer your report gets. Our goal here is to as quickly as possible be able to reproduce, assess and reward you. The better that you do, the more likely we are to be able to reward you quickly with the maximum amount with that bonus. So recently last week we had someone say, hey, there's this report on your site that's got 22, 5. I only got a small like 1312. What was the difference? And I had to say they got exceptional. It was when it was at 1.5 and you got low quality and 10 and a half thousand dollars for what probably Was like an hour of their time is a lot of money, especially all of the time that they put into the report. So go through. We actually, and Darby led it like she actually led part of it like redoing all of the exceptional report quality and redoing loads like downgrades we just went over. But go over them, make sure they're all in there. Make sure you're like short into the point succinct and you can get that like 1.2. And we specifically redid it so that everyone can get it. Like previously it was like you had to know like provide a, like how do you fix it? And with some of these server side, you might not know now everyone should be able to get that 1.2 every single time. We absolutely like you benefit and we benefit when you get that.
+
+[01:17:16.44] - Justin Gardner
+That's crazy because you guys, your bounties are already super good and then you just, you're tacking on additional 20% for anybody who, who even who tries on their report because it's like effectively described, not like you know, flawless. You know, it's just effectively have your misspellings in there.
+
+[01:17:33.89] - Michael Cote
+We don't care. Like that's not what we're looking for. We're looking for how quickly it is able to reproduce the report.
+
+[01:17:40.56] - Justin Gardner
+That's great.
+
+[01:17:42.81] - Darby Hopkins
+Yeah. Some examples I've seen of researcher reports, some researchers will write a sentence in their initial report and then just attach their full research paper. 20 pages.
+
+[01:17:57.13] - Justin Gardner
+Oh my gosh.
+
+[01:17:58.48] - Darby Hopkins
+Yeah, like amazing work, amazing work. Hats off to you. However, the time that it takes us to read through your 20 page research paper is, I mean frankly, it's money time wasted on our end. Right. So selfishly, it's to our benefit to pay you a little bit of extra time to put some of that extra work into your report so that we can more quickly understand the impact reproduce, get you a reward faster. So yes, please feel free to upload your research paper. Just know we prefer not to read through the whole thing. It will delay your reward.
+
+[01:18:44.14] - Justin Gardner
+Yeah, yeah, totally.
+
+[01:18:45.22] - Michael Cote
+So I mean that on there it's easy to miss stuff like hey, when you have like very succinct. Hey, here's the impact here is the attack preconditions. If we have to read like if you're like, like your POC or Darby calls it a POC is like like super long. That's one thing. If all of the additional words describing your attack are like 20 pages long, we are 100% going to forget maybe an important point that you're making and not completely understand perhaps the impact of your amazing vulnerability.
+
+[01:19:19.26] - Justin Gardner
+Totally, totally. Yeah, that makes a lot of sense. I think it's hard because that is definitely a skill. Concise technical writing is not easy, but it's something that as bug hunters we need to get better at in order to optimize these rewards here. So I'm sure they'll figure out a way to milk the system and get these. And I think I know for me, every time I submit a report to Google, I look at that table and I go through each point and I make sure that I have each of those, you know, there. And sometimes I actually started doing this recently. We'll see how it pans out. But I'll actually put a section at the end of my report, you know, and denote it as like, you know, report quality standards and document. Why I think that I hit each one of those, you know, and you know, who knows, maybe that'll, maybe that'll, that'll help.
+
+[01:20:09.76] - Michael Cote
+I honestly, I would love it if everyone does that. It's a good reminder for us and like it's, at least we can more effectively provide feedback.
+
+[01:20:18.71] - Justin Gardner
+Yeah, yeah, that's great. I did want to ask as well, changing gears a little bit. You know, GCP is an enterprise product like you said, you know, and there's, there's a lot of businesses that are going to be using it. It can get expensive. One of the things we've seen with other cloud providers is the ability to, for testers to have accounts that are not tied to their personal funds, you know, that they can spin up products, test them and then, and then, you know, spin it down or whatever and without that going out of their, their pocket. Do you guys have something similar for that? Is there any plans for that? How can we test more effectively as researchers without costing ourselves a bunch of money?
+
+[01:21:03.40] - Darby Hopkins
+Sure, yeah, we've been, we've gotten that feedback before. You're not the first one. Especially certain enterprise level products. Yeah. Kind of impossible for independent researchers to hack on. We are essentially the short answer is we are working on a way to get our researchers on these more expensive products right. Either whether it's provisioning Google Cloud credits, which is basically like money that can vouchers that can be added to your billing account all the way to provisioning you guys instances like a store instance to hack on at no cost to you. So we are, we are working on methods to get you guys access to that. We saw the success of that at our June bug swap last year. So we know that it's an Effective way to get high criticality issues. Unfortunately, it's a little bit of an difficult internally to get money generating money.
+
+[01:22:09.06] - Justin Gardner
+Out of thin air.
+
+[01:22:10.51] - Darby Hopkins
+Yeah, yeah. Over to our, our lovely external researchers who are trying to find security vulnerabilities in our products.
+
+[01:22:17.31] - Justin Gardner
+Sounds great.
+
+[01:22:18.18] - Darby Hopkins
+A little bit of a hard sell.
+
+[01:22:20.51] - Michael Cote
+That if you have an enterprise product, like, it's harder for credits. We had it internally approved and things change. If you are a known researcher and you want to hack on a enterprise product, Send Darby and I an email. Send us like a chat. In discord. We have gotten multiple researchers access to enterprise products, both through bug swat and outside. We want, like, new research. We want to find these vulnerabilities. So again, we can't do it for just anyone because if you haven't hacked on Google, there's no way to check for abuse or fraud or whatnot. But if you have a relationship with us, ask. We're more than happy. Maybe the product says no, but that's the worst that happens. We're definitely going to find it. We're definitely going to ask them. If you want to hack on an enterprise product, we will do whatever we can to make that happen.
+
+[01:23:17.60] - Justin Gardner
+That's excellent. Yeah, that's really good. I think that definitely that's a good opportunity for researchers and it would be really cool to see if, as an established hunter, you know, you reach a certain level reputation on bug hunters.google.com or whatever, and then that entitles you to a certain amount of credits. I think that could be. I think that could be a good system as well. Or maybe like, it comes with a number of accepted reports. You know, every three accepted reports, you get X, you know, dollars in credits to apply to your account that you can use to find more vulnerabilities. I think that could be fun as well. All right, so we've covered a lot of what we wanted to cover. I do want to go into some actual scenarios, just kind of talking through what that would look like. But first I want to give you guys the opportunity to just jump on us here. The whole, like, prep that you did on how to get these reports paid more. And there's like, you know, what is this five, six, seven paragraphs here worth of recommendations that users can use or, you know, hackers can use to get their reports paid out the max. So I don't know if you guys want to take these back and forth or if one of you guys wants to take it specifically. I'll leave it up to y'. All.
+
+[01:24:31.68] - Darby Hopkins
+Sure. Yeah. This kind of first Big tip. There's this concept that we use internally. Refer to internally as privilege escalation. Delta. I'm sure somebody else on the Internet has used this term before, but basically just refers to. I've mentioned this earlier. Where the attacker starts versus where they finish and that space in between. If you start with fewer access on the victim's project and end with full project access, that's a pretty big delta. You will get a high reward for that. It's not a big enough delta. Right. If you start with viewer access and you end with viewer access, or maybe viewer access on another product still cross product impact, but not as high as full project takeover. Using those just as examples. So in your report, when you're describing impact, focus on that. Where did I start when I began this exploit? Where did I finish? What type of data do I now have access to and in which products that'll get you a higher reward? We will downgrade or upgrade your reward based on those factors.
+
+[01:25:48.60] - Justin Gardner
+Yeah, okay, so that's great. So we should start. We should have clearly defined starts with this privilege and ends with this privilege. We could even make that like a section in our report to make it super clear and optimize the bounty.
+
+[01:26:00.05] - Darby Hopkins
+Yeah, 100%.
+
+[01:26:01.72] - Justin Gardner
+Awesome. All right, what's next?
+
+[01:26:04.52] - Michael Cote
+Yeah, I'll jump around. I'll just say, like, clear attack scenarios. Like, we get a lot of reports and probably not from your community, which like really good hackers. But some of these, and I was listening to one of your other podcasts, they were like, oh, is it a realistic attack scenario scenario? Or what do they actually get out of it? Like the example I used earlier, like the billing time. Like not billing, but the time model, train time. Like, like start and stop times. Do people. Are attackers going to take advantage of that? If not, you're either going to get really, really downgraded or it's not going to be rewarded at all as like, it's just not impactful. So think through it, think through why and it might stop a lot of back and forth.
+
+[01:26:51.51] - Justin Gardner
+Why does the attacker maybe even making this a section, like we were saying, why does the attacker want to do this attack? Yes, very good, Darby, back to you.
+
+[01:27:02.86] - Darby Hopkins
+Yeah, I'll go to the next point. Feel free to, in your report explain your understanding of how the product is supposed to work. Our product teams develop a product with a certain intent of its use case. That does not mean that it's always effectively described to people outside of the organization. And sometimes we can hit kind of a disagreement there where it's Working as intended internally, but not necessarily as the user would expect. And that's a problem. That is a bug and we want those types of reports. But as a hacker, it's valuable to us. If you explain that perception of yours and why you think this. Right. I got this understanding that the product should work this way from your own documentation, but based on the ui, it seems to work this way. It's kind of confusing. It could lead to victims and maybe misconfiguring some security settings in their own environments. That's a vulnerability. So feel free to explain that background in your report.
+
+[01:28:12.60] - Justin Gardner
+Yeah, I think that's a really good differentiator there because, yeah, the public perception of security is extremely important. Right. Whether the user thinks that this data is accessible or not accessible. Informs, especially in a cloud product, you know, their threat model for their apps, you know, as their, as you guys are a building block of the applications that these other businesses are building on. I'm very glad that you guys have that aligned in your, in your policies. Kote, what do you have?
+
+[01:28:49.11] - Michael Cote
+I'll just say mentioned earlier, but for the love of God, please stop using AI to write your full report. Like, if you can't read your full report because it's going to take you like 30 minutes and sometimes. We've literally gotten over 100 comments adding on to a singular bug, there's zero chance I am going to do everything I can to put that at low because to basically disincentivize you ever reporting like that again. But go through, read it. Is it succinct? Is it like you don't need AI for the most part and we much prefer succinct the other. I'll just go right on. But we get a lot of questions about like, hey, you started at S1 and now it's not rewarded. You started at S2 enough, now it's not rewarded. Like those are initial assumptions again, like Darby talked about, like how the product is expected to work. So like a good and common example about this is like, hey, yeah, like I was able to do something. Like the UI prevents me to do something, but using a cli, I was able to do it. Therefore it's like a privilege escalation vulnerability where people have that assumption, maybe even the person triaging and filing the bugs and that's again two separate people. So it's already been looked at twice have that same assumption. But the documentation, when you go and look at it, clearly states that's not a promise. So those are the type of things where you're like, oh, the initial estimation even it goes the opposite way too if we have a very low severity. So confusingly, we call severity S0 and S1 and S2 and S3. And we also have S1, S2, S0 within our table. But for these lower severity S3 within Google, we will also go and sometimes reward much higher. That also has happened.
+
+[01:30:44.13] - Justin Gardner
+Yeah.
+
+[01:30:44.32] - Michael Cote
+The initial. Just know that the initial triage and how it's filed has nothing to do with your end reward. Unfortunately. It's usually close, but not always.
+
+[01:30:54.13] - Darby Hopkins
+Yeah. Adding on to the AI thing specifically, in one of your recent episodes, Justin, y' all mentioned kind of the concept of manual hacker with assistance from AI. Super happy with that. Right, Right. We are totally fine with those types of reports. It's mostly an issue with having AI writing your reports. And also I've heard some feedback. Okay, well, maybe English isn't my first language. I'm using AI to rewrite my report for me. Feel free to just submit your report in your native language, whatever you're more comfortable with. We have Google Translate that we can use internally on your report and it'll probably communicate it a little bit better than AI can trying to interpret your report.
+
+[01:31:40.25] - Justin Gardner
+Yeah. Wasn't there like some Gemma. Yeah, Translate Gemma models that just got released too by Google? There's some new open source models out there.
+
+[01:31:50.13] - Michael Cote
+Oh, we have it built into our system, actually. And it's been like that for a long time. So submit in whatever language you feel is appropriate. Last. And maybe it should have been first. And I know we've talked about it a lot, but I can't reiterate it enough if you think we have something fundamentally wrong. Like it's not just the Justins of the world who have like personal relationships with Google that can push back and ask questions and be like, no, you're wrong because of xyz. Even if we end up disagreeing, which has happened, like ask questions, come back with like rationale, like new rationale of why you believe you. This is the incorrect and it's not uncommon that we change our reward. So please, like, you can reach out through the bug discord. Like people, like we prefer the bug, but like there's all sorts of avenues to get more in depth conversations about your specific issue. And I've had maybe our. One of our very, very top researchers saying like, it's very uncomfortable for me should I do this? And part of the life hacking event in which we doubled his award, he actually got like 30,000 extra dollars by like pointing something out that like, it was like a nuanced edge case that we missed that took it from like S1 to like unauthenticated and S0, which was a huge step up for like three of his reports.
+
+[01:33:13.59] - Justin Gardner
+So. Yes.
+
+[01:33:14.94] - Michael Cote
+So, like, feel free, like we do then go back and like, evaluate your arguments to see like, oh, did we miss something?
+
+[01:33:25.81] - Justin Gardner
+That's great, that's awesome. And I can vouch for certain that you guys have always had excellent dialogue on that. So I do appreciate that a lot. Any final comments from y' all on the, you know, free form tips to hackers on how to improve their reports? I think that was a good. A good run there, for sure.
+
+[01:33:45.42] - Michael Cote
+I'm good.
+
+[01:33:46.77] - Darby Hopkins
+Yep, all good.
+
+[01:33:47.85] - Justin Gardner
+All right, let's move to the actual scenarios then. I kind of looked at. So this is going to be fun. I looked at the policy and I was reading over all of the different sections and delegations, you know, that there are there. And I was trying to come up with scenarios where there could be ambiguity. And so let's see how you guys handle these in some cases, actual scenario assessments. So you've got the ones that I put in the doc, but I've also got another one here which you mentioned earlier regarding this exfilling the time of a certain model became trained at. I wanted to ask about this because one of the things that's a little bit tricky with your table here, and I'll go ahead and share my screen as well, for those that are on YouTube, is this, that some of these are descriptions of the vulnerabilities and some of these are impacts is what it seems like to me. So for example, Project Takeover, full administrative control is an impact from a vulnerability, not an actual vulnerability itself. Whereas down here, where is it here? Which one did I have in my scenario here? Like global resource name prediction or collision is like a description of a vulnerability, right? So what happens if we have a scenario where global resource name prediction allows you to accomplish full project takeover? Where does that lie?
+
+[01:35:25.77] - Darby Hopkins
+Yeah, I'll take this one. Probably use a little bit of clarification in our table on this. So generally we will start from the top of the table and work our way down. So what that means is even if your report involves global resource name predictability collision, if the impact of that is full project takeover, you will get the reward for full project takeover. And the S2 categories are kind of uses a catch all for those scenarios that are not high enough impact to warrant these higher rewards. But we still want to reward something, right? So maybe this is like a temporary DoS situation would be a great example. Yeah, that doesn't result in read or write. Right. The attacker may not get much out of it. Still has impact to the victim.
+
+[01:36:23.39] - Justin Gardner
+I see. Okay. So if we are achieving the impact that we're showing, you know, higher up in the table, then we should be able to get that, that reward. But then we go back to the exfil time scenario. Technically that is a cross. Where is it here?
+
+[01:36:42.90] - Michael Cote
+It's like S0. It would have been like S0 probably F. Right.
+
+[01:36:47.22] - Justin Gardner
+So like an S0F single service privilege escalation read, potentially cross tenant. Right. So technically we hit that impact. So are we going to hit that table and then get smacked with a bunch of downgrades? Is that how you do it? Or would you put it in a.
+
+[01:37:05.69] - Michael Cote
+Different vuln category in that case, the typical S0F that you see, we're typically talking about meaningful customer data there. In this case we decided that it was so like we couldn't apply enough downgrades, honestly comparatively to the average. And you think about like what is the average case for like cross tenant read? That seems reasonable. So no, we went to probably like S2 something very, very, very minimal. And even then you're like again, ask yourself as a researcher, how, what would an attacker do with this information? Why would they want it? And that helps inform maybe your own perception of the impact and where this would fall.
+
+[01:37:52.35] - Justin Gardner
+That makes sense. That makes sense. Yeah. There's nuance to it because some of these are vulnerability descriptions and some of these are impact descriptions. But at the end of the day for y', all, it's what can you do with the data as an attacker and what, what is the actual impact on the system regardless of what mechanism you reach? But then Darvid Cote, we have an interesting conundrum which is any XSS on GCP results in RCE on all of the instances that that user has access to. Right. So we get in a weird situation where it's like should we poc for you that we can convert an XSS into RC on all of the victims systems or is that assumed or is that integrated into the the table?
+
+[01:38:42.15] - Michael Cote
+And typically like you're talking about C0 at that point, which is integrated in like that $20,000 like again like the some of the things about the client side attack and where there is more nuance between some of the client and server side attacks is like how scalable is is the attack. And that is something if are you going to have to individually identify each specific target again like and it also depends on their initial privileges, like of what privileges then you get as the attacker. So those are why like the big difference between client and server side of like how scalable is it? Is it like arbitrary victims or is it like very specific? Specific victims. How easy is it to do? And typically, and again nuance. But in like these rare cases where it might honestly vulnerability be on the server but you have to individually target and send them a link and do other things, makes it more client side ish, that would be like the way that we were.
+
+[01:39:42.68] - Justin Gardner
+Certainly there's some, some difference between that. Right. You know, where, where there's like, you know, we're compromising Google's infrastructure versus we're compromising all of the accounts on a, on a, you know, a client's, you know, infrastructure. I'm wondering if the delivery mechanism is also considered at all for you guys because like you just mentioned, right? Because surely there's a different scenario where we, we have to like email the guy that runs your cloud, you know, for your organization and he's got to have Google Cloud open in one tab and then he's got Gmail open in one tab and then he clicks my link and then, you know, and then there's like this whole flow. That's a different scenario than if we provided, I guess let me phrase this as a question, is that a different scenario than if we provided a delivery mechanism that allows us to very cleanly and easily exploit somebody with qualified permissions for the thing we're trying to accomplish, like a ticketing system within GCP where you know, by nature of the fact that the user is looking at our ticket, they have access to the resource that we need to exploit this and thus have established a very consistent delivery mechanism.
+
+[01:40:50.77] - Darby Hopkins
+Yeah, those would be rewarded differently. I mean, internally we are looking at the maximum possible impact regardless of how you frame the vulnerability. Right. So we'll do our best to find, to think of ways that other ways that this could be exploited other than how you framed it in your report. But as a hacker, that latter scenario is clearly more impactful. Clearly. And it's worthwhile to think about those methods of attack that reduce that user interaction.
+
+[01:41:24.89] - Justin Gardner
+It cuts both ways, hackers, it seems that's kind of what I'm trying to test you guys on here is like, are we getting asymmetrical downgrades on impact versus upgrades? Right. And what your answer to that question showed is that we're also getting those upgrades. Right. If we can prove full attack delivery mechanisms and stuff like that. And as an attacker, what I would love to see as a bug bounty hunter is that also codified in your policy because we have the downgrades codified in some capacity capacity but extraordinary delivery mechanism or something like that could also be an interesting upgrade to be able to present to the to the hunter. What are your thoughts on that?
+
+[01:42:10.38] - Michael Cote
+We haven't. And again these were more recently reworked. I will say since the table was reworked we have been providing upgrades more consistently. But you're right, it is not like I love that but like for interesting attacks, like I think we've recently given someone who was a credit but like it was more of a bug than a vulnerability. Like, like I think it was 1000 or 3000, I can't remember which. Like upgrades for unique and novel attacks. So I think it would be hard to codify. But we do have additional impact where we again we think like hey, for this attack might be S1 but like given the product and given the ease and given these other things we are willing to. And again people, people on the panel advocate for more money for the researchers.
+
+[01:42:55.61] - Justin Gardner
+That makes sense. The next area that I wanted to ask you guys was can you explain the S2D programmatic or scalable and unauthorized access to non customer data? So this seems to be relating to like Project ID leaks or sort of gadgets that you guys might actually be willing to reward as vulnerabilities.
+
+[01:43:18.67] - Darby Hopkins
+Yeah, so this is. We actually added this category in response to kind of a specific set of vulnerabilities that we were receiving that we were having a hard time categorizing. So this kind of refers to the concept that we were talking about earlier. Like maybe you're getting access to metadata or training data, something it's not directly customer data, it's not pii, but it's still something that maybe you should not the attacker should not be able to access. An example of this would be like Project IDs. Project IDs for context are set by the user. They can have kind of company info in there. So it's sensitive, they're not supposed to be leaked. And maybe you found a vulnerability that can leak thousands of these project IDs from one specific product. That would be something that ideally fits into this S2D category. It can't fit into S0 or S1 because it's not really sensitive enough customer Data. So this S2D category is really data driven.
+
+[01:44:27.81] - Michael Cote
+And I'll say too, sometimes we downgrade. So hint for the researcher, sometimes we downgrade. Like hey, you don't have the Project id. Typically those are things that in and of itself it doesn't give you information, but it can be used for other attacks. So keep that in your back pocket if you want. You don't necessarily have to put it in. But when there was a high entropy downgrade ID that we didn't get over. But that's for things like Project ID or uuid, like attacks where you're like, hey, you don't have this, you don't have this information available. You're, you're giving us a specific attack because you know it because of your other like project that you spun up. You say, well, like there's also this way and then there's no downgrade.
+
+[01:45:10.31] - Justin Gardner
+That makes a lot of sense. So that's cool. This category is if you want to submit this gadget or whatever you can. But also you can use it in chains and other reports. That's good. All right, y', all that, those are the questions I had that we have time for today. Thank you guys for coming on the pod. I hack on Google, Google a lot and I learned a lot about, you know, how all of that works. So appreciate you guys giving us the tips and tricks. Is there anything that you guys wanted to shout out at the end of the pod before we close?
+
+[01:45:38.17] - Michael Cote
+No, just like we appreciate all the, all the love and all of our researchers like the amount we've given out like 3.5-ish million this year, this past year.
+
+[01:45:49.09] - Justin Gardner
+Wow.
+
+[01:45:49.85] - Michael Cote
+Huge in comparison. And we love everybody reaching out and thank you for having us on the program.
+
+[01:45:57.06] - Justin Gardner
+Awesome. Darby.
+
+[01:45:58.73] - Darby Hopkins
+Yeah, I'll echo what Kote said and also add on that Google Cloud may seem scary to start with, difficult product sets for some, but there are a lot of bugs to be found here. I've said this before, not a lot of hackers are working on this attack surface. So there's a lot of opportunity. Don't be afraid to just, just submit a report and see what sticks. We're happy to see you here.
+
+[01:46:21.56] - Justin Gardner
+Awesome. Thank you guys so much for coming onto the pod today. Peace. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'. All. If you want more Critical Thinking content or if you want to support the show, head over to CTVB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of the masterclasses, hackalongs, exclusive content and a full time hunters guild. If you're a full time hunter. It's a great time. Trust me. I'll see you there.

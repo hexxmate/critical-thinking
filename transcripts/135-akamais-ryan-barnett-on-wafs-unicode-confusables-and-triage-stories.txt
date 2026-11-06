@@ -1,0 +1,1301 @@
+Episode 135: Akamai's Ryan Barnett on WAFs, Unicode Confusables, and Triage Stories
+Source: https://www.criticalthinkingpodcast.io/episode-135-akamais-ryan-barnett-on-wafs-unicode-confusables-and-triage-stories/
+======================================================================
+
+Title: Transcript - Thu, 14 Aug 2025 20:33:42 GMT
+Date: Thu, 14 Aug 2025 20:33:42 GMT, Duration: [01:26:22.22]
+[00:00:00.96] - Ryan Barnett
+So then you know it's doing something.
+
+[00:00:02.04] - Justin Gardner
+That's what I need to know.
+
+[00:00:02.79] - Ryan Barnett
+Okay.
+
+[00:00:04.32] - Ryan Barnett
+Unicorn. Unicode. Kelvin. Dang it, guys, do not make a meme in freaking discord about unicorn, please.
+
+[00:00:12.08] - Ryan Barnett
+I see a T shirt coming.
+
+[00:00:12.67] - Justin Gardner
+Dude, shut up, Ryan. Best part of hacking, when you can just, you know, critical things, right?
+
+[00:00:28.44] - Ryan Barnett
+Yeah, dude.
+
+[00:00:36.28] - Justin Gardner
+All right, hackers, here's the deal. Before you skip forward, give me like two seconds to give you a takeaway. Okay, here it is. Threat Lock Card Detect is the best EDR around. They have a ton of tool integrations. The alerts are high signal, so you're not swimming in a bunch of garbage. And both alerting and remediation actions are super customizable. It's definitely the one you want. Okay, that's it. Skip forward if you must, but I do feel like you should know why I think that. Right. Well, we've talked a lot about the Threat Locker suite, and frankly, they're the best implemented tools around. From a technical perspective with the cdr, they're focusing a lot on customization and high signal stuff like PowerShell activity log deletion, sketchy RDP sessions. Stuff that I have wished many times EDRs were not detecting actively. Okay. And while it does work out of the box, it also gives you the experience. Purple Teamer. The tools you need to implement custom logic to lock hackers out of your network at the first sign of trouble. That trouble is the trouble that you are the most qualified to recognize. So they're equipping you to deal with it right away. They're definitely the ones you guys want to go with if you're looking for a new EDR tool. All right, that's it. Let's go back to the show. All right. Ryan, dude, come here, man. Thank you so much for today. I just had a fantastic day up in Reston with Ryan Barnett, and we are here at the Akamai offices. After battling our computer systems for a while to try to get the recording equipment in place, finally able to record the episode. Ryan, dude, I'm looking at this doc you prepped a lot. I so appreciate that.
+
+[00:02:06.15] - Ryan Barnett
+Well, yeah, I listened to the pod, as you well know, and I love all the stories, especially war stories and all that stuff. And so once you told me the dates, I was like, okay, I got time. Let me go through the files here and stuff I thought would be interesting for everybody and for us to talk about.
+
+[00:02:21.50] - Justin Gardner
+Dude, I'm very excited. I think it's going to be a new kind of episode. You know, a lot of times we have people that are Actively hunting in the bug bounty scene. And you are on the receiving side of a lot of these reports, right. And you see them, what's coming through the Akamai bug bounty queue. And then you also see the traffic that's happening live in the Akamai network. So very exciting stuff. But before we get into too much of the details, you got to cut your teeth with a bounty with a bug that you found. Okay.
+
+[00:02:47.90] - Ryan Barnett
+Yeah.
+
+[00:02:48.62] - Justin Gardner
+And we do have a little bit of a twist on this from for you today, because there's a bug that you found here, but there's also a couple bugs that you've triaged that you were excited about. So let's do a proof of concept here, POC or GTFO and tell me what you got.
+
+[00:03:06.12] - Ryan Barnett
+So the first one was interesting because it was actually an accidental finding, which sometimes that happens, right? You're using an app.
+
+[00:03:12.19] - Justin Gardner
+Yeah.
+
+[00:03:12.91] - Ryan Barnett
+So this was a number of years ago, but I was using online blogging software Type Pad. I'm in the middle of talking about some research right. On cross site scripting, I'm typing up. So I'm in the editor and out of nowhere get popped up, redirected to a third party website.
+
+[00:03:30.74] - Justin Gardner
+Oh man.
+
+[00:03:31.41] - Ryan Barnett
+And of course my spidey sense is like, wait, what's going on? Refresh. Doing it again, happens again. Then I stopped and I looked at where it was redirecting me to and I said, whoa, whoa, whoa. This was from a blog post I did a week ago. I said, wait a second. The short of this is I had to get out some tools to look at what was going on and see where my traffic was going. What happened was a week before I did a blog post talking about cross site scripting and there were cross site scripting tags that were in user agent headers. So I'm putting it into the blog and when I put it in the blog, I made sure to HTML entity encode, don't.
+
+[00:04:07.68] - Justin Gardner
+Of course, as you would.
+
+[00:04:08.49] - Ryan Barnett
+Yeah, I did everything by the book. And so the problem was, what was interesting once I tracked this down was in TypePad, they have all these plugins and what they want to do is as you're typing as an editor, it would show you, oh, we see the content you're doing. Here are some related posts if you want to cross link. Okay, so it cross linked with one of my former posts. Well, what happens is this third party and it's fixed, obviously, so I can say it was called Samantha. They add API clients, they come and scrape your content. When they scraped it, it was the Rendered content. So as I'm typing and they said, oh, we have a suggestion here. It comes back in JSON, non HTML entity encoded. And then the other key piece was the plugin. When it got that JSON, it wrapped it, it treated as HTML, so popped. And I was like, ah, crap. So two things. Number one, vulnerability disclosure. I worked with them, they fixed it. I guess that's one advantage of the kind of SaaS platforms that they don't have to give patches to people. They just fixed it, Boom, done.
+
+[00:05:08.43] - Justin Gardner
+Across the board.
+
+[00:05:09.06] - Ryan Barnett
+Yeah. Treat as text. It was fixed. But for me, that day forward, I do pictures of exploit code, I don't do text. You never know, there could be an API. And today it's like even worse, right. With all these API AI agents crawling and you don't know what they're doing with your data or how they make.
+
+[00:05:25.87] - Justin Gardner
+I mean even with pictures nowadays, sometimes something will OCR it.
+
+[00:05:29.62] - Ryan Barnett
+That's true.
+
+[00:05:30.58] - Justin Gardner
+But yeah, I definitely, I think that's definitely the safest way to go. But then me, for me, when I'm trying to hack something right on the other side of the board, I'm like, oh, let me copy this. No, it's a picture, you know, I'm.
+
+[00:05:42.70] - Ryan Barnett
+Like, it's a balance. It is, but, but that showed me, it's like you don't know who's coming to grab that content. So that was very tricky.
+
+[00:05:50.02] - Justin Gardner
+Absolutely, man. And I think one of the unique things that we've discussed time and time again is like how much you see the way that the Internet is connected. Internet is connected from across all of these different, you know, pieces. Right. You know, somebody puts in a piece of data here and somehow it ends up, you know, in your client's log somehow and it's causing a problem somewhere. Right?
+
+[00:06:09.68] - Ryan Barnett
+Yeah. All the blind stuff. Yeah, you put it in, it'll pop out who knows where.
+
+[00:06:13.93] - Justin Gardner
+I can't imagine how many websites have alert one, you know, just like popping up on the back end, you know, and they're like, oh, that's kind of funky. But nobody like took the time to do a blind XSS payload or something like that.
+
+[00:06:24.49] - Ryan Barnett
+Yeah, well, tons of our customers with sims and looking at logs. Yeah, yeah, yeah, that's.
+
+[00:06:29.89] - Justin Gardner
+Yeah. Custom stuff in the sims as well, you know, it can pop anywhere. Okay, so you got chat scatter and you got abusing third party analytics.
+
+[00:06:39.45] - Ryan Barnett
+Yeah. Where are we going? Well, we can cover both. They're fast again. So these were once a triaged, so cross site scripting problem. Once it comes through, whoever's doing the bug bounty program. Who's our customer? Back to us. So these two different ones, one looking at is it was abusing some JavaScript analytic code. So this fits in with that. You got to look and say, okay, what are all these URLs JavaScript's calling up? Look at these endpoints. What are they doing? And here I was actually looking through the code because what they figured out was there was a function in the JavaScript that was pulled up where it was talking about a mod configuration override set to true.
+
+[00:07:18.81] - Justin Gardner
+Oh, geez.
+
+[00:07:19.61] - Ryan Barnett
+So the attacker just puts it in a query string. So instead of passing in JavaScript, pass it in a query string and. And then it's this long kind of serialized configuration to say, oh, turn it on. And by the way, here's a script which is my hacker script, which pulled it up. But like from our perspective, those aren't normal payloads that we see. Yeah, so it's really abusing that default config. Yeah, the short one there is of course we help the customer to tell them what was going on. You know, we updated their configs, but the vendor silently fixed it. Of course you're back to the SaaS platform though. They just went and tweaked it. So that's where Wayback saves you. Of course. Because I can go back and say this is what it was, right?
+
+[00:08:00.00] - Justin Gardner
+It was like this.
+
+[00:08:00.88] - Ryan Barnett
+It was like this. And then the last one called chat scatter again, working with the customer, there was some cross site scripting stuff coming in once. I was kind of triaging looking at it. Cross site scripting coming in a certain query string parameter, but the parameter was an entire long payload. It was a URI from not our customer site, third party site. So I had to start tracing it back. So you go to what that other site was and looking through and then trying to tie back. How does this relate to our customer? It was a chat widget. So you get to that page. Hey, pop up. Can we help you? We want to talk to you.
+
+[00:08:37.64] - Justin Gardner
+So what's interesting is those are everywhere nowadays too.
+
+[00:08:40.04] - Ryan Barnett
+Everything, they pop up. But to again, for bug hunters, knowing what happens there, as soon as you load that in your browser, it can be making backend API calls. And what it was doing is grabbing the entire URI and beaconing to our customer. So what I was seeing was telemetry, this backscatter or chat scatter of bug hunters and real attackers attacking cross site scripting. And it immediately sends it off to us and we see it. So they're not attacking our customer, but we saw. So for me, interesting conversation. Sorry, smack the mic.
+
+[00:09:12.25] - Justin Gardner
+Yeah, I do it all the time.
+
+[00:09:13.46] - Ryan Barnett
+Man, with our customer to say, look, you do not have a vulnerability. Your customers using your software being attacked. And I did confirm some of the cross site scripting work.
+
+[00:09:23.24] - Justin Gardner
+Yeah.
+
+[00:09:23.87] - Ryan Barnett
+And I said you might want to tell them.
+
+[00:09:26.27] - Justin Gardner
+Yeah.
+
+[00:09:27.00] - Ryan Barnett
+But there's an interesting situation. These are smaller companies who don't have security teams and they can misinterpret and say, well this is because of your software. So it was up to them. I don't know who all they reached out to, but we had to, you know, pass on the information as a good net citizen and say you may want to tell those people.
+
+[00:09:45.54] - Justin Gardner
+Well, I think something, you know, you see a lot of client side stuff by nature of what you're doing there and I think that analytics, those analytics providers, you know, they're integrated. Sometimes you go into some of these sites and they've got like 10 of them. Right. And some of the ones that are, I mean not to say that there isn't a vulnerability out there and like Google Tag Manager or something, I'm sure there is that somebody can find. Not me. But in some of these other sketchy analytics plugins there are a lot of weird configuration overrides. Why are you parsing this URL parameter? I'll never forget I was at a live hacking event and there was this piece of scope that everybody struggled with because there just wasn't very much there. There's not a lot of functionality, we can't really do anything. And somebody ended up finding a beautiful DOM XSS that affected every single page of that site because of this weird analytics thing that they found. And it was just taking a URL parameter and like I said, importing a JavaScript file. So yeah, they're out there, they exist.
+
+[00:10:47.11] - Ryan Barnett
+And it's a challenge because that's usually a totally different team than the app team and they're kind of forcing in certain analytics stuff. For business.
+
+[00:10:54.30] - Justin Gardner
+Yeah. For marketing analytics. Yeah, yeah, absolutely. And they probably don't necessarily go through the same vendor vetting as like some of the other places do. And actually come to think of it, I think I've mentioned this on the POD a couple of times, but I'm thinking about a specific target where you know, is a very high security target that has to be by nature of their industry. And yeah, you know, we spent so much time poking at the client side of this thing and then of course the hole is in the third party software that they Just kind of threw in there as like, let me add this chat bot. Let me add this analytics. Right.
+
+[00:11:26.82] - Ryan Barnett
+Yeah.
+
+[00:11:27.41] - Justin Gardner
+And we ended up popping a bunch of vulns because of that vulnerable analytics piece.
+
+[00:11:31.69] - Ryan Barnett
+Yeah. And for other folks you've had on the show. Yeah, we were just talking about Lupin.
+
+[00:11:36.73] - Justin Gardner
+Yeah.
+
+[00:11:37.09] - Ryan Barnett
+Like, supply chain. That's all this stuff. And they're adding stuff in. Yeah, yeah. Different vectors on how to do lots.
+
+[00:11:43.21] - Justin Gardner
+Of different stuff there. Okay. So the meat of the. Okay, let me. Let me back up. I always. I always get tempted, you know? Cause we get in the. In the vibe from the volume talk. I always forget to come back to the introduction. And then when I do, my dad always messages me, and he's like, justin, you forgot to introduce. And I'm like, why are you watching this 20 minutes in anyway, dad, you don't understand anything that's happening. But shout out to dad, thank you for watching episodes and keeping me in line with that. So with that, I'll back up. Guys, this is Ryan Barnett. He's an OG in the Defender space. And actually, we found out recently that I bought your book back in 2017, when I was first learning how to hack. I was like, I got to get this application Defenders Cookbook and. And try to figure out exactly what I'm up against here. And I went to my Amazon history, and it bought in 2017. I was like, no way. That's my boy, Ryan.
+
+[00:12:34.98] - Ryan Barnett
+Perfect.
+
+[00:12:36.22] - Justin Gardner
+So thank you for the content you put out. Really appreciate that. And, yeah, I mean, your track record speaks for itself. You're at Mod Security. You're at Akamai now as a principal researcher for, like, 10 years a decade. Wow, dude. And we were at lunch before this. We went out and grabbed lunch before, and I was just telling him, like, that's inspiring because, you know, so many. You know, we really value highly technical people here on the podcast, and, you know, so many people, especially in a, you know, bigger company where it would be easy to go up the. Up the ladder a little bit. You know, it takes a lot of grit to stick to, you know, you know, research. It is.
+
+[00:13:18.09] - Ryan Barnett
+It's a passion. I love research.
+
+[00:13:19.40] - Justin Gardner
+And you did. You did a lot of it for a long time.
+
+[00:13:22.61] - Ryan Barnett
+We're also joking about persistence, both for bug hunters and also on the defensive side. Persistence is key.
+
+[00:13:30.02] - Justin Gardner
+Absolutely, man. Well, obviously you're working with Akamai. The gut feeling when we hear the word akamai is terror from the bug bounty hunter. Like, oh, shit, did I just get my whole IP burned again? Why can't I get my cross site scripting payload through. So I think one of the things we had here is in the doc as far as discussion goes is this bug bounty versus waf. Like how do we balance these two things in the industry? And sometimes it is like we're juxtaposed. It's like we're up against each other here, but we often forget that we're all on the same team. So I guess what are some things you want hackers to know about that dynamic of we're aspect as bug bounty hunters? We're on the same team, but we're going up against you guys all the time.
+
+[00:14:22.54] - Ryan Barnett
+Yeah. So a couple of different kind of discussion points and we can take different angles. One of the main one we always start with is our customers. And particularly when they're working in bug bounty, it's like what is their main goal? Now everybody intuitively jumps to well defined vulns. That's why you do bug bounty, which it is. But it's not every use case or some start there and they move to a different use case. So you can look at it as vulnerability enumeration. If that's their main goal, then they want bug hunters to find the bugs. So then if we're in the middle there, how do they want us to treat the traffic? Right. So part of that is just understanding what the customers want and what their goal is. So in that scenario, if that's their goal, we need to figure out ways to allow bug hunters to get by what we're doing. Just olay let you through. So there's ways they can do that for commercial scanning companies. Right.
+
+[00:15:21.36] - Justin Gardner
+Okay. Okay. I like where this is going, Ryan. Okay.
+
+[00:15:24.67] - Ryan Barnett
+Yes. But that's because they have registered IP space. Right, Right. So it's like, oh, you're qualys, your white hat, your verica, your whoever. We know your IPs. And it's easy in the product to do a bypass list. So if you're coming from this trusted space. Okay. You can get through.
+
+[00:15:40.91] - Justin Gardner
+Sure.
+
+[00:15:42.60] - Ryan Barnett
+As everybody knows who's listening to this. You can't use your ip. Right. That's ephemeral.
+
+[00:15:48.12] - Justin Gardner
+Yeah.
+
+[00:15:48.60] - Ryan Barnett
+And you sometimes have to hop and go around. So there's really not a good mechanism to let somebody go through if they wanted to.
+
+[00:15:54.39] - Justin Gardner
+Yeah.
+
+[00:15:55.08] - Ryan Barnett
+Now the other category that we have of customers are it's not just about finding vulns. It is, but there's a matter of exploitivity of it. Like we have to prove that you can get to this. And that's where they want waf to act like normal and treat bug hunters like they would anybody else. And do whatever you're going to do. Lock that request, mess with the ip, do like, do whatever. It's very interesting, we had conversations with some of these customers to understand, like, oh, okay, that's interesting. But they want to do attacker simulation.
+
+[00:16:28.52] - Justin Gardner
+Yeah. And they want it to be as. As real world, you know.
+
+[00:16:32.00] - Ryan Barnett
+Right.
+
+[00:16:32.37] - Justin Gardner
+And yeah, it's a balance because then.
+
+[00:16:34.64] - Ryan Barnett
+They can prove this is exploitable. And there's an issue with the WAF blocking it, because if they get to that, there's WAF bypass. So it's a matter of them figuring out priority because they may have a list of things that they found internally, you know, SAST and all these other things. And they're like, okay, we have this pile of things we have to fix. Which ones do we do first? Oh, WAF's helping us with some coverage here. Let's delay that a leak or so. But if you prove bug hunters can get to it, bypass WAF here. Oh, crap. Real threat actors can do that. Now we have to bump you up the.
+
+[00:17:05.00] - Justin Gardner
+Suddenly it becomes. And I mean, that's what all of security is. Right. There's always improvements that need to be made somewhere in the system. Right. You know, and so that's a good point. You know, if you are able to bypass the waf, it helps with the whole triaging of issues. Right. Triage in a different sense. You know, figure assigning the severity and the priority of these. Of these, you know, various things you need to address in your security program. Dude, I just. I hate it a little bit, though. Like. Like, come on. Like, you know, I can bypass this, Ryan. I can. I just. I'm spending so much time.
+
+[00:17:38.05] - Ryan Barnett
+Yeah. You know, there's a number of things too, that we talked about there on. From an external perspective, people see WAF that are really a lot of separate products tied together. We have things that look for just how fast people are going and the customers can figure out those are rate controls.
+
+[00:17:56.39] - Justin Gardner
+Yep. Familiar with that one.
+
+[00:17:58.50] - Ryan Barnett
+Yeah, exactly. And you're going to get blocked for a little while. Then there's client reputation. And that's the biggest thorn for the bug hunters. Yes, it is, because it's a little. It's more persistent. It doesn't have to be just the website you're interacting with where you were bug hunting. Because now Akamai is giving that IP a global score, and then other people who have client reputation can choose to use that score. It's not WAF blocking you. It's waf saying, hey, here's the score. And then the customer can choose what they want to do. And some people want to get aggressive and say, if you've attacked another customer, I don't want you to attack me. And we blocked you there.
+
+[00:18:32.01] - Justin Gardner
+Yeah, yeah, dude, that's a pain. And that's what. There's always like, there's like a little meme that goes around in the bug bounty community of like, oh, you know, you're hacking, you're hacking. All of a sudden your wife in the other room is like, justin, why can't I get on whatever website? I'm like, I can't shop my coffee. I'm like, ah, dang it, what did I do?
+
+[00:18:51.69] - Ryan Barnett
+Yeah, yeah, that's an issue.
+
+[00:18:55.45] - Justin Gardner
+It is, it is. And I think there's. But I mean like you said, there's two sides of the same coin. Right. We do want to try to show what is actually exploitable live, you know, and at the end of the, at the end of the day, I think that's probably the thing that aligns best with the bug bounty methodology. Right. The POC or GTFO world. Right. But man, it would be nice to get, get around it sometimes.
+
+[00:19:20.98] - Ryan Barnett
+And.
+
+[00:19:21.25] - Justin Gardner
+And you asked me an interesting question over lunch. You said, hey Justin, would you. Would you rather have some way to bypass Akamai? Right. And like say we did like some, you know, certificate based authentication and we were able to get know trusted testers past Akamai.
+
+[00:19:37.48] - Ryan Barnett
+Right.
+
+[00:19:38.44] - Justin Gardner
+And take a lower bounty. Or. Or would you rather just POC or gtfo?
+
+[00:19:44.00] - Ryan Barnett
+And I'm like, oh, what's option C?
+
+[00:19:46.07] - Justin Gardner
+Yeah, exactly. Right.
+
+[00:19:47.07] - Ryan Barnett
+Yeah. But the reason why that comes up again, a lot of bug hunters maybe don't have the same conversations we do with our customers.
+
+[00:19:54.20] - Justin Gardner
+Yeah.
+
+[00:19:54.92] - Ryan Barnett
+And it's for them to understand. It was that second category. We talked about that if they're doing threat actor simulation as not. Not the primary. It's always about loans. But that aspect. They may be setting their boundaries in accordance with that. That it is raising your cost, you know? Yeah. There's a chance for a Duke. Yeah, you gotta go through different VPs. Like you have to do extra work but you're getting this amount. So. Yeah, I don't know. That's a. A question for everybody hunter to have to decide for themselves would pain door number one.
+
+[00:20:27.45] - Justin Gardner
+Oh no. It's painful, man. And I do like the way you've broken it down here. I'll just repeat this back for the listene. There are two types of organizations really. One that prioritize vulnerability enumeration. That's bug bounty hunters being able to say, hey, there is a vulnerability here, but the WAF is just a thorn in my side. If I spend two hours, I can bypass it, but you'd rather me spend time enumerating other vulnerabilities. That sort of organization would prioritize that sort of behavior. And then there's the prevention of exploitation attempts, types of organizations where they really just want POC or gtfo and let me assign severity and triage these issues. So it's a very interesting description of the industry that you've set up and I think it's very accurate. Yeah, very cool, man. There's a lot of things that I'd love to get to here. So I think the next one that we'll hop into is this whole concept of virtual patching. Right. Where the WAF is being used to wall off specific endpoints as. As zero days come out. And sometimes it's something that will solve the problem, sometimes there's ways you can path traverse around it and stuff like that. How much of this is your main focus at Akamai and how have you seen customers implement this effectively?
+
+[00:21:52.76] - Ryan Barnett
+Yeah, so two levels. The real key here, virtual patching as a term, sometimes people really don't like.
+
+[00:22:00.33] - Justin Gardner
+Oh really?
+
+[00:22:00.94] - Ryan Barnett
+And I, yeah, and I understand why. And really, this falls in the same bucket we always, everybody talks about. If an organization is deciding not to actually fix code and do anything else, you're like, yeah, sure, yeah. So a virtual patch, some people can misconstrued. Oh, it's patched. It's like, no, that the code's not passed in.
+
+[00:22:21.38] - Justin Gardner
+So one of the rebrand it temporary virtual patch, you know, like.
+
+[00:22:24.70] - Ryan Barnett
+Yeah, but that's a key thing. It should be temporary.
+
+[00:22:27.05] - Justin Gardner
+Yeah.
+
+[00:22:27.38] - Ryan Barnett
+Give you time to fix the code. Right. So anyway, so the key Here is how WAFs typically work out of the box as attack detection systems. They look for bad stuff coming in. Right. And another thing, thinking about coming on the pod, talking with you and thinking about meta discussions like wafs live in a sources world, bug hunters live in a sinks world.
+
+[00:22:52.94] - Justin Gardner
+Yeah, right. And that is a good, that is a good line, Ryan. That is a good. Put that in a short. Put that in a short team.
+
+[00:23:00.85] - Ryan Barnett
+It's true. Because they're different views. They're all part of the process. And so we're looking at data coming in attacks. Another way I talk like in the industry with our customers, they're used to like MITRE and CWE discussions. Wafs, we live in a KPICK discussion and you have to make those correlations. So here, think of WAF as a tool really the paradigm changes is once a vulnerability is known, like when traffic's just going and people put a WAF in front and we have our default stuff there, sure, we can see a lot of bad stuff in whack a mole. We don't know if, where, when there's a vault. Now if they can signal to us, oh, we know there's a vault in here because we get a bug bounty report. They do pen tests, they do code review. Then think of WAF as a tool to implement some sort of mitigation to reduce risk. Right. The other one we talked about is like SharePoint stuff that just comes out.
+
+[00:23:54.85] - Justin Gardner
+Exactly.
+
+[00:23:55.38] - Ryan Barnett
+It's the same discussion. It's just we didn't get that from a customer, we got it from Microsoft third party. But oh, vulnerability intelligence, custom logic, quasi virtual patch. The key here too, like you were saying, how good is it to do that and how long, like what's the half life of a virtual patch is how you're choosing what logic to put in. Still, if you're still trying to negative security stuff, that's not as good. It's tricky though to figure out what should the payload be like. We'd love to do positive security. We don't know the app necessarily. So it's key on the vulnerability details to really figure out how to do that.
+
+[00:24:31.21] - Justin Gardner
+Yeah, yeah, Two directions I'd like to go with that one. I want to go back to the sources and syncs world. So we'll, we'll circle back around to that. But staying on topic of virtual patching, there are scenarios though when you're standing up a third party software and that third party software doesn't have, you don't have the ability to patch that live and you can put akamai in front of it and wall off certain endpoints. But then that's pretty much the extent of what you can do until the vendor patches. And then this is kind of where these virtual patches become a little bit more of a permanent solution. Right. If you cannot get that software to patch. So there's been a couple of vulnerabilities that I've found in the past where people are abusing the WAF to just see like, okay, well you can't access debug anymore. But really there's path traversals, there's other ways of accessing those endpoints, maybe method overrides or whatever, or path overrides that you can utilize to get at Them. So it's a tricky balance between that. Right.
+
+[00:25:34.71] - Ryan Barnett
+Yeah. It's another thing we talked about. Maybe we'll loop back to it. It's the whole hacking resistance discussion.
+
+[00:25:40.71] - Justin Gardner
+Yeah.
+
+[00:25:41.19] - Ryan Barnett
+Because whatever.
+
+[00:25:41.75] - Justin Gardner
+This is a really good point.
+
+[00:25:42.54] - Ryan Barnett
+Yeah. Whatever security logic you're putting in.
+
+[00:25:46.10] - Justin Gardner
+I'm going to grab my notebook really quick. Keep going.
+
+[00:25:48.23] - Ryan Barnett
+Yeah, yeah. You know, whatever security logic you're putting in, it's a question of like, how strong is that against what type of attacks to do Evasions. Right. To get around it. Like you were mentioning a lot of these too depend on what's the category of the problem. Sometimes there's discussions, oh, we found this problem. And quote, unquote, is this waffable? Like, can we do something? It's like that's more of an auth problem, you know, access control, auth. Like those are things that when you have a third party system, we don't have the knowledge or the insights and to know exactly what should be done there. Right. So it's not that a WAF can fix everything, but some stuff would fit in there. Nice. So yeah, hacking resistance, it's like, okay, we think that this would hold up, but if you have a persistent attacker that's banging, banging, banging, who knows how long that this can hold up. Right.
+
+[00:26:41.04] - Justin Gardner
+And it's a good way to simulate that in the bug bounty world. Right. Like, you know, we are persistent because we're motivated actors, you know, because we're getting motivation from the money and, and you know, just like APTS are getting motivation from whatever they're getting motivation from. So I think it is a, I think it is a cool, a cool simulation and, and definitely there's this world in which having a WAF in front of your assets makes you that much more annoying to hack, where the, where the hacker will just go hack something that's less annoying to hack, you know.
+
+[00:27:09.85] - Ryan Barnett
+Potentially, whether it's real threat actors that like you said, oh, here's the new CVE of the day. I don't care if it's this company or that company, I just want to upload my web shell.
+
+[00:27:19.68] - Justin Gardner
+Exactly.
+
+[00:27:20.20] - Ryan Barnett
+They'll just move on.
+
+[00:27:21.64] - Justin Gardner
+You're weeding out all your botnet, your ransomware actors there.
+
+[00:27:25.07] - Ryan Barnett
+There's a lot of noise that you can just.
+
+[00:27:27.07] - Justin Gardner
+Yeah, yeah, that's good. Swinging back around to your quote saying that, you know, laughs live in the source world and hackers kind of live in the sync world or at least the connection world between the two, I think that's super pivotal for bug bounty hunters to understand and now we get to do this segment, Ryan, where I'm not sure how this is going to be for you as an Akamai employee, but I kind of wanted to talk about what seems to me to be an unfixable problem in the WAF world, which is that you don't know what's going to happen on the flip side of your waf, right on the backend. And so you have to make assumptions that, especially in the XSS world, makes it very, very hard, especially if you're doing context aware blocking. It makes it very difficult for a WAF to perform properly. So the example that I often give is this. Let's say I've got an image tag. Image tags need to be able to flow through the WAF as a part of user supplied input. It's very common. And maybe an attribute, a non malicious attribute such as X is also allowed. Right? And so let's say you do something like this. X equals double quote, right? And then you do percent 22 and X equals double quote percent 22. You're inside of the HTML attribute context, right?
+
+[00:28:47.67] - Ryan Barnett
+Yeah.
+
+[00:28:49.10] - Justin Gardner
+And then you can put anything inside of that X attribute and it's not going to be malicious. Right. But so the WAF thinks, okay, now we're inside of this X attribute. So if I have something slash onerror equals alert one and then double quote again, that's all just a part of the X attribute. But really the back end is decoding that percent 22 or the percent 2522. And sometimes it's inverse, Right. Sometimes the WAF will be smart about it and say, okay, well I know that that percent 22 is also a double quote, so I'm gonna decode that. Well, then you can flip it on its head and say, okay, well now you think that I'm not in an attribute, but I am in an attribute, right? And so there's lots of ways that you can sort of flip that on its head. And I know you've seen that problem before, like just yesterday, and I'm not kidding. Yeah. Oh, geez. I mean, is there some sort of solution to this or is this just something that you guys are going to have to continue playing a whack a.
+
+[00:29:56.52] - Ryan Barnett
+Mole game with a combination of it getting back to the whole whack a mole and how we were joking before where it's like, okay, I've been doing WAF now 20 years too long. And at Black Hat, can't remember 2011, I gave a talk called Crazy Cross Site Scripting Street Fight Dude. And you can find it. I think it'll probably be in show notes. I think it's in our thing.
+
+[00:30:23.50] - Justin Gardner
+Yeah.
+
+[00:30:24.05] - Ryan Barnett
+So the idea was going through all these stages of waf. What do I try and do? Let me try this. But then the bug hunter attacker does this crap that doesn't work. Let me try this. Here's the evasion for that. And it's the chess game. Back and forth, back and forth, back and forth. So there's always blacklisting, whack, a mole approach. Because you can do that. The question is how much coverage are you getting? Right.
+
+[00:30:49.56] - Justin Gardner
+Yeah.
+
+[00:30:49.80] - Ryan Barnett
+And then these evasions. Ultimately, where I am today personally understanding the limits, because we live in a source world and what we're looking at, the big X factor for us, or what do I say? Challenges are the black box behind us. And it's not just the customer app. If you think about what we're tasked with. Right. Sorry. As defenders, it can be going to some application tier, esp, Java, like whatever can do all sorts of decodings. Potentially it could go into databases. They may do something and then something different when they pull it out to use it. But then also what you just said, think about browsers. And then we have to do that.
+
+[00:31:36.64] - Justin Gardner
+There's that layer as well.
+
+[00:31:37.72] - Ryan Barnett
+So a common thing that with the researchers I work with and we talk about this. And there's also a funny situation, again, this kind of cross pollination of us attackers and defenders. We hire a lot of bug hunters on the team and. Exactly. And we kind of joke when they come in. We said, look, we brought you because it's the whole kind of know your enemy, so to speak, and how to attack. But then I always throw out the Star Wars Yoda line, said, you must unlearn what you have learned.
+
+[00:32:11.52] - Justin Gardner
+Ryan, dude, I got to work with you, man. This is amazing. Whoever gets that job, I'm jealous of you to work with Ryan.
+
+[00:32:19.36] - Ryan Barnett
+So what we're thinking about here, and this is a common phrase that we have to use, is can we as Akamai do customizations for your Snowflake app because you want us to help you protect it? Absolutely. Outside of that, it's best size fits most we have to figure out, okay, what can we do that will work across every single customer and scale. A lot of times what you get into is between the app tier, database, web browser or whatever, who's going to decode what is it going to decode once, twice, three times.
+
+[00:32:55.71] - Justin Gardner
+Mutations. Yeah.
+
+[00:32:56.86] - Ryan Barnett
+It's the issue we saw yesterday. Data came in a bunch of stuff was encoded up to three times in certain parts. But then by the time it made it into the sync, the thing that was decoded three times was fully decoded. Other stuff was not touched, wasn't even decoded once. So we're in a very tough position to match up decodings. So, yeah, it's a constant battle to figure out how much to do, how much not to do, and you just have to tackle it from different angles of detection.
+
+[00:33:25.39] - Justin Gardner
+Yeah, absolutely. And I just wanted to mention this for the listener because I kind of sort of said a lot of code a second ago was one of the interesting things about HTML attributes is if you start an HTML attribute with a double quote, obviously that double quote becomes the encapsulating piece for that HTML attribute. But if you start the double quote with the actual text percent 22, then there's no encapsulating attribute and you can, you know, a space will terminate that HTML attribute. So, you know, there's so many tricks you can do where it's like, okay, we're going to put a double quote at the beginning of this attribute. Right, right. Encoded as percent 22. And the WAF has to think, okay, well, I think that's a double quote, which makes this a quoted HTML attribute. But actually if they're not decoding it, then it's not a quoted, it's an unquoted. And there's different terminators. Right. So it's like there's, there's so many layers to that. Um, and it's, it's a very tricky, very tricky problem.
+
+[00:34:31.65] - Ryan Barnett
+Yeah, definitely. Another key thing I always say is, well, it depends. It always depends on the exact context.
+
+[00:34:37.53] - Justin Gardner
+Yeah.
+
+[00:34:38.05] - Ryan Barnett
+Um, some other phrases I've used in the past which I think are relevant here.
+
+[00:34:41.82] - Justin Gardner
+Yeah.
+
+[00:34:42.13] - Ryan Barnett
+And we're in a world of artificial intelligence. I go old school again. For those people who know Marcus Raynham from a long time ago, he had artificial ignorance. And it's a totally different approach because when you know certain things that you already know about, you filter those out, anything left over. So we try and take multi approaches to this because it's very hard to get the context right because we're not in the sinks.
+
+[00:35:05.63] - Justin Gardner
+Yeah.
+
+[00:35:05.94] - Ryan Barnett
+So we don't really know where.
+
+[00:35:07.30] - Justin Gardner
+It's hard job you're doing, Ryan.
+
+[00:35:09.26] - Ryan Barnett
+It's hard.
+
+[00:35:10.63] - Justin Gardner
+Yeah.
+
+[00:35:11.59] - Ryan Barnett
+All I can say is multidimensional detections of ways to try and detect this because you try and do certain things in context. If that doesn't work, you take a step back and you look more general and you Catch a lot of those that get by the other one.
+
+[00:35:24.17] - Justin Gardner
+So let me ask you this. This situation that I described with the HTML attributes, that is something that affects context. Aware. Laughs and I'm wondering how far you can get, in your opinion, with just regexes or blacklists or really, at the end of the day, it's going to be very hard to get anything through if you're allowing. Or to prevent everything from getting through if you're allowing less than. And a, you know, an Alphabet character. Right?
+
+[00:35:59.05] - Ryan Barnett
+Yeah.
+
+[00:35:59.76] - Justin Gardner
+That's kind of where it kind of reduces down to, I think in a big way.
+
+[00:36:03.28] - Ryan Barnett
+Yeah. Another.
+
+[00:36:03.96] - Justin Gardner
+So maybe there's a regex for that.
+
+[00:36:05.25] - Ryan Barnett
+You know, regex serves a purpose.
+
+[00:36:07.84] - Justin Gardner
+Yeah.
+
+[00:36:08.21] - Ryan Barnett
+And I'm forgetting off the top of my head, Chomsky, whatever model that's like you have regex but you have a higher level grammar. We can't define that higher level. So regex serves a purpose, but we realize the limitations. But it serves a purpose because it's fast. You know, you can iterate and do stuff quickly. But we have other ways to look at that data. Going back to what you were saying, especially on client side. Yeah, yeah. I did some things in the past, I think we had talked about mod security. We had these cross site scripting challenges where. And I said it in the cross site scripting street fight presentation that's like, this is a browser problem. It's like, yeah, the app's not properly encoding or output, you know, encoding, escaping data. But ultimately the problem's in the browser. So there are situations, for example, and this. I think there's some stuff in the, in the doc where some of our customers really want to get into things like content security policy or pushing something like dompurify. We can do that from the edge. We can dynamically modify data on the way out because we have separate products that do different things and we can dynamically put dompurify in. So there's all sorts of other things. Because I'm like, look, like you said, there's a limit to what you can do with sources. So for our customers that want to get more advanced, say okay, we can help you and dynamically put that in. So I don't know, it's like more. It's a question of what is WAF and where does it end?
+
+[00:37:37.84] - Justin Gardner
+What is waf?
+
+[00:37:38.88] - Ryan Barnett
+I love that.
+
+[00:37:39.92] - Justin Gardner
+Well, it goes to what you are going to talk about in a minute as well here with regards to Unicode normalization, this order of operations. Right. Because if we put DOM purify, I'm Sure. You know, but if we put DOM Purify at the edge, if there's any modification of that data post DOM purification, you know, then it's going to affect the integrity of the work that Dompurify does. And if you see any, you know, unencoding or anything like that, then Dompurify becomes, you know, it doesn't work effectively. So, man, it is a hard problem to solve, but I think we're going to continue going back and forth as WAF and bug hunter and treating. Trading punches in the street fight, right?
+
+[00:38:23.40] - Ryan Barnett
+Yes, yes. Or we have to do our armrests.
+
+[00:38:26.05] - Justin Gardner
+Exactly. Yeah, dude. Right at the end.
+
+[00:38:27.73] - Ryan Barnett
+Boom.
+
+[00:38:28.86] - Justin Gardner
+I did want to mention one other thing here which is going to be interesting. I think that one of the things I'm most excited about is for the onset of Hackbots is a WAF bypassing bot. I think that's going to be really interesting. And Kaito, by the time this episode airs or I'm going to have to cut the segment, we'll see. Kaido will have released this thing called Shift Agents where you can, inside of Kaido, create your own hackbot of sorts and delegate a task. Yeah, you can give it a task and you can give it a tab in replay. Right. And then it will modify replay and you can click through it just like you normally do, forward, forward, back, back, and see what things it's tried and then create things. So what I wanted to ask about that was like, I don't know, man. Ryan, you cannot answer this. I told you I was going to put the screws to you a little bit on this podcast. What kind of things do we need to have in our arsenal as hackers? What should we know about bypassing WAFs? We talked about encoding already. Is there anything else you can give us?
+
+[00:39:39.38] - Ryan Barnett
+Oh, no, this may have to be when we're in Vegas, set up face to face, get together. I don't know. That's a good. I'm not sure. Well, I mean most things are out there.
+
+[00:39:50.17] - Justin Gardner
+Yeah.
+
+[00:39:52.01] - Ryan Barnett
+No, I will say in general it's not an Akamai thing.
+
+[00:39:55.05] - Justin Gardner
+Yeah.
+
+[00:39:55.69] - Ryan Barnett
+Is joining different.
+
+[00:39:58.36] - Justin Gardner
+I think everybody knows Akamai is the biggest pain in the ass to bypass. It is.
+
+[00:40:02.09] - Ryan Barnett
+We hope so.
+
+[00:40:02.84] - Justin Gardner
+It's very hard, but go ahead.
+
+[00:40:04.65] - Ryan Barnett
+Yeah, it's when you're joining multiple different techniques together and you know, if you go to like even port swiggers, cheat sheet, cross site scripting, it's like they'll have a lot of individual things, but if you start mixing and matching, that's a challenge. Yeah, I Mean outside of that, of course, then it's secrets. We can't take you behind the.
+
+[00:40:25.01] - Justin Gardner
+Come on, Ryan.
+
+[00:40:25.73] - Ryan Barnett
+The old powerful.
+
+[00:40:26.42] - Justin Gardner
+I know it's in here somewhere. What room? Where do you keep the WAF bypass?
+
+[00:40:30.78] - Ryan Barnett
+It's down the hall. I gotta keep an eye on Justin.
+
+[00:40:32.94] - Justin Gardner
+Dang it. My badge. Gotta have access to that. Well, very good, man. Very good. So I guess we talked a little bit about what it would look like, how hackers often circumvent WAFs. But one of the things we didn't touch on quite as much is this piece of AWS API gateways and using stuff like Fireprox and stuff like that to get around these IP based restrictions. And I know that you have mentioned in the past that AWS has this as a part of their terms of service, that we shouldn't be using that. What I want you to say to the bug hunter is to do it or not to do it. Right. It kind of goes to this whole concept of bug bounty is supposed to be an emulation of attackers and they're not actively preventing us from using AWS gateway. Do you think it's. It's unethical for an ethical hacker to do that?
+
+[00:41:35.75] - Ryan Barnett
+Ooh, that's a good one. I think it's tough when you know what the acceptable use policy is and you choose to buy. That's a personal decision.
+
+[00:41:44.63] - Justin Gardner
+So what, you're saying we should cut the segment? Is that what you're saying?
+
+[00:41:49.78] - Ryan Barnett
+So speaking in general for a second, like you said, there's a couple tools that can help to automate some of this. But part of the question is, okay, why are you doing this? Well, it's the IP block. And, and so you have to be able to distribute whatever you want to do, workloads and come different IPs. So you're getting around that problem. So there are ways to do that that don't violate acceptable use. So another interesting side thing, right? Akamai had purchased Linode a few years back. Ups, right. They have a lot of bug hunters on there. And a lot of people were using like Axiom and those kinds of tools for a while. I talked to the trust and safety. It wasn't my doing. Anybody said, I'm just, I'm on a webex with those.
+
+[00:42:33.40] - Justin Gardner
+Yeah.
+
+[00:42:33.73] - Ryan Barnett
+And they said, hey, we have to cut this. Because people were running it to the hilt.
+
+[00:42:38.84] - Justin Gardner
+Oh yeah.
+
+[00:42:39.32] - Ryan Barnett
+And it was having network problems. So they disallowed Axiom for a little while. But their customers say, hey, we're going to go somewhere else. We'll Go to a different VPs. So they worked with Axiom Project folks. And there is a. The document there says, hey, everybody, if you're going to run this, here's a way to put some bounds. Here's a few flags that maybe people didn't know about. You can still scan, but you won't take down the network. Right.
+
+[00:43:01.42] - Justin Gardner
+Here's a few flags that you didn't know about.
+
+[00:43:04.78] - Ryan Barnett
+Clearly read the docs. So there's ways to do all of that. Now where it gets interesting again is for me, I have to deal with both threat actors and bug hunters. And threat actors are a pain. They have ttps that they do. Bug hunters, we've joked, we have a frenemy relationship. Right. We are all security researchers. You're not my enemy. But the interesting thing is when the ttps overlap and what I was seeing is we see attack traffic coming from Amazon API Gateway IPs. And there's a lot of overlapping topics here. But how would I know once I investigate, this is a bug hunter. Right. So I can start to look now. If the program says you have to do request header tagging and say hacker one handle, I can look and say, okay, they're bug hunters, not a big deal. The problem is we were seeing enough traffic where there were no indications that it was bug hunter.
+
+[00:44:02.03] - Justin Gardner
+Yeah, a lot of people don't use those headers.
+
+[00:44:04.19] - Ryan Barnett
+And then I said, okay, they might not use the headers, but then I was looking at what was being sent and it was stuff that was more damaging with SQL injection, dropping tables. And I said, this could be a regular attacker. Yeah, not bug hunter. So I have to initiate conversations with security teams at aws. Very similarly, we saw on Cloudflare people setting up web workers. All they were doing is open proxy and they would funnel their traffic. So I had to get with Cloudflare, even though competitors. But there's security, trust, safety. So here's where it gets interesting, though. Like you said, the person doing the activity and saying, okay, is this acceptable use? Am I going to get in trouble like all that? It's a similar thing for the companies I talk with, because it's a situation of if you're doing this, but you're paying your bill every month.
+
+[00:44:58.03] - Justin Gardner
+Right.
+
+[00:44:58.67] - Ryan Barnett
+Do they really care?
+
+[00:45:00.26] - Justin Gardner
+Yeah.
+
+[00:45:00.98] - Ryan Barnett
+So I don't know. The mileage varies where sometimes they say, no, no, we're shutting this down. And they do. Other times they don't because you pay for it. But one other thing bug hunters should think about too, from a linode perspective, the trust and safety team. Sometimes people will get access, spin stuff up, scan who are not bug hunters or threat actors, and they've used a stolen credit card.
+
+[00:45:22.82] - Justin Gardner
+Yeah.
+
+[00:45:23.38] - Ryan Barnett
+And quickly they figure it out and shut it down. But they scan for a day. You know what I mean? So keep that in mind. When you're doing what you're doing as bug hunters, you're. You're right next to people who aren't. Sometimes there's some friendly fire repercussions. We are sorry.
+
+[00:45:38.59] - Justin Gardner
+Well, I like that. I like that because it is frustrating, you know, especially when you're an ethical researcher. It's like, no, I'm on your team. Stop inhibiting me. But yeah, especially when that infrastructure is also being used negatively. And, you know, you're saying it is. It's a difficult. It's a difficult balance to strike. But, yeah, I think. I think if you can use stuff like Axiom or Shadow Clone or whatever and not break the terms of service on a lot of these providers, then maybe that's. Maybe that's for the best. As much as I hate to say it.
+
+[00:46:12.48] - Ryan Barnett
+Yeah, yeah, yeah.
+
+[00:46:15.84] - Justin Gardner
+I guess. Let me ask you this. Has there been thought and has Akamai sort of pursued working with the platforms to create an environment where hackers could either go through a VPN or a proxy or something like that and bypass the WAF to validate their proof of concepts, you know, and kind of working with the platform for that?
+
+[00:46:39.84] - Ryan Barnett
+To a certain degree. Yes. I mean, I've. We've talked, I know, offline a little bit about this, but. Yeah, just brainstorming lots of different ways to figure this out. As we were saying, the normal mechanisms to allow a commercial desk customer just aren't there in this context. Yeah.
+
+[00:46:55.36] - Justin Gardner
+The IPs are rotating constantly.
+
+[00:46:56.96] - Ryan Barnett
+Yeah. So you need some way to validate if you're coming directly through the WAF process product. So there's some discussions. I will say they're early, but talking about part of the question is if you wanted to do something like this, who registers the bug hunter? Who gives a token, who manages? There's that question of who could do that. But if something's implemented, then it's a matter of Akamai making it an option for a customer to opt into. If they even wanted to do that.
+
+[00:47:25.88] - Justin Gardner
+Yeah.
+
+[00:47:26.28] - Ryan Barnett
+But you would let them by there. So, yeah, we're brainstorming some ideas because we know it's a pain point.
+
+[00:47:31.98] - Justin Gardner
+There's. There's some. There's some stuff in this document here about using like, TLS fingerprints to try to figure out I'm trying to think about how all that would work. What is that? What is the vision for that?
+
+[00:47:41.57] - Ryan Barnett
+Well, again, this is me.
+
+[00:47:43.26] - Justin Gardner
+Yeah. This is just Ryan.
+
+[00:47:44.30] - Ryan Barnett
+This is brainstorming. And I don't think he would care. I said anything, but, like, I pinged Ben and I was like, hey, if we were to do something like this, because the question is, how can we validate somebody that's not an ip.
+
+[00:47:59.15] - Justin Gardner
+Yeah.
+
+[00:47:59.94] - Ryan Barnett
+And there's tools out there that, let's say you're going through a proxy that you can run that will funnel all your traffic goes over then TLS different tools, where. Oh, wait a second. In tls, there's all this different data in there where you can have like a comment field. Maybe you put your hacker hand, like something there. The end result is certain parts of your TLS fingerprint will change and all of a sudden that becomes unique to you. And so I'm mentioning that because in Akamai's WAF product, you can do a bypass list based on a TLS signal.
+
+[00:48:35.11] - Justin Gardner
+Really?
+
+[00:48:35.51] - Ryan Barnett
+Yeah. Okay, so we're trying to figure out low friction.
+
+[00:48:38.32] - Justin Gardner
+Yeah. How do you make that simple for the researcher and for the companies that are implementing that?
+
+[00:48:42.32] - Ryan Barnett
+So I don't know. We are at brainstorming phase. So hopefully you're saying we're out in Vegas and we're brainstorming with hackers and whatever. Maybe there's other ideas, but any way we can do this?
+
+[00:48:53.46] - Justin Gardner
+One of the other things that I kind of thought of for this was attacking the problem from the application layer and saying, hey, okay, we've got a set of certificates that trusted researchers have, and then we create our HTTP request and we add an ex Akamai researcher header with the signature for the. For that request. Right. And you know, that includes a timestamp and stuff like that, so it can't be like vulnerable to replay attacks.
+
+[00:49:21.78] - Ryan Barnett
+Right.
+
+[00:49:22.15] - Justin Gardner
+And then we utilize that. It's not going to be perfect because, you know, it's not going to get us past all of the, like, all of our tools aren't going to be able to integrate that signing structure and stuff like that. But at least for like Kaido and Burp, you would be able to have an extension that would allow you to get past Akamai to get at the target.
+
+[00:49:41.55] - Ryan Barnett
+Well, most the CDM platforms are able to do client certificate validations, so it.
+
+[00:49:47.75] - Justin Gardner
+Makes more sense to do it at the TLS layer, I think.
+
+[00:49:49.59] - Ryan Barnett
+Well, yeah, it just depends on how you wanted to implement it. So it is a problem that should be solved. We gotta Keep brainstorming, I guess.
+
+[00:49:58.75] - Justin Gardner
+Very tricky, very tricky. So, dude, you are presenting at Black Hat this year with your daughter. Come on, give me some. That's like dad goals right there.
+
+[00:50:07.71] - Ryan Barnett
+Absolutely.
+
+[00:50:09.03] - Justin Gardner
+Congrats, Isabella, on getting your talk accepted. That's really awesome. Congrats to you, Ryan. You know you've done some Unicode stuff last year as well. Can you give us a teaser of what Lost in Translation is going to look like this year? Yeah, I guess by the time this has aired, it'll already be out. So don't give me a teaser, give me the good stuff.
+
+[00:50:31.42] - Ryan Barnett
+Yeah, very true. Yes. You'll be able to go, I think, download our presentation. Yeah, yeah. So last year at defcon Bug Bounty Village, it was a higher level concept of what are different ways where back to this order of operation problem. If data goes through some security checks and then later it's changed in some way that causes a problem. Right. So last year we talked about different scenarios. You have like Edge site includes that might change it on the way back out.
+
+[00:51:00.03] - Justin Gardner
+Yeah.
+
+[00:51:02.01] - Ryan Barnett
+There was the HTML entity decoding, which can split and there's all sorts of different things. So the one that resonated though was things related to Unicode. So we said, okay, that's what was interesting. Can we expand it a bit? So over the past year we were trying to gather stuff and my daughter, I think, had laughed at me before, like when we're on socials or doing whatever. And I said, oh, bookmark. Oh, bookmark said, what are you doing? I said, anytime I see cool stuff on our feeds, I'm like, oops, bookmark that for later. I come back. So just to give kind of a quick run through on what this is, kind of from an agenda perspective, one thing that's interesting is you have to start with URL decoders, like before you even get to what the character should be like in its regular form or glyph or whatever. So URL decoders can have different problems. The first one is if it is not multi byte awareness, which you would think, isn't it 20, 25? What?
+
+[00:52:01.61] - Justin Gardner
+Yeah, you think that that would be solved already. But really multi byte, I think a deep understanding of Unicode is pretty rare. And I know I talked to. I think you probably listened to the episode with Matthias and where we talked about this a little bit. So lately it's been coming across the POD a good bit that these multibyte sequences can be really impactful.
+
+[00:52:23.21] - Ryan Barnett
+Yeah. So what was interesting as we were going to prep the. What do we show people when we're talking about this. Well, just fire up burp and go to decoder.
+
+[00:52:31.73] - Justin Gardner
+Yeah.
+
+[00:52:32.05] - Ryan Barnett
+It's not multi byte aware.
+
+[00:52:33.17] - Justin Gardner
+Yeah.
+
+[00:52:33.50] - Ryan Barnett
+You put in UTF 8, you get Mojibake.
+
+[00:52:36.26] - Justin Gardner
+Yeah.
+
+[00:52:36.82] - Ryan Barnett
+It's like, ah. So we had to get a different extension.
+
+[00:52:39.05] - Justin Gardner
+Yeah. What did you say? Moji what?
+
+[00:52:40.69] - Ryan Barnett
+Moji bake. That's what it's called.
+
+[00:52:42.34] - Justin Gardner
+What is Moji bake?
+
+[00:52:43.38] - Ryan Barnett
+That is when data is translated in a way that it was not encoded and you get gibberish. It's called Moji bake.
+
+[00:52:48.94] - Justin Gardner
+Ah, okay.
+
+[00:52:49.94] - Ryan Barnett
+I was gonna say you're picking up on the Japanese.
+
+[00:52:51.94] - Justin Gardner
+Yeah, yeah.
+
+[00:52:52.53] - Ryan Barnett
+I'm like, yeah, yeah. So I said that word to Isabella and same thing. She's like, wait, what is that? So we were researching, but it has a name. So, yeah, in burp, you have to use decoder improved. It's got Java Swing Light and it properly decodes that it understands UTF 8, basically. So that's one thing. And there's lots of things that are not fully, like say, multibyte aware. Because technically we're just saying, really, UTF 8, normally. The other one is overlong encoding.
+
+[00:53:24.25] - Justin Gardner
+Let me ask a question about that. So multi byte sequences, that's when you've got like percent ef percent BC and then something else. Right. And it's got those longer sequences that will create a Unicode character.
+
+[00:53:39.53] - Ryan Barnett
+Correct. Okay, so a great shout out. Maybe it'll be in the notes Sonar source. They do a lot of great research, but they have a tool. It's a UTF8 online visualizer.
+
+[00:53:48.92] - Justin Gardner
+Yeah.
+
+[00:53:49.32] - Ryan Barnett
+It is awesome. It's so fun.
+
+[00:53:50.88] - Justin Gardner
+I've seen that before and we've covered it on the pod and I totally forgot about it. And I was having trouble visualizing this in the POD with Matias, and like four people messaged me and were like, you should use this. Like, yeah, there it is. Yeah. Very, very cool piece of software they built there.
+
+[00:54:05.11] - Ryan Barnett
+Yeah. And it's great because it shows you at the bottom the UTF 8 encoded bytes.
+
+[00:54:10.03] - Justin Gardner
+Yeah.
+
+[00:54:10.40] - Ryan Barnett
+The next thing are the actual raw bytes and then you have the Unicode code point and the glyph.
+
+[00:54:15.84] - Justin Gardner
+Yeah.
+
+[00:54:16.17] - Ryan Barnett
+So it depends on what layer you want to look at, but it. It helps you to understand that. Wait a second. These three individual bytes that are encoded as percent, 80%, whatever, they're all in relation to each other because there's one that's a leading byte and then you have a continuation, continuation by. Yeah, but it depends on what the character is and what each byte is storing and things like that. But yeah, if you Mochi bake it and you just get crap.
+
+[00:54:42.17] - Justin Gardner
+Yeah.
+
+[00:54:42.65] - Ryan Barnett
+So what's interesting is from a defender perspective, if we're going to look at data and make a security decision, if we Moji bake it, we're screwed. But the other thing is, if the application's Moji baking it, that can cause problems. So.
+
+[00:54:55.53] - Justin Gardner
+Really?
+
+[00:54:56.17] - Ryan Barnett
+Oh yeah, yeah, yeah. Because there were scenarios maybe get into this.
+
+[00:55:01.21] - Justin Gardner
+Oh, I guess that makes sense. One's you're perceiving it as a Unicode character, but they're perceiving it as ascii, you know, or. Yeah, okay, that's interesting.
+
+[00:55:09.92] - Ryan Barnett
+If they treat each byte as a individual ASCII character and they ignore the leading bit, it's just seven bit ascii. Then you can get an ASCII character and two, who knows what characters that may be thrown out.
+
+[00:55:23.44] - Justin Gardner
+Yeah.
+
+[00:55:24.32] - Ryan Barnett
+So when you think about control line feed injections with response splitting, that's where we saw a crazy bug bounty report.
+
+[00:55:32.55] - Justin Gardner
+I want to say. Was that a report on X or on Twitter back in the day? Yeah. By file descriptor, I think was the guy that did it.
+
+[00:55:40.88] - Ryan Barnett
+I don't remember the handle, but the one I was looking at, it was Bug Bounty versus Microsoft.
+
+[00:55:45.88] - Justin Gardner
+Yeah.
+
+[00:55:46.21] - Ryan Barnett
+Said how I got $6,000.
+
+[00:55:47.76] - Justin Gardner
+Yeah.
+
+[00:55:48.92] - Ryan Barnett
+And we had to deal with this. I dealt with the very similar problem at work when I first sold this.
+
+[00:55:53.40] - Justin Gardner
+Yeah.
+
+[00:55:53.76] - Ryan Barnett
+I said, wait a second, I know from a defender you're trying to do response injection, you're trying to do a set cookie, you're sending these crazy Chinese characters.
+
+[00:56:04.28] - Justin Gardner
+Yeah.
+
+[00:56:04.69] - Ryan Barnett
+But when it comes out of the app, it's control line fees. What the heck is happening here? Now, on the one hand, it could be a URL decoder issue emoji bake, where it's only taking the lowest byte. But the other aspect that we researched, that's kind of a related category is what we call Unicode truncation. That's where even if the URL decoder is multi byte aware, you decode it, you get what the character is. How's it going to use that character? Is it going to put it in a database? Is it going to put it in memory? And. And again, most of our customers, they're black boxes, but we can tell that they're doing URL decoding appropriately. But they took that character and all they're doing is taking the least significant bite, treating it as ascii and it becomes an ASCII character. So a lot of these control line feed injections, when you see those on cheat sheets, this is why they work. Cause the app is just saying, nope, we're treating this as ascii.
+
+[00:56:58.96] - Justin Gardner
+Okay. So there's. There's truncation and then there's also normalization and there's things not actually parsing it as multivyte sequences. What's the other one that Matias mentioned over long.
+
+[00:57:18.23] - Ryan Barnett
+Yeah, that's a subcategory too, of. It's a question in the RFC about how you're supposed to do this. So if anybody, by the time you're listening to this, or maybe at our talk, the real world analogy we have is a picture we got offline of an Amazon box, and you open it up, there's another Amazon box and a bunch of packaging, and you're looking at it saying, why didn't you just send me that box?
+
+[00:57:42.40] - Justin Gardner
+Exactly.
+
+[00:57:43.19] - Ryan Barnett
+It's the same thing. Overlong encoding is needless padding. So you have an ASCII character. It's a single byte.
+
+[00:57:48.96] - Justin Gardner
+Yeah.
+
+[00:57:49.28] - Ryan Barnett
+You can send it that way, but you can send it in 2 bytes if you wanted. But that other bite, all it's doing is saying, I'm a leading bite, but I don't have any data.
+
+[00:57:59.13] - Justin Gardner
+Just look at that guy.
+
+[00:58:00.32] - Ryan Barnett
+Yeah. So, yeah. So the question is, what do you do with that? Either you can fully normalize it back to ascii, which in my view is better, or you can say, this is bad, I'm going to block it. So the one throwback I gave to my daughter as we were prepping to this, and I said, when I see this sequence of the overlong, I get a shiver in my. And she said, why? And I said, because back in 2001, the Nimda worm came out and. What? The Nimda worm?
+
+[00:58:29.96] - Justin Gardner
+What's the Nimda worm?
+
+[00:58:31.76] - Ryan Barnett
+So whoever named this was real crafty. It's admin spelled backwards.
+
+[00:58:35.96] - Justin Gardner
+Ah.
+
+[00:58:36.76] - Ryan Barnett
+So it's the Nimda worm. And what it was doing was propagating across Microsoft environments. It would exploit systems through a bunch of different protocols in different ways, but one was through IIS server. They overlong encoded dots and slashes. So the security check would fail because it was over long, but then it would get normalized after the fact.
+
+[00:58:56.63] - Justin Gardner
+Yeah.
+
+[00:58:56.94] - Ryan Barnett
+And then they could do command injection and all sorts of stuff. So, my gosh, this stuff's not new.
+
+[00:59:00.86] - Justin Gardner
+Yeah.
+
+[00:59:01.46] - Ryan Barnett
+And it's still around.
+
+[00:59:02.42] - Justin Gardner
+It's been around for a while and it will continue to be around because this Unicode thing is tricky. It really is. And there's a lot of. There's, you know, there's best fit mappings, there's truncation there's all sorts of things. One of the things that I think is really interesting also is, is what you put in here in the dock is the casing related problems. Right? Yeah. Can you tell us a little bit about some of the gotchas where characters may be different and simply running upper or lower on something can transform it in these environments?
+
+[00:59:33.00] - Ryan Barnett
+Yeah, like you were saying, like confusables and best fit mappings. More people are aware of that over time.
+
+[00:59:38.36] - Justin Gardner
+Yeah.
+
+[00:59:38.84] - Ryan Barnett
+This is something too that I think as a developer, you're not thinking there's a Unicode component to the this, but there is now each platform and language depending on how you're doing upper and lower. And you can be doing upper. I can't remember full in Python, I can't remember. There's different terms, but when you think from a bug hunter perspective, oh, here's some input. What type of an attack should I do here? Right, so this is something when you think about like usernames, they don't want to have you log in as like justinemail.com I log in as capital J. Justin.
+
+[01:00:13.28] - Justin Gardner
+Yeah.
+
+[01:00:13.76] - Ryan Barnett
+And those are separate. No, no, they're the same. So anytime you think we need to normalize and not have a case sensitive problem, typically they would uppercase or lowercase it. And when it does that, there's case mapping in Unicode, so you can put in a Unicode character. And this was something that was very interesting as well. It's kind of related. It was one of the things we talked about. It was actually on Nahomcon this year. Right. The ATO puny code stuff. As we were looking at this and we were trying to generalize it and say, well, could there be an uppercase casing transform component? Not in this particular case, but in general, maybe. But then this dovetails into collations and databases.
+
+[01:00:57.48] - Justin Gardner
+Man.
+
+[01:00:58.19] - Ryan Barnett
+Yeah. So as we were researching that, the interesting thing again now is it's Unicode combining characters. So when you think about you, let's say you have an A character and it's got an accent graph on it. Right. Orglots or like whatever it might be, depending on the normalization that may happen, they may do a decomposition and say, okay, we understand what this glyph is, but when we store it, we're going to store it as ASCII and an accent graph separately. Right.
+
+[01:01:26.15] - Justin Gardner
+Okay.
+
+[01:01:26.67] - Ryan Barnett
+So keep that in mind because with these collations that databases may have, they can have default flags. And we were looking at MySQL because we actually highlight the ATO puny code examples this Is really interesting.
+
+[01:01:39.30] - Justin Gardner
+Yeah.
+
+[01:01:40.13] - Ryan Barnett
+So what it'll do is you pass that in, let's say with an A with an accent character. The default flags in my SQL is AI, which is accent insensitive. So even if you pass something in that has an accent on it, it ignores it. So now you just have the base character.
+
+[01:01:56.96] - Justin Gardner
+No way.
+
+[01:01:57.65] - Ryan Barnett
+Yeah.
+
+[01:01:58.13] - Justin Gardner
+So MySQL itself is doing that conversion.
+
+[01:02:00.61] - Ryan Barnett
+Yeah, it's part of the default.
+
+[01:02:02.17] - Justin Gardner
+So if you're any part of the default config. Oh, my God, Yes.
+
+[01:02:05.88] - Ryan Barnett
+And also the other flag is case and sensor. So case insensitive, accent insensitive. Now, it depends on the collation. Right. However. So if you're bug hunting, who knows, they may have set their own collation and they may be handling stuff.
+
+[01:02:17.76] - Justin Gardner
+Okay, I'm sorry, that's a crazy. I keep on saying collation. I don't have a firm grip on what collation is. What is a collation?
+
+[01:02:23.88] - Ryan Barnett
+Yeah, it's 100 describes. Basically, you're checking the equivalency of two characters. Okay, so in the basic SQL statement that we did, it's just saying, oh, select in quotes. The Unicode character A with the accent equals in quotes ASCII character A.
+
+[01:02:39.80] - Justin Gardner
+Okay.
+
+[01:02:40.17] - Ryan Barnett
+And it's either returning a zero or one.
+
+[01:02:41.88] - Justin Gardner
+Okay. Okay.
+
+[01:02:42.69] - Ryan Barnett
+So are these the same character? And when it says one. Oh, they're the same. That's not the same. And then we show if you change the collation, when you do the select and we changed it to be accent sensitive, then it's a zero. No, no, these don't match.
+
+[01:02:55.80] - Justin Gardner
+Dude, I am so hyped for this talk right now. This is going to be crazy.
+
+[01:02:59.96] - Ryan Barnett
+Yeah, it was interesting as we were looking at that, because we want to understand. Wait, how did this actually work?
+
+[01:03:06.75] - Justin Gardner
+So many layers to it as well, right? There's the WAF layer, there's the application layer, there's the database layer, there's the browser. Like we were talking about. We saw a. This is only tangentially related, but we saw an exploit come across Google VRP the other day that got disclosed that was taking advantage of ligatures in the default font used in your URL bar.
+
+[01:03:32.67] - Ryan Barnett
+Nice.
+
+[01:03:33.15] - Justin Gardner
+So, you know, there was a Google ligature, you know, to create the Google logo in the font. You know, we covered it on the pod. It was.
+
+[01:03:40.67] - Ryan Barnett
+Yeah, now it's ringing the bell.
+
+[01:03:42.03] - Justin Gardner
+It was freaking beautiful, man. It was. It was lovely. So there's so many layers to this.
+
+[01:03:47.38] - Ryan Barnett
+The one last thing, because that's what we were focusing on initially for combining.
+
+[01:03:52.38] - Justin Gardner
+Characters or dia critics, diacritics yeah.
+
+[01:03:57.15] - Ryan Barnett
+The other thing which is interesting for bug hunters.
+
+[01:03:59.51] - Justin Gardner
+Yeah.
+
+[01:04:00.19] - Ryan Barnett
+Is think about the sources and sinks. Again, if there's a sink where your data is right before, let's say a greater than character. So you have like a text input.
+
+[01:04:10.40] - Justin Gardner
+Yeah.
+
+[01:04:10.67] - Ryan Barnett
+It's ending. What if you only put the combining character as your first character? And so what we have here as an example, there's code.
+
+[01:04:19.96] - Justin Gardner
+This is a dream. Yeah. Yes. Okay. Okay.
+
+[01:04:22.44] - Ryan Barnett
+You can break context, right. So what you can do is you send this Unicode character which is a reverse full width soldis or a full width soldis depending on which way you want it to go.
+
+[01:04:34.88] - Justin Gardner
+The one you have linked in the dock here is U0338.
+
+[01:04:39.28] - Ryan Barnett
+Oh my gosh, look at this. Then it will combine and become a not greater than symbol. Now the key here though is this has to happen server side. There needs to be where the code that's going to be rendered and generated for the web page, including whatever input text. It's wrapped in a normalization and they're adding your character in. So is it semi edge case? Maybe. Is it worth a check? Tooling?
+
+[01:05:07.32] - Justin Gardner
+It's something to try. Absolutely. I've also thought about this many times and I've tried to make it work time and time again in scenarios where you need to get rid of something following your thing, where I'll put a percent sign there. Right. And I'll try to get an ampersand, like say I need to get rid of a query parameter that is appended after my specific thing. I'll put like a percent sign in there and then it becomes percent ampersand, the first character of the query parameter.
+
+[01:05:46.42] - Ryan Barnett
+Right, Right.
+
+[01:05:46.98] - Justin Gardner
+And then that's an invalid URL decoding, so then it freaks out and sometimes it does weird stuff.
+
+[01:05:51.21] - Ryan Barnett
+Yeah, right. I don't know how to decode this.
+
+[01:05:53.26] - Justin Gardner
+Yeah, exactly. So this is another thing that we can try with that. Because I've always been like, there's got to be something that I can do to affect post. Because obviously the ideal situation is you've got a. A hashtag or something like that and you can turn it into the fragment or whatever.
+
+[01:06:08.92] - Ryan Barnett
+Right.
+
+[01:06:09.21] - Justin Gardner
+But you don't always have that. And so all of the. Any primitive like this that could potentially allow you to affect previously hard coded text that follows your input.
+
+[01:06:19.36] - Ryan Barnett
+Right.
+
+[01:06:20.88] - Justin Gardner
+So interesting man.
+
+[01:06:22.09] - Ryan Barnett
+Breaking context. Right.
+
+[01:06:23.84] - Justin Gardner
+Frick. I love this. Oh my gosh.
+
+[01:06:26.17] - Ryan Barnett
+What we were doing and prepping oh my gosh for the talk and doing the research is to update tooling. Right. We want to give back and let people Use this. So I've worked with James Kettle, so active scan for BURP users. We already have some pull requests in there. We're making some more. But basically the concept is. And you can adapt this to other tooling.
+
+[01:06:47.98] - Justin Gardner
+Yeah, yeah.
+
+[01:06:48.86] - Ryan Barnett
+Is if you're checking for this behavior, it's figure out. All right, are we talking about confusables? Do we want to see if there's any normalization? Do we want to check for byte truncate? Like what are we checking for? And essentially you get a prefix and a suffix that are random strings. Send whatever character you want in between. Because then the random strings tell you where it is in the return and you're seeing if it changes in the way that you want it, if it's transformed. Yeah. So for example, if you want to see if it does any normalization, you can send the unicode Kelvin sign. It normalizes under all four normalizations. So then you know it's doing something.
+
+[01:07:24.57] - Justin Gardner
+That's what I need to know. Okay. Unicorn. Unicorn. Unicode Kelvin. Dang it, guys, do not make a meme in the freaking discord. Discord about unicorn. Please shut up, Ryan. The unicode Kelvin sign. Yeah, I think I've seen this before because I think there was a.
+
+[01:07:42.36] - Ryan Barnett
+They called it special K. Yeah, special K. Polygon.
+
+[01:07:45.36] - Justin Gardner
+Exactly. That's the one. And I believe the first time I was exposed to this actually was. Yes. We hacked bit K researcher showed me some really cool transformations in JavaScript. I think that use that. That K where you can lowercase it and it goes to like a normal ASCII lowercase K. Yeah. And I'm like, oh my gosh, that's crazy.
+
+[01:08:06.69] - Ryan Barnett
+That's the same concept. So you can check for everything. Like we have the other example for Unicode truncation. We send a Chinese character and if it comes back in between your prefix and Suffolk as a left curly bracket, maybe you want to try some server side template injection. Like there's different checks to do. So there should be some tools out by the time our talk's out.
+
+[01:08:24.75] - Justin Gardner
+All right, well, definitely interesting stuff there. Going to be on the lookout for that talk. I'm glad I get a little insight into it now. This is good. This is good. I got to start adapting some of this tooling for Kaito. Very nice, man. I think this last bit about the combining characters is really intriguing to me in my brain. I can feel it in my brain that I need to try to figure out what combinations there are there. Right. I'm sure that's in your talk. I'm excited to See it, man. Yeah, let's, let's. We've only got a couple more things here. You mentioned, you know, active scan. We talked a little bit about recollapse before.
+
+[01:09:03.02] - Ryan Barnett
+Right.
+
+[01:09:03.38] - Justin Gardner
+Where that's really helpful for normalization tables and creating those kind of vulnerabilities. Finding normalization vulnerabilities. What, what you mentioned sso, you mentioned, you know, usernames and stuff like that. What kind of places do you see this most being effective for the bug hunters, you know, and I guess it affects definitely things like cross site scripting, normalization, but also you've got critical impact with arbitrary account takeover if normalization is happening across SSO sign in.
+
+[01:09:36.52] - Ryan Barnett
+Yeah. So I think some of these overlap with the discussion about like, what are good vulnerabilities that WAP is great at identifying.
+
+[01:09:44.64] - Justin Gardner
+Yeah.
+
+[01:09:44.88] - Ryan Barnett
+Right. So the ATO stuff again, Akamai's got a different product to help you account takeovers.
+
+[01:09:50.23] - Justin Gardner
+Yeah.
+
+[01:09:50.64] - Ryan Barnett
+That's not like an injection. It's a different scenario. Most of what I've seen, when we get tickets and we have to triage, it's around all of the. Well, ssrf.
+
+[01:10:04.00] - Justin Gardner
+Yeah.
+
+[01:10:04.64] - Ryan Barnett
+Because enclosed alphanumerics.
+
+[01:10:06.56] - Justin Gardner
+Okay.
+
+[01:10:07.03] - Ryan Barnett
+Those get normalized. There's a unicode or an IDNA element processing there with the, with the URLs that does some normalization, control line feed injections and then cross site scripting. Those are the top three. Those are the top three that we see not only trying because we see people try all sorts of crazy stuff with the tools. Right. And now you got all these AI agents. It's cheap to test.
+
+[01:10:26.85] - Justin Gardner
+Yeah, yeah.
+
+[01:10:27.64] - Ryan Barnett
+But we have to weed out that and say, what are the things actually show impact that are working.
+
+[01:10:32.77] - Justin Gardner
+Yeah, exactly.
+
+[01:10:33.89] - Ryan Barnett
+And apps do crazy stuff.
+
+[01:10:36.68] - Justin Gardner
+Oh, yeah.
+
+[01:10:37.32] - Ryan Barnett
+And how they're transforming data. So we've seen examples where it's confusables, it's casing. Haven't seen any combining characters yet. Keeping my eye out, but those are the big ones. And then it's like, well, okay, why is it happening? And that's usually part of our triage. What is going on?
+
+[01:10:56.93] - Justin Gardner
+Xss, CRLF and ssrf. Ssrf. And then we've got those sort of normalization attacks on SSO and usernames.
+
+[01:11:04.93] - Ryan Barnett
+Yeah, yeah, yeah, yeah. If it's normalizing.
+
+[01:11:07.43] - Justin Gardner
+All right, well, we'll give it a shot. We'll see what we can find. I definitely think the combining characters research that you've done, and especially the. I mean, the collation stuff for sure, but the combining character stuff definitely has a lot of potential. I think that will result in some bugs. I got to get some of those, you know, into my normal testing routine.
+
+[01:11:27.35] - Ryan Barnett
+Exactly. Get them in your tooling.
+
+[01:11:28.96] - Justin Gardner
+Yeah. The last thing that we had really on the list here is CSPs. And I think you have a very interesting little piece here about how CSPs can sometimes be implemented at the WAF level. Right. Can you talk about the pros and cons of implementing CSP there and what bug hunters need to know about that?
+
+[01:11:49.94] - Ryan Barnett
+Yeah. Whether it's a quote unquote WAF or just something that's an intermediary upstream from the app. Right.
+
+[01:11:58.51] - Justin Gardner
+Yeah.
+
+[01:11:59.84] - Ryan Barnett
+Some customers find that attractive because maybe not every app stack they have that can quickly. Oh, you're doing CSP like that's built into some apps. Right. It's easy to do, other ones it's not. And you want to have a centralized place to have your policies. So from an architecture perspective, it makes sense for me when I work keep hitting this thing. You're good. When I work with customers who want to do this, it's a question of what are you trying to achieve with csp.
+
+[01:12:27.22] - Justin Gardner
+Right.
+
+[01:12:28.18] - Ryan Barnett
+What order do you implement these in and then where is it? Where you probably want to do that at what we call Origin. That's the customer application.
+
+[01:12:35.46] - Justin Gardner
+Yeah.
+
+[01:12:36.73] - Ryan Barnett
+So anytime you're getting into we want to nonce data to say obviously oh no, this is secure or hashing or anything like that. That really should be done at Origin.
+
+[01:12:46.61] - Justin Gardner
+Yeah.
+
+[01:12:47.46] - Ryan Barnett
+But other stuff is easy and fine. You can push that where we say downstream to us and then we'll send it out to the client. So there's advantages depending what they want to do with their policy. Where this gets interesting is if you have that intermediary and it's auto non data originating from the app. Right. In the inline cross site scripting. So yeah, I've, I ran into this with testing with some other third party security products that were doing this.
+
+[01:13:15.84] - Justin Gardner
+Yeah.
+
+[01:13:16.23] - Ryan Barnett
+As a customer was evaluating and I kind of pointed this out because I was able to do reflected access and it auto nonstick for me and I said I don't think this is the best idea.
+
+[01:13:26.44] - Justin Gardner
+That's very interesting. Yes. Stored XSS reflected xss. I guess really what that auto non sync feature would be intended to stop is DOM xss. Right. Because that's the only scenario where that's really going to become handy.
+
+[01:13:38.25] - Ryan Barnett
+But yeah, the, the only kind of reference I will make here again. Name dropping XSS doctor. Yeah, my boy.
+
+[01:13:48.32] - Justin Gardner
+Exactly, My boy. XSS doctor.
+
+[01:13:50.32] - Ryan Barnett
+So we were chatting on Discord a Little bit. And this was coming up and we were just going over stuff and he had made a comment about in general, like csp ways to bypass it and generally saying, oh, like if I see a nonce, it's like, is it worth my time to try and do this? Because they're noncing it.
+
+[01:14:06.28] - Justin Gardner
+Yeah.
+
+[01:14:06.52] - Ryan Barnett
+And so I just made that comment. I said, just because you see a nonce test. Yeah, it may be worth. Now, are they in this scenario? Maybe not, but they might be. And then the nonce does not matter. It'll auto. So it's something again, from a tooling perspective. Maybe you could test a few things and see. Yeah, I wouldn't just give up on that.
+
+[01:14:23.89] - Justin Gardner
+Yeah. Because it may just be auto noncing it. It might be considering it apart, or there could be some like, I don't even know if it's middleware, you know, something back end, backside wear. I don't know. You know that after everything's done, it's going back through and. And noncing it. So there's lots of ways that attacker's input could get nonced in those sort of situations.
+
+[01:14:44.72] - Ryan Barnett
+Yep. Wow.
+
+[01:14:45.92] - Justin Gardner
+Very interesting stuff. And then you also. One of the things that you kind of have access to with Akamai is the perspective of looking at these CSP violation reports.
+
+[01:14:58.56] - Ryan Barnett
+Yeah.
+
+[01:15:00.15] - Justin Gardner
+What kind of juicy stuff have you found in those? And I always thought that that's a really cool vector because if you were able, even as an attacker, to inject into that CSP reporting environment, you can trigger a CSP violation and then get data out that way. So there's lots of cool tricks.
+
+[01:15:18.32] - Ryan Barnett
+Yeah. Right. So we talked about the scenario of if they wanted Akamai to add the CSP policies, which we can. Then if you want to do any sort of reporting to Beaconing. Right.
+
+[01:15:30.68] - Justin Gardner
+Yeah.
+
+[01:15:31.52] - Ryan Barnett
+You can send that wherever you want. It doesn't have to be back to us or whatever. But some customers opt to have it come through us and they can have us actually act as like a CSP report endpoint and then they can actually see stuff interesting or it goes all the way through. But with that, we had to talk with them and say, okay, well then when that's coming through, you don't have to block it. Like just come on through and then they have a reporting that's back behind us. Right. So it's an architectural question. Now, what's interesting, what you were just saying is I can look at all sorts of CSP reports, and if you're familiar with what those reports look like in the JSON different, you know, policy things. And so I'm interested in, of course, like samples. When I said report sample, what was the blocked uri? There's a few things I go and look at and there's interesting stuff that you can see that people are trying to beacon or what are they trying a new technique, whatever it might be. Well, what's also funny, though, is exactly what you just said. All this tooling will take anything and every input and whatever and inject everywhere. It's inject everything. And so I'll be looking at something that. Oh, what was the original CSP policy? Cross site scripting tag. They're just. They're trying to anything. You know what I mean? Because maybe it works, maybe it'll pop somewhere. So that's part of weeding out. It's like, that's bogus. That's just an attacker futzing around with the report JSON coming back. So that's noise.
+
+[01:16:51.01] - Justin Gardner
+Yeah, well, sometimes. Sometimes, you know, those logs can end up. I mean, we talked about a blind XSS scenario before. Those can go into like, janky backend systems where they process it, and that's why. Blind. So crazy. Yeah, exactly. Exactly.
+
+[01:17:03.89] - Ryan Barnett
+Yeah.
+
+[01:17:04.44] - Justin Gardner
+So there's always that. That impact there as well. Very, very interesting. One thing you said before that I didn't have on the list, but I do want to circle back to is one of the first sort of interactions that I had with a WAF as a hunter was trying to bypass a WAF via locating the origin server. How often do you see that misconfiguration in clients where they're not just whitelisting communication with Akamai or something changes? Is that. And I guess I don't know. My question that I want to ask is how can I find the fricking origin server? But I don't know if you're going to be able to give me much with that.
+
+[01:17:47.52] - Ryan Barnett
+Not really. Mainly I'll plead that that's not my area. That's a platform.
+
+[01:17:52.25] - Justin Gardner
+Okay. Okay. All right.
+
+[01:17:53.85] - Ryan Barnett
+Get off the hook on that one. Yeah, it is, in a sense. Now, it's supposed to be a typical onboarding.
+
+[01:18:00.01] - Justin Gardner
+Yeah.
+
+[01:18:00.48] - Ryan Barnett
+That you talk with a customer. Because we have a lot of customers that are only on performance.
+
+[01:18:05.13] - Justin Gardner
+Yeah.
+
+[01:18:05.77] - Ryan Barnett
+They want us as a cdn.
+
+[01:18:07.32] - Justin Gardner
+Yeah.
+
+[01:18:08.25] - Ryan Barnett
+So. Okay.
+
+[01:18:09.52] - Justin Gardner
+We don't even think about that as hackers, you know, because we're like on my waf. But it's, you know, originally it was a cdn. Right.
+
+[01:18:15.68] - Ryan Barnett
+Serves a purpose, makes everything faster.
+
+[01:18:17.68] - Justin Gardner
+So.
+
+[01:18:18.39] - Ryan Barnett
+Yeah, yeah. But security side of the house, that's a discussion when there's onboarding and to say, look, if you don't want people to reach your origin and get around the edge network, then you have to figure out how to configure that. So they know about it now. Question is, okay, why wasn't it implemented? Sometimes it's hard, you know, you have to configure network firewalls to figure out how to talk with the edge systems and make sure that they're always set up properly. Right. And sometimes I guess that that doesn't happen or things change. There's also scenarios where typically the edge network, to make everything faster, it knows where servers are that are geographically close to you and all of that. So you know, I, again, I don't work on that side of the operations and working with customers on configuring. But if you only configured it to work with server, certain Akamai servers because they're in your region, but then somebody goes through a different one and you're just not restricting. I don't know. But yeah, being able to bypass that, it's an issue. So that's why we tell customers, no, no, if you want this, we call it site shield. You got to configure site shield to say we only talk, you know, with Akamate now directly. Yeah. The other scenario there is, you were thinking, typically, oh, I'm a hacker, I'm doing web application attacks. There's also the issue of denial of service.
+
+[01:19:38.92] - Justin Gardner
+Yeah.
+
+[01:19:39.47] - Ryan Barnett
+That if they know the origin and go directly to it. Now in this case, if they find an ip, they can still slam it.
+
+[01:19:45.80] - Justin Gardner
+Oh yeah.
+
+[01:19:46.27] - Ryan Barnett
+From an application attacker. Yeah. You can't actually get in to do what you wanted, but if they're just wanting to flood, they can do that anyway. So again, there's different DDoS scenarios where we can front end and we have a whole different system for doing that. But. Yeah, but that's been an issue with any CDN waf. I've seen tools out there with like Cloudflare trying to find if you can find the original source IP before they onboard it. That's the issue.
+
+[01:20:09.36] - Justin Gardner
+Yeah, exactly. And that's often in the DNS history. You know, you can go back and look before they onboarded their waf, you know, you can say, oh, where was that ip? Oh, it's still there.
+
+[01:20:18.25] - Ryan Barnett
+Yeah. It never forgets.
+
+[01:20:20.56] - Justin Gardner
+Yeah, exactly, exactly. Okay, I said last thing, but I did come up with one more thing. One of the, you know, by nature of these, these WAFs, it's important that it's necessary that you have to be able to have some routes that you hit that return data from the WAF rather than from the actual origin. You know, something to do like your bot check and stuff like that. That has become very interesting attack surface for attackers. And I've spent a good amount of time looking at the CDN CGI endpoints and stuff like that. Right. I guess. What is your. And once again, this might be a product question rather than the researcher side, which is kind of where you're at, but running a bug bounty program yourself, that I imagine is very high value attack surface to you. And would it be possible maybe for us to get some additional introspection into what those endpoints are exposed on every host?
+
+[01:21:29.01] - Ryan Barnett
+Yeah, good question. Well, it is important one thing that you just mentioned, that Akamai does have a bug bounty program. Right now. It's scoped just for the platform, but also Linode had a long.
+
+[01:21:41.56] - Justin Gardner
+Yeah, excellent program. I've worked with them.
+
+[01:21:43.48] - Ryan Barnett
+So that's within scope of what we're doing as well. So I don't know. That's a good question. To fit. It's a scoping question.
+
+[01:21:49.63] - Justin Gardner
+Yeah.
+
+[01:21:49.98] - Ryan Barnett
+Right. We set up also a sandboxed environment that has different origin setups with different stacks. And also from more from the protocol perspective, that we want to have nginx Apache node js, but we have a whole system set up where you can test and stuff echoes back and so you can see what's happening.
+
+[01:22:09.31] - Justin Gardner
+That's interesting.
+
+[01:22:12.09] - Ryan Barnett
+A hat tip to James Kettle, who's doing his research. You know, we talked, I triaged his bone, he found that he's talking about a black hat.
+
+[01:22:21.40] - Justin Gardner
+Yeah.
+
+[01:22:21.93] - Ryan Barnett
+So we have an area set up for this which will help to identify these types of situations and gives you back some debugging information to see exactly what made it to origin, how did it change? How's it coming back? So it's not full blown. It is more of a product question on all these different things that may potentially have problems. But we're looking to expand the scope.
+
+[01:22:44.10] - Justin Gardner
+So the WAF currently is not in scope. If we find vulnerabilities, let's say, on those endpoints that need to be exposed that are under a customer's domain but are actually Akamai code, those are currently not in scope.
+
+[01:23:01.86] - Ryan Barnett
+Correct. It's a product question now. Yeah, I am working to get it within scope. Part of the question is, okay, what scope do you put around waf? Right, yeah.
+
+[01:23:13.06] - Justin Gardner
+Because there are some programs that'll just be like, all right, here's $25 per WAF bypass, high volume, low value.
+
+[01:23:19.42] - Ryan Barnett
+Yeah, we don't really go in that direction. We don't really want to get in that game because part of when you think about the day to day business of WAF and yes a bit of whack a mole with some of the detections. That's day to day business. That's not something we deem as a like evasion and some of this is internal terminology and I'm not sure maybe this is something that I just use. But the way I look at these are the day to day stuff like that or. Oh, that's an interesting cross site scripting vector. Okay, we need to catch that. That's a bypass. Evasion is something deeper in the platform protocol processing. And the way I say it is if my team can't fix it, it's an evasion because we have to get with engineers whole different scope and timelines and so we don't want to get into the bounties for bypass. That's. Maybe we'll do some specials. I've seen that before like hey, for the next whatever here, send us, give us cool techniques. Yeah. But right now it's, it's focusing more on, on lower level kind of protocol bypassing kinds of things.
+
+[01:24:19.43] - Justin Gardner
+That's, that's fun research though. It's a good research target. So glad you guys are running a program on that.
+
+[01:24:25.46] - Ryan Barnett
+One other thing I'll mention actually this is going to come out I guess after we're in Vegas. The current state of the program. Right. We had it private for a while now. It's not private, it's on HackerOne. You can find our page. But it was invite for a while. But now anybody who kind of asks, we haven't turned anybody away. Like if you say hey, can I come to your program? We'll just let you in. And then there's a little different information where it gives you about our sandbox and you do all that stuff. So we are right on the fence to being full blown public program public. We're working our way over that fence. But anyways I plan when I'm in Vegas talking with people to let them know. So if you're talking with people and they say okta Mike say oh you can ask to join the program. They can join.
+
+[01:25:08.89] - Justin Gardner
+Heck yeah dude. I'm excited for that. I think that'll be great. I think it's really important for these types of software to have you know, bug bounty programs. And I know a public program is a big step and you got to deal with A lot of, you know, reported flux and stuff like that, but.
+
+[01:25:23.86] - Ryan Barnett
+Yeah, it's a bandwidth issue.
+
+[01:25:25.43] - Justin Gardner
+Yeah, absolutely, man. Well, whenever you guys go public, let me know, I'll give you a shout out. I owe you one for coming on the pod and for showing me a good time up here today.
+
+[01:25:34.55] - Ryan Barnett
+Absolutely. Pleasure, dude.
+
+[01:25:36.22] - Justin Gardner
+Thank you so much, man. Appreciate it.
+
+[01:25:37.67] - Ryan Barnett
+We got to hold on.
+
+[01:25:38.67] - Justin Gardner
+Yeah, we got to. For the end of the. For the end of the episode. Let me get the. Hold on. All right, well, we'll. We'll call it a wrap there. Oh, you guys can see. Here we go. This is going to be the thumbnail right here.
+
+[01:25:49.10] - Ryan Barnett
+Yeah.
+
+[01:25:49.51] - Justin Gardner
+Three, two, one. Nice. Very good. All right, thanks, man. Great episode. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'.
+
+[01:25:59.35] - Ryan Barnett
+All.
+
+[01:25:59.55] - Justin Gardner
+If you want more Critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level happen hacking discussion happening there. On top of the master classes, hack alongs, exclusive content and a full time hunters guild if you're a full time hunter. It's a great time, trust me. All right, I'll see you there.

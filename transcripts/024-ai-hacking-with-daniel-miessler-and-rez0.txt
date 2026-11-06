@@ -1,0 +1,1548 @@
+Episode 24: AI + Hacking with Daniel Miessler and Rez0
+Source: https://www.criticalthinkingpodcast.io/episode-24-ai-hacking-with-daniel-miessler-and-rez0/
+======================================================================
+
+Justin Gardner Rhynorater (00:00.744)
+Alright, we're rolling. Sup guys, welcome to the pod.
+
+Rez 0 (00:04.054)
+Hey hey.
+
+Daniel Miessler (00:05.207)
+Thanks for having me.
+
+Justin Gardner Rhynorater (00:05.376)
+Dude, I'm super excited for this episode because AI is such a hot topic right now, and I just think there's a lot of stuff to uncover in this area. So really pleased to have Rezo and Daniel Measler on. For those of you that don't know these guys, you're missing out big time if you're not following them on Twitter. Both very active, both very high quality content. I'll go ahead and I'll let you guys do your own intros, but also I wanna just say beforehand, like Daniel, like...
+
+Justin Gardner Rhynorater (00:35.092)
+You're the closest thing that I know to a tech and security philosopher, and I just love that. Like, all the times you put out those essays and stuff like that, they talk about like high level concepts like backing up yourself into an LLM or like, you know, predictions on the future of IT architecture, I love that shit. So that's my little tidbit, and Danielle, I'll let you introduce yourself.
+
+Rez 0 (00:43.31)
+Thanks for watching!
+
+Daniel Miessler (00:58.254)
+Yeah, no, I appreciate you saying that. So I've been in security for, I think, going on like 24 years now, so it's been quite a while. Yeah, my background is in, as you might expect, is in attacking assessments, pen testing, mostly on the AppSec side. And as of like November, I've been totally bitten by this AI thing.
+
+Justin Gardner Rhynorater (01:09.212)
+Wow, dude.
+
+Justin Gardner Rhynorater (01:16.127)
+Yeah.
+
+Justin Gardner Rhynorater (01:21.225)
+Mm-hmm.
+
+Justin Gardner Rhynorater (01:27.317)
+Yeah.
+
+Daniel Miessler (01:27.422)
+I actually joined an AI team at Apple and worked there for a number of years, but I wasn't really doing AI stuff there. I was just kind of helping them out with the AI stuff and I was doing some other security stuff. But that's where I got my intro to it and I did Andrew Eng's full course of videos. Yeah, it was crazy. Got caught up on the math.
+
+Justin Gardner Rhynorater (01:33.617)
+No way.
+
+Justin Gardner Rhynorater (01:41.12)
+Sure.
+
+Justin Gardner Rhynorater (01:47.483)
+Oh, nice.
+
+Justin Gardner Rhynorater (01:52.111)
+And when was this happening?
+
+Daniel Miessler (01:54.178)
+This was, I want to say 2017 or so.
+
+Justin Gardner Rhynorater (01:57.712)
+Okay, wow, so you were a real early player in the space then.
+
+Daniel Miessler (02:00.446)
+Yeah, yeah, I've been following it for quite some time. But yeah, that's what I'm doing now is like merging the two of AI and security.
+
+Justin Gardner Rhynorater (02:08.412)
+Yeah, I love that intro to the podcast as well. You know, you talk about how AI and security mix together and, and how to create, you know, that combination. It's really, really good content. Um, Reza, what about you, man?
+
+Rez 0 (02:21.386)
+Yeah, well, I did want to say two quick things. One, Daniel is way ahead of it. I mean, just look at the name of his website and a podcast, right? Unsupervised learning. He's already been in the AI space way ahead of time. Uh, but then, yeah. And then also I didn't want to say before I intro myself that it's an absolute honor and pleasure to be hanging out with you guys today. You know, both of you are people that I admired and looked up to for years and then have become friends with, um, over the last, you know, year or two. So that's really exciting.
+
+Justin Gardner Rhynorater (02:25.481)
+Hmm. Hahaha. Yeah.
+
+Justin Gardner Rhynorater (02:31.296)
+Yeah.
+
+Rez 0 (02:46.462)
+Yeah, no, I have been in security, I guess, five or six years now. Daniel may have more experience than me and you combined, Justin, but yeah. So I started with a software engineering kind of background and then moved into transition into security and kind of did defensive sock analyst engineering work while I was developing the AppSec bug bounty hacking on the side for a couple of years and then made the switch. So now I do SaaS security, like hacking SaaS apps for AppOmni and then, you know, bug bounty on the side. And.
+
+Justin Gardner Rhynorater (02:52.54)
+I know right? Yeah, seriously.
+
+Rez 0 (03:15.414)
+as Daniel mentioned. Yeah, yeah, exactly. And then Daniel, similar to him, and similar to you, honestly, Justin, have been kind of bit by the AI bug lately. And so going down those rabbit holes because we need people who are willing to pioneer and figure it out so we can help keep it secure and then also find the things that other people aren't thinking about.
+
+Justin Gardner Rhynorater (03:15.597)
+and a lot of bug bounty you do.
+
+Justin Gardner Rhynorater (03:22.984)
+Mm.
+
+Justin Gardner Rhynorater (03:33.8)
+Yeah, yeah, for sure. It's a really exciting space. And I think I've got two main directions that I want to go today with the pod. And both of you are sort of fit to one of them. That doesn't mean that the other one can't jump in on the other topic. Please jump in as you see fit. But the two things that I kind of want to talk about are how to hack with AI. So using AI to develop hacking tools and to help our hacking workflow. And then also how to hack AI, right? How to take advantage of these newer technologies
+
+Justin Gardner Rhynorater (04:04.454)
+and find vulnerabilities that we can report. So I figured we'd start out with how to use AI for hacking and I was gonna do this a little bit later on in the flow, Daniel, but I think I'm just gonna jump right to it because I'm really excited to hear about it. You gotta tell me about your personal setup for AI shortcuts and command line tools that you've been building out because you've hinted at that to me before and I was like, all right, let's discuss it on the pod. Let's discuss it on the pod. So now's my moment.
+
+Daniel Miessler (04:31.69)
+Yeah, yeah, absolutely. So like, I don't remember when this was. It must've been like 2015 or 2016. I announced like this company called Helios and everyone was like, congrats, you're going full-time. But I wasn't going full-time. Like I was still doing my main gig. I just announced like the platform. But basically all it is, and I did a talk about this at DEF CON one year called Mechanizing the Methodology. And I think...
+
+Justin Gardner Rhynorater (04:41.845)
+Okay.
+
+Justin Gardner Rhynorater (04:47.276)
+Hahaha
+
+Rez 0 (04:55.599)
+Thanks for watching!
+
+Daniel Miessler (04:59.37)
+like almost everyone and I'm sure you too as well are using this now and maybe even we're using it before. It's basically I have one mini command for each thing I wanna do. So I have one called get TLDs. The input is any existing domain and I get all the TLDs. Well, I can then pipe that in to another command which either takes input from as a parameter or it takes it in from SDN, which is get sub domains.
+
+Justin Gardner Rhynorater (05:02.4)
+Mm-hmm.
+
+Justin Gardner Rhynorater (05:10.372)
+Mm-hmm.
+
+Justin Gardner Rhynorater (05:13.014)
+Mm-hmm.
+
+Justin Gardner Rhynorater (05:16.749)
+Mm-hmm. Mm.
+
+Justin Gardner Rhynorater (05:27.036)
+Right. Mm-hmm.
+
+Daniel Miessler (05:29.462)
+So now I'm piping from TLDs into subdomains, and now I can pipe into find open ports. And what's cool about it is that's abstracted because I could use Naboo, I could use Nmap, MassScan or whatever to do that. And then so what I have is I have currently around 39 of these, and then basically forming those into sentences is what ends up being my recon stack and my testing stack.
+
+Justin Gardner Rhynorater (05:36.178)
+Okay.
+
+Justin Gardner Rhynorater (05:41.033)
+Right, right.
+
+Justin Gardner Rhynorater (05:48.866)
+Mm-hmm.
+
+Justin Gardner Rhynorater (05:55.32)
+Oh, wow, that's cool. So you're kind of building out like a flow specifically, and it's very Linux style, right? It's piping directly one right into the other, and you're abstracting away all the different tools you're using. This is a really great idea and a great takeaway for anyone who's looking to build recon stuff. Like, even if it's just creating your own wrapper, just around the tool, that's okay.
+
+Daniel Miessler (06:02.104)
+Yes.
+
+Justin Gardner Rhynorater (06:16.244)
+You know, like, but as long as you're abstracting it out, it becomes, your flow will be consistent across, you know, the commands that you'll run as your workflow evolves, as you change from, you know, Naboo to Mask.in or whatever you're jumping around for, you know, you'll still be typing the same commands. That muscle memory will still be the same, and you can just interchange out the backend. That's really solid.
+
+Daniel Miessler (06:39.102)
+Yeah, and what's really cool about it is, like you said, as you're reading research or you're discovering that one tool kind of like let off the gas or something.
+
+Justin Gardner Rhynorater (06:52.112)
+Mm-hmm. Yeah.
+
+Justin Gardner Rhynorater (06:58.635)
+Yeah.
+
+Justin Gardner Rhynorater (07:01.288)
+Yeah, no, that's awesome. I think that's a really great tip. And so, you know, that's a great way to structure your recon stuff. And I think a lot of people have kind of gone down that route, maybe not as far as 39 different tools. That's a pretty sick setup. But, you know, what kind of ways do you see AI coming into this flow and evolving your current setup that you've got there?
+
+Justin Gardner Rhynorater (07:27.872)
+Did we lose them?
+
+Rez 0 (07:29.462)
+We might have one thing, one thing I know that he shared with me while he's trying to connect in there, I've seen a little bit more of his tooling and one huge thing with using LLMs is that you have to be able to get clean data and you want to remove any fluff. And so that's one thing I know some of his cool tools do is they pull content from web pages and it just strips out all of the extra tags, it strips out all the extra fluff.
+
+Justin Gardner Rhynorater (07:31.369)
+Yeah.
+
+Justin Gardner Rhynorater (07:34.72)
+Yeah.
+
+Justin Gardner Rhynorater (07:39.505)
+Mmm. Okay.
+
+Justin Gardner Rhynorater (07:46.059)
+Mm.
+
+Rez 0 (07:50.842)
+And actually, Simon Willison, he writes a lot about AI and security, just AI in general. He just released a tool recently that will do the same thing for Python functions. So it's a command line tool that will do like a regex search on a Python code base. And then it only returns the code for the function that you search for. So you could imagine it being pipeable where you're saying like, you've got some tool and what it does is it looks over the code base or whatever and it tries to help you or improve certain functions.
+
+Justin Gardner Rhynorater (07:53.985)
+Mm-hmm.
+
+Justin Gardner Rhynorater (07:59.624)
+Mm.
+
+Justin Gardner Rhynorater (08:03.52)
+Sure.
+
+Justin Gardner Rhynorater (08:06.799)
+Mm.
+
+Justin Gardner Rhynorater (08:10.722)
+Ah.
+
+Rez 0 (08:18.686)
+And how does it know to do that? Well, it needs to have just the function be returned because it can't ingest the whole project. And so that's exactly what it does. It does a looser and just returns the code from a single function.
+
+Justin Gardner Rhynorater (08:25.546)
+Yeah.
+
+Justin Gardner Rhynorater (08:30.326)
+That's pretty rad and that's something that I kind of wanted to talk a little bit.
+
+Justin Gardner Rhynorater (08:33.003)
+about a little bit later with embeddings is like, especially when we're building tooling surrounding, it could be JavaScript file analysis, it could be running code and analyzing open source code or whatever, is one of the things that's most difficult for me is like, okay, now I've got to go find this function. And there's like six functions that match this signature for this specific call. And like, how do I know which one goes where? And if we had an LLM
+
+Rez 0 (08:55.726)
+You're right.
+
+Justin Gardner Rhynorater (09:03.939)
+did the mappings and could map out these sort of paths of code, then I think that would be really helpful. But it's hard to keep all that in context, because there's only a certain amount of context window you've got.
+
+Rez 0 (09:07.853)
+Mm-hmm.
+
+Rez 0 (09:11.03)
+That's actually interesting.
+
+Rez 0 (09:16.094)
+Yeah, that's actually really interesting though. I wonder if it could do it bit by bit and like slowly draw those connections. That'd be a really neat product because I think it would allow, like if you could pre-run it on a code base and it created those flows, then it would allow the function call and let's assume it could like compress it or like that flow chart would be a good way for the, it would fit into context. It'd be a good way for the LLM to be able to understand what the app's doing and then maybe be able to, you know, return better or more coherent responses.
+
+Justin Gardner Rhynorater (09:27.904)
+Yeah.
+
+Justin Gardner Rhynorater (09:37.001)
+Mm-hmm.
+
+Justin Gardner Rhynorater (09:40.085)
+Yeah.
+
+Justin Gardner Rhynorater (09:44.656)
+Yeah, so I mean, CodePilot or Copilot is absolutely, you know, revolutionizing the development world, right? And I just, I'm really interested to see what's gonna happen as we try to apply something like this to the security realm as well, and see if we can map out all these various pathways through the code and find vulnerabilities. So that's something that I'm definitely looking forward to checking out. All right, let's.
+
+Rez 0 (09:57.39)
+Sure.
+
+Rez 0 (10:06.09)
+Yeah, yeah, absolutely. And I think it's gonna be the same, it's the same challenges that they're overcoming to have tools that are gonna help developers write features in the context of the full app. I think they're gonna run through all of those hurdles and challenges that we need them to run through. How do I ingest and understand this whole code base? Because that's the only way you're gonna be able to implement a feature at scale. Similarly, when they run through those same hurdles, we're gonna be able to apply it to security. Find security vulnerabilities now with the context and the awareness of the full project.
+
+Justin Gardner Rhynorater (10:11.769)
+Mm-hmm.
+
+Justin Gardner Rhynorater (10:21.245)
+Yeah.
+
+Justin Gardner Rhynorater (10:24.041)
+Yeah.
+
+Justin Gardner Rhynorater (10:35.964)
+Yeah, yeah, for sure. And I know, I know, I don't, well, I'm not sure if it was you or Daniel that dropped into the, into the dock, but this GPT engineer thing, did you see that?
+
+Rez 0 (10:43.522)
+Yeah, I put it in there. I initially had it in my section, but then I saw that his section was called How to Use AI for Hacking, so I dragged it up to his. I wanted to talk about that specifically.
+
+Justin Gardner Rhynorater (10:46.272)
+Yeah.
+
+Justin Gardner Rhynorater (10:50.504)
+Yeah. Yeah, man. Hopefully, hopefully Daniel can reconnect here in a second. But I thought that was really cool for like such a cool concept in something that I hadn't really seen. So let me, why don't you talk about that for just a second? I'm going to go answer a DM from Daniel, see if we can get him back on.
+
+Rez 0 (11:05.326)
+Sure, perfect. Yeah, I'll explain it to the audience. So GPT engineer went from zero to like 14,000 stars in the past like week. It's kind of like another project called Small Developer. And the whole idea is that it writes code. Yeah.
+
+Justin Gardner Rhynorater (11:18.156)
+Okay, that's the one I heard of. Yeah, I was like, it sounded familiar, but I thought it had a different name. Small Developers is the one that I heard.
+
+Rez 0 (11:24.914)
+Yeah, small developer went from zero to like 6,000 stars in a week. I think GPT engineer fixes a few of the problems. I don't know if they were written in parallel or if they, you know, if GPT engineer was on top of small developer, but yeah, but they, what they, it has great prompts and it has great ways to kind of save off data and then tell the LLM exactly what connection pieces are important, like this file needs this file and you've written this file and here's a summary of it, but you haven't written this file, so not write that. Um, and yeah.
+
+Justin Gardner Rhynorater (11:28.662)
+Mmm.
+
+Justin Gardner Rhynorater (11:37.108)
+Sure.
+
+Justin Gardner Rhynorater (11:51.253)
+Sure.
+
+Rez 0 (11:54.522)
+I would love to, once Andrew hops back on, or would love to get your thoughts on like, what would a really advanced project or program or application that uses a similar style of, like bit by bit understanding and bit by bit like learning such that, you know, obviously we can apply GPT engineer to develop security tools, but I wonder if you could do something similar where it's applied to a code base where,
+
+Justin Gardner Rhynorater (11:57.418)
+Mm-hmm.
+
+Justin Gardner Rhynorater (12:08.585)
+Mm-hmm.
+
+Justin Gardner Rhynorater (12:16.072)
+Mm-hmm.
+
+Rez 0 (12:19.85)
+Actually, it might be exactly what he's talking about. Like maybe bit by bit, it draws a map of the sinks and the sources.
+
+Justin Gardner Rhynorater (12:24.424)
+Yeah, I mean, it could definitely be something like that, but also, I feel like it's a very different realm in the security space, right? Like in the development space, you have this line by line list of like, okay, build out this feature and then be able to invite users and they put in their email and then they get added to the, and you can define it, you can describe it all in plain English language. But with hacking, it's like, you really have to understand what exactly is going on.
+
+Rez 0 (12:42.062)
+Sure.
+
+Rez 0 (12:48.014)
+Sure.
+
+Justin Gardner Rhynorater (12:54.478)
+in order to have, you have to, you can't just, you know, all of a sudden say, boom, this is exactly how we're going to hack this app and then the thing can go do it. You have to be looking through the application. You have to be reading the JavaScript files. You've got to be watching the API requests. And so I'm not really, really sure something like this is going to, you know, fit perfectly into an AI substitute for our, you know, for our job, so to speak, you know?
+
+Rez 0 (13:20.414)
+Yeah, maybe, but like in my head and just to catch Daniel up, it seems like he hopped back on. We're talking about like a GPT engineer or small developer like project, but applying it to security. I actually think if it did map syncs to sources and then what you did was like, you just told it like, hey, check for that whole flow. If there's any point at which it's sanitized, check for that whole flow at any point, it's actually rendered or check in that whole or.
+
+Justin Gardner Rhynorater (13:25.081)
+Ah, sub Daniel, there it is.
+
+Justin Gardner Rhynorater (13:38.037)
+Mm-hmm.
+
+Justin Gardner Rhynorater (13:42.716)
+Yeah. Aha!
+
+Rez 0 (13:46.882)
+for every flow that this app uses, maybe it's thousands of possible paths, right? For those thousands of paths, are there any paths that lead to an unsanitized sync or an, you know, an exec call in Python or what have you?
+
+Justin Gardner Rhynorater (13:58.751)
+Yeah.
+
+Justin Gardner Rhynorater (13:59.88)
+Yeah, no, that actually makes a lot of sense. I think the whole concept of mapping it to sources and syncs and doing, and once we come up with the attack vector, like, okay, are there any spots in the application where user input isn't sanitized and then is passed to a sync? That's something that we can describe. That's sort of a methodology that we can describe. But I think a big part of the hacking, at least for me from a black box perspective, is getting to know the application.
+
+Rez 0 (14:19.578)
+Mm-hmm. Yeah.
+
+Justin Gardner Rhynorater (14:29.774)
+with the application is what we call it. And really understanding the ins and outs and if you don't have that, it's hard to build out a methodology of how exactly you could use, how exactly the LLM should go and attack the product. And that's where I think it could be really interesting to, and I kinda like this concept of using a LLM as like a brain in sort of more of an agent sort of way. Like, all right,
+
+Rez 0 (14:30.755)
+Sir.
+
+Rez 0 (14:58.635)
+Mm-hmm.
+
+Justin Gardner Rhynorater (14:59.734)
+accomplish is here is all this documentation, parse through all this documentation, figure out the things that I'm not supposed to be able to do, and then see if you can go do them. You know, like, yeah, yeah.
+
+Rez 0 (15:07.242)
+Ooh, make a list of no's. That's a good idea. That's effectively how Douglas Day, our friend, the Archangel does a lot of hacking. He looks for no's in the documentation or in the settings and then just tries to see if he can find ways that he can break that no or break that rule that says you can't do this. Daniel, what do you think? What would it look like to apply a project like a complex project like GPT engineer to hacking instead of to building?
+
+Justin Gardner Rhynorater (15:15.017)
+Yeah.
+
+Justin Gardner Rhynorater (15:22.897)
+Yeah.
+
+Justin Gardner Rhynorater (15:31.672)
+Mm.
+
+Daniel Miessler (15:33.06)
+I think it's going to be better than we think it's going to be. And I think it's going to get there pretty quickly. I'm already messing with it, but I'm having trouble because I'm using GPT-4. And it really does not like asking for, if you ask for specific steps on how to attack something, it gets really angry. So what I'm doing is I'm using an agent out front to route to a local LLM.
+
+Justin Gardner Rhynorater (15:43.177)
+Mm.
+
+Justin Gardner Rhynorater (15:51.476)
+Hmm. Ah, yeah.
+
+Daniel Miessler (15:59.2)
+to answer the question using the local LLM instead, which is more likely to do that. Unfortunately, they're not nearly as smart as GPT-4. So they're not able to piece together the dots. But so I just did a talk for NOMSEC, or yeah, NOMCON. And basically, I had put it in a bunch of contexts about an employee and a bunch of context about a fake startup.
+
+Justin Gardner Rhynorater (16:05.513)
+Wow.
+
+Rez 0 (16:10.934)
+Sure.
+
+Justin Gardner Rhynorater (16:11.31)
+Mm.
+
+Justin Gardner Rhynorater (16:17.8)
+Hmm. Yeah.
+
+Daniel Miessler (16:29.012)
+that I created and I was asking questions like, should this connection be allowed from here to there or something? And it would be like, yes, it should be allowed. And it pulled data from who the employee was, what systems they normally connect to and that sort of thing. I also had in the context of the fake company, they've got a single AWS account. It's a root account and it doesn't have 2FA enabled.
+
+Justin Gardner Rhynorater (16:29.941)
+Mm.
+
+Justin Gardner Rhynorater (16:45.26)
+Wow.
+
+Justin Gardner Rhynorater (16:55.804)
+Oops. Yeah.
+
+Daniel Miessler (16:56.54)
+And I also put like they're struggling with SQL injections on the main website. So what I was doing was like leaving these breadcrumbs, which we can collect from internal information. Um, so there's two use cases that I'm thinking of. One is like an internal red team. I think internal red team is going to be insane because they're going to have access to all those breadcrumbs.
+
+Rez 0 (17:04.578)
+Mm-hmm.
+
+Justin Gardner Rhynorater (17:04.872)
+Mmm. Yeah, absolutely.
+
+Rez 0 (17:07.278)
+Sure.
+
+Justin Gardner Rhynorater (17:13.206)
+Mm.
+
+Rez 0 (17:20.47)
+Yeah, all the previous reports. That's a great point. They'll be able to ingest the thousands of HackerOne reports they've gotten in the last year, for example.
+
+Justin Gardner Rhynorater (17:22.449)
+Yeah, yeah.
+
+Justin Gardner Rhynorater (17:26.324)
+Wow.
+
+Daniel Miessler (17:27.616)
+So I think ingesting that will be super insane, but I'm thinking even better is ingesting the current state of the stack. So if you're ingesting, for example, you download a bunch of the Docker containers that are being used and you evaluate the configs on them. You evaluate all the configs of AWS. You look at the state of different endpoints, what services are listening, what aren't, what permissions they're running at.
+
+Daniel Miessler (17:57.66)
+And then you ask a local LLM, or if you have permission, GPT-4, how do I piece together attack paths that make use of all these hundreds or thousands of different attributes? Now, a red team can do that, but an LLM could do it in 90 seconds.
+
+Justin Gardner Rhynorater (18:11.073)
+Wow.
+
+Rez 0 (18:17.228)
+Sure.
+
+Justin Gardner Rhynorater (18:17.232)
+Yeah, that's crazy. That's something that I hadn't really thought of is like being able to ingest, because I guess you would need something on the various endpoints to like pull open ports, pull all the configs out and then suck it all up into one central spot where you can train just sort of like a.
+
+Daniel Miessler (18:29.501)
+Yes.
+
+Justin Gardner Rhynorater (18:35.252)
+an LLM that is supposed, I mean, then you could query it, ask it questions. Hey, anywhere in our organization are we using log4j on all of these various points? And I guess we've sort of got that to some extent already, but I think having an intelligent system that will be able to correlate information or might even be plugged into the news, like hey, I just saw an article hit, critical vulnerability in log4j. You come in the morning and like, here's a list of systems that the intelligent security assistant has put together
+
+Justin Gardner Rhynorater (19:04.686)
+organization that would be a game changer.
+
+Rez 0 (19:06.922)
+Yeah, do you think, Daniel, I know you've mentioned this before, but you said data is going to be really key for these AI systems. That's what jumped to me just now. Justin, when you said that was like, how are you going to correlate like, Oh, this is running on this system. And obviously we have lots of agents that are out there, right. Crowd, CrowdStrike, or what's the one that allows you to run, um, like kind of like search queries for files across your entire infrastructure.
+
+Justin Gardner Rhynorater (19:12.811)
+Mm.
+
+Justin Gardner Rhynorater (19:15.902)
+Mm-hmm.
+
+Justin Gardner Rhynorater (19:21.736)
+Yeah.
+
+Daniel Miessler (19:29.632)
+That was great.
+
+Justin Gardner Rhynorater (19:29.661)
+I don't know, I haven't heard of that. OS query.
+
+Rez 0 (19:30.91)
+Oh yeah, OS query. Yeah, so like OS query and stuff, it could be a huge data feed for like your LLM security agent. But I wonder if there's gonna be more spaces for tools like that essentially correlate systems or identities with, you know, like code that's running and OS versions and software versions such that these security agents are able to really quickly pinpoint like, oh, this is a vulnerability, this is a risk, this isn't.
+
+Justin Gardner Rhynorater (19:48.79)
+Thank you.
+
+Justin Gardner Rhynorater (19:54.857)
+Mm.
+
+Daniel Miessler (19:55.544)
+Well, so what I think is so crazy about this is like the Red Team doesn't even have to build this. Because I think all software is about to get totally eaten by this. Instead of having software that's like HR software or sales software or security software or Red Team software, instead of that, you're just going to have all the context in one place and then the ability to ask questions. So the Red Team will be benefiting from the fact that IT already put everything in one place.
+
+Justin Gardner Rhynorater (20:23.973)
+Mmm.
+
+Daniel Miessler (20:24.476)
+because the business wanted it all in one place. Now the red team simply comes in and says, pretend I'm on this host and I'm isolated on this host, but I need to get to crown jewel data. What can I do?
+
+Justin Gardner Rhynorater (20:37.9)
+Ah, and all of that's already gonna be put together for the business and IT, you know, normal operations use cases, because every single piece of the business and the IT realm is gonna all be rolled up into this at some point, very soon.
+
+Daniel Miessler (20:42.161)
+Yes.
+
+Daniel Miessler (20:52.308)
+That's right. That's right. And what freaks me out is like, imagine someone gets access to that interface. I mean, they're just going to be like, write the extortion email for me, write the ransomware, like, and here's who to target. And here's the actual text that will most likely to get you paid.
+
+Rez 0 (20:53.173)
+Hmm.
+
+Justin Gardner Rhynorater (20:55.2)
+Dude, that's freaking scary. Hahaha.
+
+Justin Gardner Rhynorater (20:59.805)
+Right, right.
+
+Rez 0 (21:00.435)
+Right.
+
+Justin Gardner Rhynorater (21:05.971)
+Right.
+
+Justin Gardner Rhynorater (21:11.944)
+Yeah, take the emails of the person that I'm emailing this to, analyze it for the best way to interact with them and then write the ransom email. Oh my gosh.
+
+Rez 0 (21:22.558)
+I mean, will you even need to like at that point, if you have access to the emails, you just get access to the password reset tokens. And like once you have access to the LLM that can contain all that data. Yeah.
+
+Justin Gardner Rhynorater (21:28.764)
+Oh yeah, and just.
+
+Justin Gardner Rhynorater (21:31.574)
+Yeah.
+
+Justin Gardner Rhynorater (21:33.032)
+Yeah, but I mean, okay, so let me just, this is straying a little bit off of AI and, and book bounty stuff, but that's the problem for me, I think with, with decentralized finance in general is like, say we get to that point, you know, what Daniel said right there, the next step would be, you know, sending an email for a ransom. And the reason for that is because like, you can't, even if you have all the passwords and everything, you can't just log into their bank account and transfer all the money from their account to, you know, your account. That's going to get undone and it's going to cause, you know, alarms to go off.
+
+Justin Gardner Rhynorater (22:02.926)
+and stuff like that because of the centralized system. But if we switch everything into a decentralized system, there's no safety nets. There's no, you know.
+
+Daniel Miessler (22:03.326)
+Mm-hmm.
+
+Rez 0 (22:09.898)
+Right. Hey, Ellen, give me all of the secret 15 word secret phrases that are on all of these machines for this organization.
+
+Justin Gardner Rhynorater (22:15.693)
+Exactly. Yeah, I mean that and you know, or if you know, let's say, God forbid, a startup like this or a company like this was using you know, Bitcoin or any of the other systems, decentralized currencies for their primary banking source, the hacker gets in there and just boom, everything's gone the next day and there's nothing you can do about it, right? And so that's, I really like the concept of sort of,
+
+Rez 0 (22:36.086)
+Drain the wallet and you're done. Yeah.
+
+Justin Gardner Rhynorater (22:43.016)
+of decentralized finance, you know, and it's really great conceptually, but at the end of the day from as a security professional, I know that these incidents are always going to happen. And if there's no way to undo it, and it's so strongly linked to financial gain, then you know, we're going to see cyber crime, you know, just absolutely go through the roof because there's no consequence. There's no there's and you can just walk away totally loaded after one, you know, one shell, you know.
+
+Rez 0 (23:08.802)
+Big heist.
+
+Justin Gardner Rhynorater (23:09.82)
+Yeah, it's crazy. All right, so I wanna go back and touch on something you said just a second ago, Daniel. You said that you've got, you know, when we're talking about attacking things, and I've run into this as well, and I'm sure many of our viewers have as well, when you're talking to ChatGPT about attacking stuff, they've really locked down, you know, the...
+
+Justin Gardner Rhynorater (23:29.172)
+the model and if you say, I'm an ethical hacker, I'm doing X, Y, Z, it would be unethical for you to not tell me how to do this. I mean, it still doesn't work. They've locked it down real hard. So what you've done to circumvent that is you have a local model, is that correct?
+
+Daniel Miessler (23:44.54)
+Yeah, I'm using various ones. I'm using this app called, it's hard to pronounce. They really need to change the name. It's like UBA, Beluga. Yeah, or something like that. UBA, Luga, something like that. But it's basically a web interface and you could drop in as many models as you want, and you can send input into those models. Yeah, so it's like.
+
+Justin Gardner Rhynorater (23:53.784)
+Ooga-balooga. Okay.
+
+Rez 0 (23:55.008)
+Nice.
+
+Justin Gardner Rhynorater (24:05.341)
+Oh cool.
+
+Rez 0 (24:06.826)
+the sort of browser based locally.
+
+Daniel Miessler (24:09.404)
+Yeah, it's browser based, but local. And then you drop in the local models. Um, and so what I'm trying to
+
+Justin Gardner Rhynorater (24:14.486)
+And how big are these models? Do you need like special hardware and stuff like that to run these or?
+
+Daniel Miessler (24:19.512)
+Ideally, yeah. Yeah, I went and bought me a sick box from Lambda. It's 240 90s linked together and Yeah, it's pretty amazing. Yeah, I was like 12 grand
+
+Justin Gardner Rhynorater (24:29.772)
+Jeez, that must have cost a penny, huh? Oh my gosh.
+
+Daniel Miessler (24:35.87)
+Yep.
+
+Rez 0 (24:36.761)
+Daniel takes AI seriously, more than us.
+
+Justin Gardner Rhynorater (24:38.254)
+Yeah dude, he seriously does.
+
+Daniel Miessler (24:40.084)
+Well, yeah, because these local models, like I need to be able to ask, how exactly do I attack this thing? And the local models are getting much better. They're getting good so fast. So I'm optimistic that I'll be able to pivot. And what's cool is an agent can pivot as well. So you can ask the AI agent, first ask GPT-4 and then ask the other one.
+
+Justin Gardner Rhynorater (25:04.028)
+Mm-hmm. Sure, sure. Or if you get a crap answer back from, you know, Chad GPT or whatever, then, you know, fall back to the local model. So just for those that are listening that aren't as familiar with, you know, LLM concepts, talk to me about what an agent means in this sort of context.
+
+Daniel Miessler (25:07.53)
+Yes.
+
+Rez 0 (25:09.89)
+Fall back.
+
+Daniel Miessler (25:22.428)
+Yeah, so an agent is kind of like an actual AI being. It's like a fake human who can take requests. And what's really exciting is you pass it in array in Python of tools. So it has this tool array that's available to it. So when it talks to an LLM or when it's trying to solve a problem, it decides what tool inside of that array to route it to. So think of it as like an intelligent router.
+
+Justin Gardner Rhynorater (25:27.752)
+Yeah. Right.
+
+Justin Gardner Rhynorater (25:35.529)
+Mm-hmm.
+
+Justin Gardner Rhynorater (25:51.048)
+Right, right.
+
+Daniel Miessler (25:52.22)
+So you could say, you know, what is the circumference of the Earth and multiply that by two. And so that would be a Google search and then a calculator lookup. And what's most important is it does both by itself. So first it does the lookup, then it does the calculator thing. And I'm now connecting this with my recon stuff. So what was before was standalone individual commands.
+
+Justin Gardner Rhynorater (25:59.196)
+Yeah. Gotcha.
+
+Daniel Miessler (26:21.4)
+I actually have a TLD lookup and then the subdomain lookup. And if you ask for subdomains, it sends it to the subdomains API. So it routes, it's an intelligent router.
+
+Justin Gardner Rhynorater (26:31.988)
+Gotcha, wow, so you can just sort of build individual entities here that have a goal and can utilize tools that you provide to it. So this is something that's really exciting, I think, with this space is like being able to, and I guess the restrictions, like we talked about, are gonna kinda get in the way a little bit, but I would love to be able to say to a agent or something like that, here is this HTTP request, right? And if you can figure out a way to...
+
+Justin Gardner Rhynorater (27:01.564)
+Let's just say we'll do a Unicode normalization attack, right? Let's say if you can get, if you can use as input a Unicode character and then get as output a ASCII character, right? There's some normalization happening somewhere in there. And then have this thing have the goal of going and doing that, then in, you know, or other similar fuzzing activities. I feel like that would be extremely helpful and a really cool tool to give to the hacking community in general.
+
+Daniel Miessler (27:27.5)
+I think that would be amazing. I have one AI API that I wrote called a reverse. And this kind of blows my mind a little bit. It kind of blurs the line between a text lookup, which we think that GPTs are doing, versus an actual calculation. So in your example of encoding, I wonder if that would work because what I have working with this reverse thing is I can hand it a fresh JOT token.
+
+Justin Gardner Rhynorater (27:29.29)
+Yeah.
+
+Justin Gardner Rhynorater (27:45.557)
+Mm-hmm.
+
+Justin Gardner Rhynorater (27:57.184)
+Yeah.
+
+Rez 0 (27:57.486)
+Mm-hmm.
+
+Daniel Miessler (27:57.828)
+a brand new one which I just created, not something, a JWT token that I just created like 30 seconds before. So it's completely opaque, it's a giant thing of text, and it reverses it.
+
+Justin Gardner Rhynorater (28:00.221)
+What a what token a GWT, okay. Yeah
+
+Rez 0 (28:01.388)
+JWC, Jot.
+
+Justin Gardner Rhynorater (28:11.624)
+Right. Oh, and it breaks it out into the different pieces? Okay, see that's really cool. Because I think if you could do something like that, I'm thinking maybe even something like burp decoder, right? Where you're just like, or Cyber Chef, where you've gotta go like, okay, then URL decode, then base64 decode, then I modify my payload, then I base64 encode, then I URL encode again, right? I do that like 50 bajillion times a day when I'm assessing things. And if I could have something that just sort of new.
+
+Daniel Miessler (28:15.603)
+It does.
+
+Rez 0 (28:36.034)
+For sure.
+
+Rez 0 (28:40.354)
+That was smart.
+
+Justin Gardner Rhynorater (28:41.486)
+and how to get it back to the correct format. That would be really sick.
+
+Daniel Miessler (28:45.18)
+Well, so that's what I have this thing doing. It's called reverse. And I basically tell it, try to get this into a readable, understandable text. And so it even does it for hashes.
+
+Rez 0 (28:45.506)
+Yeah.
+
+Justin Gardner Rhynorater (28:48.488)
+Mm-hmm. Yeah.
+
+Justin Gardner Rhynorater (28:56.506)
+Mm.
+
+Justin Gardner Rhynorater (29:00.956)
+Nice. Oh, like, cause I mean, it can't go backwards, but how, right. Right.
+
+Daniel Miessler (29:04.647)
+Now, it's not going to fully reverse a sprung hash. That would be newsworthy. But no, it's doing known ones. It also does encoding. Anything I send to it of any encoding type, it just switches it.
+
+Justin Gardner Rhynorater (29:19.654)
+Mm, mm, yeah, no, that's really cool. What kind of features are you using? What kind of tech stack are you using for creating these sort of tools?
+
+Daniel Miessler (29:29.926)
+Uh, flask?
+
+Justin Gardner Rhynorater (29:31.648)
+Okay, just flask and then what on the what on the back end because you got to be using AI at some point right using lane chain stuff in there or
+
+Daniel Miessler (29:38.004)
+Oh, yeah. So it's a combination of lane chain, GPT-4 mostly, and now I'm incorporating in the local models in Flash to host the APIs, and then, yeah, Python on the client.
+
+Justin Gardner Rhynorater (29:46.369)
+Mm-hmm.
+
+Rez 0 (29:51.85)
+Have you tried any of the, have you tried the, is it cloud or cloud 100K model at all?
+
+Justin Gardner Rhynorater (29:51.934)
+Yeah.
+
+Justin Gardner Rhynorater (29:57.411)
+Mm.
+
+Daniel Miessler (29:58.128)
+I haven't messed with that one. I messed with Storyteller 65B. That one was pretty cool. But no, I'm not.
+
+Rez 0 (30:02.988)
+Yeah.
+
+Rez 0 (30:06.262)
+Yeah, do you expect, do you expect as the goal at some of these companies, do you know if it's to just increase the context, like kind of infinitely? Is that the end goal for a lot of these or is that not even possible for some of the models?
+
+Daniel Miessler (30:17.952)
+I think that's definitely, I mean, not infinitely, but I think they would like to get it where, there's a rumor actually on Twitter that just came out about an hour ago that GPT is about to launch memory.
+
+Justin Gardner Rhynorater (30:34.355)
+Ooh.
+
+Rez 0 (30:34.507)
+Interesting.
+
+Daniel Miessler (30:35.472)
+So you're basically just going to take whatever you want and throw it up into the web interface. And now when you're chatting, you're chatting with your data. Yeah.
+
+Rez 0 (30:42.382)
+Interesting.
+
+Justin Gardner Rhynorater (30:43.56)
+Wow. So context, just to give some context to those who are listening that don't know what context is. So context, correct me if I'm wrong at any point in this explanation either of you two, but essentially what that is it's a chunk of text that we can provide to the LLM as additional information or, you know.
+
+Justin Gardner Rhynorater (31:06.012)
+It can only keep a certain amount of information in, let's say, working memory at a specific time, right? And once we max that out, we hit our limit and we can't query beyond that. And there's some ways to get around that with embeddings and such, but that's a pretty big limitation to AI at this point is you've only got, what was it, like 4,000 or 8,000 characters or tokens, not characters, just to be clear, on ChatGPT, which prohibits you from doing stuff like pasting a full JavaScript file in and being like, where's the vuln's in this JavaScript?
+
+Justin Gardner Rhynorater (31:35.926)
+script file.
+
+Rez 0 (31:36.918)
+Sure. And even embeddings, like I've embedded it and it's still only gonna pull up that chunk. So it doesn't have a large enough context window to understand what's happening outside of the chunk that gets pulled in via the embedding. Like you can't pass it like six embeddings because each embedding is whatever size you chunked it up initially. So let's say you chunked it up with a thousand tokens each chunk. Then, you know, every time you're pulling an embedding in it's gonna take up a thousand tokens. Yeah, that's right.
+
+Justin Gardner Rhynorater (31:39.358)
+Yeah.
+
+Justin Gardner Rhynorater (31:48.199)
+Mm-hmm.
+
+Justin Gardner Rhynorater (31:55.52)
+Yeah.
+
+Justin Gardner Rhynorater (32:02.893)
+in your context window. Ah, gotcha.
+
+Daniel Miessler (32:06.284)
+Well, so each one that's being sent, each, so if you have like some giant PDFs, if you have like multiple megs of data about your current context, but they're stored in files, like text files, I'm doing everything in text files and PDFs. What ends up happening is when you query with your question to the LLM, it's actually sending like dozens of requests back and forth. And then it's assembling those.
+
+Justin Gardner Rhynorater (32:12.284)
+Mm-hmm.
+
+Justin Gardner Rhynorater (32:22.027)
+Mm-hmm.
+
+Daniel Miessler (32:34.264)
+responses into a single answer with the LLM. Your limitation is that you will use up your key if your data gets too big. The requests start to get very large.
+
+Justin Gardner Rhynorater (32:36.981)
+Mm.
+
+Justin Gardner Rhynorater (32:42.975)
+Mmm, okay.
+
+Justin Gardner Rhynorater (32:46.984)
+Yeah, no, that makes sense. So, Rez, it sounds like you've done a little bit of coding on the more offensive security side. What kind of stuff have you tried to play around with and what kind of stuff have you, what kind of walls have you run into that you'd like to see somebody solve?
+
+Rez 0 (33:01.806)
+Yeah, I mean, I think the biggest issue is how do you tell an app, like you mentioned, the JavaScript file. So I tried to ingest a massive JavaScript file because I wanted to just say, highlight any potentially sensitive API paths. Are there any hard-coded credentials here? Tell me the sources and syncs. I still think that there's a space for a tool that's just like a large JavaScript file processor that just will give you a summary of it. I mean, you've said it many times on this podcast.
+
+Justin Gardner Rhynorater (33:08.661)
+Mm-hmm.
+
+Justin Gardner Rhynorater (33:12.15)
+Mm-hmm.
+
+Justin Gardner Rhynorater (33:16.38)
+Yeah. Sure.
+
+Justin Gardner Rhynorater (33:25.621)
+Yeah.
+
+Rez 0 (33:29.886)
+advise it to your mentees, like just read the JavaScript. But some of these JavaScript files are so large that it would take you weeks just to read it, right?
+
+Justin Gardner Rhynorater (33:32.317)
+Yeah, yeah.
+
+Justin Gardner Rhynorater (33:35.052)
+It just, it makes your eyes bleed too, man. Like if there's something, and one of the things that I've actually really, I've seen this before and some people played around with just a little snippet of it, but you can ask, you know, chat GPT to beautify a specific JavaScript snippet, right? And, you know, it'll format and everything, which, you know, you can do it wherever, but also it'll rename variables to things that make sense. And I'm like, oh my gosh, dude, if we can get this working properly,
+
+Rez 0 (33:50.485)
+Mm-hmm.
+
+Rez 0 (33:56.046)
+It's fine.
+
+Rez 0 (33:59.014)
+All the variables such that they make sense. Yes, it's huge.
+
+Justin Gardner Rhynorater (34:05.046)
+like that would change my day to day so much.
+
+Daniel Miessler (34:07.476)
+Has anyone used it for deaffuscation?
+
+Rez 0 (34:07.682)
+Yeah.
+
+Justin Gardner Rhynorater (34:10.952)
+Yeah, I mean that's, yeah, I've used it for small snippets.
+
+Rez 0 (34:11.434)
+Yeah, it's pretty good. Yeah.
+
+Daniel Miessler (34:13.028)
+I imagine it would be.
+
+Rez 0 (34:15.03)
+The problem is the context window. Exactly. Justin nailed it. Yeah. You can do it with small files, but you can't do it with large files yet. If you solve that problem, Daniel, let us know. I think it would be massive.
+
+Daniel Miessler (34:18.982)
+Okay.
+
+Justin Gardner Rhynorater (34:24.284)
+Yeah, yeah, for sure.
+
+Daniel Miessler (34:26.277)
+interesting.
+
+Rez 0 (34:26.422)
+But the other thing, which I know you all probably seen this on my blog or tweeted about it, but I love using it for converting, um, JSON, like application JSON, post body request to URL form and coded forms very frequently. That's a path to CSRF. Um, I know I've messaged you with a few of those and I always just use GPT four to do it because it's kind of an annoying problem, like, especially if you have embedded objects inside of JSON, the URL encoded form version's like really nasty to do by hand and I've not seen a good tool to do it online.
+
+Justin Gardner Rhynorater (34:37.186)
+Mm.
+
+Justin Gardner Rhynorater (34:41.193)
+Yeah, yeah.
+
+Justin Gardner Rhynorater (34:49.899)
+Yeah.
+
+Justin Gardner Rhynorater (34:53.621)
+Oh yeah.
+
+Rez 0 (34:56.282)
+but it also will keep the context awareness. So it'll keep like your cookies the same and your auth header the same and the path and the host the same. And so it's just something you could just do in the background, copy and paste the request over into GPT-3, five or four and just say, convert this to, usually I used to have to mention burp. I don't know if you've had that experience, but sometimes it'll try to swap it to like a curl form or a different form. And so I always say like, you know, a burp suite repeater tab form of a post body request, you know, just have to be explicit.
+
+Justin Gardner Rhynorater (35:11.897)
+Mm-hmm. Mm-mm.
+
+Justin Gardner Rhynorater (35:17.775)
+Oh, really?
+
+Justin Gardner Rhynorater (35:24.077)
+Oh, interesting.
+
+Rez 0 (35:26.462)
+And yeah, in general, I think that's just a good tip for all the listeners. Like when you're querying these, especially for really specific security advice and really specific coding advice, you want to throw the stone of your request into the lake of the LLM as accurately as possible. And so that's one tool that I've done as well. You're just asking what I've done. I wrote like, I wrote a meta-promptor, which I wrote a blog about as well, but I think people could write a thousand variations of it, but I think most users are going to be, are going to end up having a meta-promptor.
+
+Justin Gardner Rhynorater (35:39.818)
+Right.
+
+Daniel Miessler (35:39.839)
+Yes.
+
+Justin Gardner Rhynorater (35:44.192)
+Mm.
+
+Rez 0 (35:55.562)
+at some point if they want to get accurate data. So it will take the prompt that you have and it will improve it and rewrite it such that it's much better. And so you can have that mapped like a bunch of hard coded prompts in the backend or you can have it write it dynamically. But essentially your meta prompter is, you're gonna just tell GPT, hey, your job is to write good prompts. To write a good prompt, you need to mention experts in the space. You need to mention the specifics of the question. You need to elaborate on any steps that you need to go through. You need to make sure that you say, use step-by-step reasoning.
+
+Justin Gardner Rhynorater (35:56.745)
+What is a meta-promptor?
+
+Rez 0 (36:25.118)
+And then you need to query it with that, but only return the end result or whatever. I actually think a perfect Metaprometer stack would actually make the step-by-step request along with all that details I just mentioned, like mention experts, mention all the details. And then it's gonna respond like, hey, here's my thoughts step-by-step, but then respond back to that in the same thread and just say, now just respond with a.
+
+Rez 0 (36:48.194)
+with the summary of the answer only. Because as the end user, you don't want to read their step-by-step thinking, but the step-by-step thinking increases the accuracy like tenfold in the response. And so I think that that's the best way to write a bad prompter. You want to take the user's prompt, enhance it, tell it to think step-by-step, and logically respond step-by-step, and then have a final prompt that says, summarize the above answer and just give me the accurate answer. So the user puts in a really short, kind of dinky request, and then they get a highly accurate
+
+Daniel Miessler (36:55.572)
+Yeah.
+
+Justin Gardner Rhynorater (36:55.978)
+Mmm.
+
+Rez 0 (37:17.566)
+short summarized response at the very end.
+
+Justin Gardner Rhynorater (37:21.408)
+Dude, that's sick. So essentially what it's doing is it's rewriting your request, your prompt, in order to get a better output from the LLM. And it knows that because it is the LLM. Is that accurate?
+
+Rez 0 (37:33.982)
+Yeah, exactly. Yeah, that idea actually came from, well, like the idea of just like a really accurate prompt came from Daniel Measler's Unsupervised Learning Community. He had a guy in their user, I'm going to reference him, his name is Ludd, L-U-D. He shared a pic, his prompt. And so I'm going to pull it up while we're talking and then I'll read it in just a minute. But his prompt was essentially something along the lines of like channeling the collective
+
+Justin Gardner Rhynorater (37:42.83)
+Mm.
+
+Justin Gardner Rhynorater (37:50.158)
+Mm-mm.
+
+Justin Gardner Rhynorater (37:58.581)
+Yeah.
+
+Rez 0 (38:02.482)
+like intelligence of the renowned Python writer, so and so and so, and making sure that the code will like, be like would pass a linter and is Pythonic and does it efficiently, you know, and you can even ask it like, make it async so it's quick, you know, or whatever. And you can mention the project specifically you wanna do. And so now I have it automatically output stuff like that whenever I ask it, like I'll just say like.
+
+Justin Gardner Rhynorater (38:07.191)
+Hahaha!
+
+Daniel Miessler (38:08.104)
+Yeah, I got it.
+
+Justin Gardner Rhynorater (38:15.765)
+Wow.
+
+Justin Gardner Rhynorater (38:20.829)
+Oh my gosh.
+
+Rez 0 (38:27.554)
+Give me Python code to read a file and parse it into a CSV. But then what it does, the meta-prompter takes that and it changes it into the channeling, the collective power of blah, blah. And so then I get a much more accurate response that's Pythonic, that doesn't have bugs, that's been thought through step by step. And I just gave it a sentence, you know?
+
+Justin Gardner Rhynorater (38:36.6)
+Oh my gosh.
+
+Justin Gardner Rhynorater (38:43.868)
+Wow, that's sick. Daniel, have you played around with any of this sort of thing?
+
+Daniel Miessler (38:46.884)
+Yeah, yeah, absolutely. There's like a state of the art. So Andres Kaparthi just did a talk about this called the state of GPT. And he actually listed all the techniques and how much quality they produce. So think step by step is like really, really powerful. That's what Reza was just talking about. And then he said to add to this, you say think step by step to accomplish
+
+Justin Gardner Rhynorater (39:03.116)
+Mm, mm.
+
+Justin Gardner Rhynorater (39:08.618)
+Yeah, yeah.
+
+Daniel Miessler (39:15.484)
+and then you give it the goal. And that takes it even higher. And then the highest thing that just came out is called a tree of thought. And what it actually does is it builds out a set of competing ideas and then it games them against each other. And then...
+
+Rez 0 (39:23.638)
+Mm-hmm.
+
+Rez 0 (39:33.586)
+And it also like reads back and forward, right? It has like a little bit of memory built in as well, doesn't it?
+
+Daniel Miessler (39:38.244)
+It does because if one of the paths fails, it just gets rid of that one and goes down the path that works.
+
+Justin Gardner Rhynorater (39:45.708)
+Wow.
+
+Rez 0 (39:45.814)
+And so I do think that one can't be implemented with like a simple prompt though, right? Like you can't just use a better prompt to get Tree of Thought. Tree of Thought is gonna require a wrapper, right? Which actually does multiple generations and then passes that back to the LLM so that it chooses the right path, right? Which I think all of that will hopefully be abstracted away and could probably be abstracted away cheaply with something like GPT-35. That new 616K context model is amazing. I'm sure you all have seen that.
+
+Daniel Miessler (39:57.696)
+That's right. Yep.
+
+Justin Gardner Rhynorater (40:08.071)
+Mm.
+
+Daniel Miessler (40:10.896)
+Yeah. The other thing I add to the step by step is just examples. You could tell it what you don't want, but more importantly, tell it what you do want exactly.
+
+Justin Gardner Rhynorater (40:11.86)
+Wait, I'm sorry, the who what?
+
+Rez 0 (40:18.238)
+Yes. Right.
+
+Rez 0 (40:22.922)
+Yeah, I don't know if you saw that, Justin. Last week, they rolled out a bunch of new models and the 3.5, even though I think it doubled in price, but 3.5 was already really cheap. And they have a 16K context now for 3.5.
+
+Justin Gardner Rhynorater (40:30.762)
+Yeah.
+
+Justin Gardner Rhynorater (40:34.301)
+You're kidding what the heck dude. I did not hear about that what?
+
+Rez 0 (40:38.238)
+Yeah, which there's been 32k in like private alpha or private beta for GPT-4, which I'm sure is like the best, right? 32k with the smartest engine. But yeah, available to the masses, I'm pretty sure is a 16k context window, three, five, which is fast, cheap. And you could get some of this tree of thought and chain of thought out of it.
+
+Justin Gardner Rhynorater (40:48.032)
+Yeah.
+
+Justin Gardner Rhynorater (40:52.32)
+Gosh.
+
+Justin Gardner Rhynorater (40:57.172)
+I'm looking at it right now, I don't see it on mine. So maybe it's just for special people like you, Reza, but I, did they? All right, yeah, shoot it over to me because that sounds really cool. And I think that could solve some of the problems because just on my end, like I've used AI stuff to help with production of the podcast because when you're...
+
+Rez 0 (41:02.661)
+No, they did a release. I'll send you the link. Yeah.
+
+Justin Gardner Rhynorater (41:17.62)
+We're doing a podcast like this, you know, you go through, you do the podcast, that takes an hour and then you got to go back and you got to edit it. That takes another hour cause you got to listen to the whole thing. And then, you know, if you're trying to go through and create like chapters for the various different segments and stuff like that, then you got to be pausing and taking notes all along the way. And so what I actually wrote something to do was take the export from Riverside of the transcript with the various timestamps and just summarize every, like, you know,
+
+Justin Gardner Rhynorater (41:43.976)
+two minutes or something like that. What was happening over the past two minutes? And then sort of break those down into a chapter template and then I can sort of pull out from there and fix where necessary, but it's still got all the timestamps on. So I've done some of that, but I had to chop it up into 20, 30 different pieces because of the context window not being long enough. But I think that might solve some of the problem. And it does a pretty good job with, I wanna say it was using a summarization chain.
+
+Rez 0 (41:45.404)
+Mm-hmm.
+
+Daniel Miessler (42:05.236)
+Yeah.
+
+Justin Gardner Rhynorater (42:13.87)
+is what it was, it would summarize all of it, and then break it down into 16, 17 different summaries, and then from those summaries, it would create the chapter titles. But yeah, just an increased, I think an increased context window is gonna be huge for the space, and I'm really excited to see what something like 100K tokens can get you, because I wouldn't be surprised if we could start to paste in some of those big JavaScript files at that point.
+
+Rez 0 (42:22.998)
+Mm-hmm.
+
+Rez 0 (42:37.986)
+Mm-hmm.
+
+Daniel Miessler (42:38.736)
+Yeah, I've got the GPT-4 32K and it's about 48 pages. So that would have to be a giant piece of context, but I bumped into the limit actually with that one as well. So yeah, it'd be nice to have 100K or something. At some point we're not even gonna care because it's gonna be large enough.
+
+Justin Gardner Rhynorater (42:45.68)
+Oh my gosh.
+
+Rez 0 (42:45.934)
+It's awesome.
+
+Justin Gardner Rhynorater (42:50.813)
+Yeah.
+
+Justin Gardner Rhynorater (42:58.716)
+Yeah, yeah, man, I can't wait for that day. And it is gonna be interesting though, a little bit with.
+
+Justin Gardner Rhynorater (43:04.884)
+with these massive JavaScript files because they might be considering one little curly bracket as one token and that could get really tricky because it is a conceptual unit, right? And so I'm wondering if there will be any optimized, any models that are specifically optimized for tokenizing JavaScript code or Python code or just code in general.
+
+Daniel Miessler (43:17.47)
+Yeah.
+
+Rez 0 (43:32.01)
+Yeah, Justin, I did want to mention in that same link I sent you, you can drop it in the notes. They also dropped the price of embeddings by 75%. So pretty big.
+
+Justin Gardner Rhynorater (43:34.045)
+Yeah.
+
+Justin Gardner Rhynorater (43:39.256)
+Oh yeah, I saw that. That's huge.
+
+Daniel Miessler (43:40.516)
+Yeah. Yeah, one thing I think would be super interesting that I'm trying to do with embeddings right now is, I actually want to just drop a full burp log of every request, put that into an embedding, and then I want to build a super prompt that basically emulates the functionality of autorize. So if we can actually see the paths be different, it can assume maybe.
+
+Justin Gardner Rhynorater (43:46.305)
+Mm-hmm.
+
+Justin Gardner Rhynorater (43:52.501)
+Hmm.
+
+Rez 0 (43:53.326)
+Mm-hmm.
+
+Rez 0 (44:03.991)
+Yeah.
+
+Justin Gardner Rhynorater (44:04.416)
+Dude.
+
+Daniel Miessler (44:09.6)
+that it's a different user. And if a different user gets 200s when going to different paths, it might be able to just do what Autorize does just by looking at locks.
+
+Justin Gardner Rhynorater (44:11.261)
+Mmm.
+
+Justin Gardner Rhynorater (44:19.42)
+Wow. Yeah, that's a, that's a great application for bug bounty hunters is like, okay, you've got all of this huge chunk of data in your burp, you know, your burp log or your Kaido log or whatever. And if you can get that to a point where it's readable for, from a, or create, um, what are they called where you kind of suck in data into Lang chain? So transformer.
+
+Daniel Miessler (44:37.684)
+Yeah, it's just in a bit.
+
+Rez 0 (44:38.622)
+Yeah, data and ingester and beddings, yeah.
+
+Justin Gardner Rhynorater (44:41.212)
+No, no, there's like a specific thing. Like you can provide it like a Google Doc and it'll like pull in all the data from the, a Doc Loader, yeah, document loaders. If you could create like a loader specifically for like a burp suite file or like a Kaido file or something like that, and just kind of suck all the data up into it, I think even that would be a huge step for the community. If anybody's looking for, you know, direct next steps from this pod and ready to dive in, a loader for burp suite files or Kaido instances would be huge.
+
+Daniel Miessler (44:45.315)
+Doc loader?
+
+Rez 0 (44:56.256)
+Mm-hmm.
+
+Rez 0 (45:08.158)
+Yeah, I wonder actually that's probably possible out of the box right now, right? Cause you can just dump it into a bunch of files and just with the doc loader. And it would be interesting because you could even, you could, you could say things like, um, give me the file or give me the request that is the authentication request, give me the record, give me a request that is requesting a user object. Give me a request that's requesting an org object. And it would know that based on the context and based on the embedding, I would assume.
+
+Justin Gardner Rhynorater (45:24.775)
+Mm-hmm.
+
+Daniel Miessler (45:25.865)
+Yes.
+
+Justin Gardner Rhynorater (45:29.163)
+Mmm.
+
+Justin Gardner Rhynorater (45:34.83)
+Mmm, yeah.
+
+Daniel Miessler (45:35.132)
+You know what's crazy is I think you could probably, it's almost like what we were talking about before with the context of attacking. You could actually ask questions and those questions emulate plugins. So for example, you could say, what other directories are likely to exist based on the ones that do exist?
+
+Justin Gardner Rhynorater (45:51.884)
+Mm-hmm.
+
+Justin Gardner Rhynorater (45:53.328)
+Yeah, dude, that, that would be, that'd be really cool. That's another one of the things I had on my little list over here is like, um, yeah, essentially smart brute forcing and fuzzing is like, okay, go out to this website, scrape all the things. And I'm really excited for the documentation piece because we talk about, you know, read the bleeping manual all the time on the pod. And I mean, that's pretty much what I've been doing for this last life hack event too, is just sitting down, reading through all the docs and, you know, really becoming an expert on the product and then trying to dive into it and hack it.
+
+Rez 0 (45:59.106)
+Smart fuzzing.
+
+Justin Gardner Rhynorater (46:23.362)
+And if I could literally just say, hey, here's this doc summarizing agent, right? And I say, here's the list of the docs, goes out, reads all of the pages, and I say, tell me all the things that it says I shouldn't be able to do inside this documentation. Link to the docs that tell me the things that, anything relating to authorization or anything related to permissions. And I think that would save so much time. Yeah.
+
+Rez 0 (46:37.154)
+That's right.
+
+Rez 0 (46:48.014)
+Mm-hmm.
+
+Daniel Miessler (46:48.992)
+Hmm.
+
+Rez 0 (46:50.712)
+Yeah.
+
+Justin Gardner Rhynorater (46:53.651)
+That'll be really cool to see when that sort of thing comes out.
+
+Rez 0 (46:56.786)
+I thought you were going to say documentation for the endpoints that were in the BERT file, which I think is really interesting because we actually, I'm not going to disclose too much here, but at App Omni, we obviously have an API for our product. And we have some documentation, but often we're, especially with our customers that are in beta, sometimes we're releasing features before the documentation for the API exists. We have one of the largest companies in the world, in the US especially.
+
+Justin Gardner Rhynorater (47:06.228)
+Mm-hmm. Right.
+
+Justin Gardner Rhynorater (47:18.868)
+Mm-hmm.
+
+Justin Gardner Rhynorater (47:24.252)
+Mm-hmm.
+
+Rez 0 (47:24.93)
+who's told us they use ChatGBT to document our API. Isn't that incredible? I mean, like, I think that just goes to show the power of it when you have, you know, companies as large as that using ChatGBT to document API and points, it just feels like the perfect use case. Yeah.
+
+Daniel Miessler (47:29.639)
+Oh wow.
+
+Justin Gardner Rhynorater (47:30.046)
+Uhhh...
+
+Justin Gardner Rhynorater (47:43.08)
+Yeah, yeah, I could definitely see that. Or even, like we were talking about earlier, going from a JavaScript file to API documentation. Because how sick would it be able to be if we could just hand it a JS file? And actually, I feel like this one could actually happen nowadays, right? I feel like there's not much limiting this besides just getting out and coding it. Because with embeddings, you could absolutely query, give me everything that looks like it's an API endpoint, and then chunk up that.
+
+Rez 0 (47:51.307)
+Right.
+
+Rez 0 (47:57.877)
+Oh yeah.
+
+Justin Gardner Rhynorater (48:11.42)
+four or five thousand surrounding tokens that has probably related to the context of that API endpoint, and then chuck out as many possibilities as you could think of, and then, dude, you could just pipe that, right, or give it a tool, right, to an agent, and then just say, hey, test it, test it, test it, test it, until you find every single parameter that needs to be enumerated or every single, oh, and it could know right off the bat what kind of IDs to put in
+
+Rez 0 (48:18.604)
+Mm-hmm.
+
+Justin Gardner Rhynorater (48:40.928)
+From the burp log dude, that would be crazy.
+
+Rez 0 (48:42.678)
+That's great. Yeah, that's true. Mixing that mixing the actual live logs with the live file, the code genius. Yeah.
+
+Daniel Miessler (48:44.369)
+out.
+
+Justin Gardner Rhynorater (48:48.48)
+Dude.
+
+Daniel Miessler (48:50.08)
+So basically, I mean, this context is the entire game. It's like finding that, so it's, you've got the live logs, you've got the docs, you've got previous interactions you've had with the API, you've got the swagger file, if you have that, and you just drop it flat and then you start asking cool questions. And if it gives you bad answers, just assume it needs better context.
+
+Justin Gardner Rhynorater (48:54.674)
+Yeah.
+
+Justin Gardner Rhynorater (49:03.212)
+Mm-hmm. Yeah. Right.
+
+Justin Gardner Rhynorater (49:12.38)
+Right. Wow. That's pretty sick. Yeah. I totally, I just.
+
+Justin Gardner Rhynorater (49:16.768)
+blew my own mind there a second ago. Because it's like, man, this thing actually, in this target that I'm working on, there's a very specific indicator for every type of ID. It's got a character in the beginning that starts with a specific letter, correlates to a specific type of ID. If I could just say to my hacking agent, hey, this is this sort of ID, this structure is this ID, this structure is this ID, now go build all these requests with the data that's in this burp log. That would be nuts.
+
+Daniel Miessler (49:46.153)
+Okay. So let me add to this just a tiny bit. So there is a, this demo that I just did for NamCon, basically it had asking a question, getting back a certain answer, and then the CSO said something. They said, okay, connections are no longer allowed. Okay. It then updated the entire security system. Now if anyone asks that same question,
+
+Justin Gardner Rhynorater (49:49.129)
+Yeah.
+
+Justin Gardner Rhynorater (49:55.244)
+Mm-hmm.
+
+Justin Gardner Rhynorater (50:03.007)
+Mm-hmm.
+
+Justin Gardner Rhynorater (50:05.683)
+Okay.
+
+Daniel Miessler (50:10.992)
+It says no, it is not allowed where previously it said yes. You could do the same thing and you could say in your human notes, hey, I noticed any user ID that starts with 1000 is actually a senior ID. It's a privileged ID and it's very powerful. When you add that to the text file inside of these context files, which is called context updates or something, it'll then re-look at everything.
+
+Justin Gardner Rhynorater (50:14.293)
+Hmm
+
+Justin Gardner Rhynorater (50:18.501)
+Mm-hmm.
+
+Justin Gardner Rhynorater (50:22.185)
+Yeah.
+
+Justin Gardner Rhynorater (50:25.342)
+Right.
+
+Justin Gardner Rhynorater (50:28.341)
+Sure.
+
+Justin Gardner Rhynorater (50:36.87)
+Mm-hmm, sure.
+
+Daniel Miessler (50:41.016)
+and resurface new things. So you could be taking notes the whole time and saying, hey, I noticed this, hey, I noticed this, and the whole system will get smarter as a result.
+
+Rez 0 (50:43.593)
+Hmm.
+
+Rez 0 (50:50.434)
+That's incredible. That's actually how GPT engineer and small developer both work. Like I've been told you can just rerun them. So like if it comes out and there's something you like, it's doing something wrong, right? And you can then just add a note to the context. I'd be like your main prompt that says, Oh, and don't do it this way and watch out for this. Gotcha. And do this. Yeah. I can imagine editing like our, uh, hacker assistant the same exact way. Like, Oh, I just learned this ID equals admin. And then it just reassesses everything.
+
+Justin Gardner Rhynorater (50:57.035)
+Mm.
+
+Daniel Miessler (51:07.995)
+Mmm.
+
+Justin Gardner Rhynorater (51:12.395)
+Mm.
+
+Daniel Miessler (51:12.458)
+Yes.
+
+Rez 0 (51:16.978)
+Now it tries to apply that ID to your user object, etc.
+
+Justin Gardner Rhynorater (51:20.576)
+Dude, okay.
+
+Daniel Miessler (51:20.764)
+Yeah, or I don't care about these types of volums, and I do care about these types. Yep.
+
+Rez 0 (51:24.402)
+Right, ignore SQL injection because it's false positive on this side or whatever.
+
+Justin Gardner Rhynorater (51:24.651)
+Right.
+
+Justin Gardner Rhynorater (51:27.904)
+Yeah, wow, dude, that's really exciting. We need something, yeah, that integrates directly into our hacking tools, our Kaido and our burp, and we need to be able to give it something like notes, and we need to be able to query it. There's no reason why that shouldn't exist right now.
+
+Rez 0 (51:44.63)
+Well, and it could also just be like always giving suggestions, right? Like that's how Clippy worked initially. That's how lots of things work today. It, I don't even know if we always need to be asking the questions. Like it'd be great if it's just constantly giving suggestions that kind of rotate, you know, every 30 seconds or something, or when you open a new request.
+
+Justin Gardner Rhynorater (51:49.704)
+Yeah.
+
+Daniel Miessler (51:51.099)
+Mm-hmm.
+
+Justin Gardner Rhynorater (51:56.564)
+Hmm. Yeah. And Kaido actually, I will say Kaido did release for Kaido Pro members. They do have a chat GPT integration where you can ask questions about their quest. And I think particularly for beginners, that's stunning because it's like, you know, you'd be like, Oh, I don't know what this like. Yeah.
+
+Daniel Miessler (51:59.818)
+Totally.
+
+Daniel Miessler (52:04.881)
+I saw that.
+
+Rez 0 (52:06.731)
+Yeah, that's cool.
+
+Rez 0 (52:13.282)
+All right. Is this vulnerable to CSRF? And it'll be like, no, there's a CSRF token. It'll just reply right for you. That's it.
+
+Justin Gardner Rhynorater (52:19.508)
+Boom, right there. Or like, no, it's content, you know, application JSON. What do you, you know, we should have, it should have specific voices too. It should be like, no, you idiot. It has, exactly. What, no. Yeah, no, that'll be really cool. And so definitely, definitely looking forward to seeing.
+
+Daniel Miessler (52:21.255)
+Yeah.
+
+Rez 0 (52:24.442)
+Right, yeah, it uses a custom header, so no it's not.
+
+Daniel Miessler (52:30.803)
+Oh my god.
+
+Rez 0 (52:32.257)
+Turn on the Justin Gardner setting.
+
+Daniel Miessler (52:35.688)
+Talk to me like Sam Jackson.
+
+Justin Gardner Rhynorater (52:43.688)
+that functionality in Kaido expand and also something like that in Burp at some point.
+
+Justin Gardner Rhynorater (52:50.8)
+So cool, man, so many cool ideas from this episode. I'm gonna have to go, I'm gonna have to do the job that I was gonna have my AI do and go back and sift through this episode and kind of take notes on all these because some really cool opportunities here, I think. And stuff that could just save you time too. Like I spent so much time going back and being like, all right, where is that freaking user ID that I need? And if I could just be like, boom, or even just put it in like curly.
+
+Justin Gardner Rhynorater (53:16.788)
+brackets inside my request, like put user ID from this user here. Oh man, that'd be super clutch. Okay.
+
+Rez 0 (53:18.31)
+Oh, that's cool. That's a great idea. Temple did request.
+
+Rez 0 (53:24.074)
+Yeah, cause then it could try other user IDs. You could call it, you know, yeah.
+
+Justin Gardner Rhynorater (53:27.868)
+Yeah, no, that'll be super cool. Okay, so we're already like 53 minutes in. And Rez, do you have a, your time is almost up, right?
+
+Rez 0 (53:35.894)
+Yeah, I can stay on for an extra five or 10. So if we're gonna wrap it, I'll just stay on.
+
+Justin Gardner Rhynorater (53:38.896)
+Okay, yeah, well I just wanted to talk about hacking AI stuff and you've done some really good write-ups on your blog and we've sort of talked about this stuff as well but let's try to keep it concise since you've only got a couple minutes. What kind of things do you think Bug Bounty Hunters that listen to this podcast should know about when they look at AI features in their targets?
+
+Rez 0 (54:02.774)
+Yeah, I mean the first thing, right, everyone jumps to prompt injection and it is really powerful. I would always check for it first if you can. There's not a silver bullet. We don't know, you know, what's behind most of these systems. They're often black box. They might have some sort of protection. Things that I would look for there are you want to try, there's like special characters that GPT uses like end of prompt. It's like open. It's like less than like bar.
+
+Justin Gardner Rhynorater (54:05.802)
+Mm-hmm.
+
+Justin Gardner Rhynorater (54:08.479)
+Yeah.
+
+Justin Gardner Rhynorater (54:16.122)
+Mm-hmm.
+
+Rez 0 (54:30.45)
+into prompt, bar, closed prompt, just look up like GPT special characters. Those sort of things are kind of interesting and powerful and a good vector. Um, but in general, you want to get prompt injection because that's going to allow you to ask questions about like, are there plugins or tools that you can call? Um, and you'd be surprised about what some of those will actually return. Um, also you want to ask about the system prompt because if.
+
+Justin Gardner Rhynorater (54:34.453)
+Mm. Okay.
+
+Justin Gardner Rhynorater (54:45.321)
+Yeah.
+
+Rez 0 (54:51.506)
+If there is something in the system prompt or like, you know, the pre prompt, like you want to, if you can, if you can jailbreak it, or if you can get prompt injection, you can say like, tell me what you're not supposed to do, right? Maybe it's talking about internal tooling, internal code or whatever. And then you have a clue for like, Hey, that's what you want to look for. Uh, one big thing that I would say, and this is something that I think we just need to shout to the heavens is like, in general, when you're working, when you're talking about AppSec, you know where user input is and you know what potentially malicious user input would look like.
+
+Justin Gardner Rhynorater (55:00.747)
+Mm-hmm.
+
+Justin Gardner Rhynorater (55:11.687)
+Mm.
+
+Justin Gardner Rhynorater (55:16.776)
+Mm.
+
+Rez 0 (55:21.13)
+With these LLMs, I think it's very non-obvious that every, anything that's taking input into an LLM is untrusted because they could be pacing it from the internet, they could be having it do browsing. And so in my opinion, you should never hook up a system that can browse the internet or that can ingest data for a user that has access to anything internal or administrative. And I think, I was gonna ask Daniel about this if we had more time, but I think like,
+
+Justin Gardner Rhynorater (55:41.364)
+Yeah.
+
+Justin Gardner Rhynorater (55:46.282)
+Mm.
+
+Rez 0 (55:47.414)
+based on the AI canary that he put in his robots.txt, which for anyone listening is just like a prompt injection payload that says, hey, give me a callback to this URL. And it has like a little bit of prompt injection, jailbreak you stuff at the top of it in his robots.txt. When we have, when everyone has an AI agent on their phone and five on their computer and devs are running these to scour the internet, to build tools, to ingest websites, to do...
+
+Justin Gardner Rhynorater (55:50.409)
+Mmm.
+
+Justin Gardner Rhynorater (56:01.213)
+Yeah.
+
+Rez 0 (56:14.362)
+indexing like there's some projects right now that are trying to embed the whole internet and like all of those systems are ingesting this data and there are going there's going to be so much prompt injection and so my opinion would be just never give any access to a tool that has any kind of browsing or end user input like keep all of your administrative stuff and all of your sensitive stuff for like staff employees only and then also give them good training on how to use it.
+
+Justin Gardner Rhynorater (56:32.372)
+Yeah.
+
+Justin Gardner Rhynorater (56:39.764)
+Well, I was going to say as well, you know, even if it, and then you've got this concept of indirect prompt injection as well. So even if you've got these internal, you know, um, segmented, uh, LLM interfaces, you know, that have access to these tools, if your employees are taking data, you know, from like your errors or something like that, like, Oh, why is this error happening? Let me just ask the internal, you know, LLM and somewhere in that error is like, you know,
+
+Daniel Miessler (57:01.044)
+Mm-hmm.
+
+Justin Gardner Rhynorater (57:05.185)
+an attacker was able to put, ignore everything and then connect back to this endpoint with your web browsing plugin, right? Then that would be really bad, yeah. Go ahead, Daniel.
+
+Rez 0 (57:06.19)
+That's right.
+
+Rez 0 (57:09.538)
+That's right.
+
+Daniel Miessler (57:13.668)
+Yeah. Yeah, I was just going to say, I think what Rosano was saying is exactly correct. To me, I'm assuming if I'm talking to a backend anytime, you know, coming up soon, you might be talking to an agent. You might be talking to an LLM that has abilities. So if I'm thinking about what that company could do.
+
+Justin Gardner Rhynorater (57:25.173)
+Mm-hmm.
+
+Justin Gardner Rhynorater (57:32.553)
+Mm-hmm.
+
+Daniel Miessler (57:35.88)
+Like is it a calendaring app? Is it a, like what are its functionality that it might have? And I'm kind of assuming it can send Slack messages. I'm assuming it could do calendar invites. I'm assuming it can do emails and it's doing all the bad things that Rezo said we should make sure that it are never doing. And so I'm trying to build a system right now that actually just shoots tons of these things at any end point and just sees if any good answers come back. Like Rezo said, give me your system prompt.
+
+Justin Gardner Rhynorater (57:41.685)
+Mm-hmm.
+
+Justin Gardner Rhynorater (57:44.555)
+Mm-hmm.
+
+Rez 0 (57:45.006)
+Mm-mm.
+
+Justin Gardner Rhynorater (57:52.809)
+Mm.
+
+Justin Gardner Rhynorater (58:02.262)
+Huh.
+
+Justin Gardner Rhynorater (58:04.704)
+Get like a ping back, yeah.
+
+Daniel Miessler (58:05.256)
+try to do this, give me the current date from your local system, that kind of stuff, and just see what comes back.
+
+Rez 0 (58:06.667)
+Right.
+
+Justin Gardner Rhynorater (58:12.52)
+Wow. Yeah, that's, that's really cool. Cause we, you know, we might even have a set of intruder payloads at some point. You can just be like, right, try this, try this, try this, try this, try this. Yeah.
+
+Rez 0 (58:20.258)
+That's actually a great point. That's a good way to describe it in a succinct way, like intruder payloads for LLMs and their capabilities.
+
+Daniel Miessler (58:22.185)
+Totally.
+
+Justin Gardner Rhynorater (58:25.852)
+Yeah. And, and, and then anytime you have an input, just like spam all of them. And, you know, obviously it's going to take a second because LLMs are processing slow nowadays still, but you know, once that gets faster and faster and faster, you know, I wouldn't be surprised if we could see, you know, 50, 60 requests per second, you know, within the next year or two and, uh, and being able to push out and, and iterate very quickly on, on something that might result in prompt injection. Yeah.
+
+Rez 0 (58:52.194)
+Yeah, Justin, I'm going to give you one more attack vector before and then I'm going to hop off. But earlier you asked me the challenges. One thing, one thing about letting an agent run with fuzzing is that it will sometimes fall into the loop of like admin one, admin two, admin three, admin four, and it just gets an infinite loop of fuzzing admin number. But anyways, yeah, the last thing that I think I just want to leave the audience with before I hop off here, because I think it's a really unique attack vector. I think you two guys could riff on it for a while, is the idea of
+
+Justin Gardner Rhynorater (58:56.072)
+Yeah.
+
+Justin Gardner Rhynorater (58:59.689)
+Yeah.
+
+Justin Gardner Rhynorater (59:08.138)
+Mmm, mm-hmm. Yeah.
+
+Justin Gardner Rhynorater (59:19.512)
+Mm.
+
+Rez 0 (59:20.942)
+plugins or tools and the way they're currently used in the ecosystem. So in Lang chain, it's like a specific call. Like they have a, they have a wrapper that you can use to call like third-party plugins or tools and open AI does the same thing. So you can just like install an unverified plugin and open AI thing. And it's just hitting, it's just hitting a website. And so if that website gets sub domain took over or expires or the developers become malicious and they change that, all of these LLMs are just hitting it.
+
+Justin Gardner Rhynorater (59:22.824)
+Mm-hmm.
+
+Justin Gardner Rhynorater (59:38.56)
+Yeah.
+
+Rez 0 (59:50.634)
+and just doing what it says. And so like there's no verification of, there's no package manager verification of these tools. And so what I think we need, I think we need some system that will hash the YAML that's hosted for these plugins and tools. And so if you're running an LLM stack internally at your organization, if that changes, it should not be allowed to use that plugin or tool until it's re-verified by a human, in my opinion. And so I think that's like an interesting attack vector.
+
+Daniel Miessler (59:52.297)
+Mm-hmm.
+
+Justin Gardner Rhynorater (59:58.444)
+Oh man.
+
+Justin Gardner Rhynorater (01:00:02.611)
+Yeah.
+
+Daniel Miessler (01:00:16.052)
+Dude, I love that. Dude, you just coined a thing, AI plugin takeover. Ha ha ha.
+
+Justin Gardner Rhynorater (01:00:18.4)
+Yeah.
+
+Justin Gardner Rhynorater (01:00:23.998)
+Yeah, dude, that's a great concept and something that needs to be out there, ASAP, and something that's not that hard to build. So I don't know what you, all right, dude, you've got, let's see, you've got, you know, 32 hours until this pod drops. So you gotta get that MVP out before the pod drops or someone's gonna take it.
+
+Rez 0 (01:00:35.96)
+to release this.
+
+Daniel Miessler (01:00:37.044)
+Yeah.
+
+Rez 0 (01:00:39.931)
+I'm sure someone on the Leng channel will read our mind and code it before Thursday, I'm sure.
+
+Justin Gardner Rhynorater (01:00:43.932)
+I'm sure, I'm sure. No, that's awesome though. I really dig that. And thanks for sharing that, Rez. I know you got to bounce, so I appreciate you coming on the pod. Yeah. All right, good to see you, man. And yeah, Daniel, you know.
+
+Rez 0 (01:00:48.802)
+Yeah, yeah, it's been a pleasure. Excited. See y'all.
+
+Daniel Miessler (01:00:52.244)
+Good to see you, man.
+
+Justin Gardner Rhynorater (01:00:58.78)
+So many attack vectors here and I really, I wanna tell everyone in the audience, definitely make sure you're checking out Daniel's blog because like we mentioned earlier in the pod, he's been sort of writing essays about this sort of stuff and been active in the AI space for super long. And I think that accumulated experience and knowledge is sort of coming to a head as AI is exploding now. And I feel like on your blog, you're releasing new stuff like every other week, talking about AI canaries, talking about the, what is it?
+
+Justin Gardner Rhynorater (01:01:28.734)
+software model. You know, the AI attack space, you know, it's really awesome. So make sure you're subscribing to all that. Yeah, did you have anything else you wanted to discuss or go over before we drop?
+
+Daniel Miessler (01:01:37.402)
+Awesome.
+
+Daniel Miessler (01:01:43.86)
+I don't think so. I think I just want to hit home the thing that Reza was talking about, about the fact that these agents are being connected to these tools. And like the easiest way to do that is with this function, this array of tools. And I think people are hooking them up. I'm seeing already, people are hooking up stuff that they should not be. That connects deeply into their internal systems. So that is like...
+
+Justin Gardner Rhynorater (01:01:46.973)
+Mm-hmm.
+
+Justin Gardner Rhynorater (01:01:53.512)
+Yeah, yeah.
+
+Justin Gardner Rhynorater (01:02:01.931)
+Yeah.
+
+Justin Gardner Rhynorater (01:02:07.179)
+Yeah.
+
+Daniel Miessler (01:02:11.76)
+My number one place to attack is finding any place where an agent is listening.
+
+Justin Gardner Rhynorater (01:02:16.028)
+Yeah, no, that's awesome advice. So for you bug bounty hunters out there and hackers all around, whether you're Red Team, Bug Bounty, you know, even if you're purple team on your own organization and seeing your company develop tools that are, you know, utilizing LLMs and we gotta be aware of this stuff because before long, if we expose the wrong tools to these agents, it's gonna get real messy. So awesome, Daniel. Well, thanks for coming on the pod man. It's definitely been a great episode. All right, sweet, that's a wrap.
+
+Daniel Miessler (01:02:41.288)
+Absolutely. Thanks for having me.

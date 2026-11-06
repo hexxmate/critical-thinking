@@ -1,0 +1,584 @@
+Episode 191: Rez0s Sick Caching Bug & Local AI vs Subsidized tokens
+Source: https://www.criticalthinkingpodcast.io/rez0s-sick-caching-bug-local-ai-vs-subsidized-tokens/
+======================================================================
+
+Title: Transcript - Thu, 10 Sep 2026 15:02:28 GMT
+Date: Thu, 10 Sep 2026 15:02:28 GMT, Duration: [00:37:32.93]
+[00:00:00.90] - Joseph Thacker
+Did you say Ubuntu?
+
+[00:00:03.02] - Justin Gardner
+Ubuntu. You say Ubuntu?
+
+[00:00:05.69] - Joseph Thacker
+No, Ubuntu. There's no U. There's no Y at the beginning.
+
+[00:00:09.39] - Justin Gardner
+What is this? What is this garbage?
+
+[00:00:11.40] - Joseph Thacker
+Okay, we're gonna vote on this. That— you're just definitely wrong. No one pronounces it with a Y at the beginning.
+
+[00:00:15.59] - Justin Gardner
+I'm gonna be roasted by the whole community.
+
+[00:00:22.71] - Joseph Thacker
+Best part of hacking, when you can just, you know, critical think, right?
+
+[00:00:32.00] - Justin Gardner
+Oh yeah, dude.
+
+[00:00:42.02] - Joseph Thacker
+What's up guys? This week in bug bounty, we have one cool thing from Yes We Hack. They have released a how to use Codex for bug bounty, like, course kind of blog write-up, and it's actually like extremely verbose. It's got a lot of really cool data in it, so A lot of really cool things you could learn from. So the one, you know, the question here they're trying to answer is, can Codex do more than, you know, flag suspicious code and actually drive a vulnerability end to end? Well, from my personal experience, I can tell you yes, absolutely. And then they, they talk about how HashKitten's WordPress to shell was found using GPT-5.6 Sol. This does not surprise me at all. And they walk you through a bunch of ways that you can set it up, a bunch of ways you can do it. For example, here is how you can set up your folder structure. So you got a scope markdown file, recon, requests, scripts, source, and findings. Of course, there are many different ways you can do this, but I think this is a great way to start. And they go into all the changes you can make to make it more efficient, how to set it up to do black box testing, how to use Playwright, how to add Burp. You can of course use Kaido as well. I really like Kaido's Claude skill that exists right now. And of course works great in Codex as well. The one thing that they mentioned, and I think this is really cool, is they talk about how HashKitten adapted OpenAI's prompt for cycle double cover conjecture, which is basically just like the prompt that OpenAI used to solve some unsolved math problems and how HashKitten adapted that for the WP to Shell. I took this exact script and I think you guys can do this too and abstract it out a little more to work for any kind of black box bug bounty or pen testing. problem or, you know, you know, site that you wanted to hack or look at. And they walk you through all of this. And I think that you all will think it's extremely cool. So go check out this blog from Yes We Hack. Back to the show.
+
+[00:02:35.87] - Justin Gardner
+All right. We got whatever the heck just happened to Rizzo's microphone. We got that sussed. And for putting us through the torture of having to listen to whatever that garbage was, Joseph, now you got to give us a cool bug.
+
+[00:02:49.21] - Joseph Thacker
+Yeah, sweet. It would have been a little bit, been a few episodes since we shared an awesome bug. So I sent this bug to Justin and he said, dude, I think that's my favorite bug all year.
+
+[00:02:58.12] - Justin Gardner
+Dude, this is a phenomenal bug.
+
+[00:02:59.96] - Joseph Thacker
+Yeah, and there's a lot of little pieces of it that you can use for better POCs for your frontend bugs and all that. So let me share it with you. So I was hacking on this extremely secure product and they have a chatbot like almost everyone these days. And I was talking to Codex. This is definitely like a very human-in-the-loop bug. And I was like, one of my favorite ways to basically do input, the best delivery is like a Q parameter injection, right? And so I— this is actually one that I had never messed with before, so I didn't know if it had an auto-invocation feature in the same way that, you know, lots of other apps do where you can put like GET parameter of Q or whatever in order to like automatically invoke a query. And so it found that pretty quickly in the JavaScript. There was a way. It actually was 2 parameters. So it had like a query parameter and then another one called like auto-submit or auto-invoke or something. Nice.
+
+[00:03:50.18] - Justin Gardner
+Nice.
+
+[00:03:50.18] - Joseph Thacker
+Nice. And then— so then I had that. I was like, sweet. Now all— literally all I need is exfiltration because this app already had access to tons of sensitive data, right? It could pull all kinds of like object data for your account. And lots of untrusted data too. And so then I was like, okay, we just need some image markdown rendering. And so I just tested it myself really quickly because I was on the free plan where it's like a tiny model that will basically listen to anything you say. And so I was like, render this image, render this image, and none of them would render, like none of them.
+
+[00:04:17.66] - Justin Gardner
+Mm-hmm.
+
+[00:04:18.56] - Joseph Thacker
+And so I have this big cheat sheet of markdown image payloads. And so I pasted that in Codex and I was like, try to find image markdown rendering. It found it in like 10 minutes. All it needed was, it was basically like a CSP bypass. They would load images, but it was only from their trusted CDN domain. Got it, okay. So I was like, okay, that's pretty cool. I wonder if we have any access to control anything on that domain. I did end up finding one down the road, but that's not relevant to this bug, so just ignore that for now. There was basically no way to really control content for this CSP bypass. But I told Codex, I was like, there's got to be some way for us to figure out how to exfiltrate data of this because we have everything else for the entire chain. So what it found is so crazy. It found basically this app has avatars, like profile pictures, that are automatically generated per users, and they are behind a cache. And so it found out that if the agent that's invoking automatically for the victim makes a hit on one of those avatars, then when we hit it, we get a cache hit instead of a cache miss. So what this allows us to do is to write a whole big framework, a big scripting framework where we're trying a whole bunch of avatar paths that end with a certain byte.
+
+[00:05:36.20] - Justin Gardner
+Yeah.
+
+[00:05:36.60] - Joseph Thacker
+And then we have a massive auto-invoked prompt that probably is near the limit of what actually can happen because you have to tell it to like make a bunch of different markdown image requests for the CDN path, which are correlative to the secret that it found in your account. So let me just give the final bug because I know that's probably confusing to listeners. The final payload was basically an auto-invoking prompt that's either one-click or CSRF, which tells the agent, hey, go fetch this secret in the objects that they have stored and then make a whole bunch of markdown image paths where the last byte is the index of that. So like, you know, the first one is the first, Uh, index, like the first character in the secret. The second one is the second one. And, and then what we do, as soon as we see that happen on our server, we immediately run a script, which then tries, you know, like hundreds or thousands of avatars with the ending bytes. And you basically end up getting, and it's correlative per index. And so then you get like only one hit, a cache hit across every character. So you can leak out the secrets.
+
+[00:06:44.50] - Justin Gardner
+Mm-hmm.
+
+[00:06:44.76] - Joseph Thacker
+via the cache.
+
+[00:06:46.37] - Justin Gardner
+But index by index.
+
+[00:06:47.61] - Joseph Thacker
+Yeah, index by index, right? But the coolest part that makes— that I knew would make Justin so happy about this is, and I've always really wanted this, and so I feel good to have finally quote unquote solved it, is that with one-click with auto-invoking prompts, you're kind of expecting the user to sit there and watch themselves get pwned, right?
+
+[00:07:03.87] - Justin Gardner
+Yeah.
+
+[00:07:04.31] - Joseph Thacker
+They, they, they go to my blog and then it automatically redirects to an auto-invoking prompt, but now they have to watch themselves get pwned in real time as it auto-invokes on their screen. And so I was like, you know, how can I hide this? And so I was thinking about pop-unders and stuff like that. And then I realized tab-under works really well here. And the first time that I tried to set it up though, you can't do a redirect with a tab-under automatically. You have to get a click. You have to get like basically a second click in Chrome at least. It may work differently. How does it work in Safari or Firefox?
+
+[00:07:37.35] - Justin Gardner
+Do you know? No, it's, it's, I think you need one click across the board. There's some, there's some weird stuff that people have been doing in the CTBB Discord. with print popups and stuff like that where you might be able to do it in no-click, but typically it requires one click to come to the attacker's page and then one click on the attacker's page for you to get a popunder.
+
+[00:08:00.32] - Joseph Thacker
+Yeah, and so that, I wanted to feel like just, honestly, this is something you inspired me with a long time ago through all that stuff we did on that Google Live Hacking event in Tokyo where you told us you have to have the cleanest, most realistic POC. And so I was like, where am I always clicking? Cloudflare one-click CAPTCHAs.
+
+[00:08:16.63] - Justin Gardner
+Yes, sir.
+
+[00:08:17.48] - Joseph Thacker
+And so everyone listen up. This is the full end-to-end thing and it looks so clean. Basically, you just browse to my blog, right? Now I use some other random website because using my personal blog, which gets like 100,000 views a month, it would just be absurd. But so you would basically come to a malicious site like my blog or whatever. You would get the single CAPTCHA, Cloudflare CAPTCHA. You click to enter. And what it does is it immediately redirects that page to the auto-invoke while it opens a new tab for you. And just to the user, it just Like it, look, it flickers once and then it brings up the blog. Now they're sitting there reading the blog. What they don't know was there was a tab under that initial page redirected. Oh no, that's what it does. Yeah. So it opens a new tab when they click the button.
+
+[00:08:57.37] - Justin Gardner
+It opens a new tab.
+
+[00:08:58.41] - Joseph Thacker
+Yep. Then the old tab goes to the auto, like redirects to the auto-invocation page where there's a prompt injection running, which then automatically pulls their secret from their objects stored in it, from their files stored in this app via the Markdown image rendering. And then in the background, my server is like hitting the cache to figure out the hits And we just leak out the secret with that single click. And so it was so sick because it was the, the frontend beauty and it was the AI prompt injection. And then it was also the exfil via the server-side caching. And it was just like, dude.
+
+[00:09:31.07] - Justin Gardner
+I am shivering right now from the goosebumps of that bug, man. That is so hype. Like, just the beautiful, like, for one, I love to see you. First, let me, let me dig on you a little bit. I love that you're like, So I didn't use my blog. I had to set up another website. I'm like, this is a POC. This is like a POC website, which is what every client-side hacker ever has.
+
+[00:09:53.87] - Joseph Thacker
+Yeah.
+
+[00:09:54.01] - Justin Gardner
+Like, what are you doing? I like how you had to solve that in the middle of this. And then, um, you have, you, you've got the, the popunder, the redirection of the hidden tab to trigger the prompt injection. And then, dude, to be honest, like the most beautiful part of this for me was this whole cache exfiltration piece. Like I, I have no idea how I've never thought of that, but that's such a brilliant solution. Is like, all right, if you know this exploit is going to take 2 minutes on average, you know, you, whenever you do the pop under, right, you start a timer and then 2 minutes later, character by character, you can brute force the whole secret.
+
+[00:10:27.72] - Joseph Thacker
+That's right.
+
+[00:10:28.01] - Justin Gardner
+You know, just by checking the cache indices. And like, I wish we could show the POC on the pod, dude. Like, it was so clean. Yeah.
+
+[00:10:35.39] - Joseph Thacker
+It's like red, red, red, red, green, red, red, red, red, green. And then whenever it was green, it would automatically put that character over on the right. So at the end you have the full column of the full secret.
+
+[00:10:45.48] - Justin Gardner
+Oh my gosh, dude, it was gorgeous. So congrats on that one, man. That was a stellar bug.
+
+[00:10:52.23] - Joseph Thacker
+Thank you. Yeah, and then I'll go ahead and do the follow-up. Basically, there was another thing where kind of like you can think of it as like another CSP bypass where on like Google, you can use like Google Scripts to exfiltrate it. Basically on this same root domain that you actually do have access to like set up an SSRF or not, sorry, like a request handler. And so then I was able to exfiltrate it without all of the fanciness in like a second way. And I reported it as like second bug. I don't— they'll probably just accept it as one, but you actually could just straight up exfiltrate the secret via a Markdown image directly to your server.
+
+[00:11:23.96] - Justin Gardner
+Okay. Well, hey, you know, this was cool.
+
+[00:11:25.99] - Joseph Thacker
+It was cool.
+
+[00:11:26.37] - Justin Gardner
+It was way cooler. And I learned something from that. I don't know. Yeah. I can't think that I've ever used cache as an exfiltration mechanism. So that's, that is, uh, I already learned something from this episode from chatting with you about that. So thanks for that, man.
+
+[00:11:41.53] - Joseph Thacker
+Yeah, man.
+
+[00:11:43.73] - Justin Gardner
+Okay. Well, I'm looking through my list right now. And let me tell you, man, I have a lot of bugs in here. And they are all incredibly boring. And— but it's a lot of bugs. So, the hackbot has been cranking. I think I've submitted 50 bugs this month. Oh, my God. You know, like within the past, I guess it's just a new month. So let's call it within the past 2 weeks. Um, uh, since you, you challenged me to scale. And then about a week after that, I, I, you know, actually was able to implement that. Um, and they are all in the high, high crit range on a program that is very responsive and we'll be paying out all of those very soon. So I am very pleased. Uh, And I think I will be investing in more. And to be clear, I think I found a really good program. Like, I think the program that I'm hacking on is like very, uh, friendly. Yeah, it's, it's, I mean, they, they're very, they're very kind, uh, you know, and I, I'm messaging with them and talking to them and they're like, triage has gotten really hard nowadays because of the volume from the AI reports.
+
+[00:12:58.12] - Joseph Thacker
+I'm like, sorry, guys. I see you, Justin.
+
+[00:13:00.05] - Justin Gardner
+Like, yeah. And then, then they're like, Yeah, like, you've been a perfect example of that this week.
+
+[00:13:04.69] - Joseph Thacker
+Hahaha.
+
+[00:13:05.59] - Justin Gardner
+You know?
+
+[00:13:05.90] - Joseph Thacker
+Mm-hmm.
+
+[00:13:07.34] - Justin Gardner
+But, but they're very, I mean, they're paying bonuses on, on stuff. They're like, 'cause these are good POCs and things. So, um, yeah, man, I don't know. I'm excited to see. I think there's one other target where I've, I've gotten like very consistent, like 3, 4, 5 bugs a day for an extended period of time. Um, So I've done this twice now, and I am looking forward to seeing if I can continue to do this or whether these 2 programs are kind of like outliers or not.
+
+[00:13:37.46] - Joseph Thacker
+Special.
+
+[00:13:37.90] - Justin Gardner
+Yeah. I guess it's 3, actually. Yeah. But yeah, I'm very excited. So thank you for that challenge, dude. And I have no qualms about spending several thousand dollars a month now on compute and servers and AI tokens and stuff like that. I think they'll continue to do that.
+
+[00:13:59.22] - Joseph Thacker
+In every other business, the motto is you got to spend money to make money. That hasn't always been true for bug bounty, but I think that that is becoming more true. And actually, that's a great segue to one major thing I wanted to bring up was it feels like one way that people are spending and investing is buying hardware. We have so many friends.
+
+[00:14:17.27] - Justin Gardner
+It's a big price tag and it hurts. It hurts. It hurts because 6 months ago, it wasn't even remotely that expensive.
+
+[00:14:23.85] - Joseph Thacker
+Yeah, so I pre-ordered a Mac Studio 256 gig to run stuff on. Did you really?
+
+[00:14:29.95] - Justin Gardner
+Oh, shit.
+
+[00:14:30.61] - Joseph Thacker
+Yeah, it won't come in until November, which is like the biggest bummer, honestly. I feel like I'm so spoiled for like getting stuff instantly these days. As a complete aside that doesn't really matter to our listeners, but I figured I would tell you anyways, I did a credit card to churn to buy that, but they don't charge your card until they ship it. So it's kind of funny.
+
+[00:14:50.21] - Justin Gardner
+No.
+
+[00:14:50.30] - Joseph Thacker
+Yeah, I still will hit it, but it's, yeah, kind of annoying because that was like literally a $10,000 purchase.
+
+[00:14:56.15] - Justin Gardner
+Oh, shit.
+
+[00:14:56.98] - Joseph Thacker
+Anyways, all that to say, did you—
+
+[00:14:59.53] - Justin Gardner
+You got the Mac Studio for $10K?
+
+[00:15:01.85] - Joseph Thacker
+Dude, yeah.
+
+[00:15:02.83] - Justin Gardner
+Is it $10K?
+
+[00:15:03.73] - Joseph Thacker
+It's $10K for, well, it technically starts at $9K. It starts at $9K for 256GB for Mac Studio with M5 Ultra chip.
+
+[00:15:11.00] - Justin Gardner
+Really?
+
+[00:15:11.33] - Joseph Thacker
+Crazy good price, yeah.
+
+[00:15:12.66] - Justin Gardner
+Okay, so how is that comparing to the, 'cause I'm thinking I'm going with the daisy-chained Sparks.
+
+[00:15:19.12] - Joseph Thacker
+CGX Sparks, yeah. So if you get 2 ASUS Sparks, I think they're $3,999. They're 4K each. So you're gonna spend—
+
+[00:15:26.87] - Justin Gardner
+5K each now.
+
+[00:15:28.33] - Joseph Thacker
+The ASUS or the, or the Gold Spark? The NVIDIA Spark?
+
+[00:15:30.91] - Justin Gardner
+Oh, I'm talking about the NVIDIA. Yeah. So maybe the ASUS is cheaper. Yeah.
+
+[00:15:34.26] - Joseph Thacker
+So the ASUS has the same exact Spark, uh, chip and everything or whatever that's under the hood. It just has less, um, disk. So you get 1 terabyte of disk instead of 4 and you save $1,000. So if people are wanting to scale up, It's probably, I mean, if you're trying to basically cut costs and you still need 256 gig of RAM, like VRAM for AI models, you would want to do 2 ASUS Sparks. But anyways, I kind of think it's sweet to have the gold Spark and it's got 4 terabytes. So anyways, but yeah, so Turbo bought a Spark and then Inspector Ambitious, the guy who won Malaga NVH for Google, he has 2 ASUS that he's running. I think our friend Ian Carroll bought Yeah, of course he did. Uh, so, which, I mean, of course he can afford it, but yeah. So I think in general it's interesting to see so many people finally jumping on that bandwagon. So I wanted to kind of go down the list of use cases for why our listeners probably should or shouldn't, depending on, um, like, I just want to give them really practical advice for why they should or shouldn't.
+
+[00:16:38.04] - Justin Gardner
+Yeah, yeah. Well, I, you know what I'm thinking, man? What I'm feeling is I, I don't really have any qualms paying for the subsidized tokens right now. Like, I'm gonna pay for the subsidized tokens as much as I can.
+
+[00:16:48.64] - Joseph Thacker
+Same.
+
+[00:16:49.41] - Justin Gardner
+And, and on, on one, you know, I see people canceling their cloud subscriptions. I think that's crazy. I think I will, you know, I will buy, you know, access to, uh, 20x Mac subscriptions for, you know, $225, $250 every, every shot I can get, you know. Um, but I, I think that the reason I'm investing in the local AI is because I've realized that I literally cannot function without this. Like, you know, like, well, this is one of the things that came up this week. You know, we've been getting spoiled as heck on resets with Codex, right?
+
+[00:17:27.34] - Joseph Thacker
+Yep.
+
+[00:17:27.81] - Justin Gardner
+And, and, um, but I had a bug in my hack bot this week and it uses Codex as the manager and it just dumped like so much into Codex. Like it just—
+
+[00:17:40.11] - Joseph Thacker
+What do you mean?
+
+[00:17:41.13] - Justin Gardner
+Like, it just dumped a bunch of text. It like just was spamming, spamming into Codex, boom, boom, boom, boom, boom. And it ate up pretty much the whole subscription.
+
+[00:17:49.07] - Joseph Thacker
+Yep.
+
+[00:17:49.78] - Justin Gardner
+Um, and, and so now I'm sitting here without Codex and I'm like, what do I do? What do I do? Yeah. And, and like, you know, uh, right now as we speak, Claude is actually down.
+
+[00:18:00.93] - Joseph Thacker
+Uh, it is, it's been down for like 2 hours. Yeah.
+
+[00:18:03.01] - Justin Gardner
+Yeah. And I'm like, you know, and, and I'm like, I cannot do this. So I need to get some local AI as just a redundancy. And then forbid the subsidization of tokens goes away, local AI prices are going to skyrocket. So I might as well get on it now, secure a hedge against that, and make sure that I have access to at least some form of AI so I can have a co-hack companion, right?
+
+[00:18:31.90] - Joseph Thacker
+Yeah.
+
+[00:18:33.00] - Justin Gardner
+If I had to do it manually, Um, even if I'm not using that as much for my hack bot, uh, because like at least then I can stay productive in my day-to-day. Does that make sense?
+
+[00:18:42.54] - Joseph Thacker
+Yeah, 1 million percent. Yeah, I feel the same way, right? It's like you and I and probably everyone are gonna get like, uh, less and less familiar with like even like writing bash commands, right? Like if you need to like set up a new piece of software, you just run some local Quinn model if everything's down and then you still have it, right? Or if regulation ends up coming out where we like, where none of the models are able to really be used for cyber and they can't even get like bypasses for us. Like you need to be able to respond to your NMIs. You still need to be able to do pen tests. You still need to be able to like bounce ideas off of it. And so I think that it is a good hedge against subsidized tokens maybe going away or regulation coming in. But I think there's a couple other cool things that I wanted to bring up. One is, so I've thought a lot about how to apply it to basically be more cost effective. So like, for example, stretching out your subscriptions.
+
+[00:19:31.51] - Justin Gardner
+Yeah.
+
+[00:19:31.98] - Joseph Thacker
+a little bit further.
+
+[00:19:33.41] - Justin Gardner
+Yeah.
+
+[00:19:33.74] - Joseph Thacker
+And me and JD went back and forth on this. Like, we've like thought about the idea, like, does it make sense to have like the dumbest model, like your local models, try to hack something first and then like slowly tier up into the smarter and smarter models? And I think I've come to the conclusion that that's not a good idea because you end up with like fake coverage where, you know, it'll often think that it's hacked something before it has. But I think the other way is actually like the most effective way to use it. What I'm gonna do once I get mine here is I'm gonna run a local model, like one of the smart ones. And then I'm gonna tell like Codex, Hey, for anything that requires any amount of like skill or taste or quality, always use like your own subagents. But if you just need like a one-off script to do something, just give it to the local model. And basically it's going to have, I'm going to have like a dumb agent that it's able to call just to save itself tokens when it needs to do something that's like silly, right? Or I honestly think some of the smaller models are actually better at specifically because you could even fine-tune it if you want to, like just experiment with it. But even if you don't fine-tune it, some of the smaller models I think sound a little bit more natural because they're less They're like less smart. And so I think I'm gonna use it as my report writer as well. 'Cause report writing can often use a lot of tokens too, especially if like you're going back and forth like 3 or 4 times to having it change things. And so I think I'm also gonna use the local model for that. Yeah, any thoughts on that before I give another reason for buying hardware?
+
+[00:20:52.93] - Justin Gardner
+Well, I think that on one hand, you know, you've got all of the, even some of the dumber models nowadays are really good, right? You know, so it's like, okay, well, we're not really dealing with like, you know, GPT-2 over here. No, no, no. Yeah. And I think it definitely makes sense. What I intend to do is try to figure out what task I can effectively allocate out like that.
+
+[00:21:15.83] - Joseph Thacker
+Yeah.
+
+[00:21:16.01] - Justin Gardner
+I think data synthesis is probably the biggest one. Like, okay, you need to read this whole JavaScript file, or you need to, you know, understand how everything is built in this JavaScript file. Hand that to a subagent because you're going to be just like churning through a lot of stuff.
+
+[00:21:32.49] - Joseph Thacker
+Yeah.
+
+[00:21:32.83] - Justin Gardner
+Right? And then spot check it. Have the agent give you like specific offsets and, and stuff like that in the file where you can go back and be like, okay, yeah, that is where the client-side paths are defined. Or like, okay, you know, this is where some concatenation happens that makes all of our API requests like heck up or whatever, right?
+
+[00:21:50.67] - Joseph Thacker
+Mm-hmm.
+
+[00:21:52.27] - Justin Gardner
+Um, so trying to delegate those little tasks out. One thing that I am a little worried about is, um, throughput, uh, with the local AI models. I know that if I'm running a Spark 2 Sparks, then I'm going to have some problems with speed of the model if I'm running DeepSeek Flash version 4.
+
+[00:22:16.81] - Joseph Thacker
+But as a subagent, though, they just wait. All of the current harnesses just wait. And so it's not a big deal, in my opinion. You know what I mean? The parent model will either wait for it or it'll just sit around. And you can actually do 4 concurrent on it. So even though you might not have like a single stream that's really fast for the, for DeepSeek V4 Flash with 2 DGX Sparks, you can run 4 concurrent streams at that like 20 to 30 tokens per second. And so I think you'll be fine.
+
+[00:22:44.07] - Justin Gardner
+20 to 30 tokens per second. Yuck, dude. I don't know. I might, maybe I'll get 3. I don't know. That's that, that, that feels bad, bro.
+
+[00:22:53.66] - Joseph Thacker
+I mean, I think, yeah, you'll get it and play with it and know what you want. But I think that the—
+
+[00:22:59.15] - Justin Gardner
+then you got to solve the chaining problem. Like you can't just wire them together as easily, I think, when you've got 3. I think you have to have like a switch or something. That's something I still need to investigate, but yeah. Yeah.
+
+[00:23:10.57] - Joseph Thacker
+So I think that the last big reason is, it's kind of like a twofold one. One is for extremely sensitive exploit dev. So you might've saw it in the Discord with Shell, our buddy Shell. needed to basically have it write a script that would parse some data or something. And Daybreak just wouldn't touch it with a 10-foot pole. And so sometimes you're doing something, well, a lot of times it just depends on the context. And so could he probably have massaged it by creating a new session and explaining the rules and doing all that? He could. But sometimes it's so much faster just to be able to talk to an unrestricted model.
+
+[00:23:48.57] - Justin Gardner
+Yeah. And they're good too, man. Apparently they're really good. So, right.
+
+[00:23:51.64] - Joseph Thacker
+And so I think that's a big issue. And then on that same topic, I would be Team 6, do like, uh, like jailbreaky stuff a lot of times, and none of the models will, will like, um, happily help you jailbreak other models. Like, at least all the top ones.
+
+[00:24:04.67] - Justin Gardner
+Oh, really?
+
+[00:24:05.11] - Joseph Thacker
+Yeah. So like, if you want like a smart assistant that's going to help you like write jailbreak payloads like Opus and Daybreak and Soul, like none of them will help with that at all. And so having like a jailbreak, like a Yeah, a jailbreaking helper or jailbreak assistant as like a model locally can be really huge. Oh, and the last thing, I think Matt Brown mentioned this to me. If you ever get a pen test client, Justin, that will not allow you to send their data to OpenAI or Anthropic where it's sensitive, then you can still at least, it might not be super high as high quality hacking, but you can still get some hacking done locally. You could have it run overnight, like testing on stuff and none of the data ever leaves your house. And so I think that those are like the big reasons for why.
+
+[00:24:46.00] - Justin Gardner
+That's a really good point. Yeah. I just, I don't know, man. Maybe there are threat models where that makes sense. If somebody tries to get me to do a pen test where they're like, oh, our data can't touch Claude because it's so important, very important, then I'm going to be like, all right, bro.
+
+[00:25:03.86] - Joseph Thacker
+Yeah, you're not that important.
+
+[00:25:05.08] - Justin Gardner
+Exactly. Yeah. No one gives a shit. that'll be interesting to— if that ever comes up. But I would like to have it in my pocket either way. So sure, I'm gonna pull the trigger on it. I also— I hit— you know this because I hit you up for a credit card referral, uh, yes, sir, thing. But, um, yeah, I mean, you can get like $2K back in, in rewards points if you optimize your, your redemption rates, um, on some of these with a big chunk of spend. So I'm just gonna grab, um, those. And also, I think I want to say it's the Amex Gold Business has, um, AI tokens is like a 4x multiple or something like that.
+
+[00:25:44.64] - Joseph Thacker
+Uh, so interesting. I have like a $300 ChatGPT, uh, reimbursement.
+
+[00:25:51.02] - Justin Gardner
+That's business. So it's not, it doesn't, it doesn't cover personal Max plans where I think the Amex Gold, I want to say it does. Um, so that, that's kind of an interesting one. I do, we should do a whole, a whole Can we turn this into like a— let's put a referral link in the description. Yeah, yeah,
+
+[00:26:11.25] - Joseph Thacker
+Yeah, yeah, honestly, we could. Yeah, we'll do that.
+
+[00:26:12.39] - Justin Gardner
+We could, we could. Yeah, I don't even have it yet, so you gotta, you gotta do it. But we'll put a referral link in the description if you guys want to do that. Um, yeah, yeah, look at us, man, finding creative, creative ways to—
+
+[00:26:23.75] - Joseph Thacker
+I'm gonna try to get this in the frame. Ah, it's not gonna reach, I don't think. All right, I'm gonna like—
+
+[00:26:27.65] - Justin Gardner
+what is it?
+
+[00:26:28.17] - Joseph Thacker
+Really heck up my camera for a second. Well, there's so much stuff on my desk anyways. Um, I'll put a picture in the show notes, dude. I got, uh, this might only be VIP, so sorry if it is, but GitHub Bug Bounty Program has a swag store. And when you get paid, you also get these swag points you can spend in it. And I got the sickest, uh, what is this called? Wireless charger that looks like it's straight up from like a cyberpunk movie. And I'm obsessed with it.
+
+[00:26:51.76] - Justin Gardner
+Dude, I got to see a picture of this, man. I'm excited. I have gotten some really nice GitHub swag before.
+
+[00:26:56.92] - Joseph Thacker
+I posted it in Palisade. If you go to Images and scroll up just a little bit. You can see it real quick.
+
+[00:27:03.05] - Justin Gardner
+Okay. Oh, I see. Let me see. Oh, wow, dude.
+
+[00:27:06.88] - Joseph Thacker
+But you can change the RGB to like any color you want. So you can like make it really bright purple and stuff. Oh, it's sick.
+
+[00:27:11.50] - Justin Gardner
+Dang, that's pretty sick, man.
+
+[00:27:13.34] - Joseph Thacker
+Anyways, I want to give them a shout out.
+
+[00:27:15.83] - Justin Gardner
+Do you have, um, do you have like a— totally different thing, but do you, do you have like a coffee warmer?
+
+[00:27:26.13] - Joseph Thacker
+I don't. Do you?
+
+[00:27:27.89] - Justin Gardner
+I do. I do. And I'm not using it so much for coffee because I normally just like down my coffee like a total animal. But, um, dude, I stuck a candle on this thing. It's nice. It is nice, bro. My office smells like— what is this? Uh, sandalwood and smoke.
+
+[00:27:46.16] - Joseph Thacker
+You are a 30-year-old, Jackson. You're definitely getting old.
+
+[00:27:50.21] - Justin Gardner
+Don't say that to me, man. But like, look at this.
+
+[00:27:52.23] - Joseph Thacker
+Look. Talking about candles.
+
+[00:27:55.02] - Justin Gardner
+Oh my gosh, feels good, man. All right, well, we'll pivot away from that then. Uh, GitHub bug bounty program, pretty cool though. Um, going back to, um, some AI stuff. Dude, now I'm completely AI pilled. Screw you, Rezo, man. I used to like, I used to, I used to get deep in this stuff and hack.
+
+[00:28:14.16] - Joseph Thacker
+Now you're just making more money.
+
+[00:28:15.26] - Justin Gardner
+Oh, now I'm just making more money. I know, I know. The green hat is getting greener, man. But anyway, I was talking to— so, our— I don't even know. What is Yuji, dude? Yuji is like our— the whole CTBB backend, pretty much. He's like— does a bunch of our ops stuff here at CTBB. And he's also in the Discord a lot in the community side. But he hit me up the other day and recommended this herder.dev thing. Have you seen that?
+
+[00:28:42.85] - Joseph Thacker
+I was in that chat. Yes, sir. I have not tried it yet.
+
+[00:28:45.45] - Justin Gardner
+So it is, it is a, it's a very interesting thing. And I use tmux very heavily. So I am still, it is still to be seen whether I will use this or not.
+
+[00:28:58.31] - Joseph Thacker
+I thought this was tmux integrated.
+
+[00:29:01.34] - Justin Gardner
+It is not tmux integrated. It is, it is its own multiplexer of sorts here. And, but it's specifically designed to provide additional data on coding agents that are running in your CLI. And I've already, you know, one of the reasons this resonated with me when Yuji mentioned it was it definitely feels like I need that. And I was trying to sort of hack something together a little bit before I even saw this. So that's what made me think about it. And I gave it a shot. The problem, I really liked it.
+
+[00:29:37.98] - Joseph Thacker
+The problem is, Uh, like you run the weirdest distribution. Yeah, you run the weirdest distribution on the planet. It's not
+
+[00:29:44.92] - Justin Gardner
+It's not the weirdest distribution.
+
+[00:29:45.88] - Joseph Thacker
+You could just use Linux or Mac, but you're some Windows fanboy so you can play League of Legends. And yeah, yeah, Justin's basically, for his one time a month when he gets to actually get away and play League of Legends, he's like shooting himself in the foot.
+
+[00:29:59.74] - Justin Gardner
+Okay, well, it's also nice for game hacking too. Okay, call me Mr. Shoot in the Foot.
+
+[00:30:05.47] - Joseph Thacker
+Call me, man.
+
+[00:30:05.89] - Justin Gardner
+As I'm in, you know, I don't know. I don't remember what we placed on the last, uh, game hacking live hacking event, but we did pretty dang good. So, um, no, but I, I do agree, to be honest. And that is why I have decided that, uh, probably after this next live hacking event, and maybe I'll try to switch, uh, switch over before, but I am gonna, I'm gonna switch my main desktop to, uh, Ubuntu again. I'm just gonna go. Like, did you say Ubuntu? Ubuntu. You say Ubuntu?
+
+[00:30:36.72] - Joseph Thacker
+No, Ubuntu. There's no U, there's no Y at the beginning.
+
+[00:30:40.50] - Justin Gardner
+What is this? What is this garbage?
+
+[00:30:42.50] - Joseph Thacker
+Okay, we're gonna vote on this.
+
+[00:30:43.70] - Justin Gardner
+That—
+
+[00:30:43.95] - Joseph Thacker
+you're just definitely wrong. No one pronounces it with a Y at the beginning.
+
+[00:30:46.77] - Justin Gardner
+I'm gonna be roasted by the whole community. I learned this— I learned the name of this thing when I was like 11, bro. Like—
+
+[00:30:54.76] - Joseph Thacker
+I hate to dig up past wounds, but earlier, did you say Thoroughput? Instead of throughput.
+
+[00:31:00.02] - Justin Gardner
+Did I? One thing that I am a little worried about is, um, throwput. Throwput.
+
+[00:31:11.28] - Joseph Thacker
+Throwput.
+
+[00:31:13.32] - Justin Gardner
+Shit. Don't, don't, don't do this to me. Throughput.
+
+[00:31:15.76] - Joseph Thacker
+Throughput. Okay.
+
+[00:31:16.55] - Justin Gardner
+Okay. Okay.
+
+[00:31:16.89] - Joseph Thacker
+Okay. As long as you, as long as you know the word, as long as you know what the word is, if you said it wrong, that's one thing. But if you thought the word was thoroughput.
+
+[00:31:24.51] - Justin Gardner
+No, it's not thoroughput. Look, guys, being a podcaster is hard, okay? You have to say words out loud. You know how it is with the IT community. All we do is read stuff online. We don't say this shit. I don't know.
+
+[00:31:36.53] - Joseph Thacker
+You'd think 15 years in though, I'd be, you know, I got to drop it in. But can I show you something cool?
+
+[00:31:42.11] - Justin Gardner
+Yeah, sure. What you got?
+
+[00:31:45.35] - Joseph Thacker
+Sorry, I'm just gonna do more AI shilling. Basically, it's just absurd to me that AI can do this. So I've been hacking on a 3D printing company and you know, I've been printing lots of stuff for the kids and whatever. And for my anniversary, I was like, oh, I really want to come up with a cool anniversary gift. So I was like looking on Etsy for like 3D printed anniversary gifts. And there's this thing called like a lithopane. And what it is, is it is a thing that is a piece of like, it's like a 3D printed piece of plastic and it kind of like looks okay, but it looks really weird, right?
+
+[00:32:14.88] - Justin Gardner
+Yeah.
+
+[00:32:15.02] - Joseph Thacker
+But dude, if you put it in front of—
+
+[00:32:17.89] - Justin Gardner
+Dude, what?
+
+[00:32:18.43] - Joseph Thacker
+If you put it in front of a window or a light, So it just looks like 3D printed kind of garbly gook here. But then when you put it in front of a light, it looks like an image. And I just thought that was so cool. That is
+
+[00:32:31.01] - Justin Gardner
+That is like a very high res. That's a gorgeous picture of you two, by the way. Thank
+
+[00:32:33.79] - Joseph Thacker
+Thank you. It's our wedding.
+
+[00:32:34.66] - Justin Gardner
+That's very nice.
+
+[00:32:35.72] - Joseph Thacker
+13 years ago. But anyways, I thought it was really cool. You can literally just tell it, hey, make, make a 3D print file for this and it will just make it end to end. And I just blew my mind that Codex or Claude Code can do that. So.
+
+[00:32:46.79] - Justin Gardner
+That is pretty crazy, man. Um, hey, one more thing. You got to drop in like 5, right?
+
+[00:32:52.47] - Joseph Thacker
+Yeah, more like 3.
+
+[00:32:54.53] - Justin Gardner
+Uh, one, one last thing. Um, so I'm doing a live hacking event next week and it's an interesting one, uh, because it is a live hacking event where the total bounty pool is just equally split across all.
+
+[00:33:10.59] - Joseph Thacker
+And I haven't gotten in a single one of those yet, but yeah, go ahead.
+
+[00:33:13.00] - Justin Gardner
+It's, it's a, it's a small one, you know, it's not a big one. And the amount of money you walk away with is like Pretty substantial. It's, uh, we'll bleep it, but like, it's pretty, I mean, it's decent, right?
+
+[00:33:23.02] - Joseph Thacker
+Yeah. Yeah.
+
+[00:33:23.47] - Justin Gardner
+It's worth your time. And, uh, yeah. And we'll, and it's a shorter event, right? So you, you, you literally don't get the scope until less than a week before the, you know, event closes. Right. So, um, it, it is a, it, I think it's a really interesting model and I think that it, I'm definitely more collaborative, like substantially more collaborative in these, in these events. You're
+
+[00:33:45.26] - Joseph Thacker
+You're saying, you're saying during that event or just in general these days?
+
+[00:33:48.03] - Justin Gardner
+Well, I mean, maybe both, but definitely during the event, you know, like it is, it is a lot more fun, I think, uh, in that regard. Um, and when you're still walking away with a good amount of money for the amount of time you're investing, it's very interesting. Um, and I think the competitive aspect of it as well becomes a little bit more jovial.
+
+[00:34:09.75] - Joseph Thacker
+Yep.
+
+[00:34:09.98] - Justin Gardner
+You know, like as somebody who takes the competition pretty seriously in these bug bounties, like, Uh, you know, competitions, I think that it becomes a lot more jovial and, and less stressful. Um, and a lot of the work is being done by AI nowadays anyway, so I'm not as like uptight about like how much my, my, my performance indicates about me as a hacker, you know? So I don't know, I just thought I didn't really feel like I would be as motivated for an event like that, but I'm finding myself Motivated.
+
+[00:34:42.19] - Joseph Thacker
+So yeah, yeah, that's awesome. Well, I think like you said, it's just because you don't— well, one, you're probably doing fine, you know, financially-ish, but then I also think you're probably like knowing you're gonna get a lot out of it. Um, but it is a really neat concept. I know, I think you all did that similarly. You were in one of those earlier this year. Yeah, and it felt really, really neat and really cool. Yeah, I would love the opportunity to do one of those. I do think you want to keep it smaller-ish and have like hard buy-in. Because obviously some people could just do nothing and still get the full payout and that feels really bad. So there has to be a— there has to be a lot of trust. It's a cool target.
+
+[00:35:13.59] - Justin Gardner
+Yeah. It's a cool target too. So it's like one of those targets where you want to hack it, you know, like you feel like there's some like, I just want to hack that for the heck of it, you know? So I think that's an integral piece of that as well. And it's fairly soft scope.
+
+[00:35:28.32] - Joseph Thacker
+So pretty good. Yeah, dude. Nice. I have 3 kids banging on my door, so.
+
+[00:35:32.09] - Justin Gardner
+All right. All right. We'll let you go. All right. That's the Peace out.
+
+[00:35:34.80] - Joseph Thacker
+See you guys.
+
+[00:35:38.73] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more Critical Thinking content, uh, or if you want to support the show, head over to ctbp.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild if you're a full-time hunter. It's a great time. Trust me. All right. I'll see you there.
+
+[00:36:04.13] - Joseph Thacker
+Let me—
+
+[00:36:04.55] - Justin Gardner
+all right. Just hold on. Since we're on the candle front, let me, um, let me just really like nerd out for a second here.
+
+[00:36:09.90] - Joseph Thacker
+Oh my gosh.
+
+[00:36:11.48] - Justin Gardner
+Um, Richard, feel free to cut this if this is too cringe, but, uh, but dude, it's gonna be so funny if he cuts and then it's— he's like, no, it was too cringe. Um, but I was thinking the other day, you know, why— what we become really, um, desensitized to smells as they Right? So you light a candle and you, you smell it for like 5 minutes, right? And then you leave the room and you come back and you're like, oh, you know, that's amazing, right?
+
+[00:36:38.75] - Joseph Thacker
+Yeah.
+
+[00:36:39.46] - Justin Gardner
+I was thinking, why is there not a product—
+
+[00:36:42.46] - Joseph Thacker
+A smell-changing candle?
+
+[00:36:44.67] - Justin Gardner
+Yeah, it like, like caters an olfactory experience, you know, around your house, you know. And so every other day it like switches up and it's, you know, they've got the little They've got the little plugs that you plug into the wall, right? You know, and it's like sprays your house with the thing. But like, you know, it becomes so, uh, you know, our olfactory sense is so adaptable. So it's like, let's switch it up. Let's keep it dynamic. You know, you get a rotation. I'm thinking like, uh, like one of those things where you can go in there and like select your own packs or whatever and like build like a, you know, 5 or 6 That's so interesting. sequence that rotate. I don't know. I feel like, I feel like that's I think that seems— I'm not sure I would buy it, but I think it's, you know, a pretty cool product, right?
+
+[00:37:27.67] - Joseph Thacker
+Yeah, it is really cool. Okay.

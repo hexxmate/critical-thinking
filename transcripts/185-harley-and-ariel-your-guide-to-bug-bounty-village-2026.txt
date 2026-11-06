@@ -1,0 +1,1188 @@
+Episode 185: Harley & Ariel - Your Guide to Bug Bounty Village 2026
+Source: https://www.criticalthinkingpodcast.io/harley-ariel-your-guide-to-bug-bounty-village-2026/
+======================================================================
+
+[00:00:00.00] - Harley Kimball
+My dream is to have someone tell me like, hey, you know, I didn't know about Book Bounty. I found out about it in The Village. In The Village, I, you know, I found a 5K crit or something. Like, that would be— that's my dream, man. One day someone will walk up to me and tell me that happened.
+
+[00:00:37.71] - Justin Gardner
+If you've been in the bug bounty recon game for any period of time, you know how beautiful it is when some unsuspecting dev or DevOps guy spins up what's clearly supposed to be an internal-facing server and accidentally just gives you the keys to the kingdom, right? It's a big payday. It's an easy win. It's a beautiful thing, right? And unfortunately for us, ThreatLocker also knows about that, and that's why they created their Zero Trust Network Access product. Okay, check this out. This is a product that prevents that unauthorized network access not only at the network level but also at the device level. Okay, so anybody's connecting to those sensitive internal services, you know that they are authorized as that user, but also the device that they're connecting from is validated. So you get complete introspection into who's accessing these sensitive systems. It's a great product. Check it out at threatlocker.com. All right, let's go back to the show.
+
+[00:01:24.56] - Harley Kimball
+Whew.
+
+[00:01:26.25] - Justin Gardner
+All right guys, I just got off this episode with Ari and Harley and it is an amazing one, especially if you're going to Bug Bounty Village. This is gonna set you up. If you are not going to Bug Bounty Village as well though, I will say jump to the end of this episode, use the timestamps in the description. Harley gives some great tips for, uh, HackBot architecture and, and features that you definitely wanna check out. But if you are going to be going to DEF CON, unfortunately you are unlike me because this year I've got some family obligations over DEF CON that hard conflict. So I will not be there, but we will have Grepmi and Bus Factor from the CTBB team out there representing. So be on the lookout for them. We'll put something in the description so you know what they look like. Go find them and get some CTBB swag because we're sending a ton of swag this year because we got blown out of the water last year. So. So go get that from them and keep a close eye on the Discord for how to find them at DEF CON because they'll be around and we're gonna make announcements in the Discord. Additionally, we have a This Week in Bug Bounty segment piece from Yes We Hack. They are gonna be at DEF CON as well and they just released an article that I'll put in the description talking about their talk that I'll talk about in the episode as well. smuggling poison through the door with Brumans. And you get a nice picture of Brumans here as well. So you know who to look for when you're there live. I always, you know, people always do not their faces, their profile picture, and then you can't find your homies, right? So always try to figure out what your homies look like before you go to DEF CON and you're like, where are you? Oh, I'm over here. And they've also got a great panel on navigating AI-assisted submissions that have representatives from all of the different platforms there as well. And last but not least, they will be running the Payload Please Reloaded challenge with the Yes We Hack challenge coin as well. So be on the lookout for that. They've got a lot of really fun activities going on this year at Bug Bounty Village. So be on the lookout for the Yes We Hack team. They're going to be there and they're going to be wanting to meet y'all. So go up and say hi. All right, that's a wrap. Let's get to the show. Well, guys, gentlemen, welcome back to the pod. We've got our yearly edition of Critical Thinking where we sit down with the creators of Bug Bounty Village at DEF CON and look at this sick lineup that we've got and get hyped about it. So thanks for joining us again, guys. And, but you know the drill, we only take bug hunters here. So prove it.
+
+[00:03:55.09] - Ariel Garcia
+Yeah.
+
+[00:03:55.25] - Justin Gardner
+Prove your bug hunter-ness before us with a bug. Harley, you wanna kick us off?
+
+[00:03:59.81] - Harley Kimball
+Sure, sure. Yeah, man, thanks for having us back on the pod. Super excited to talk about Bug Bounty Village. It's been a ton of work going into it, so.
+
+[00:04:06.90] - Justin Gardner
+I'm sure.
+
+[00:04:07.65] - Harley Kimball
+Yeah, yeah. But I've been doing a lot of hacking in addition to Bug Bounty Village. Really been kind of cranking up the volume with report submissions this year.
+
+[00:04:16.13] - Justin Gardner
+Yeah, dude, you're beating me out and you were calling me out on Twitter. Homie's like, ah, Justin, looks like I'm about to pass you on the leaderboard. I'm like, Wait, wait, what? So I'm excited to hear about that, dude. You, you're— I mean, the stats are crazy and you've been cranking out some serious hackbot stuff. So, um, we're also going to do a segment on that later in the episode. So, uh, we'll get to that, but let's, let's, uh, let's go to some bugs first.
+
+[00:04:41.50] - Harley Kimball
+Sure. Yeah. So I've been, as you kind of hinted at, I've been building out this hackbot and that's made it to where it'll find a lot of things for me that then I just have to connect the dots. It has a lot of leads, so I don't have much time between my full-time job and then also managing Bug Bounty Village and all that stuff. So when I do get a hack, I like to just jump right in. And so this was a bug that I found a couple months ago, and I figured it was super fitting because it was on a podcast software. Here we are on a podcast, so had to talk about it.
+
+[00:05:12.50] - Justin Gardner
+Beautiful.
+
+[00:05:13.79] - Harley Kimball
+Yeah, so this bug is a story of how I went from Signing up as a free user, getting the trial all the way to a super admin on a multi-tenant podcasting software.
+
+[00:05:24.55] - Justin Gardner
+Okay. What was it? Riverside though? Can Can
+
+[00:05:26.26] - Harley Kimball
+Can Can you— I mean, I'm not going to say what it was. Okay.
+
+[00:05:28.47] - Justin Gardner
+Well, you can say the name of it. We can bleep it.
+
+[00:05:30.81] - Harley Kimball
+Okay. All All
+
+[00:05:31.64] - Justin Gardner
+All All right. All right. Whatever. Just go. Just go.
+
+[00:05:33.20] - Harley Kimball
+Yeah. Yeah. Yeah. So anyway, it's multi-tenant. We could dump all the information, zero-click ATO, pretty much just like complete, complete—
+
+[00:05:40.56] - Justin Gardner
+Oh my God.
+
+[00:05:41.62] - Harley Kimball
+So anyway, it started with what? HackBot's really good at, which is the JavaScript analysis, right? Combing through everything, pulling out endpoints, mapping out hosts. So it found a bunch of undocumented API paths and I started to just kind of store them in my HackBot database, just keep an eye on those. As it continued to work through them, it ended up finding that some of these API hosts that it was trying to hit weren't actually routable. You couldn't get to 'em through the VPS. So my hack bot has residential proxies that it'll route through when that happens. And so that was able to get through kind of that first layer.
+
+[00:06:17.00] - Justin Gardner
+Mm-hmm.
+
+[00:06:17.62] - Harley Kimball
+And then it found a mass assignment, uh, bug where you could essentially just add, like, certain parameters were blocked. Like, you couldn't just add, like, PUT admin and then the admin role. Uh, but there was another endpoint that the JavaScript, uh, pretty much had leaked where it was admin user. And so you could just self-escalate with mass assignment to super admin. The problem was with this is as soon as you do that, it will invalidate your session and it'll log you out and it'll force you to sign back in. So when it first happened, my hackbot was like, hey, we've chained this together, we found this for you, here you go, here's a cred. So then I go to log in with it and I can't actually sign in. I'm hitting Duo. There's like, as soon as you—
+
+[00:07:03.35] - Ariel Garcia
+Ah.
+
+[00:07:04.27] - Harley Kimball
+As soon as you become a super admin, the application enforces you to go through Duo enrollment, but you couldn't actually enroll. You had to have access to like, you know, whatever pre-enrollment, maybe they have to give you a device. I'm not exactly sure, but it was gating me. I couldn't get past the Duo. So I had a super admin account, I just couldn't use it.
+
+[00:07:23.94] - Justin Gardner
+No, that's a nightmare scenario, dude.
+
+[00:07:27.20] - Harley Kimball
+So that was the point where it's like, okay, the hack bot found the crit, but it's not actually like, So then at that point, that's when I needed to step in and look for an MFA bypass. So I spent a ton of time like, can I bypass Duo? Can I do this? The answer is actually super simple. My database had found this gadget where, you know, and usually I would chain this with like an XSS for an ATO or something, but they had this ability to create this magic link where you could sign in without a password and it would bypass MFA. So you would have to generate the magic link ahead of time. And so the full chain is free trial, login, and then before you escalate to super admin, you create yourself a magic link that you then would use later. And then you escalate to super admin, it logs you out. When you go to log in, you just use the magic link to mint an actual session token, and then you use that session token to get in and bypass MFA. And then at that point, at that point, it's just like, boom, you have super admin against all the tenants in the org, like across the client base. Yeah, that one, that one is pretty sweet.
+
+[00:08:35.30] - Justin Gardner
+Dude, that's sick. I really like that, that, um, you know, order of operations piece there too, right? Where you have to mint the token before and then you become forced 2FA eligible, right? You know, when you become a super admin and, but then you've already got the magic link, so boom, you're in.
+
+[00:08:52.60] - Harley Kimball
+Yeah.
+
+[00:08:52.85] - Justin Gardner
+That's lovely.
+
+[00:08:54.62] - Harley Kimball
+And I feel like it highlights too, like, an important piece that, like, yes, the HackBot helps a lot and it makes it to where, like, okay, it stores these gadgets, it found, like, you know, half of it or 80% of it, but then there's still moments where you have to still kind of, like, think about how can you piece it together to actually, you know, end-to-end turn this into something that's actually reportable in Bug bounty. And I feel like that's just super relevant right now with people who are submitting half you know, have big things or aren't spending that time going that extra mile, and then they miss out on like something that could actually be critical.
+
+[00:09:25.50] - Justin Gardner
+Absolutely, absolutely. Great, great work. Perfect example of using a hackbot to find a nice crit. Well done, Harley. All right, Ari, you are up to the, uh, you are up to the, the microphone here. Um, we want to hear about your bug as well.
+
+[00:09:40.85] - Ariel Garcia
+Yeah, so I mean, again, after hearing Harley's story, my, my stories always feel like crappy and simple, but I have some memories. You find a lot of bugs through your career as a pentester, bug bounty hunter, and some of those bugs stick, maybe because of the story, maybe because of an experience, maybe because of the bounty or whatever. In this case, this bug was not in bug bounty. I know I'm cheating, sorry, but it was in my full-time work as a pentester.
+
+[00:10:10.21] - Harley Kimball
+Okay.
+
+[00:10:11.32] - Ariel Garcia
+So I didn't get a bounty and definitely, It wasn't profit besides my salary, but I used to work in an ATM company. Basically, it was like a whole payment industry, banking-related, big connections there. And when you're doing some pentests or bug bounty, you kind of are always afraid of testing some things. You're not going to go hit your banking production app.
+
+[00:10:37.85] - Justin Gardner
+Right.
+
+[00:10:38.00] - Ariel Garcia
+Because you'll get your credit line damage or the FBI is going to hit your door in a moment.
+
+[00:10:44.73] - Harley Kimball
+Yeah.
+
+[00:10:45.47] - Ariel Garcia
+But we had the permission to do it because my company was building those things. So this new wallet app, basically everyone needs to have these modern things where you can just pay with a QR code and that kind of thing. And this app had a feature that If you think straight, maybe it doesn't make any sense, but you could get money out of the ATM without your card. Basically, you use the mobile app to create this thing where you just go to the ATM and you extract money, which maybe sounds practical for some, but also as a hacker or as a pentester or bug bounty hunter, you think like, It can't go well, you know, somewhere it would fail. So we started testing this thing. Yes. Uh, and, and again, it's a simple, simple bug, right? But, but the impact it has is, and the stories is what makes it more like entertaining. It's like, I'm testing this thing. I'm checking this feature. We even had production ATMs in the office. So I could literally test things. You know, I will actually be hacking ATMs. It was fun.
+
+[00:11:57.16] - Justin Gardner
+I'm so jealous, man. That sounds like a blast.
+
+[00:12:00.75] - Ariel Garcia
+That is when you get access to that scope, you can do a lot of interesting stuff that you cannot do as a bug bounty hunter sometimes. So that's what I'm sharing is because it's interesting. And it was this generate ATM extraction, whatever feature. And funny enough, they had these account numbers in the request and you can of course change that request to put someone else's account number. It's so bad that the account numbers wasn't even the real account numbers. It was using some sort of sequential number based on who signed up first.
+
+[00:12:37.62] - Justin Gardner
+Oh, you're kidding me. Yeah, yeah, yes.
+
+[00:12:38.85] - Ariel Garcia
+And so I go testing this and I'm changing the number and it's like, successfully created. I'm like, okay, that seems to be working, but I need to confirm. So I figured out the number of my manager. my manager's bank account.
+
+[00:12:55.79] - Justin Gardner
+No.
+
+[00:12:56.44] - Ariel Garcia
+With this sequential number and we swap it, then we change it and it's successful. So I go with this one-use code to extract money to the ATM and I actually get the cash out. So I go to my manager and I was like, can you check your balance and see if you're missing some cash? And she's like, let me check. And suddenly I'm missing $100. What happened? And don't worry, here's your $100, you know, like here is the cash. Uh, and we have a critical bug. Uh, we need to fix this. It's the whole, you know, people was like, oh my God, oh my God, we need to fix this immediately.
+
+[00:13:34.74] - Harley Kimball
+You should have paid yourself the dollar.
+
+[00:13:36.65] - Justin Gardner
+Yeah. I can't imagine the hype of like, you know, giving it, showing it the QR code and it just spitting out money like that.
+
+[00:13:45.98] - Ariel Garcia
+It's, it's, yeah, it's so happy, dude. It's It's
+
+[00:13:48.82] - Harley Kimball
+It's It's fun.
+
+[00:13:49.12] - Justin Gardner
+I would have been elated in that moment to see that $100 bill come out. Oh my gosh.
+
+[00:13:55.30] - Ariel Garcia
+Dude, when it works and you're actually getting money and then the whole impact of this is real, it's not even like digital, you know, that you're touching the money, you know, like it's very different. And the whole experience was very funny. Wow, very cool. And they fixed that. Redefining Redefining
+
+[00:14:09.90] - Harley Kimball
+Redefining Redefining the internet anyway.
+
+[00:14:11.62] - Justin Gardner
+Yeah, exactly right. And I'll take, uh, you know, withdraw $200. Oh man.
+
+[00:14:18.38] - Ariel Garcia
+Yeah, imagine the impact, right? Like you could brute force every single account Because it was sequential and you could go to the ATM and basically extract like thousands and thousands.
+
+[00:14:28.20] - Justin Gardner
+Yeah. Just drain the whole ATM. Yeah.
+
+[00:14:30.61] - Ariel Garcia
+Yeah, literally. Um, it was very funny. And by the way, that was in production. It was, I mean, it was working and outside in the world. Um, it's not like, oh, we're testing a testing environment or something.
+
+[00:14:43.60] - Justin Gardner
+Shout out to them for giving you a production app, you know, with production creds, you know, that you can actually use because so many companies don't do that. And it's like, you know, because of that, there are bugs sitting out there for sure, you know, that are between their QA-tested blah-de-blah that they, uh, you know, did in a little sandbox before they pushed it out with their pentesters, right? Uh, versus like an actual production system, right?
+
+[00:15:11.19] - Ariel Garcia
+Yeah, yeah. And, and exactly. And imagine how many of those banking apps or like very, very critical apps are out there being vulnerable and, and and you cannot test it because it's out of scope or because you don't have a, you know, social security number or whatever, or you don't want to use it because, you know, you don't want to risk yourself.
+
+[00:15:30.12] - Justin Gardner
+Yeah.
+
+[00:15:30.92] - Ariel Garcia
+Um, it's insane.
+
+[00:15:32.92] - Justin Gardner
+Yeah, it is. It is scary with the banking apps, man. Uh, like really, it, you know, I, I'll personally, I'll speak from experience. I have definitely made, you know, some multiple of, of 5-figure bounties, right? Off of banking with the bank that I bank with, right? Just because like, You know, I, I see something, I'm like, oh, that's a little off, and I go and do it, right? But also, especially in this AI era, I'm like, you know, getting ready to connect Claude Code to my proxy, and I'm like, oh, wait a second, my actual bank is in this. Like, actually, no, no, no, no, no, no. So it's like, you really, I mean, on one hand, when you're doing everything manually, like I was up until like a year and a half ago, right? It's like, okay. This is acceptable risk, right? But, but, but as we move into this era where we're navigating 6 agents and I'll tell him to go do something and then I'll check back in 20 minutes later and he's like transferred all my money away, then I'm like, then it gets a little bit risky. Yeah, it's too much.
+
+[00:16:32.88] - Harley Kimball
+It's too much. I mean, I don't know if you should have your tech bot connected to your bank account, but—
+
+[00:16:37.50] - Justin Gardner
+Absolutely not.
+
+[00:16:38.17] - Harley Kimball
+To each their own.
+
+[00:16:38.78] - Justin Gardner
+I will tell you though, that little shit logged into my proxy and, and connected to Gmail. And sent it, like sent an email. And I was like, how did you do that? And he's like, well, the creds were in the proxy and I just left it proxied and opened in a new tab, like my, my Gmail or whatever. And it's like, oh, there's Gmail creds. I'm like, what are you doing?
+
+[00:17:01.97] - Ariel Garcia
+Imagine how many companies buy coding stuff all the time, uh, you know, have the same issues, but in production with, with way more important stuff.
+
+[00:17:10.48] - Justin Gardner
+Yeah, man. I just, I just got, I got hacked by my own bot.
+
+[00:17:13.76] - Ariel Garcia
+Crazy.
+
+[00:17:14.80] - Justin Gardner
+All right. Well, thank you, gentlemen, for humoring our stupid little tradition there. These 2 lovely guys that are here with me today are Harley and Ari. We go way back to the live hacking event scene and all the fun times that we had on site in all these various locations, working together, solving, solving problems, dealing with reports, you know, as we did. And nowadays, Harley is at H1, still actively involved in the live hacking event scene. And Ari is over at Expo doing security research. So thank you guys for coming on the pod. You have earned your introductions very well. And I'm very excited to talk about, Harley, your HackBot stuff and you passing me on the leaderboard and whatever the heck else you're doing, you're cooking up over there. But I'm also very excited to talk about the massive service that you guys have done to the community setting up Bug Bounty Village at DEF CON. And unfortunately, guys, I don't know if I've said on the pod yet, I will actually not be there this year. It is a— I've got a family event that hard conflicts with it. So I'm so sorry, guys. But really, I'm more sorry for myself, to be honest, as I'm reading through this agenda, because it is looking pristine. It is looking really good this year. So we'll jump into that in just a moment. But do one of you guys, maybe Harley, want want to tell me a little bit about the highlights of what we can expect at Bug Bounty Village this year and the stuff that we should look forward to and events that we're definitely going to want to be in on?
+
+[00:18:45.73] - Harley Kimball
+Yeah, yeah, of course. So we've been cooking up a lot of really awesome stuff. You know, obviously Bug Bounty Village is something that only runs for a few days, but it takes Ari and I all year to put together, and we put a lot of effort and time into it. But that means we get to do all these cool things. So The, I guess we could talk through some of the activities that we have going on.
+
+[00:19:06.09] - Justin Gardner
+Yeah. Yeah. Let's do that.
+
+[00:19:07.41] - Harley Kimball
+Yeah. So first, you know, we have a happy hour that's happening Thursday night. That'll be at the same venue that we've done, uh, the last 2 years. We're running it back with TikTok and HackerOne.
+
+[00:19:17.26] - Justin Gardner
+Is that the Flight Club?
+
+[00:19:19.00] - Harley Kimball
+Exactly. Yes.
+
+[00:19:19.91] - Justin Gardner
+Dude, that is a sick venue.
+
+[00:19:21.57] - Harley Kimball
+Yeah.
+
+[00:19:21.74] - Justin Gardner
+I hope you guys expanded it last year because they, dude, they wouldn't let me in. Guys, I have to tell you guys actually what happened last year. This party is popping, right? And, and then, um, and so, you know, there's, there's a whole line, you know, and, and the, the venue maxed out. And, and, and in my, you know, also I'll be fair, like I also came towards the end of the, the event, right? So the bouncer at the front of the thing was like, uh, sorry, you can't go in. Like there's, there's too many people. And then, and then you guys saved me and you put—
+
+[00:19:55.10] - Harley Kimball
+oh no.
+
+[00:19:55.36] - Justin Gardner
+And then people started coming out and taking pictures.
+
+[00:19:57.56] - Ariel Garcia
+Oh.
+
+[00:19:58.03] - Justin Gardner
+And then, and then you guys were like, Justin, come in, come in, come in here. And, uh, so I, I appreciated that, man. Um, also I want to, I want to say, oh man, I forget the name. I forget which country it was, but there was this amazing group of guys that I think, I want to say it was Chile, that came out of that party. And they're like, Justin, let's take a picture. And then they pull a flag out of their backpack and they're holding up their country's flag and I'm holding the country's flag. And I'm like, this is amazing. I love this. So— You're a celebrity right now, man. Dude, that was such a great party. You guys nailed it. And the Flight Club venue is amazing. So did you guys expand it this year so you have more space?
+
+[00:20:39.55] - Harley Kimball
+Yeah. So we've, you know, we've done it 2 years in the past. This will be year 3. That first year we were just kind of like testing it out and it was a huge hit. We had about half the space. The second year we had like 3 quarters of the space. So we got a little bit more. Um, this year we bought the whole venue out. We're just like, we know, we know we're gonna have the demand. So if you are listening and you have not yet RSVP'd, you know, definitely do that. I think link will be somewhere. Um, but definitely RSVP because it's probably gonna convert to a waitlist really soon. And when you, when you show up, I would recommend getting there early just to make sure you can get in.
+
+[00:21:14.91] - Justin Gardner
+Yeah. Yeah. It's, it's a great one, guys. And if you want a place where all of the bug bounty hunters are gonna be, like, that is the place. You know, and you just go in there and I was just like running around talking to all the legends in the community. You know, I've just moved from one legend to the other. I was like, oh my gosh, it's this guy. Oh my gosh, it's this guy.
+
+[00:21:32.72] - Harley Kimball
+You know?
+
+[00:21:33.58] - Justin Gardner
+And I just, you know, you get in there, you recognize people from their profile pictures or from whatever, and you just jump from person to person to person that you know and whose research you respect and love, you know? So really, really fun event. Thanks for putting that on, guys. So we got that on Thursday. Is that the 6th?
+
+[00:21:51.38] - Harley Kimball
+Yeah. Oh man, I have no idea.
+
+[00:21:53.49] - Justin Gardner
+Yeah, Thursday the 6th, August 6th. Yep.
+
+[00:21:56.43] - Harley Kimball
+Yep. So that's gonna be to kick off DEF CON essentially. And then that next morning is when the village actually opens. And so we'll open up the village 10 AM on Friday. And that's also the same time that we kick off our CTF, which is another big activity that I highly recommend you guys go and check out this year because we've been cooking up something really, really cool. Ari, do you wanna talk a bit about the CTF?
+
+[00:22:22.02] - Ariel Garcia
+100%. And yeah, the first thing to mention is that it is an official contest at DEF CON. So it's not like we're just creating something to play around with. It's literally in DEF CON website as an official contest, which means someday, eventually, hopefully, we will be qualifying to do a Black Badge at DEF CON. Who knows? I mean, I think we're still very new.
+
+[00:22:46.54] - Justin Gardner
+That would be sick.
+
+[00:22:47.40] - Ariel Garcia
+We're very new. But we're working very, very hard and the guys building the CTF are as well.
+
+[00:22:52.72] - Harley Kimball
+Yeah. Since we started building the CTF out, it was like always like, how do we build this in a way where they'll give us a black badge one day?
+
+[00:22:58.89] - Justin Gardner
+Okay. Yes, you must do that. And I, yeah, I, dude, whoever gets the first Bug Bounty Village CTF black badge, that, that person's name will go down in history, man. That is going to be a legendary thing.
+
+[00:23:13.08] - Ariel Garcia
+100%. Oh my gosh. And that's, you know, a great reason to come and play.
+
+[00:23:18.29] - Justin Gardner
+Yeah.
+
+[00:23:18.55] - Ariel Garcia
+Not only if you are at DEF CON in person, because we know not every single person can be there, but it will be open to participate remotely as well. So you can literally sign up for free and compete. We'll have different leaderboards for in-person people and remote people. We also will have different awards or prizes for the people participating remote or in person. And yeah, As we did last year, which was our first CTF, we were not building a broken thing from scratch. We're not building a damn vulnerable web application. We're building a whole web application, a whole company with AI bots and AI chatbots and things like that. And then we're adding the vulnerabilities in it.
+
+[00:24:06.98] - Justin Gardner
+Mm.
+
+[00:24:07.41] - Ariel Garcia
+So it is very, very different. First of all, it's literally like a bug bounty program. You choose a target, in this case our CTF, and then you start looking for vulnerabilities when you don't even know what's out there. You don't know what you're going to find. You're not looking for the typical cross-site scripting. You're exploring the app, doing a bunch of different things, and finding cool vulnerabilities. And one of the main things that makes it different than any other CTF is that we also have a specific component about reporting the vulnerabilities in a reporting system, Mm-hmm. which simulates any platform that you could be using for bug bounty. And we do have a team of triagers, like real-life triagers from platforms validating the reports you're submitting in an attempt to actually give you some recommendations, improving your writing, improving your skills when submitting a report. So forget the one-liners. Um, because that won't give you extra points.
+
+[00:25:07.64] - Justin Gardner
+And why are you looking at me when you say that, Ari? Why? What do you— you know, like you've seen my reports or something? What do you—
+
+[00:25:14.79] - Ariel Garcia
+The, the best bug money hunters out there are sometimes the worst, you know, in writing reports. I'm not saying it's your case, but— Thanks, I appreciate that. I I
+
+[00:25:23.55] - Harley Kimball
+I I am saying it's his case.
+
+[00:25:24.72] - Justin Gardner
+All right, okay, let's just say though, for the past 2 live hacking events, Harley has had to send me a message Saying, Justin, stop that. So I'm trying, dude. I'm trying. But you know, the thing is, and my, my, my, um, my AI is a little bit better now for writing the reports and it, it, it, it, I think it does a more thorough job explaining it and stuff like that. But I think before, especially when we were rushing to get these reports in and we were writing by hand, what I try to do, and, and you can give me shit for this if you want, Harley, but what I try to do is I try to get a link. that will do the thing, right? Like if I, as long as I get a POC, you know, and I say, all right, click this link, you know, and then you go to it and then it speaks for itself, you know? And I will explain, I will explain it, I promise. But it, but it's like, you know, the POC must speak loudly.
+
+[00:26:15.57] - Harley Kimball
+Agreed. Clearly. 100%. And, and don't get me wrong, like that is exactly what makes validation so much easier.
+
+[00:26:22.42] - Justin Gardner
+Yeah.
+
+[00:26:22.68] - Harley Kimball
+You know, I mean, we could go down a rabbit hole of talking about triage and pitfall and all that stuff, but you know, I—
+
+[00:26:27.25] - Justin Gardner
+I'll add it to the end of the docket. Let, I'll, I'll throw it at the end of the list here. Okay, we will, we'll, we'll, we'll put that in at the end, see, see if we'll come back to that.
+
+[00:26:35.13] - Harley Kimball
+But yeah, totally. I'd love to talk more about the CTF, um, because I think, I think that there are some really cool elements too that we haven't discussed yet, which, um, you know, last year we did like this biotech medical company that was, that was like the theme. This year, you know, the rise of AI is among us, right? So we are now creating our own frontier AI lab. That's, that's kind of the theme here. So it's called Zinoptic. So if you've been watching our socials, you've probably seen us talk about Zinoptic kind of like mysteriously.
+
+[00:27:07.89] - Justin Gardner
+Sure, sure.
+
+[00:27:08.75] - Harley Kimball
+That's because that's the, the company that we've created for the CTF, and it's not a single web application. Like, this is something where we literally are simulating, you know, a lot of the frontier labs out there. So we have You know, the actual chatbot panel that you go into, but we have backend admin panels that manage and invite users. We have companies where you can set up billing and credit systems of how many tokens is this user assigned, that type of thing. We literally have a CLI that we've built out to simulate like a quad code where there's bugs built out into that as well.
+
+[00:27:43.95] - Justin Gardner
+Wow.
+
+[00:27:44.61] - Harley Kimball
+So there's a ton of attack surface here. And if you wanted to kind of get like an experience of what it's like to hack, you know, OpenAI or Anthropic or something like that, um, but in a, in a CTF format, this is, this is the place to do that.
+
+[00:27:59.05] - Justin Gardner
+Okay. Wow. That, that is sick. You guys have really gone the extra mile there. And Ari, going back to what you were saying just a second ago before we got, we got derailed there, um, and then they find the bugs, you know, maybe they go after the CLI, maybe they go after the chat interface. They report it through the official bug bounty reporting system for the CTF, and then it goes through triage, or?
+
+[00:28:21.51] - Ariel Garcia
+Yeah, triagers are going to be reading the report. To be honest, they are not going to validate the whole technical part of it. We have specific flags and ways of avoiding cheating. So it's not like you're going to have to write a huge report. you need to explain it. The whole goal is for you to report a vulnerability and you will need to have step-by-step reproduction. How do you find the vulnerability? Add screenshots, add the impact and all those things that the triage will review and leave feedback about. If you're pasting a single link, Justin, I'm sorry, you might not get enough points.
+
+[00:29:02.33] - Justin Gardner
+Dang it.
+
+[00:29:02.81] - Ariel Garcia
+You might end up second place because of that.
+
+[00:29:05.25] - Justin Gardner
+Oh no. no.
+
+[00:29:05.35] - Ariel Garcia
+no. no. It's important.
+
+[00:29:06.27] - Justin Gardner
+No. You You
+
+[00:29:06.83] - Ariel Garcia
+You You will get extra points for your quality writing skills. So, um, you know, take, take that in mind, very important. Uh, and, and the idea is for new, new people or even experts to, you know, get some feedback, uh, and, and improve their writing skills as well, which is very important as part of any bug bounty program.
+
+[00:29:26.54] - Harley Kimball
+Yeah, so the— when you find a bug, you'll receive a flag, and that flag is how we can validate things quickly at scale. And so the flag is submitted as part of the report submission. But then you have the ability to where that flag will earn an X number, set amount of points. But then based on your report, that's how we determine, are we going to award additional points? And that is really probably going to be the thing that differentiates that top leaderboard spot.
+
+[00:29:51.17] - Ariel Garcia
+Wow.
+
+[00:29:51.82] - Harley Kimball
+Okay.
+
+[00:29:52.31] - Justin Gardner
+That's going to be interesting, man. That's going to be very interesting. So refine your reporting AI and make sure that you read it thoroughly and and make it concise and to the point. That should be great. And then last thing we had on our little docket here, which is something I'll take you guys, is CTBB is gonna do a meetup this year, even though I won't be there. We do have guys from the team, Gretmi and Bus Factor, are gonna be there running the CTBB meetup. So keep a close eye on the Discord. That will be somewhere surrounding Bug Bounty Village, depending on availability and space and everything. But, uh, they are gonna have a shit ton of swag and, uh, you know, custom swag too. Um, so definitely try to track down, uh, BuzzFactor and Grep.me while you're out there and rob them of the swag that we have provided. Did you like that last little, little—
+
+[00:30:48.31] - Ariel Garcia
+Only the swag.
+
+[00:30:48.80] - Justin Gardner
+Yeah, exactly. Did you like the pause there? I thought Brandon and, uh, and Victor would appreciate that. Um, all right, cool. So that's, those are the major, you know, some of the activities that we got going on. Um, how is the, the room going to be laid out this year? Because last year we had a little creator's corner. We had some, uh, you know, we had the main sort of workshop space. What are we looking at this year?
+
+[00:31:14.16] - Harley Kimball
+Yeah. So each year we're proving we need more and more space. We're getting bigger and bigger. Um, you know, I think what you're recalling was year 1 where we did the creator corner. Year 2, we expanded, we got rid of the Creator Corner. It was kind of similar. This year we have close to double the amount of space that we had previously.
+
+[00:31:32.64] - Justin Gardner
+Sick.
+
+[00:31:33.32] - Harley Kimball
+Yeah, it's really cool to see that. So the intention is to get rid of like the classroom tables. We don't have that because it takes up too much space. And so this year we're doing just kind of like seats. I think there's gonna be close to 80 seats that we have available for people to sit to listen to the speaker. And then the other half of the room, we kind of have it divided. The other half of the room is more of like a lounge where we're going to have couches, some round tables, things like that. And so the concept is someone wants to come in and collab on a report, right? They can come in and do that in the lounge. Or people want to meet up and kind of like talk with some of their favorite, you know, bug bounty hunters or whatever that maybe they've been working with for years online. Like, this is a place to go and do that. So we'll meet up. Go ahead.
+
+[00:32:17.44] - Justin Gardner
+I feel so seen. I feel so seen. This is why I love it when people that actually do the thing also run the thing for the people, you know, because it's like, that is what we need, right? You know, a lot of times the bug bounty hunters, they're there to definitely see the talks, but then they wanna hack. There, there's nothing that bug bounty hunters love more than hacking, right? And so if you have a lounge, an area where we can chill and, and we can hack together and we can collaborate, right? Um, that's gonna be, that's gonna be a great time.
+
+[00:32:46.86] - Harley Kimball
+Yeah, that's exactly the intention.
+
+[00:32:48.15] - Ariel Garcia
+I mean, yeah, we have seen a lot of people hacking on the, on the hallways.
+
+[00:32:53.13] - Justin Gardner
+Yeah.
+
+[00:32:53.60] - Ariel Garcia
+Of DEF CON.
+
+[00:32:54.33] - Justin Gardner
+That's what I did last year.
+
+[00:32:56.18] - Ariel Garcia
+So yeah, and well, the good news is that we will also have, um, a creator— sorry, a contest, um, a contest venue, you can, you can say it, in the actual contest area. Since we are an official contest, we have some tables, some chairs in there. So if you even like the low lights and the more silent type of venue, you can also sit there and hack there at the CTF and collaborate with other hackers. So it should be fun and it adds more space for people. Heck yeah.
+
+[00:33:28.43] - Harley Kimball
+Yeah.
+
+[00:33:28.91] - Justin Gardner
+Last year I remember it was crazy, man. The line was like going into another village's line. It was like, okay. And the first year it like completely DoS'd DEF CON because that hallway was like so crowded that you couldn't even get through to go to the other villages. Yeah. So I'm glad they gave you more space this year.
+
+[00:33:50.19] - Harley Kimball
+Yeah.
+
+[00:33:50.69] - Ariel Garcia
+The, the goons, uh, hate us, um, and maybe love us as well, but I mean, we try to give them swag and coins and badges and everything because they, you know, they kind of hate us a little bit because we are— we have huge lines in the hallways blocking doors and things like that. Uh, we're sorry, but yeah, it's, you know, we need more space. So yeah.
+
+[00:34:11.32] - Justin Gardner
+I mean, DEF CON in and of itself, I think is a pretty, you know, hands on the keyboard conference, which I appreciate. But I mean, the thing I love about Bugbunny is, is it's the hands on the keyboard of the hands on the keyboard. You know, it's like, it's really like, these are the, these are the folks that are out there looking at the hardest targets, finding the craziest bones on the cutting edge and getting, getting the reward for it. Right. And, uh, And so I definitely understand the pull, right? Even, even if you're not a bug bounty hunter, surely you want to be in that environment where you're like, the hacker's hacker, you know, is, is the bug bounty hunter in my opinion.
+
+[00:34:45.84] - Harley Kimball
+Yeah. It's like, like actually finding real stuff on real targets. And, and, you know, I, I think that, um, my, my dream is to have someone tell me like, hey, you know, I, I didn't know about bug bounty. I found out about it in the Village. In the Village, I, you know, I, I found a $5K crit or something like that would be That's my dream, man. One day someone will walk up to me and tell me that happened.
+
+[00:35:05.55] - Justin Gardner
+Somebody's gonna make that happen this year, Harley. You know, like, hey guys, go chill. And these— that's no biggie for the people listening to this podcast. So guys, go chill in the lounge, right? And make Harley's dreams come true. And if you send me a DM telling me that you found a crit, uh, in the Hacker Lounge, we'll get you some, some CTBB swag, either a subscription or a swag or something like that. So hit me with a DM and let's make Harley's dreams come true this year. Okay. That's going to be great.
+
+[00:35:29.53] - Ariel Garcia
+That's awesome.
+
+[00:35:30.11] - Harley Kimball
+Thanks, Justin.
+
+[00:35:31.26] - Ariel Garcia
+I remember a couple of years ago, I think we were not doing Bug Bounty Village yet, but I remember we went to a talk about certificates and a bunch of things. It was like a new research. And immediately after the talk, it was like Ronnie, Ronnie Carta from France, like Shlomi, Bresso, like a bunch of people, like we sit there and start like finding potential vulnerable mobile applications on this specific bug, ended up in a hotel room still hacking. So that is kind of what we want to mimic in the Bug Bounty Videos. Yeah, Yeah,
+
+[00:36:07.73] - Justin Gardner
+Yeah, Yeah, dude, I remember Ronnie was so hyped about that presentation. Ronnie was hitting me up. He's like, Justin, we need to do this right now. I'm like, Ronnie, I'm in a live hacking event. I can't drop what I'm doing right now.
+
+[00:36:19.01] - Ariel Garcia
+Dude, they were even connecting to the hotel Wi-Fi, no protection at all. just, you know, like finding targets and running these scripts to detect vulnerable things. But eventually it's like, it's, it's the fun.
+
+[00:36:30.88] - Justin Gardner
+Yeah.
+
+[00:36:31.05] - Harley Kimball
+Wow.
+
+[00:36:31.42] - Justin Gardner
+That's awesome, guys.
+
+[00:36:32.51] - Harley Kimball
+Just to be clear on the layout, just so people don't get lost, we're gonna be on the 2nd level. That's where the primary Bug Bounty Village space will be. Downstairs, kind of main floor contest area is an additional place that we'll have. So if you're gonna participate in the CTF, we have a dedicated area downstairs for that in the contest area. And then if you want to just kind of hang out in the lounge and see the talks, things like that, then you'll want to come up to the second level.
+
+[00:36:57.21] - Justin Gardner
+Dang it, dude. The FOMO is real. The FOMO is real. I'm sitting here and I am trying to figure out some way that I can make it.
+
+[00:37:05.44] - Harley Kimball
+We should get you like a cardboard—
+
+[00:37:06.65] - Ariel Garcia
+Yeah.
+
+[00:37:09.25] - Justin Gardner
+Just stick Justin right there. Hey guys. Bug bounty?
+
+[00:37:16.46] - Ariel Garcia
+Like an hour moving.
+
+[00:37:17.42] - Justin Gardner
+Like, gosh.
+
+[00:37:18.51] - Ariel Garcia
+Um, you know, and wait, wait till you see the swag, dude. We have some cool stuff.
+
+[00:37:22.94] - Justin Gardner
+Oh my gosh. Yeah, dude, the stuff here in the, in the doc that you guys, uh, have is crazy. Do we want to jump to that now? Can we jump to that now?
+
+[00:37:30.00] - Harley Kimball
+Sure.
+
+[00:37:30.86] - Justin Gardner
+Okay. Uh, Richard, if you could put this stuff up on the, on the screen, we've got, um, this t-shirt is looking super sick. This is a little, in my opinion, a little reminiscent of the H1 Elite stuff right here. You know, these, like this poster that we got up here. Yeah. Um, that is I like it. Yeah. Oh yeah. You know, the one that I got, uh, right there, right there.
+
+[00:37:52.55] - Ariel Garcia
+Which, by the way, which, by the way, I created with a sign. And And
+
+[00:37:56.63] - Justin Gardner
+And And you nailed it specifically for you. So you nailed it.
+
+[00:37:59.36] - Ariel Garcia
+I like you enjoy it.
+
+[00:38:00.15] - Harley Kimball
+Yeah.
+
+[00:38:00.26] - Justin Gardner
+No, this is, this is awesome. This is looking super sick. And badges this year sponsored by Integritee, right?
+
+[00:38:05.90] - Harley Kimball
+Yes. Yes. But let's double-click on that t-shirt for a minute, man, because, uh, I, I think, you know, these guys, Miscreants, are you familiar with?
+
+[00:38:13.44] - Justin Gardner
+Yeah. Yeah. Oh my gosh. Hold on. Let me zoom in.
+
+[00:38:16.07] - Harley Kimball
+Yeah, so we partnered with them. They put this together for us. And so it's a collab that we're doing with Miskriens.
+
+[00:38:22.94] - Justin Gardner
+Sick.
+
+[00:38:23.21] - Harley Kimball
+This will be an exclusive drop. We're only making 300 of 'em and that's it. So it's gonna be hard to get your hands on these.
+
+[00:38:28.57] - Justin Gardner
+No way.
+
+[00:38:29.46] - Harley Kimball
+And we kind of wanted to tell a bit of a story actually. Like, you know, the idea behind this was we're in an era where AI is swarming, right? The bug bounty ecosystem. So we kind of wanted to simulate that. Like we're in Vegas, we're doing bug bounty hunting. Obviously this is our mascot, then we have this swarm of reports that are just coming in. And that's kind of the concept here.
+
+[00:38:51.98] - Justin Gardner
+Wow. Okay, so for audio listeners, we've got, you know, a hacker sort of in a superhero-like pose. We've got a laptop, we've got a swarm of bugs around, right? And the, you know, background as well there. So very, very nice design collab by Miscreants and Bug Bounty Village. Please, Harley, please just give me one. Just please reserve one for me, please.
+
+[00:39:16.46] - Harley Kimball
+We've got you, man.
+
+[00:39:17.17] - Justin Gardner
+Don't worry. Okay. All right.
+
+[00:39:18.15] - Ariel Garcia
+Thank you.
+
+[00:39:18.78] - Justin Gardner
+I'm sorry. I know I'm not doing my part by being there, but like, just, I would just really like one of these. Um, and then we've got the badge too, which is super sick. Um, and we're sponsored by Integritee. Let me, let me, let me pop open one of these, uh, these videos here. Dang. I'm sorry for those of you listening. Richard, maybe you'll make a cut for the people on audio or something like that. Wow. The colors, dude.
+
+[00:39:48.09] - Harley Kimball
+So the concept with this, man, we have binary flags that people have to solve throughout various different challenges that we have scattered. So Ari can talk a bit about some of the challenges because he's been hands-on making them. But we have some of them integrated into our CTF. We have Integrity who created the challenge that integrates with their challenge coin. Ari put together one that integrates with a different challenge coin that Bug Bounty Village has made in partnership with OKX. And so if you solve the coin, you get a binary flag, you punch that flag into your badge, you unlock a color. So there's 5 total flags, and if you unlock all 5, something sick happens. I don't know.
+
+[00:40:26.80] - Justin Gardner
+Dude, this is like the Thanos, like, you know, collecting, you know, diamonds or whatever. Infinity stones. Yeah, the gems. Wow.
+
+[00:40:34.26] - Harley Kimball
+Yeah. So we really wanted to, we really wanted to make things interactive, engaging, right? If, uh, for whatever reason people wanna take a break from hacking on, on programs and, and put themselves in a little virtual environment here, they can do that. So.
+
+[00:40:46.80] - Justin Gardner
+Wow. Very cool, man.
+
+[00:40:48.21] - Harley Kimball
+Yeah.
+
+[00:40:48.42] - Justin Gardner
+Nice swag.
+
+[00:40:48.90] - Ariel Garcia
+And that's cool. Like the, the whole integration with the challenge coins and, and, and the other things is, you know, allowing you to, you, you cannot just go and solve one challenge and that's it. Like you need to get a coin and solve it and then maybe play a little bit of a CTF. and find some more flags or get together with some other folks and maybe hack your way into finding more flags or hack the hardware. Who knows? Maybe you're just a hardware hacker, just hack it and figure it out. This year we have a screen for the first time. I will be very, very interested to see someone hacking on the screen and, you know, Rickrolling us or something. I don't know.
+
+[00:41:31.90] - Justin Gardner
+That would be sick.
+
+[00:41:32.46] - Ariel Garcia
+That would be amazing. Um, and I hope it happens. But, but yeah, I mean, that, that's, that's the thing. Every single year the, the badge is, is better. Like the first year it was like a blinky thing. No, no colors. It was super simple. Second year had acrylic floating and like, you know, different, different things. And this year is like multicolor, like it has a screen, all these, you know, different things happening. So each year we try to make a better version. And dude, it takes so much time.
+
+[00:42:01.15] - Justin Gardner
+I'm sure, I'm sure it does, guys. I, I can't, I can't even fathom how, how much time you guys are putting into all this. So thank you guys so much.
+
+[00:42:08.88] - Harley Kimball
+Shout out Abhinav at HackerWare. You know, he, he's the one who kind of is the mastermind behind these badges and put this together for us.
+
+[00:42:15.92] - Ariel Garcia
+So yeah.
+
+[00:42:16.51] - Justin Gardner
+Very cool.
+
+[00:42:17.19] - Ariel Garcia
+And we will do our best to get, you know, one for you as well. Thank well. Thank
+
+[00:42:20.44] - Justin Gardner
+well. Thank well. Thank you, man. I've really, I, I would so love that. That would, that would make me feel included, guys. You know, I know I'm not there, but That would really help. That would do a lot. All right. So—
+
+[00:42:31.51] - Ariel Garcia
+But you need to be back this year. I will.
+
+[00:42:33.53] - Harley Kimball
+I will.
+
+[00:42:34.07] - Justin Gardner
+I'll be back. I'll be back. Um, uh, yeah, but now to the, to the time that everybody was looking forward to, which is the actual agenda itself. I think this launched yesterday from time that we're recording here. And this lineup is super stacked, dude. This is real stacked. Um, So let's— I'm just scrolling through this. And I mean, every scroll that I have hits an S-tier hacker, you know, like, or several most of the time. So let's kind of walk through some of these. And I'm gonna, you know, guys, if I could just sit here and narrate to you the whole agenda, I would. But that's boring. So what I'm going to do is I'm going to talk to you guys a little bit about my, my proposed schedule. If I was, was to go to Bug Bounty Villages here. Um, so let's, let's take a look. First one starting at 10 is click me, turning URI links into bug bounty RCs. Yeah, go ahead.
+
+[00:43:34.55] - Harley Kimball
+By the way, I would just say too, we have 2 different talk tracks that we're gonna have. And so, okay, you'll see some overlap on some of these. And so you may have to, you may have to pick as you're going, you may have to pick which one you wanna miss. Um, but we'll have a location.
+
+[00:43:47.69] - Justin Gardner
+I've already, yeah. It's bad, man. But, you know, I just feel bad for the people as well, you know, that are like lined up in the same time slot as like another crazy talk. I had that one year, you know, I won't say when. Last time I— one of the times I was speaking and I was like, look guys, if I were you, I would be at this talk, you know, like, and it's like, oh no, no. One of the years it was like with Jay, it lined with like James Kettle's talk, you know?
+
+[00:44:13.78] - Harley Kimball
+Mm-hmm.
+
+[00:44:14.34] - Justin Gardner
+And I was like, Well, that's game over for me.
+
+[00:44:16.65] - Harley Kimball
+You know, like, well, I guess the silver lining is there's only limited space, right? So, you know, at some point people have to go to other places anyway.
+
+[00:44:26.61] - Justin Gardner
+Unless it's James Kettlestock and then you're in like the mega, mega—
+
+[00:44:29.98] - Harley Kimball
+That's true. That's true.
+
+[00:44:30.94] - Justin Gardner
+Yeah.
+
+[00:44:31.36] - Harley Kimball
+Yeah. GG. But for this, we'll have access on the creator stage and then the rest of it will be inside the village.
+
+[00:44:38.32] - Justin Gardner
+Okay. Nice. Awesome. And how far are the— do you know how far by foot the village— these don't look too far.
+
+[00:44:44.96] - Ariel Garcia
+Far.
+
+[00:44:45.38] - Justin Gardner
+Yeah, these look pretty close.
+
+[00:44:46.59] - Ariel Garcia
+Yeah, it should be same floor, uh, you know, a little bit of walking, but should be the same floor. So nice, this time we're close.
+
+[00:44:53.26] - Justin Gardner
+Okay, so, um, tell me about the 2 tracks and then I'll kind of shout out a couple talks that I'm hyped for.
+
+[00:44:59.51] - Harley Kimball
+Sure. Yeah, so the Creator Stage is a, is a stage that DEF CON kind of provides. It's like the central place where multiple villages will collab together to have speakers present, and then they have it to where it's kind of like what you would expect We're walking into like a DEF CON track and seeing the full experience. Whereas inside the village, that's where we have the layout kind of controlled based on what we wanna do.
+
+[00:45:21.80] - Justin Gardner
+Mm-hmm.
+
+[00:45:22.15] - Harley Kimball
+And so we'll put things inside the village if it's like a workshop and hands-on, we'll typically have that inside the village.
+
+[00:45:28.32] - Justin Gardner
+Okay.
+
+[00:45:28.71] - Harley Kimball
+Whereas more of the like talks that are, you know, maybe shorter, 30 minutes, things like that where rotating people in and out quickly is really helpful, then that'll be on the creator stage.
+
+[00:45:39.09] - Justin Gardner
+Okay. Gotcha. That makes sense. Okay. Um, so I guess if we're looking for more, the more hands-on track, we're probably going to be closer to Bug Bounty Village.
+
+[00:45:50.80] - Ariel Garcia
+Correct.
+
+[00:45:51.19] - Harley Kimball
+Yep.
+
+[00:45:51.36] - Justin Gardner
+Okay. All right, man. Um, so first one, for the first one up here that, that kind of got me is I anchored at 10:30 with this talk with, uh, Hacking IDE Extensions VS Code Workshop with, with Nick Copi. Nick is, is, is turbo. He's amazing. So I said, okay, this one I have to go to. This one is a mandatory attendance one. So I kind of worked back from there and landed on Clicking Me: Turning URI Links into Bug Bounty RCs, which sounds sick as well, from Tobias D. Ellie. Sorry, I don't know how to pronounce your last name, Tobias, but I do want to emphasize this talk by Nick Nick is really awesome and I've seen him hack VS Code before. So that's how I know it's awesome is, is he tears this stuff apart. Um, so this will really, um, uh, this will really, really have a lot of impact, uh, in the bug bounty world. Um, if you guys can get to this.
+
+[00:46:50.61] - Harley Kimball
+Nick is crazy. Like, like he's so humble too, cause he's just been killing it lately. And I was talking to him like in Japan and I was just like, dude, like, Like, you know, you, you're killing. He's like, I don't know. I don't think I am.
+
+[00:47:02.90] - Justin Gardner
+He, he always says stuff in the, in the Full-Time Hunters Guild about like, I'm feeling a little lazy and I'm like, and he's got like this whole pipeline of on the most hardened targets out there. So Nick is, Nick is such a beast, dude. Definitely one worth seeing. Then we've got Hackbots with Jason Haddix and Ryan Bonner at 11:30. We got to see that, right? Because that's the whole, the whole name of the game is, is hackbots.
+
+[00:47:28.09] - Ariel Garcia
+One of the bangers.
+
+[00:47:29.01] - Justin Gardner
+Exactly, exactly.
+
+[00:47:30.86] - Ariel Garcia
+But I mean, if I can say something, you, you, you skipped a panel, which I get it, you're super technical, you want to see all the techniques, but that panel right there is, you know, this is a program manager panel. I mean, yeah, it's, it's also like very interesting maybe for, for program managers or people related to bug bounty that are not super, super technical to hear a little bit of what's going on with bug bounty and maybe the future because I think the whole AI situation is changing a lot of things. So definitely I will keep an eye on those, but I mean, I get it. I know why you're picking those talks. Those are amazing.
+
+[00:48:10.05] - Justin Gardner
+If I was going to go to a program manager panel, this would be the one, right? We've got Katherine here who was Capital One before, GitHub now. We've got Austin, you know, Amazon legend. We've got TikTok, we've got GoDaddy, right? You know, this is a really good lineup of program managers here. So they'll definitely give some good insight into the future of bug bounty from the program manager's perspective, which guys, unfortunately dictates our future a little bit, right?
+
+[00:48:36.07] - Ariel Garcia
+It does.
+
+[00:48:36.30] - Justin Gardner
+You know, it's not like we can just ignore that, but I don't know, gents. Like, it can't, it can't, uh, like, I can't miss 30 minutes of Nick's talk, you know, for that, you know what I'm saying? But maybe, you know, maybe I would go— that's a good point. Maybe I would hit that panel for 30 minutes, right? And then, and then go. That's a good point. I like that. I like that.
+
+[00:49:00.76] - Harley Kimball
+Well, the good news too, if you're not able to make it to everything, we do intend to record all the content, throw it up on YouTube after. So There is that.
+
+[00:49:06.94] - Justin Gardner
+Okay, sweet. And what is the timeline for that, Harley?
+
+[00:49:09.76] - Harley Kimball
+You know, okay, here, I do a lot of things, all right? Putting videos on YouTube is not on the priority list, but it should be. So I apologize.
+
+[00:49:21.69] - Justin Gardner
+Well, we can, we can help you too, you know, like if you, if you want, maybe we'll, we'll chat off air after this, but, uh, maybe see if we can make some, some partnership this year between Bug Bounty Village and CTBB and see if we can get the editing Um, you know, and, and get them on YouTube because I think there's a lot of hype surrounding DEF CON on these and there's a lot of FOMO if you didn't get to make it to a specific talk, something came up, you know, whatever. And then you want to capitalize on that, you know what I'm saying?
+
+[00:49:50.42] - Harley Kimball
+100%. 100%. We want to get it out sooner. So yeah, let's, let's chat. Let's chat.
+
+[00:49:55.11] - Justin Gardner
+All right, let's do it. Um, all right. Uh, up next. So we have HackBot. That's, that's pretty sick. And then you've also got to do, I mean, on the same side of the, you know, other side of the coin, right? Now we've got Ben et al. talking about AI hacking workshop, right? So that's going to be hands-on getting to know how to actually write AI-related reports that are going to get accepted in the bug bounty world, right? Stuff that, you know, how to get exfiltration out.
+
+[00:50:26.63] - Harley Kimball
+Yeah.
+
+[00:50:28.21] - Justin Gardner
+putting together a lot of what we talked about, I imagine, um, you know, similarly on that episode where post, um, Tokyo where we talked about, you know, prompt injection, you know, you need to do some action, either fetch data or infect user's account and then exfiltration, those 3 major components. So I'm really excited to see what Ben does here as he breaks all of that down and his SSRF work in the past was phenomenal. I know he's going to knock this one out of the park too.
+
+[00:50:53.17] - Harley Kimball
+Yeah. You'll, you'll see a theme going through the agenda. I'd say at least half the content this year is is heavily focused on either hackbots hacking things or us tearing apart hacking, uh, or hackbots and AI.
+
+[00:51:04.07] - Justin Gardner
+Yeah, yeah, yeah. I think that's— I mean, I think that's right on the money, man. You can't ignore it anymore. There's actually— I'm gonna throw Franz under the bus, dude. Franz, Franz, for being the best hacker, Franz is like, get your freaking AI shit together, Franz, please. Like, You know, maybe I should be begging him not to because when he went— No, No,
+
+[00:51:26.23] - Ariel Garcia
+No, No, no, not only that. Not only that, but, but he, you know, he went full recon boy before.
+
+[00:51:31.15] - Justin Gardner
+Yeah, he went full recon boy before, right? And, and tore everything up, right? And so, man, if Franz gets it, gets AI integrated properly, man, we're cooked. So I'm sorry. All right, what were you saying there?
+
+[00:51:44.53] - Ariel Garcia
+I was just saying, sorry, I, I overstepped, but I was saying not only that, but also come to Pagani Village and talk about it because He's one of the, you know, rock stars.
+
+[00:51:54.13] - Justin Gardner
+Yeah.
+
+[00:51:54.38] - Ariel Garcia
+And he didn't do a talk with us yet. So, yeah, you know, probably call out to Franz.
+
+[00:52:00.17] - Justin Gardner
+Franz, here's your call out, man.
+
+[00:52:01.21] - Ariel Garcia
+Come to DEF CON.
+
+[00:52:01.69] - Justin Gardner
+But here's, here's the conflict, guys, right here is you've got Ben's— this is the one that, that hits me right in the heart, right? You've got Ben's AI hacking workshop, but you've also gone— got Beyond Theoretical Risk: How Cash Poisoning Escalated to Critical Account Takeover in TikTok's Web Infrastructure. And if I'm, if I'm not mistaken, Is this given by the— yeah, this is given by the TikTok team, right?
+
+[00:52:26.82] - Harley Kimball
+Yes.
+
+[00:52:28.78] - Justin Gardner
+Screw you guys. That's not— you can't make talks like that overlap, bro.
+
+[00:52:33.92] - Harley Kimball
+Hey man, we do the best we can do.
+
+[00:52:36.28] - Justin Gardner
+Dude. All right.
+
+[00:52:37.98] - Ariel Garcia
+And, and yeah, and, and the, the times that we get from DEF CON sometimes is, you know, it's very complicated to make everything work.
+
+[00:52:43.63] - Justin Gardner
+I'm sorry. I'm very grateful. I'm grateful for you guys. I am. That, that is a conflict in my heart though, for sure.
+
+[00:52:49.69] - Harley Kimball
+It is. It is.
+
+[00:52:50.67] - Justin Gardner
+Okay. Um, we got a Navigating AI-Assisted Submissions with some, uh, you know, amazing representatives from all the different, uh, platforms here.
+
+[00:52:59.98] - Harley Kimball
+So, so this one, this one's really important to me that we, we continue to do each year. Like, you know, when we started Bug Bounty Village, part of the mission obviously was to create a space for, for researchers to come learn, connect, collab. But I think it was also really important to try to cut through some of the competitive landscape that a lot of these platforms have with each other.
+
+[00:53:19.82] - Justin Gardner
+Yeah.
+
+[00:53:19.92] - Harley Kimball
+And it's like, look, at the same time, we all kind of are driving towards the same mission, right? We wanna make the internet safer. We wanna introduce and provide opportunity to people that are like you and I. And so I wanted to show that all the different platforms can come together and unite and have some voice, a shared voice. And we've done that now every year. And so each year we change what the topic is. But this panel is something that Ari and I, we headhunt, we go out, we actually pitch to these platforms and we say, we want you to have a place here.
+
+[00:53:57.88] - Justin Gardner
+Yeah.
+
+[00:53:58.05] - Harley Kimball
+So it's a lot of work to get this many people from this many platforms and time zones together.
+
+[00:54:03.55] - Justin Gardner
+It is.
+
+[00:54:04.92] - Harley Kimball
+But I'm really, I'm really proud of what we've been able to put together here.
+
+[00:54:08.11] - Justin Gardner
+Yeah.
+
+[00:54:08.15] - Ariel Garcia
+And, and we are also getting the moderator, um, you know who he is, um, which, you know, it's, it's also great to have him because he's very technical. He has a bunch of experience working with programs and platforms.
+
+[00:54:22.69] - Justin Gardner
+So he's the perfect moderator for that. Yeah. Yeah. Plus we get to hear his beautiful voice.
+
+[00:54:28.57] - Ariel Garcia
+Yeah, he's so chill, you know, like he, he kind of relaxes.
+
+[00:54:31.82] - Justin Gardner
+He is. He is. Um, that's, that's gonna be a great one, guys. And shout out to you. It, it is, it is, I know, a lot of work getting all of the platforms to collaborate together. Uh, I'm, that's one of the, the things that I'm really proud of actually with the podcast is that all of the, the platforms are, are sponsoring the podcast, right? So we don't show partiality here. Um, and I really appreciate that you guys went the extra mile to get that work done here, cuz it is, it does take a lot. Um, Yeah, I think that'll be a really good one too. And I think the programs have had to change. I've discussed it with Michael Skelton a lot, you know, the guy from Bugcrowd here, Codingo, as I know him. And, you know, I've chatted with him a good bit about the way that it's affecting the landscape. You know, the platforms definitely have to make a shift and yeah, it's going to be interesting the next couple of years as the volume increases so much. You know, definitely.
+
+[00:55:27.98] - Ariel Garcia
+Yeah, it's, it's insane to see how some changes are already being, you know, added to platforms. Not, not one of the major platforms from that we know, but I have seen a platform actually charging money to researchers, which was never done before. Yeah, um, like you need to pay this minimum fee to submit something, and once you submit it, you know, maybe we refund it to you or something like that, but that tells you so much, right? Like, there is a massive problem of volume, there's a massive problem of noise, and you need to pay to get in. And, and that means you're confident enough to—
+
+[00:56:02.11] - Justin Gardner
+Exactly.
+
+[00:56:02.51] - Ariel Garcia
+You know, you know you will get the money back.
+
+[00:56:04.67] - Justin Gardner
+Yeah, Rezo mentioned that on the pod a while back, and I was like, I, I thought it was a good idea. And then people roasted me in the comments, and I'm like, guys, chill. I submit valid reports. Hate me, you know. You know, don't hate the player, hate the game, you know? Like, like, it's, it's, it's a way to feed, to feed out, you know, weed out people that are not going to submit valid reports because it's going to cost them money, right?
+
+[00:56:28.19] - Harley Kimball
+It is.
+
+[00:56:28.78] - Ariel Garcia
+Even if that is like a very low amount of money, like $50 or $100, which for some people might be a lot, by the way.
+
+[00:56:35.17] - Justin Gardner
+But if I miss—
+
+[00:56:35.92] - Ariel Garcia
+I mean, if that's the case, like, it's a filter, right?
+
+[00:56:38.32] - Justin Gardner
+Exactly. And if I, if I screw up and, and, you know, uh, heck up the threat model and misunderstood something, which is a part of my job as a bug bounty hunter, right? As it is for their job to correctly communicate their threat model. Then in my opinion, the $5 is not the big deal here. The big deal is somebody who's getting paid $150K USD to run a bug bounty program and be technical and be in the weeds and look at my report just wasted 2 hours of their time telling me my report is bullshit, you know? So it's—
+
+[00:57:12.98] - Harley Kimball
+I don't know, man. I think it's— I personally think it's a can of worms. I think it's, you know, a little risky because then you just kind of end up in these debates of like, well, I think it is valid. And then the other side maybe doesn't for whatever reason. And it's like, how do you— do you refund the $5 submission fee? Do you not? Like, it's a little weird. And then I don't really know. I mean, people might just treat it as a slot machine. They're like, look, I'll put $5 in 100 times. That's a great point. If I get one bounty, like, yeah, that's a great point. So yeah.
+
+[00:57:43.78] - Justin Gardner
+Yeah, there are some great— I mean, increase in overhead is a great point. Uh, financial, um, difficulties, right? With, okay, now I'm taking money from you, not just paying out. Right. Uh, all of that is super complicated. So there's definitely some catches to it. Um, I'm looking at the lineup and I'm thinking, okay guys, we can't actually go through every single one of these. You know, speakers, but I cannot skip the next 3, uh, for sure. So we've got Drop, our boy, uh, who actually has done, uh, a great talk that's in the Critical Thinkers tier, um, on AI, um, saying, uh, with his talk on AI Nightmare: Hacking at Zero Hour, um, that's definitely going to be amazing. And then this one is a very interesting one to me. Chris Holt, right? Flying Toasters OG. Michael Skelton, Codingo OG. A redacted history of this hobby.
+
+[00:58:35.48] - Harley Kimball
+If you know, you know, man.
+
+[00:58:37.40] - Justin Gardner
+That, that is going to be, that is going to be a really, really sick one.
+
+[00:58:43.26] - Harley Kimball
+Well, I think this is, it's, I think these people are the right people for this, right? Because they've been in the industry for what, since it was pretty much conceived. And so, and they've, they've kind of ran between the two of them. They've gone both sides.
+
+[00:58:57.23] - Justin Gardner
+They've seen, yeah.
+
+[00:58:58.01] - Harley Kimball
+They've seen the platform management side. They've been researchers themselves at some point submitting bugs. So like, yeah, I think that this is, uh, it's going to be powerful.
+
+[00:59:08.30] - Justin Gardner
+For sure. For sure. Um, then we've got Alex Brummans, uh, from Yes We Hack, uh, talking about cache key injection. I read the abstract for this one. Very interesting. I'm going to just, uh, read this to you guys. Um, cache poisoning research has long centered on unkeyed input injection. Right? The next cache poisoning vulnerability may not come from unkeyed input, but from what is mistakenly included in the cache key itself. And I'm just sitting here trying to like conceive how that could possibly be. And I know Alex is going to knock it out of the park with this, but that was a really good hook, I thought, in that abstract.
+
+[00:59:49.05] - Harley Kimball
+Yeah. Absolutely. He, he did a talk about prototype pollution. Right.
+
+[00:59:53.96] - Justin Gardner
+Um, yeah, I believe—
+
+[00:59:55.57] - Harley Kimball
+or that was BitK. That was—
+
+[00:59:56.76] - Justin Gardner
+no, that was BitK. That was BitK. But dude, the Yes We Hack team is stacked, bro. They've got some good researchers, man. They've got some really good ones. Um, we've got, uh, you know, signature malleability and replay attacks in EVM. We've got Inti, uh, another OG legend talking about hacking human-in-the-loop systems. Um, which I think that's such a beautiful alignment for him because of his hacking style. He's just the most creative hacker that I've ever seen. Right. So being able to integrate that like convincing human, you know, aspect to it, very valuable. I think he's going to knock that out of the park and I'm glad to see him back, you know, doing some stuff publicly in the bug bounty world.
+
+[01:00:41.36] - Ariel Garcia
+Yeah. He's also a magician, by the way.
+
+[01:00:43.05] - Justin Gardner
+Yeah. Yeah.
+
+[01:00:44.36] - Ariel Garcia
+He makes magic.
+
+[01:00:45.34] - Justin Gardner
+Seriously.
+
+[01:00:45.80] - Ariel Garcia
+Um, but yeah, and on top of the bug bounty hunters that are like old school, Uh, we have some very new talent. I mean, I would say very new in, in, in the bug bounty industry maybe, but we have so much of these new folks. Hacking AI, um, a lot of those are members of the BT6. Um, yeah, we have Joey Mello, um, we have Atz Dawson, uh, we have Mike, um, we have a lot of these folks that are amazing.
+
+[01:01:11.67] - Harley Kimball
+And—
+
+[01:01:12.17] - Justin Gardner
+Yeah, where is that, where is that, uh, panel that that he's on. Where?
+
+[01:01:18.57] - Harley Kimball
+Right there. Bots, Bounties, and Boosters.
+
+[01:01:20.67] - Justin Gardner
+Oh yeah, right here. Yeah, this is gonna be great, man. And Ben's moderating that. Oh my gosh. Yeah, that is gonna be such a great one.
+
+[01:01:28.15] - Harley Kimball
+Essentially, we have BT6, not, uh, moderated by non-tech, doing a talk on, on AI. What can go wrong?
+
+[01:01:36.09] - Justin Gardner
+That's gonna go so beautifully.
+
+[01:01:38.98] - Ariel Garcia
+Definitely intended to have these, you know, balance of, of you know, bug bounty hunters and, you know, people that are kicking ass now in the industry, especially with AI, which is a hot topic. And then you have some, you know, lame-ass speakers. If you go down that line, you'll see that Sunday I will be doing a talk.
+
+[01:01:58.00] - Justin Gardner
+Oh, what is this? Is this Ari? Oh, what the heck?
+
+[01:02:01.67] - Ariel Garcia
+I promise it's not a— I promise I'm not cheating myself into a talk. Maybe I am, I don't know. You will never know, but We are adding a quick walkthrough, the DEF CON challenge coins. We have been doing these challenge coins for the last 5 years. So even before Bug Bunny Village, at the time we were with HackOne, we used to create these and I always created these challenges. And it's so rewarding when you see the people actually cracking the code and figuring out. And, and also it's super rewarding when you— someone comes to you and they are like overthinking it so much, dude. And they are like, oh, I did this and I like wrote a script. And I was like, you just needed to Google this, you know, thing. It's so funny to see that. Like last year, for example, we made like a triangle coin. It was gold and it had a bug. The cipher was the gold bug cipher.
+
+[01:02:59.63] - Justin Gardner
+Uh-huh. It was like I was giving you hints all along, you know.
+
+[01:03:03.48] - Ariel Garcia
+And, and, and this guy came to me, it's like, I did all these things, and like, and the 3 hours talking to me, I'm like, dude, you're overthinking it so much, you know. It's like, and that is so rewarding. So the idea is just to, you know, do a quick walkthrough, explain the process, and, and go through the new challenges. Because, you know, AI is now— is kind of killing a lot of these things, right?
+
+[01:03:24.30] - Harley Kimball
+Right.
+
+[01:03:24.48] - Ariel Garcia
+If you just do like a, like a ROT13 or like a super easy cipher, you are like literally taking a picture of the, of the coin and then putting it into the AI, whatever you use, and it will already give you the answers. Spit out the flag.
+
+[01:03:40.98] - Justin Gardner
+Wow.
+
+[01:03:41.84] - Ariel Garcia
+Yeah, it breaks the whole, the whole, you know, the whole idea. So this time I had to get very creative and I went into some cool random stuff that, um, I hope it came out very, very good in, in the coin. Uh, we had to make the coin bigger this time because otherwise it might be too small to read. And boy, those are heavy.
+
+[01:04:03.73] - Justin Gardner
+Those are—
+
+[01:04:04.94] - Ariel Garcia
+I'm sure those are heavy boxes to move around.
+
+[01:04:07.82] - Justin Gardner
+I've got a box. I've got like a, you know, uh, you may call it like a 12 by 12, you know, inch box that has all of my, uh, challenge coins in it. And it's like, it's like 30, 40 pounds, you know, from all of the live hacking events. I'm like, oh my gosh, it's crazy.
+
+[01:04:25.34] - Harley Kimball
+So, story time. We always have these crazy challenge coins that Ari has built for DEF CON in years past. When we would run 702 in Vegas, we would typically ship those coins to the 702 venue, which is like HyperX Arena over at the Luxor. We have to find a way to get them to DEF CON. And dude, they are so heavy. And Ari and I had to take them from one venue to another, and we're like trying to get them from like one room to a different room, throwing them into an Uber. The Uber driver's like, what are you doing? I don't want all this in my car.
+
+[01:05:01.42] - Justin Gardner
+Why are you loading up loot into like, you know, freaking treasure pirate ship loot into my car?
+
+[01:05:09.15] - Harley Kimball
+If we couldn't find an elevator, we would like have to take this whole other like route, like Dude, so many stories of, you know, 100-degree challenge coin expeditions in Vegas.
+
+[01:05:20.94] - Justin Gardner
+Jesus. Yeah, absolutely, man.
+
+[01:05:22.63] - Ariel Garcia
+But it was fun.
+
+[01:05:23.57] - Harley Kimball
+They—
+
+[01:05:23.96] - Justin Gardner
+that— you guys, you guys doing, doing the work out there, really, uh, getting all that done. I appreciate that. Um, so anyway, all of that, I've— we've done it. We've shouted out a bunch of talks. Uh, the last one that I'll do is Beyond Normalization. Uh, this is from Ryan Barnett and his daughter Izzy. They did a really awesome talk on this last year, and they have brought it even further this year. And one of the things I always love about this is they always tie in tooling as well. So you'll see, you know, PRs to Burp tooling and Kaido tooling expanding this Unicode attack surface. So that's definitely going to be a good one. And that'll bring you guys, you know, I think that's the rough Itinerary.
+
+[01:06:10.42] - Harley Kimball
+Well, you gotta talk about Kaido, man. We have Kaido represented here as well, right?
+
+[01:06:14.90] - Justin Gardner
+No, we will, we will, we will. So that, that's the one that gets you guys through Friday. Okay. Saturday. I mean, we've just gotta, I mean, I think we just gotta rattle these off for Saturday, man. I don't know that we can go here and do all of the same ones that we just did for Friday, but Kaido of course is doing a talk. Um, this is going to be 11:30 on Saturday. Um, Disloppify Your AI Needs a Proxy, talking about how AI, integrating that with your proxy and why that's a winning combination, right? Rather than just letting the AI curl stuff directly, right? So checking that out. And one of the ones I'm really excited for as well is this one right here at 12:30. This is Better Bug Hunting on AI Products by John from the Google VRP program. Um, just talking about the kind of bugs that will get you accepted reports with Google in the AI realm and which ones affect safety and abuse, right? Which is one of, uh, John's areas under, under Google VRP. So that's going to be an excellent one as well, for sure.
+
+[01:07:18.05] - Harley Kimball
+Yeah. And Sam Irby did one in the past.
+
+[01:07:20.86] - Justin Gardner
+Um, or Irby Sam.
+
+[01:07:22.55] - Harley Kimball
+And yeah, he, that was, that was a really, really awesome talk. So, uh, I imagine John's going to kill it here.
+
+[01:07:29.59] - Justin Gardner
+Yeah. Some gzip thing too. Oh, that was such a crazy talk now that I'm thinking back through it. I love how Sam just like hyperfixated on, no, we can get XSS here. We will get XSS here. That's, that's lovely. Um, yeah, so just a couple other, um, just sort of running through this for you guys. Definitely you guys need to go and check out the link in the description. Um, look at the agenda for 2026 for Bug Bounty Village, but, um, just hitting some of the highlights. Uh, Ads has also got one, Exfil Everything, a Year of Stealing Data from AI Agents. We've got the panel that we talked about with Ads and Victor and Joey, Bots, Bounties, and Bullshit. That's definitely going to be an amazing one. Munke is presenting some research as well, AI Cutting Both Ways. Ryan Bonner again, Skill Issue. These are— oh, Katie right here talking about using rules to detect AI slop for bug bounty. All of these are going to be amazing talks. check out the link in the description, agenda-2026@bugbountydefcon.com. And that's going to be— it's going to be an amazing lineup. So I've given you guys some of my thoughts on the lineup. I would love to hear which you guys end up hitting. So if you guys want to drop it in the Discord, which talks you're going to go to, that'll probably help some of the other people, some of the less planner types, as they go into their Bug Bounty DEF CON experience.
+
+[01:08:55.68] - Harley Kimball
+By the time this is launching too, it might be in Hacker Tracker. So the cool thing about Hacker Tracker is you can, you know, custom build your own agenda. Um, so all of this should be there. If it's not by the time this goes live, it definitely will be, you know, by the time the con starts. So feel free to map out what you want to go to and check that off in Hacker Tracker.
+
+[01:09:14.22] - Justin Gardner
+Nice. Oh, is this, this is the, uh, this is how you built Zenoptic. Oh my God.
+
+[01:09:18.85] - Harley Kimball
+This is the CTF walkthrough. So, you know, we're gonna, we're gonna close the CTF at 10 AM. on Sunday, and then 2 hours later, you know, that gives us 2 hours to wrap up triage, figure out the winners, all that stuff. The CTF team who built it, which is a company based in Dubai called CTF AE. Yeah, they're insane what they can do, man. Um, and so they're going to be in person giving a talk, a walkthrough of some of these challenges, how they built Zenoptic, uh, and then we'll do an award show in person where we give out, you know, PS5s and all that good stuff. So.
+
+[01:09:49.31] - Justin Gardner
+Really?
+
+[01:09:50.35] - Ariel Garcia
+Dang.
+
+[01:09:50.69] - Justin Gardner
+All right, dude. Wow. This is gonna be awesome. I, okay. I'm gonna just breathe for a second and then we need to pivot away from this, Harley, because I, I can't deal with the FOMO right now. I'm gonna close this tab. Let me close this tab in my browser. Um, amazing lineup. Gonna be a great year. Let's, let's shift a little bit away from Bug Bounty Village. Did you guys have any last shoutouts that you want the people to know about Bug Bounty Village before we jump into some of your HackBot stuff, Harley?
+
+[01:10:18.30] - Harley Kimball
+I don't— Ari, do you have anything?
+
+[01:10:21.38] - Ariel Garcia
+No, I mean, I won't name every single one of our sponsors because I don't want you to, you know, put those in your, in your podcast. But just want to say, you know, we couldn't be doing this without the help of all these sponsors and all the volunteers we have. Uh, so massive thanks to everyone. Uh, again, it's a full-time job, uh, on top of our full-time jobs. Um, so, you know, thanks so much and, and Yeah, I hope you enjoy it.
+
+[01:10:46.97] - Justin Gardner
+If you guys, if you guys want to see a list of people that really care about the bug bounty community, right, you can look at the sponsor list of Bug Bounty Village, right? That's a good place to see it. I like, I like that. Um, all right. Um, with that, Harley, let's, I, I would be remiss if I didn't grill you a little bit on what the heck is going on in the hackbot world for you right now, because all of a sudden out of left field. you start, you know, knocking me off the leaderboard. And I'm displeased. I cannot say that I am not displeased. So what is going on here, man? What was the impetus for this? And can you give any tips to the people on how you actually made this happen?
+
+[01:11:29.10] - Harley Kimball
+Yeah, yeah. I mean, I'm not gonna give away too much, right? Because I think secret sauce is important. But, but I definitely do.
+
+[01:11:36.27] - Justin Gardner
+But I definitely do, you know, Well, I'm a big advocate of giving away tips on the pod, but we, we had a whole episode where we talked about this. You can't talk too much about the HackBot stuff because there's no do friction anymore.
+
+[01:11:51.19] - Harley Kimball
+Yeah.
+
+[01:11:51.35] - Justin Gardner
+Right? Before it was like, I could tell you all my secrets and you still wouldn't go do it. Some of these people, right? You know, they just wouldn't do it. They wouldn't fail enough. You know, they wouldn't push through the amount of times you have to fail in order to find a bug. But now you could just tell a HackBot, go fail. And then you just write, grab the transcript of Justin's podcast with Harley, rip out everything that he says and go do that. And then it will actually do it. So with that being said, Harley, I will, I mean, as much as I would like you to share, please have caution, but also do what you do and love the community and serve the community. Right. So yeah, please hit me, man.
+
+[01:12:28.44] - Ariel Garcia
+Yeah, man.
+
+[01:12:28.77] - Harley Kimball
+I mean, I don't, I don't know where you want me to start, but like, uh, I, I started building this hack pack. I can tell the story, I guess, about how it kind of started to So January-ish, you know, I've spent the past few years building all kinds of apps and vibecoding all kinds of stuff.
+
+[01:12:41.85] - Justin Gardner
+Yeah.
+
+[01:12:42.05] - Harley Kimball
+We talked last year about some things I've built. So I already had some like recon automation work done that would do distributed scanning across like DigitalOcean VPSs and stuff like that. So then in like January when Cloud Code really started to like be a thing that was super powerful, and then February era when like Opus 4.6 dropped, I started using it as like a copilot and hacking, and I was just finding bugs at like insane scale, right? I think we all had that moment in like February where we're just like, what is happening right now? So when that happened to me, you know, it was like a Friday night when I kind of first discovered it. I ended up hacking the whole weekend. I submitted like a dozen reports in a weekend, and that was insane. Like the only time I'd ever done that before is when—
+
+[01:13:29.81] - Justin Gardner
+Yeah, for real.
+
+[01:13:30.25] - Harley Kimball
+I sat down for like 2 weeks on PTO and just went crazy, right? So, the fact that I could do that on the weekend was mind-blowing to me. And so, I actually had like a party to go to for a family member on like Sunday, and I didn't want to go. And I've heard Douglas talk about this, about like it costs you money to hang out with your friends, you know?
+
+[01:13:51.73] - Justin Gardner
+Yeah.
+
+[01:13:52.56] - Harley Kimball
+And that's what it felt like. And so, I was like, how do I keep going? Claude running when I'm not there, and that's when I started kind of just exploring like well how do I keep this going? How do I keep it going? And it just turned into this like rabbit hole where I saw this opportunity where a lot of hackers weren't doing this yet, and I felt like it was a short window. So I started to just kind of put together like a simple loop, and it just was my methodology and how I approach things and how I think about things. But building it out into a bunch of agents, and you know. trying to just kind of learn by trial and error. So it started with like 2 or 3 sub-agents where maybe I'd have an agent that was focused on, you know, recon. And then I had an agent that was focused on, you know, they called it like a generalist agent that would do kind of like your general work. And then you would have an escalation agent whose whole purpose was to take data from the generalist agent, try to escalate it, right? Like pretty much now is standard concept stuff. In February it wasn't. And so I was just like trying to figure it all out as I went.
+
+[01:14:50.26] - Justin Gardner
+Awesome. Yeah. Well, I think many people architect these things differently too. Uh, Harley, for example, the, the, the, the AI agent that has just kicked out probably 30, 40 valid bugs for me since I started running it is literally just, literally just Claude code. And I give it like a hook into Kaido and I say, you know, look at the API file, you know, look at, look at the, for API endpoints in the JS files. and try to hack it, right? It's like, it's so— and surely there, there, I've made some, some skills and some minor improvements on it. But like, I think you get most of the way with like, you know, just that basic component, right? And that's how I've got mine. But you've got yours broken out into different agents that are collaborating together.
+
+[01:15:37.27] - Harley Kimball
+Yeah, at this stage, I've got at least 30 different agents that I've built that all have specialty tasks. And I've kind of broken them out into various domains because as I started to do this and scale it, you know, I needed a way to triage these reports as well, right?
+
+[01:15:53.97] - Justin Gardner
+Right.
+
+[01:15:54.22] - Harley Kimball
+Like, I don't want to spend all my time triaging. I don't have time, so I don't want to spend time triaging. So I needed ways to actually break that out. So I've got like 30 agents, you know, maybe 15 of them are part of what I consider the ATT&CK domain where they're doing things like actually going out, like, you know, client-side specialists, JavaScript mining, you know, server-side specialist, APK decompiler, like different agent specialties that do these things in kind of like the ATT&CK domain, and that can mix some recon work as well. But then you also have like the triage domain. So like your validation agent, your deduplication agent, like all these different—
+
+[01:16:30.44] - Justin Gardner
+That's essential.
+
+[01:16:31.43] - Harley Kimball
+Yeah, like these components, right? And so it was just crazy seeing how it evolved over time and like, Thinking like, okay, what's the challenge that I need to solve right in front of me today to keep this running? And it just kind of kept building and building and building. Um, you know, I—
+
+[01:16:45.43] - Justin Gardner
+Very cool.
+
+[01:16:46.19] - Harley Kimball
+One, one special hook that I, and I think I've heard you guys talk about this before, but if you're not doing this yet, um, I highly recommend adding, well, I kind of recommend—
+
+[01:16:57.10] - Justin Gardner
+Say it, Harley. Say it.
+
+[01:16:58.14] - Harley Kimball
+Adding, uh, an exit hook when your agent wants to stop, right?
+
+[01:17:02.72] - Justin Gardner
+Yeah.
+
+[01:17:03.39] - Harley Kimball
+Telling it, hey, you missed something, keep going. Just gaslight it. And it'll push it and keep going. But I did have a safety issue that that caused at one point.
+
+[01:17:12.76] - Justin Gardner
+Really?
+
+[01:17:13.19] - Harley Kimball
+And so, you gotta be very careful. That's something that I spent a lot of time with actually a few months back, which is like, how do I factor safety into this whole thing?
+
+[01:17:22.35] - Justin Gardner
+What do you mean?
+
+[01:17:23.47] - Harley Kimball
+Well, I'm not seeing a lot of people that really think about impact. If you have a bug that you know, you can self-register yourself to a different customer organization or something like that. And then now you own this account, you have permission to access it. Claude or whatever agents you're using might think, oh, I can start modifying data to test, you know, for data things. And that could cause a problem, right? Okay.
+
+[01:17:45.44] - Justin Gardner
+So that's a good, that's a good note.
+
+[01:17:47.22] - Harley Kimball
+When you're running autonomous systems like this, I, I think that people are really going to put themselves in a spot where they're going to start doing things that you know, can land them in trouble for, in bug bounty, in the bug bounty ecosystem, right? They are responsible at the end of the day for what your bot does.
+
+[01:18:01.92] - Ariel Garcia
+Yeah.
+
+[01:18:02.11] - Harley Kimball
+And I haven't heard enough people talk about how do you validate that the session that you're operating in is actually an approved session to operate in, right?
+
+[01:18:10.52] - Justin Gardner
+And— Great point.
+
+[01:18:11.39] - Harley Kimball
+And so I've been spending a lot of time trying to work that stuff out. And I don't know, I think, I think it'd be really interesting to hear how other people are solving that problem. And I'm not sure if people, you, Even caring about it right now.
+
+[01:18:22.80] - Justin Gardner
+Yeah.
+
+[01:18:23.19] - Harley Kimball
+Sorry.
+
+[01:18:23.39] - Justin Gardner
+I'm just spacing out thinking, shit, I need, I need to go. I need to go deal with that. That is, that's a great point because that, that is your account now. Right. So, and, and so like, okay. Yeah. It's got like my email attached to it.
+
+[01:18:36.31] - Harley Kimball
+Right.
+
+[01:18:36.61] - Justin Gardner
+Like surely this is a test account.
+
+[01:18:39.89] - Harley Kimball
+No.
+
+[01:18:40.53] - Justin Gardner
+No. And if you're just gaslighting it continually, like go further, go deeper, go further, go deeper, go further, go deeper, then naturally it's going to digress into That, right?
+
+[01:18:48.52] - Harley Kimball
+Exactly.
+
+[01:18:48.98] - Justin Gardner
+Um, yeah. Wow. Very interesting. Okay. So you, you've largely built it around these various agents that have different jobs, and I guess you have an orchestrator agent that will kick off the various subagents. And do you have multiple loops running at, at, at the same time, or are you doing one master loop and then, you know?
+
+[01:19:09.15] - Harley Kimball
+Yeah. So I, I have essentially a master loop that controls it, at least per program. Um, and it, it gets orchestrated across like a fleet of, of systems that I'm running. And so, um, essentially there's in, in the ATT&CK domain, triage domain, there's like a brain domain that actually decides, looks at the different gadgets that have came in, the leads that have came in and decides like, where do I wanna route that work item? And so which agent picks it up, which model uses it, where it's gonna actually land in priority for the queue. So there's a lot, there's a lot of work there.
+
+[01:19:37.88] - Justin Gardner
+Um, there is that, that sounds like a, pretty in-depth, um, that sounds like a pretty in-depth architecture. So you, you are not going on the, on the handy, handy Claude code and let it run. This is a more architected system I see. And, and I did kind of want to go back to one of the things you said before when you were talking about your HackBot find, which is store it in the HackBot DB, unquote, right? Quote unquote there. So, so what it seems to me is that you have a database, and feel free to cut me off whenever here, but you have a database that keeps track of various API endpoints and parameters and that sort of thing that you use to hack on, right? So when the bot registers, uh, you know, a specific JS endpoint or, or, or something that it pulled up from JS, it, it like will put it in that database and then another agent will pop it off and try to hack it. Or how does that work?
+
+[01:20:29.52] - Harley Kimball
+Yeah, man. I mean, I'm gonna pause here. I'm starting to give away too many secrets, I think. But I think you've already connected the dots, right? Like, you get a good idea of how this is working behind the scenes.
+
+[01:20:39.25] - Justin Gardner
+So, okay. And then the last one, guys, I, I, maybe he doesn't want to, he doesn't want to go back, but it's already on the record. Residential proxies. That was a very interesting point. Um, seen that problem time and time again. Not an easy solution, but that is one of the ones where it's like, you know, you can tell them, hey, go find residential proxies, but that's not a super easy thing to set up. So that is a good, a good shout out there as well.
+
+[01:21:03.97] - Harley Kimball
+Yeah, I would say just in general, think about what tools you can give your bots, right? There's, there's tools that you use as a human, whether that's, you know, checking your email, receiving SMS OTPs, right? Things like that. How can you empower your agents to also have those same tools so you don't have to be the bottleneck anymore?
+
+[01:21:21.46] - Justin Gardner
+Right now, that's a great, that's a great generalization. All right, man. Well, thank you so much for coming on and talking about this. I won't push you too much further because I know that It is a little bit difficult in this hackbot era. Um, but as, if I, if I may ask you this one thing, as your, as your techniques age, if you wouldn't mind letting us know, you know, when you're like, okay, hey, this one technique, I've been using this for 6 months. I'm ready, you know, to, to give this out to the pod or something like that. You can just shoot me a message and I'll, I'll, I'll say, hey guys, we got a message from Harley. He says do XYZ, right?
+
+[01:21:54.72] - Harley Kimball
+Yeah.
+
+[01:21:55.27] - Justin Gardner
+And then we'll, we'll, we'll announce it moving forward and, and keep the community, you know, fresh on, on the latest hackbot techniques.
+
+[01:22:03.55] - Harley Kimball
+Yeah. Yeah, absolutely.
+
+[01:22:04.47] - Justin Gardner
+Yeah.
+
+[01:22:04.68] - Harley Kimball
+Yeah. All right.
+
+[01:22:05.81] - Justin Gardner
+Awesome, man. Um, Ari, Harley, thank you guys so much for coming on. Thank you guys so much for the work you do at Bug Bounty Village. And damn it, I wish I could say I'll see you there, but I won't see you there.
+
+[01:22:16.51] - Harley Kimball
+No.
+
+[01:22:18.35] - Ariel Garcia
+Ah, dude. Well, you will miss me. You will be missed. Um, and yeah, I hope next year you'll be there, um, with another banger, uh, presentation.
+
+[01:22:27.26] - Justin Gardner
+Thanks, man. I appreciate that.
+
+[01:22:28.77] - Ariel Garcia
+But yeah, yeah, we, we always appreciate you and, and, you know, the talks and everything, investing your time in the Village. Highly appreciate it. A lot of people were making the huge lines for you, so definitely hope you can be back next, next year.
+
+[01:22:41.39] - Justin Gardner
+Thanks, man. Thanks, y'all. That's the pod. Thanks, guys.
+
+[01:22:44.92] - Ariel Garcia
+Thank you, folks.
+
+[01:22:46.52] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more Critical Thinking content, uh, or if you wanna support the show, head over to ctbv.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild if you're a full-time hunter. It's a great time. Trust me.
+
+[01:23:08.52] - Ariel Garcia
+All right.
+
+[01:23:08.86] - Justin Gardner
+I'll see you there.

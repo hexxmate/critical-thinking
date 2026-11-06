@@ -1,0 +1,530 @@
+Episode 153: Hacking the Robots of the Future: Hardware, AI, and Bug Bounties with Matt Brown
+Source: https://www.criticalthinkingpodcast.io/episode-153-hacking-the-robots-of-the-future-hardware-ai-and-bug-bounties-with-matt-brown/
+======================================================================
+
+Title: Transcript - Thu, 18 Dec 2025 17:05:40 GMT
+Date: Thu, 18 Dec 2025 17:05:40 GMT, Duration: [01:16:52.20]
+[00:00:01.04] - Matt Brown
+And then use those APIs to move, to physically move the camera around.
+
+[00:00:05.32] - Joseph Thacker
+crazy is that, man? You're just like, move the camera and then you wait and all of a sudden it goes and you're like, oh, my.
+
+[00:00:35.02] - Justin Gardner
+all right, hackers, if you're really looking to take the deep dive this year, I really recommend you check out the critical thinkers tier in the CTV Discord. Okay? This is the place where we are doing hack alongs. AMA's giving you exclusive content that only the inner circle has access to to boost you as a hacker. Master classes, you know, custom interviews with extended interviews with guests, that sort of thing. It's a great way to support the pod and it's a great way to invest in yourself as a hacker. And it's a tax write off for sure. So give it a shot. Check it out. CTB show. Discord will help you join us. Thanks.
+
+[00:01:10.18] - Joseph Thacker
+Hey, what's up y'?
+
+[00:01:11.01] - Justin Gardner
+All?
+
+[00:01:11.70] - Joseph Thacker
+Welcome back to critical thinking. Today we have one of our dear friends and in my opinion, one of the greatest experts from a hardware hacking perspective, Mr. Matt Brown.
+
+[00:01:22.42] - Justin Gardner
+I want to give him a round of applause right here for you.
+
+[00:01:25.06] - Joseph Thacker
+Exactly. And in normal fashion, as Justin likes to do, we'll start straight with the bug. So why don't you give us a cool bug?
+
+[00:01:33.43] - Matt Brown
+All right, thank you guys for having me on the pod. It's good to be back. Yeah. So this bug I wanted to share is, is one that I found in, let's just say an industrial control system, a little bit more or less consumer facing business facing kind of a target. And so this piece of hardware that I got sent to do some bug bounty hunting on was effectively a device that allowed you to remotely view the controls of this very large, expensive industrial control system. And so there was this protocol in it that would reach out to the Internet from the device. And so the first thing I do on any kind of device that's communicating over the network, I'm an old school network Wireshark guy. So I love to open up Wireshark, monitor all the traffic that's going on between the device and the Internet. And I was seeing some interesting UDP data. So a lot of times maybe in the web hacking world you're used to just, you're kind of standard IP tcp, you're probably got TLS and then on, and then inside of that TTLs session is HTTP. Well, in the IoT world you get a lot of like custom rolled UDP protocols. And so I was actually seeing some, some clear text data kind of going through that stream. That gave me some intelligence, let's just say it gave me some, some information about this device and a session id. And then I started poking into the mobile app. So I always like to like to go down multiple avenues for these IoT targets. And oftentimes there's some kind of a mobile app or maybe a thick client that will interact with the cloud and kind of sync data down. And so I started digging into the mobile app, did kind of the standard unpinning. So I got Frida in there, modified the app and got it unpinned so I could see the web traffic from the mobile app. And I found there was this, let's just say a incremental session token that was more or less being used to, to connect to this remote session to remotely view this, this piece of industrial equipment.
+
+[00:04:04.43] - Justin Gardner
+Right. Holy.
+
+[00:04:05.38] - Matt Brown
+And it wasn't exactly a UNIX timestamp. Right. So there was some part, you know. You know, it was, it was close.
+
+[00:04:12.50] - Justin Gardner
+To that, but it wasn't exactly a UNIX timestamp.
+
+[00:04:16.11] - Matt Brown
+Well, well, it didn't line up with the exact date. Right. But you could see that it was incrementing at the level of like a mill, like, like the integer at the millisecond kind of level or the second level, I forget.
+
+[00:04:27.37] - Joseph Thacker
+It was a while, Matt, they changed that. It wasn't the actual UNIX epoch. They added a few days to it.
+
+[00:04:32.85] - Justin Gardner
+You know, that's pretty much encryption in my book, you know.
+
+[00:04:35.68] - Matt Brown
+Yeah, yeah, yeah. Well, yeah. And, and especially in the hardware and IoT world, when you start to dig in some of these devices, the, the security model is like obscurity, Right? Security through obscurity sometimes. So, so when I had my device, I was able to initiate a session and I was able to see that session ID of my device. What was also interesting is that the whole fleet operated on the same incremental. Like the server side was handing out the session token. And so I was able to just initiate a session on my device and then either go walk backwards or forwards from that session id and I was able to remotely connect to other remote sessions and monitor other people's industrial control systems.
+
+[00:05:28.98] - Justin Gardner
+So that is nuts. We've all heard of incremental idor. Not gonna lie. Incremental session token is one that I haven't heard before. That's nuts. And you didn't even call it.
+
+[00:05:41.18] - Joseph Thacker
+I was a bug there. Because obviously it takes man in the middle. But they were also in plain text, right? On udp.
+
+[00:05:45.86] - Matt Brown
+Yeah, yeah. Yeah, that part was kind of wrapped up in, let's just say, another finding that I. That I reported, and that ended up being a dupe. And, yeah, there's a whole bunch of stuff that happened with the result of this find.
+
+[00:06:02.75] - Justin Gardner
+Well, I kind of wanted to ask about that. So, I mean, this is a hardware bug bounty. They sent you the hardware device, right?
+
+[00:06:09.04] - Matt Brown
+Yes.
+
+[00:06:09.39] - Justin Gardner
+You start hacking on it. What are the bounties? Like, how do they compare to web?
+
+[00:06:17.24] - Matt Brown
+Yeah, they were significantly better than their kind of standard program. So this target had a public program. I find this is the case a lot of times there's like, a public program, and then they have a private hardware program. And I would say the bugs were about 3x, whatever the categories of the web was.
+
+[00:06:40.12] - Justin Gardner
+That's what I like to see. We were talking about this a little bit before the episode, before we started, you know, recording. But, like, there. There have been some programs out there where they're like, throw a hardware device at us and they're like, you know, it's either like 1x their normal bounties. Right? So just their normal bounties or sometimes even lower. And I'm like, guys, no. Like, I'm not gonna. You don't understand how much time this takes, you know? So it is good to see a little bit of a multiple there where you get a premium for that unique skill set.
+
+[00:07:09.57] - Joseph Thacker
+Now that we're past the first bug, why don't you intro Matt for us?
+
+[00:07:12.86] - Justin Gardner
+Okay. All right. All right, guys. You guys know Matt. We did an episode with Matt in the past, but if you haven't caught that one, Matt Brown is like, I don't know, man. I'll tell a little backstory here as well. Matt lives close to me in the United States, and we met up, and I was trying to get him a while back to, like, join the Critical Thinking brand because I love his product so much. His hardware hacking videos are unbelievable. They've been taken off on YouTube left and right. They are just the kind of technical, you know, quality content that we love here at Critical Thinking, where you're actually getting down in the weeds of it, talking about the details. And, I don't know, I guess as somebody who considers myself, like, you know, intermediate, beginner, intermediate in hardware hacking. Like, the stuff is advanced, where I'm learning a lot, but it's approachable enough to help me grow, you know? Um, so it's really, really good. And that, I mean, that is a very hard, you know, needle to thread there, in my opinion, like, being approachable. But Also like, clearly, you know, advanced. Um, so I love Matt's, Matt's hardware stuff. And yeah, he's, he's been doing some, you know, some work penetration testing off the back of that. And. And yeah, I don't know, man. I guess I just. We just vibe. So. So I'd love to have you on the podcast to talk about hardware hacking stuff. And that last episode we did was one of my favorites that we've recorded.
+
+[00:08:37.21] - Matt Brown
+Well, thanks. Yeah, it's good to. Good to be on again.
+
+[00:08:39.76] - Justin Gardner
+Yeah.
+
+[00:08:40.40] - Joseph Thacker
+Yeah. So I. The main vision or goal for this episode, I think that the reason why I was so excited to have Matt on is we have just seen since he was on last, a huge explosion of humanoid robots. Right. You know, they're not in everybody's home yet, but you see marketing material for them literally everywhere. On every social media platform people are talking about it. There's like the little creepy one with like the weird eyes that came out recently. There's already been multiple, like, take over every robot vulnerability found. And I think that there's something from like a security research perspective that is much more visceral when it comes to a hardware device in your home. You know, I think Justin on the Halloween episode had an insane hardware related finding where, you know, a device could be listening to you in your home. But it gets even more real. I mean, obviously having like an iRobot vacuum that's like spying on you and going room to room is like also pretty intense. But a robot that can actually harm you, they actually have the ability to like physically harm you or steal your things or break your things. If someone were to take over, it feels real in a way that nothing else does. Right. I don't know, maybe it's because there's movies like IROBOT or whatever that, that have come out. But anyways, I want to get mad on because I think that like just the idea of hacking the robots of the future is like such a crazy and a cool idea. And, and then, you know, there's. There's already a huge discussion to be had around hardware bug bounty hacking. And then personally, you know, I like really interested in AI in general. And so I wanted to talk to him about like two things. We're gonna get to all these topics, but the one is, you know, can you. And how would you use AI to assist hardware hacking? And then kind of the other thing is like if, if a person was just like getting into bug bounty for hardware? Because I think that hardware hacking is going to be more resilient to, you know, the hackbot takeover or whatever. I'm actually more optimistic about this. But we'll get, we can get into it later. But if someone wanted to get into hardware hacking, you know, how would they do it? And I know that's a common question for you, Matt, so I'm excited to hear all those answers. But yeah, let's, let's, let's start with, you know, where you and Justin were already at. Like, how do you kind of see the hardware bug bounty scene? Is it like better than it's ever been? Has it been like kind of declining? Like, how do you, as it, is it growing? And you know, have there been some that you've seen that have like already incorporated AI into some of the hardware devices or not? Are you getting asked about that for your cold reach outs?
+
+[00:11:07.41] - Matt Brown
+Yeah. So the hardware bug bounty scene is an interesting beast, I would say. Uh, and I think there's some things that are aligned with the general bug bounty scene in that program selection is really important. Right. You guys have experienced this. You, you know, it's always a risk to invest time into a new program because you don't know how they operate, if they're going to take your findings seriously, if they're going to shortchange you or just downgrade severity because they have budget issues or something like that. So I think there's just more risk in that, in the hardware scene because like you said, there's a lot of initial time investment that you're going to put into a hardware hacking target. And so if you roll the dice on a bad program, you're going to find out later on down the line that they're not a good fit.
+
+[00:12:07.64] - Justin Gardner
+Right.
+
+[00:12:10.85] - Matt Brown
+But there are good hardware book bounty programs out there. There's not as many public ones is what I've experienced. So unfortunately you have to kind of dip your toe in the water with one of them. And then once, once you get a couple findings under your belt, you're going to get those, those private invites, which is really helpful in the hardware scene because sometimes there are private programs out there that have a device that you can't even go buy online. Right. It might be a B2B type of a device that you can't just go on Amazon and buy this thing.
+
+[00:12:46.79] - Justin Gardner
+Right.
+
+[00:12:47.75] - Matt Brown
+Obviously for consumer facing devices you can do that. And if it's a public program. But I do think that there is an advantage to hardware bug bounty where some of these public programs, if you get one finding, especially on a specific program, you might instantly get invited to A private event, a private program. Wow, that's pretty cool. Whereas. Whereas in the web scene, I think you have to grind a lot more to get those invites, like to live hacking events and things like that. So I've talked to some people, they submitted one bug, it was a good bug, and then they got invited to an event because it was a hardware target.
+
+[00:13:30.52] - Justin Gardner
+So that's awesome. Have you, do you have any public programs that you want to shout out for the hardware hacking world that you've had good experiences with?
+
+[00:13:39.99] - Matt Brown
+Yeah, I mean, I mean, Amazon. So their program is public. I mean, they have, they have, yeah. So they have. The thing that impresses me about Amazon's program is that their description of severity is very well defined and there's a cutout for hardware. So they define the severity very specifically for their hardware targets that matches their threat model. So you guys have talked about this on the POD before. When you're interacting with a program, you want to figure out what matters to them, right? But sometimes if you're new to a program and they don't tell you what their threat model is, you just have to guess and submit bugs and then you think it's a high, they come back and they're like, that's a low. We've got compensating controls. We don't really. That's not in our threat model. And you have to kind of almost like test the target to see what their threat model is. And the thing I appreciate about Amazon and I would encourage anyone who's building a hardware bug bounty program is to just have like, it's just a simple little paragraph that they have for this is severity or this is a critical. These are the kinds of very hardware specific findings that would fall into that category and then layering down from there in the other severity categories. So that's so helpful because there's just not like you get into a situation where there's unmet expectations, right? And so like we said with hardware, it just takes longer for you to figure out that those expectations aren't aligned if you're going in blind.
+
+[00:15:19.47] - Justin Gardner
+So, yeah, that's scary, man. That's scary for normal bug bounty hunters. Right? But it's worse for hardware hackers because there's so much upfront investment. It's good to hear that you vouch for the Amazon program because they have a lot of devices too. I've also had a really good experience with the Amazon hardware hacking program. So that seems like a good place for people to start at if they're, if they're looking to kick off.
+
+[00:15:40.61] - Joseph Thacker
+Yeah, yeah. On that bug bounty metagame point, I think one thing that's worth stating is that the platforms will learn that you're a hardware hacker as well. And in fact, in the platforms you can go tag that. So a lot of times if you go edit your profile in like HackerOne or Bugcrowd or what have you, you can go in there and set like, oh, I have an expertise or an interest in hardware hacking. Please send me hardware hacking invites. And then I think like you said, once you submit a couple, the platform program owners, you know, the people at HackerOne or Bugcrowd or yes, we hack or whatever, will see that you have an interest in this and that you can actually find real vaults and then they'll start giving you those invites. So I think that's a really, really clutch recommendation.
+
+[00:16:21.57] - Justin Gardner
+Yeah, I did want to circle back around to one of those rapid fire questions that Rezo shot at you in the beginning, which was the AI on hardware devices stuff. Have you run into any of that and do you have any nuance about threat models or anything that's different in that world?
+
+[00:16:40.12] - Matt Brown
+So I haven't run into any of that in a bug bounty target. I've, I've run into some of those systems professionally and private pen tests that I can't, I can't get into, obviously. But I can say generally about the IoT and hardware industry, there's some really interesting things happening. So even before the LLM boom, let's call it, there was a push to get machine learning think, especially in security camera contest context, right? You have your doorbell, you want your doorbell to identify if a person is coming up to your front door and you want to get a push notification maybe with like a thumbnail, right, A clip. And you want it to do the AI to, you know, you don't want just motion detection, you don't want just like some leaves blow by your door to trigger this alert, right? And so I would say phase one of machine learning on hardware was the doorbell, the camera, the whatever, the thing would send all that data back to the cloud and they'd have a data center like with servers with Nvidia GPUs in it. And they would do all of their, the heavy lift on the back end and then they would send the push notification. And what people don't like about that is it takes time, right? For if somebody's approaching my property, like seconds matter, right, like in a kind of physical security context or, or some other context like that. And so phase two has been to bring AI to the edge on the hardware. Right. And so now you're seeing platforms like the Nvidia Jetson that bring kind of gpu, or you have Google's like TPU Tensor processing units that bring ML acceleration to hardware on the edge. That's low power, right? That stuff in the data center. They don't really care about, you know, conserving power. Like it's not running on battery in the data center, but you have these devices now that are running all those algorithms locally. And what I think you're going to see, and I've already seen some of this, is you're starting to see LLMs get involved with devices on the edge. I saw the other day this toy for children.
+
+[00:19:01.21] - Justin Gardner
+Oh, geez.
+
+[00:19:02.25] - Matt Brown
+That it's like, help help your kids socialize by having it talk to this robot.
+
+[00:19:10.13] - Justin Gardner
+Oh my God.
+
+[00:19:12.52] - Matt Brown
+I know this isn't a parenting podcast here, but I think we could all give some advice on why that's not a great idea. Yeah.
+
+[00:19:20.52] - Justin Gardner
+Geez. Wow.
+
+[00:19:22.84] - Matt Brown
+But in that case, now, in that case, it's moving back to the phase one model, where I'm sure what that's doing is it's got some API keys on it and it's sending your voice input. Maybe it's doing voice to text on the device, but then it's shipping that to the back end. But I'm thinking, how close are we to where they'll want to bring that locally on the device and run kind of like a local LLM on devices and then you're going to have, you know, prompt injection on hardware, things like that, where those kind of bugs. I haven't seen a bug like that yet. But I just think that if we look at what happened in the ML space with, with trying to bring ML to the edge to do like object. Object detection, things like that. I think you're going to probably see that in the LLM space also.
+
+[00:20:13.38] - Joseph Thacker
+Yeah, I. I had this exact desire this morning. I got a Tesla update to my Model Y last night and when I got in my car today and I've wanted this for a while, it said like Gro can now control your navigation in your car. So they've exposed and it was like in beta and so they've exposed some tool call in in like Groq on Tesla that that can now like control things in the car. And so like, I've been looking for this exact moment to start looking for bugs in this. Because before the groen, the Teslas was just the chat bot. Like it was just. And it had no personalization. And I still don't think it has any personalization. But anyways, I couldn't get it to work. Like, literally Grok wouldn't respond all morning in my car. So I'm kind of annoyed because I wanted to test this exact thing. Right. It's like, yeah, you're right. There are going to be prompt injection in physical hardware devices. And. And yeah, I think that toys right now could have a Raspberry PI in them that can run small models. There are some, like, really small models, like Gemma 1B and stuff that could totally have like baby conversation. Like, you know, it's not going to be good. It's not going to be able to tell you any legitimately useful information about the world. But it can say, hi and how are you? And it can imitate Elsa or whatever, right?
+
+[00:21:16.96] - Justin Gardner
+Oh my God.
+
+[00:21:17.68] - Matt Brown
+Yeah.
+
+[00:21:18.72] - Justin Gardner
+Our kids are going to start saying, certainly you're right. Oh, yeah, you know, like dad. Yeah. Like, yeah, it's going to. Going to turn them totally sycophantic or whatever, like these models. Oh my gosh, dude, that's terrifying. That's freaking terrifying.
+
+[00:21:32.39] - Joseph Thacker
+Yeah.
+
+[00:21:33.82] - Justin Gardner
+Wow. Well, yeah, I definitely think that makes sense. You know, if you've seen the trend with ML, it'll probably also hit that with AI. I'm trying to think about, you know, attack vectors for that. I mean, there could be, you know, MCP server built into the device where it's trigger triggering tool calls and stuff like that. And you know, maybe you're speaking to it and, you know, you say, hey, do this and it does it. So that, that certainly seems interesting, but I think it's just another way to interface with the device in large capacity. So I think it might. I'm trying to think about like, how. How would I actually convert this into like, you know, an actual reasonable vulnerability besides business logic. And I'm like, I guess I could say apostrophe semicolon, you know, and it's like if it's piping into a command line, you know, you could do it. But I think it'd be pretty challenging to do that verbally.
+
+[00:22:28.39] - Joseph Thacker
+Well, yeah, I put thought into this and I've always thought that you would basically record a payload. So you would work a lot with your own device. You'd have a recorded payload and so. And you would also play. Play it. Like sub. What's the word? Like humans can't hear it.
+
+[00:22:41.67] - Justin Gardner
+Oh, yeah, I don't know the word.
+
+[00:22:44.02] - Joseph Thacker
+But I know anyway, there's a word for that. Like you would. So you would play it below what humans could play or you could play it with certain to that are out of the human range. So you can still play it loud, but it would be like really high pitched or really low pitched or something and you would pre record it. And so then when you get in the car with someone's Tesla, you would play it and it would. Then it would automatically do that thing, right?
+
+[00:23:01.00] - Justin Gardner
+Oh shit. That's crazy.
+
+[00:23:03.17] - Joseph Thacker
+That's the way you pull it off or have you seen this? Matt would probably know way more about this than me. There's like things like, called like directional speakers. Oh actually I think you can transmit audio to input mics via like infrared too or something I've seen like you.
+
+[00:23:16.52] - Matt Brown
+Can do it with lasers.
+
+[00:23:17.76] - Justin Gardner
+So.
+
+[00:23:20.03] - Joseph Thacker
+Yes, you go ahead. No, you know more about.
+
+[00:23:21.79] - Matt Brown
+Yeah, yeah. So Sammy Kamkar, his work is what you'd want to look into. YouTube, DEFCON, Cox, everything. So he found that he could use a laser and you know, send audio with a laser microphone through a window and activate an Amazon Alexa device and speak.
+
+[00:23:42.79] - Joseph Thacker
+So you could record it, translate it into whatever his laser input is and then shoot it through a window towards someone's Amazon Alexa device to like trigger a. What's it called? Oh, actually, yeah, I recently heard this was. I'm not going to mention the company. There was a AI vulnerability that was reported where you could start a call with somebody that and it would open up the audio. So you could essentially enable their audio via a prompt. And so if you could put that through this laser thing through the camera, you could basically turn on a mic in their house. You could listen.
+
+[00:24:11.98] - Justin Gardner
+Holy, dude. That's crazy.
+
+[00:24:14.74] - Joseph Thacker
+That's the full chain, dude.
+
+[00:24:16.96] - Justin Gardner
+How do people come up with this shit with the lasers and like. Oh my gosh. Jeez.
+
+[00:24:22.96] - Joseph Thacker
+Wow. I don't even understand how audio works to know how it would go through a laser.
+
+[00:24:26.96] - Justin Gardner
+Yeah, that.
+
+[00:24:27.79] - Matt Brown
+Yeah, it's a lot of physics. Physics stuff there.
+
+[00:24:30.92] - Justin Gardner
+Yeah, for sure. Let's, let's. I'm sorry, we got a little distracted with the AI Iot dreaming here. Let's circle back around. Joseph, did you want to go into some of this like attacking how these robots would. You know, how we would go after these robots? Or did you have a different chapter?
+
+[00:24:49.27] - Joseph Thacker
+So I do want to get to Matt Brown's Iot Hackbot and Matt Brown's Zero to Hero guide. But yeah, that was actually one of my questions and I don't even think I put it in the doc. But it's like the main point of the episode like that, I wanted to know personally. It's like Matt Brown, we've delivered you a Unitree robot or a Boston Dynamics robot because honestly me and Justin would love to get one of these in alpha or beta.
+
+[00:25:10.96] - Justin Gardner
+Absolutely.
+
+[00:25:11.48] - Joseph Thacker
+Test on and because it'd be so fun to have one when they're probably going to be like 50k when they come out. But yeah, you know, Tesla drops you a new robot. What would be like, you know, give us the first eight hours of you like basically pen testing this thing. You know, what, what does that look like?
+
+[00:25:26.53] - Justin Gardner
+Oh wow, this is great.
+
+[00:25:28.01] - Matt Brown
+Yeah, yeah. So any device like that, there's, there's going to be a reconnaissance phase. Right. It's a little bit simpler with consumer facing electronics because you can, you can get a lot of information off the fcc. If it transmits wirelessly and it's sold in the United States, then by law they have to report certain details about the inner workings of the device and post it on the FCC's website. And there's a third party website that searches that information way better called FCCI FCCID IO and so basic reconnaissance. Honestly, nowadays I use GROK for all of my hardware recon. I'll put in, hey, here's, here's the target. If I know anything, any other details about, about the device, I'll say hey, you know, like look into all the sub components that I know about at the time and give me any, you know, known CVEs, any kind of past research, blog posts. And so I just kind of send GROK out to be like, hey, deep search, you know, turn, turn on deep search, send it out and then I'll let that run while I start opening up the device. And so I'm going to open up the device, I'm going to gather more data about what chips I see inside of it. Probably like, you know, add that into the GROK flow.
+
+[00:26:52.80] - Justin Gardner
+But then are you using GROK as like your primary AI for this? Because I hear that like, I don't hear that very often. I'm mostly hearing people using like Gemini or Claude.
+
+[00:27:05.20] - Matt Brown
+So, so I use Claude for all tool calling stuff. But I, I just use GROK because it doesn't, it doesn't take up my, my Claude tokens when I'm doing like light, light Internet search recon stuff. So like that's literally just in the web browser.
+
+[00:27:20.72] - Justin Gardner
+Sure.
+
+[00:27:21.44] - Matt Brown
+All my other AI like hacking flows now are, are Claude, Claude based.
+
+[00:27:26.55] - Joseph Thacker
+I think that's smart. I did the same thing. Justin. I don't know if I've mentioned it much, but, like, if I have a random question that I expect would be enhanced by web results and just other users, like the stuff in the past, you know, you used to Google like something, something, something Reddit, because you wanted, like, the public opinion about the thing. Now I use Grok for that because it's going to, like, be looking at all those tweets that are kind of relevant, and then it also does a pretty good job of searching online. And it's also really fast. So I also do that for, like, when I want a quick answer about stuff that I want public opinion about and public documentation about.
+
+[00:27:56.83] - Justin Gardner
+That's interesting. I'll often use Gemini for that, but I'll have to check out Grok. I use Grox a little bit on mobile because it's built right into the X app and I can just be like, you know, but yeah, I'll have to give that a go and see how it performs. Okay, so swinging back around to that, you're. You're performing recon the device. You kick off an agent to go do some FCC recon, you're opening up the device, and then I guess it kind of depends on what you see there. I mean, do you have thoughts on how you think that that might be implemented in the future, or are we just going to have to wait and see?
+
+[00:28:34.07] - Matt Brown
+Oh, yeah. So for the robotics tech, no one of those hardware assessments would be so fun because it's going to be a little more complex, most likely, than your average IoT device. Where there's one processor, it might be a microcontroller, it might be a cpu, like running Linux or Android. But your average device, there's like one processor, maybe some flash storage, some external flash storage, maybe there's a debug connector. But in these more complex systems, there's oftentimes, you know, circuitry, there's often like multiple PCBs, it might be in different parts of the robot. So you might have to take apart the head, and that's like the camera unit and take apart the body, and that's like the motor control processor units. And so then what the cool thing about those systems where there are multiple kind of PCBs or components, they have to talk to each other somehow. So that's where you can use a logic analyzer to start to read those digital signals. It's basically a physical. You can visualize it as wireshark at the physical level. You're physically looking at the electrical signals that are going back and forth between these different subsystems of A robot like that and trying to see how they work. Right. Like when the CPU wants to send a message to the ARM that says move up, it's going to send some kind of a digital signal. And so you can play with those a little bit. That's not a vulnerability in and of itself because it's like, okay, you need physical access to the thing. But in any, in any hardware assessment, I'm looking for two large components, and that is debug interfaces. And those vary based on what your target is. But a debug interface is something that the developer uses to develop on the target. Right? It's a developer tool that maybe gets them access to log data, maybe it gets them access to a shell, maybe on a microcontroller unit. It lets them upload code and download code. And so seeing if any of those debug interfaces are enabled is step one.
+
+[00:30:56.03] - Justin Gardner
+That's going to be uart, right, jtag, or do you often see something where you can just hook up to it via usb? And is that something you also see?
+
+[00:31:09.03] - Matt Brown
+Yeah, you see that especially on Android devices, you'll see USB interfaces and sometimes they'll be on the circuit board, but there won't be a USB header soldered up to it. So sometimes all you have to do is take a USB cord, cut it, and then you got the four wires inside of there.
+
+[00:31:28.96] - Justin Gardner
+That's so badass, dude.
+
+[00:31:30.24] - Matt Brown
+And so you've got power ground, and then you've got your signal plus your plus and minus for your signal. And it used to be it's four wires. You gotta, you know, you maybe do some in your reconnaissance, you look at the data sheet, you say, okay, I think this is where I solder onto. And now you've got your USB hooked up again.
+
+[00:31:48.05] - Justin Gardner
+I, I haven't, I haven't ever done any of this with, with USB before. But how, how does that differ from like UART in this scenario? Because my, my, my thing, you know, my UART adapter that I've got sounds very similar to what you just described there.
+
+[00:32:01.33] - Matt Brown
+Yeah. So it, it is, it's similar and it's different. So usb, I think we're all understand at a high level that USB does different things, right?
+
+[00:32:12.50] - Justin Gardner
+Right.
+
+[00:32:13.58] - Matt Brown
+On my computer I have a bunch of USB ports, but those aren't just like giving me shells on my computer. Right. That'd be a pretty bad threat model for a PC to be just like, oh, I plug in, I get a shell. So it could be a, just a hub, right, where you can, like, maybe you can connect in a device and then the operating system can choose to use that device like your PC or it could be an interface for say adb. So on Android Targets, if the ADB is enabled, then if you get a USB connection to it, you can then on your PC that you've connected up this usb, this newly populated USB interface, you can type, you know, ADB devices and it will enumerate over that USB interface. If it can connect to a device, you can say ADB shell and then if again if it's enabled, drops you to a shell.
+
+[00:33:11.49] - Justin Gardner
+That'd be beautiful. Yeah, yeah. So I guess on these, on these, just one, one last thing on that and then I'll let you, you take it. Joseph. You know, on these sort of, I guess more robotic oriented devices, have you seen a trend one way or the other between these three sort of debug interfaces? You are JTAG or usb.
+
+[00:33:33.90] - Matt Brown
+So on robotic devices there's almost like I mentioned, how there's going to be multiple PCBs. There's probably going to be both. Okay, there's probably going to be. Because if you think of anything that's doing onboard ML or AI, it's going to most likely be running Linux. The most popular platform I've seen out there is the Nvidia Jetson platform. So Nvidia makes this embedded GPU that is not as power hungry as their kind of data center or desktop models obviously. So that can. And then they provide an SDK that has an entire build system. So they provide for you the Linux build system. And it actually has a lot of security stuff built in. It's got some security built in. You can implement that wrong. So I've seen that sometimes. But it's going to be a Linux system, but then maybe, but that's going to do like all of the AI stuff. But then maybe there's another like processor that's doing the motor control. Right. And so that is more likely, those motor control circuits are more likely to be a microcontroller target. And microcontrollers are going to more likely have JTAG or SWD, which is ARM's version of JTAG. Whereas the Linux side you're going to be looking for uart.
+
+[00:35:09.71] - Justin Gardner
+Okay, that makes sense. So overall likely it's going to have, for the more complex robotic pieces, it's going to have a microcomputer core. Right. So we're running Linux, probably this Nvidia here. And then we might have microcontrollers throughout the system that are controlling various pieces of it. And Kind of calling back up via these, you know, hub here or this, you know, area where you could hit it with the logic analyzer back up to the. To the microcomputer core.
+
+[00:35:37.13] - Matt Brown
+Right, Exactly. And those signals are usually uart, like serial signals also. So there's a couple different protocols. There's UART, there's i2C, we don't need to get into all. There's SPI, there's different protocols that use digital signals to do interchip communication.
+
+[00:35:59.61] - Justin Gardner
+And you can identify those via the logic analyzer when you hook up and you sort of pull off those connections.
+
+[00:36:06.34] - Matt Brown
+Exactly. So the most common logic analyzer out there, Sali, makes really good products, highly recommend them. And it comes with this software that's called Logic or Logic 2. And it has these analyzers that you can plug in an analyzer and you can see if it decodes data properly or not. So you kind of test your hypotheses.
+
+[00:36:26.50] - Justin Gardner
+Let me just add that to my Christmas list real quickly.
+
+[00:36:30.84] - Joseph Thacker
+Yeah, actually, yeah. So I have lots of dumb questions, but one, one specifically is like, how do you balance not breaking hardware devices that you get shipped? Like, like when you were talking about opening up this human robot, I'm just like, thinking, like, if Tesla sent me, I don't know, one of their humanoid robots, and it was like a $50,000 device and, you know, you're telling me, like, yeah, just crack it open, you know, start like, soldering stuff onto the back of it. I'm just like, oh, my gosh, I'm going to break this thing. How do I know? Like, you know, how do you balance that?
+
+[00:37:00.42] - Matt Brown
+That is a great question. So on a higher value target, so, so to take a step back, when I'm doing Iot pen testing or, or bug bounty hunting, I always prefer to have more than one device. Like, ideally, I would have two to three devices and I would have one device that is like, okay, this is my destructive testing target. I don't care if I brick it. I'm going to be really rough with it. And then I'll have, like, on the other side of the spectrum, I'll have, like, the clean device that I like. I open up only if I really have to to do very safe operations. But on the hardware hacking spectrum, when you gain experience, this is why I always suggest for people to go, go to Goodwill, go buy some used routers and, like, practice on those targets that are like, $20, not the, you know, $50,000 target, but after you've had some experience, you know, which operations are Risky or pretty safe. Now, obviously, anything you could make a mistake and I could do my safe operation on a device and I could still brick it if I'm really unlucky that day. But interacting with uart, that's going to be pretty safe. Like doing hot air and pulling a chip off, which is kind of. The other phase is doing firmware extraction on a device. So kind of my. My two big hardware hacking operations, it's debug, look for debug interfaces. The other one is do firmware extraction. And anytime you have to do firmware extraction, especially if you're physically pulling the chip off the device, you're at risk of messing stuff up, you're hooked.
+
+[00:38:35.65] - Justin Gardner
+Dude, when you said two to three, I. I was like, man, this guy's a boss. You know, like in the one. Excuse me, but in the one live, you know, live hacking event that I did for hardware, they. And you were there, Matt, so I think you got the same thing. But like, yeah, they sent us a link and they said, hey, you can buy three and we'll reimburse you. And they sent us the link to the three. To the three packs. So I bought three of the three packs and they did. They reimbursed me. I was like, hey, you told me I could buy three of these, you know, and then I did buy three of these, you know,' and so I had nine devices. And, dude, I burnt through like six or seven of them with all of this. Like, I was just like frying it with the gun, you know, with the hot air gun. And so I was like, yeah. I mean, for me, it's a minimum of five devices.
+
+[00:39:23.61] - Joseph Thacker
+I think that's funny, since we've mentioned. Is a digital analyzer or logic analyzer a physical device?
+
+[00:39:31.17] - Matt Brown
+Yes. Yes, it is. It's a physical device. You can buy the knockoffs on Amazon for about $20. I'll get you guys some links to throw in your show notes.
+
+[00:39:40.30] - Joseph Thacker
+Perfect.
+
+[00:39:40.53] - Justin Gardner
+That'd be good.
+
+[00:39:40.94] - Matt Brown
+So there's a $20 one that'll. That'll more or less get you what you need. You're gonna it like it's gonna have an advertised sampling rate on it. That is. Is not true. Like, you're never gonna get that rate. But for most of our hardware hacking stuff, not gonna matter. It'll be fine. And then Sali, obviously is kind of the. The Cadillac of a logic analyzer. And they have a new device out, which is really fun. Like, this is just me nerding out, but they have a device that combines a logic analyzer and an oscilloscope. So if you really need an oscilloscope for any work you're doing.
+
+[00:40:16.19] - Justin Gardner
+Yeah, I need.
+
+[00:40:16.82] - Matt Brown
+It's all in one for sure.
+
+[00:40:18.42] - Justin Gardner
+Yeah, yeah. I'm using an oscilloscope all the time.
+
+[00:40:22.34] - Joseph Thacker
+Does a, does a flipper come in handy much at all?
+
+[00:40:25.63] - Matt Brown
+Ooh. So the flipper is grown on me. So I would say it's kind of a toy. But I have used it funny enough. I've used it in hardware assessments. I actually bought it for a pen test because I knew I was going to need to do infrared. It was, I can say the general target. It was a TV, like a smart TV. And some of these smart TVs, the remotes will have like undocumented commands that you can send over infrared to the television. And so I needed a way to kind of programmatically interact with that. So I was writing custom. So for that pen test I was like writing custom flipper apps that would, that would send data over infrared. So it's useful in some cases. There are some limitations to it. And they're currently developing a new one that's going to be like a full blown Linux system basically that's going to have a lot more capabilities. But I would say it's. It's kind of a toy is how I usually use it.
+
+[00:41:28.84] - Joseph Thacker
+Yeah, go ahead, Justin. You were going to say something.
+
+[00:41:31.88] - Justin Gardner
+Yeah, well, I was just going to. I was going to ask before about something else, but we can jump into The Hardware Hacking 02 Hero Hardware Hacking Guide because I think you had some thoughts on, some questions on exactly how to proceed with that. And I think we've covered it up to a good point here. We've covered it up to reconnaissance. And so we're looking for debug interfaces by your JTAG usb, that sort of thing. And then the other side of that is, is firmware extraction. Before we jump over to firmware extraction, did you have anything else on. On like the, the debug interface side, tips and tricks for identifying those or tools we might need to, to be able to identify those and hook up to them?
+
+[00:42:14.86] - Matt Brown
+No, I don't have anything else. I would like to go back if we're going to the Zero and Hero, I'd like to jump up to that kind of philosophy first and then I can jump down into that because this is something. I get this question a lot and sometimes you can get stuck into the weeds of the hardware hacking. And so I like to clarify for people what like the goal usually is of our hardware hacking. So to start that there, there are such things as hardware vulnerabilities, like, like flaws that are baked into the silicon. These are oftentimes unfixable flaws. But like, like, like the fix is to like, make a design and fabricate a new chip is usually the fix for a hardware flaw like that. So what I find is typically not technically a hardware flaw. It's software flaws in hardware devices. And so I say that because usually all this hardware hacking stuff, my philosophy is a means to an end of hacking on software. And it's a means to the end of turning what is like a black box assessment. Because think about like, you get a device and you can like, maybe it had, maybe it has like an ethernet port on it. You like plug it into your network. You're like, I could run like NMAP on it. I could start, like, you could treat it like a network pen test, and that'd be black box, right? Maybe there's a web app on it and you could treat it like a black box web pen test. But the thing that hardware hacking gets us in that threat model, in that scenario, is that it turns a black box assessment into a gray box assessment. It gives us more intelligence on how the device works on the inside.
+
+[00:43:56.53] - Justin Gardner
+Dude, frick, that is such a beautiful point. And it makes it so much more approachable, right, from, you know, from, from a software hacker's perspective, right? If I'm, if I'm working on my web stuff and I'm thinking, oh, you know, hardware stuff, that's like, so like the soldering and the body lot, right? You know, all of that is just a way to get you source code. And once you get source code, you know, you're like, ah, this is, this is where I live. You know, and then it goes back to those, those comfortable skills of source code review of web hacking. And of course there are things like, you know, Bluetooth or like, like you're mentioning all these UDP protocols that, you know, web hackers in particular aren't super comfortable with. But at the end of the day, it's just a different skill set of, of software hacking, right? And that makes it a lot more approachable. I really like that clarification. That's great.
+
+[00:44:44.21] - Matt Brown
+Yeah. And then I kind of break down my process again into those two categories. There's debug interfaces, so the debug interfaces. Again, on this kind of, this map of we're trying to get more information, we're trying to get our hooks into the device so we can hack on the software. So we can find a software flaw in the device, the debug interfaces. If we can get a shell on a Linux device, right, in the context of turning it into a gray box assessment, we can view the running processes on the system. We can look at those processes that have sockets open, right? So then we can start to connect the dots to say, okay, before I was performing this black box assessment and I saw this open port, like, maybe there's a web application running on this IoT device, right? And you're asking, well, where is the code for that, right? If I can run Netstat and I can see, okay, port 80 is being opened by this process named web, like there's some binary that is listening on that port. Now I know exactly where to go in the firmware or on the device. And I can. Because when you look at firmware, you're looking at like a million files. You're like, what do I look at first? And so those debug interfaces often tell us exactly where to look on the device.
+
+[00:46:09.42] - Justin Gardner
+That's beautiful, man. It's like if you have a shell on a server, how much easier would it be to hack that? It's beautiful. And especially when the attack surface is so rich like it is on a lot of these IoT devices. Right? There's. Right there's, you know, there's some. Something happening over here over HTTP there's something happening over here over like there's some weird UDP protocol or like, you know, there's. So there's a lot of attack vectors in, in these sort of scenarios, Typically Bluetooth stuff. Right? All of that's really fun. So, yeah, it feels like like three.
+
+[00:46:41.28] - Joseph Thacker
+Things you're doing by, by hardware probing. You're like getting access to scope you didn't have access to before. Like you could test things that you weren't able to test. You can reduce friction, which I think is what Justin loves to say all the time around testing things by being able to test them in a more like, automatable fashion or in like a more repeatable fashion. Oh, man. What was the third one? Yeah, but it sounds like those are like the main things, right? Is that you're one able to get access to scope other people can't. Or reduce the friction that it takes to test these tough things. To test.
+
+[00:47:11.84] - Justin Gardner
+Totally. Yeah. Okay, so we've gone down that route. We've tried to identify some debug interfaces. How often do you think there are no debug interfaces? Or like, maybe they burnt these or something? Right. Like I've heard in the Past like, what'll happen is they'll like, you know, break the fuses or whatever on those specific lines.
+
+[00:47:33.82] - Matt Brown
+Yeah, yeah. So there can be cases where the debug interface, I mean frankly on most bug bounty targets, because bug bounty targets tend to be more secure than the not bug bounty targets generally. I mean, obviously that's not always the case, but especially in the hardware world because there's not as many hardware programs as there are web programs. So tend to be a little bit more a hardened device where they take security seriously. And so, yeah, oftentimes you're going to be left with maybe no debug interfaces or you're going to be left with a UART connection that doesn't let you send any data, but you might get some data out, right? Maybe you'll get standard out standard error of some programs running on the system or maybe you'll get the kernel logs during boot up, or maybe it'll just be blank and you won't get anything. So then the next step is firmware extraction, because with firmware extraction we can usually get some of the firmware hopefully out of the device. And so that's where we're going to turn to look at those flash chips that are on the device. And this does become kind of a game of pattern recognition of okay, so like I can now look at a PCB and I can see a certain shape of a chip and a, like that's the flash chip right there. Obviously when you're new, when you're new, you're probably going to have to read the little serial numbers, little model numbers that are written on the chip, do some Googling and you're like, you Google it and you're like, nope, that's the cpu. You Google it, Nope, that's the dram. And then you're like, oh, here, this is like EMMC Flash chip or a spy flash chip, something like that.
+
+[00:49:16.73] - Justin Gardner
+So what are some. You know, I knew emmc, but I didn't know the second one. You said SPI Flash chip.
+
+[00:49:23.53] - Matt Brown
+Yeah, so there's. Well, okay, so technically that's the protocol that the chip is speaking. So those come in a lot of different packages. So in the hardware world, a package just is the name for the physical dimensions of the chip. So you're probably familiar with emmc. It's a larger square to rectangular chip and they actually come in a lot of different dimensions. And so sometimes you need like different little cutouts to place that chip into your programmer to read the, read the firmware out. But there's also, you know, little eight pin chips that, and especially on cheaper devices, you're more likely or cheaper or lower power or you know, lower budget devices that you're just going to find those, those kinds of Flash chips. And so there's some that are like called a TS, a TSOP 48. I could, I could rip off all the names and that wouldn't be too helpful for everybody. But there's, it's a little, you know, chip with you know, 48 pins, you know, 24 each side. And so those are, those are some common ones you'll find. But oftentimes if you're not familiar with it, the, the, the solution, the easy path is just look at the model number that's written on the chip. Google all of the things that are written on the chip and you'll probably figure it out.
+
+[00:50:42.92] - Justin Gardner
+And eventually you'll figure it out. Okay. Yeah.
+
+[00:50:45.48] - Joseph Thacker
+So once you have detached it, how do you then actually like view the firmware?
+
+[00:50:50.13] - Matt Brown
+Exactly. So this is where different firmware reading tools are going to come in handy. So the most universal universal programmer that I recommend all the time is called the XGECU X G E C U. That platform is a device that has a lot of different sockets that will fit lots of different types and shapes of chips into them. And they have profiles for many, many different types of Flash chips that you can read, you can read EMMC Flash chips now with the better models of this firmware reader and all the way down to the really low budget chips. And so there's a piece of software, the official one runs on Windows. There is a open source project called MiniPro that tries to give you some open source options to interface with the reader. It works sometimes. So I've resulted to having a burner laptop that sits over here that doesn't have access to anything else on my network because it runs this Chinese exe that you probably don't want just like on the rest of your network. So you run this software, it interfaces with the, with the Flash reader, you place the Flash chip in a socket. There's many different sockets that you can buy to fit all the different kind of chips into the reader. And then you click a button and it says here's a binary file with all the firmware.
+
+[00:52:21.88] - Joseph Thacker
+Yeah. And then what do you do with the binary file in order to like actually make sense of it?
+
+[00:52:25.94] - Justin Gardner
+Dude, hold on. Before we go down that route, like I just gotta just give the listener the beauty of that moment. Like guys, you get to understand the moment when you take this Flash Chip and you put it in your thing and, and it reads it successfully, guys. Like, it is just. Oh, it is. One of my favorite moments that I've ever had in hacking is that moment when it, when I. And it was crazy because it's not even really the hacking, right. It's just like, you know, just getting it. I feel like I just plugged them, you know, micro USB chip into my computer. But like, the fact that now I'm staring at the, you know, the file system of this thing that I'm trying to hack, I just feel so much like, like potential, you know, and, and hope for how I'm gonna like destroy this device. Um, so really beautiful there. I did want to jump back before we go into what we do with that binary. You know, when you are removing these chips, I see in your notes here you, you have your gun set to 800 or to 850 Fahrenheit. I feel like that's freaking hot. Is that not like super hot?
+
+[00:53:29.09] - Matt Brown
+That's probably hotter than most people would recommend, but yeah.
+
+[00:53:32.28] - Justin Gardner
+Is there a reason why you do that or.
+
+[00:53:35.09] - Matt Brown
+I'm impatient.
+
+[00:53:39.48] - Justin Gardner
+Well, that makes me feel a little bit better because like, you know, Joel, you know, Joel, my co host, you know, for the first couple years, was yelling at me one time because I was like trying to. It's funny because we were working together on this event and for some reason he did not have the device. I forget maybe he was like a plus one that event or something like that. But I was like, hey man, you know, guide me how to hack this, right? And I'm like sitting. The air gun. He's like, no, don't put the air gun that high or else you're going to fry the chip. And I'm like, oh, shit. You know, like, you know, trying to undo it and. But it was only at like 450 or like 500. And I was like, let me just, you know, he would look the other way and I would like ease it up a little bit because it takes a while to burn off the, you know, the solder that holds it. It holds it there.
+
+[00:54:21.82] - Matt Brown
+Yeah. Especially with those larger chips, like you were dealing with an EMMC chip. So the kind of, kind of the most standard package for an EMMC chip is 153 solder balls that are underneath that chip. It's just a large surface area. Also, depending on the device, you know, underneath of it and or on the size of this chip, there's oftentimes these massive heat shields, these large metal components that are Going to soak up the heat that you're just, I mean you're just, you're just blowing heat indiscriminately. I mean you're trying to, you're trying to aim it at the chip. But obviously these large metal surfaces are going to absorb a bunch of that heat. And so on those targets, sometimes I'll go and I'll try to like rip off all the shields before I do something like that just because it'll be less heat for the to be absorbed elsewhere.
+
+[00:55:12.21] - Justin Gardner
+Totally, totally. That makes sense. Okay, so sorry, going back to your question, Joseph, we've extracted the binary, we've got the firmware image. What's your go to strategy from there, Matt?
+
+[00:55:24.86] - Matt Brown
+Yeah, so binwalk is definitely the go to tool for extracting firmware. So you run binwalk lowercase e and that will attempt to just go through this large binary file because like you said, you don't get handed a partition table out of the firmware file, right? You don't get handed all these individual partitions. I mean, sometimes you can do it with emmc, but usually you have to like already know the partition table, so it doesn't really help you. So when you get that one large binary file, so let's say it's like a 16 gig, you know, EMMC chip, you just get a 16 gig file that has all of the file systems, the partitions crammed into one file. And so what binwalk will do is it will try to signature detect, you know, hey, I see an ext4 Linux file system here. Let me, let me, let me carve that out and try to unpack the file system. Now sometimes binwalk will fail on you. So this goes back to kind of the debug interfaces. Oftentimes if you do get a, a boot printout on uart, oftentimes on a Linux system, it will, in the boot logs of like when the kernel's starting up, it will show you like a readout of the partition table and all the offsets. So sometimes if bin walk is just, sometimes it's like not able to detect or it's got a really weird file system in one of those partitions. You can oftentimes go and get all of the offsets from the UART printout. And then you can basically more or less convert that into DD commands using DD to carve out the exact bytes at the exact offsets for each partitions. And then you can try to use other tools from there, more kind of like standard tools to unpack certain file systems.
+
+[00:57:23.98] - Justin Gardner
+Check the magic bytes on those or whatever and make sure you've got your stuff aligned properly and then pull it all out.
+
+[00:57:30.65] - Matt Brown
+Exactly.
+
+[00:57:31.21] - Justin Gardner
+That's cool, man. That's freaking cool. I've seen those readouts before, but I never correlated that with like, oh wow, if my bin walk is having some issues then I can use that. So that's a really cool tip. Sweet.
+
+[00:57:45.65] - Joseph Thacker
+And then from there you all would do things like look for secrets, find routes, see what types of source code you can get for both the device and any web apps, and just do traditional open source code review at that point, right?
+
+[00:58:01.90] - Matt Brown
+Yeah. And most of the time, so sometimes you get lucky and you'll get source code on your IoT device, but most of the time it's going to be binaries. That's why I say we're going from black box to gray box. It's not completely open because oftentimes you'll see like if you see a web app on an IoT device, most of the time it's going to be written in C and it's going to be a compiled server where the web server and web application are like custom and they're like all one.
+
+[00:58:33.03] - Joseph Thacker
+Wow.
+
+[00:58:33.59] - Matt Brown
+And so there's a lot of. So that's where you get into binary reverse engineering. With tools like Ghidra, Binary Ninja, IDA.
+
+[00:58:41.67] - Justin Gardner
+Pro, things like that, how often are you able to get those binaries back to something more readable than, you know, like assembly, you know, like, like, like sometimes there's compiled Python, sometimes there's, you know, some cgi, you know, stuff going on, you know, what, what, what often do you see? What stacks?
+
+[00:59:03.50] - Matt Brown
+Yeah, so I think we're in a much better position. So when I, when I kind of started my career, you know, 10, 10, 15 years ago or whatever, we had IDA Pro, which you had to pay, you have to pay out the nose for.
+
+[00:59:17.42] - Joseph Thacker
+It's expensive.
+
+[00:59:19.23] - Matt Brown
+And that was it. Since then the NSA open sourced Ghidra and so Ghidra's decompiler is very effective. And now we also have Binary Ninja that is entered to market. So we don't have like this monopoly in the software, binary reverse engineering kind of tool space anymore, which is really great. It's spurred competition, which is always good for the market. So we've got a lot of good tools that will get you back to more or less what the original C looked like. Again, oftentimes these programs are going to be C C. Sometimes you'll find some Python in there, but really like 90%.
+
+[01:00:03.61] - Justin Gardner
+Of the time or more it's going to be C. Yep, exactly. Dang it, man. Oh, that hurts. That hurts, man. I really have gotten lucky because it's twice now that I have dealt with IoT devices that are not straight C. And so my experience is so flowery. It's like, oh, great. And then I pop it open and just decompile this Python or pop this jar into Jadx or whatever, right? And it's like, okay, yeah, but it's not normally that way, I guess.
+
+[01:00:36.44] - Matt Brown
+No. And if I had to give my meta analysis of that, I would say that bug bounty targets tend to be on some devices that I would say are more or less like over specced or overbuilt. So they have more powerful CPUs or resources on those systems and therefore they can afford to run Python, which is not as efficient as C or C. So. But on a lot of like low power, low resource devices, you're probably not going to find Python.
+
+[01:01:09.46] - Justin Gardner
+Dang, man, Dang. That sucks. Well, I so enjoyed my little stint there in the Python code review land. But that's not what I can expect from most IoT devices.
+
+[01:01:20.57] - Matt Brown
+It doesn't seem, unfortunately. No, I wish that was the case.
+
+[01:01:24.82] - Justin Gardner
+Yeah, sweet.
+
+[01:01:25.73] - Joseph Thacker
+And then so we have. Matt graciously gave us like a list of like six links. There's an intro playlist by Make Me Hack for getting into hardware hacking. There's a post about UR spi and then there's a bunch of links to Matt's videos about UR interaction and firmware extraction that we will put in the show notes and the hacker notes for everyone.
+
+[01:01:46.80] - Justin Gardner
+That should be great. Yeah, those are always good reviews. And then did you want to jump from there, Joseph, over to IoT hackbot?
+
+[01:01:53.69] - Joseph Thacker
+I'm not going to let us hang up today. I'm not going to let us get off here without talking about this IoT hackbot, so.
+
+[01:01:58.80] - Justin Gardner
+Okay.
+
+[01:01:59.76] - Joseph Thacker
+Yeah. So Matt, we heard that you built an IoT hackbot, basically a agent that helps you hack. So tell us the full story, you know. Well, you know, what is it? How did you build it? Do you have a video about it?
+
+[01:02:11.53] - Matt Brown
+Well, I was shooting some ideas over to Rezo here and I was telling him about some, about some stuff I was doing. So it was originally just using cursor. I have to say I'm a late adopter to all of the LLM stuff. I was maybe in the skeptical camp at first, so I'll admit that, I'll admit that here on the pod, but I've started to see the value. So I originally started by wanting to build some very specific tools. So where this started, I was doing some security research on some IoT cameras and I wanted to build some attack tools that were very specifically targeted to these set of cameras. So in the security camera world, there's a standard called ONVIF, which is a standard set of APIs that uses Soap and XML. And it's gross and I hate, I hate Soap. And so I'm like, you know what, an LLM could probably code me a tool in Python that'll make me not have to like, you know, blow my brains out because I'm like writing all this like XML stuff into my, into my Python tool to do checks. So it all started that way with writing this tool. So in ONVIF there's a set of APIs that are defined in the standard and some are pre auth that you can execute without authentication, and then everything else should require authentication. So I wrote this tool to go through every API in the spec and try to see if I can access it without authentication. So it requires a different SOAP XML payload for each one, which would just, I mean, that would have just been pure pain to try to do that. But yeah, but the LLM was able to just go, oh yeah, I'll go read the spec and I'll write a Python tool that will execute that. And I found some bugs. And so this got me started on this journey of, okay, what if I could, you know, build some kind of agents or stuff like that? And that's when I reached out to you and you were like, hey, you should, you should use CLAUDE code. And on the same day, it just so happened that that was like, it was on the same day that CLAUDE released their skills. And so that it's, it's with which cloud skills are. I mean, it's, I don't know if it's an overhyped feature, but it's really helped me. And so CLAUDE skills are basically a markdown file where it doesn't read in the whole markdown file into the context window where you can tell it how to use certain tools. So I started out by, okay, I had these two little tools for testing these IP cameras. And so I was like, all right, let's create Claude skills for those. And then I could just let Claude code use them. And it basically, one shot, you know, this camera and, and was able to find like a bunch of ons, and then I even posted a video of how I was able to tell it to like write a payload. So in the onvif spec For PTZ cameras, which are pan tilt zoom cameras that can actually move physically on their own. And I had a camera that supported that. I was able to tell Claude to go and enumerate, find if there's any Vaughns. And I'm like, and if there's a Vaughn, I mean, I knew there was a Vaughn, but if there's a Vaughn, you know, move the camera. And so it was able to, you know, find the APIs that didn't have off and then use those APIs to move, to physically move the camera.
+
+[01:05:50.26] - Justin Gardner
+How crazy is that, man? You're just like, move the camera and then you wait and all of a sudden it goes. You're like, oh, my gosh.
+
+[01:05:57.53] - Joseph Thacker
+I mean, that's the closest thing to like in a movie where it's like, you know, like, computer, computer, hack this device and make it move. Like, give me a better view of the angle. And the computer runs off and is like, like, I'm gonna use Matt Brown's skill to go hack this and then I'm gonna turn the device. Right? It's like exactly like, achieves the outcome.
+
+[01:06:13.30] - Justin Gardner
+It's like Riley from National Treasure, right? You know, the. That was like, when I was younger, that was my like, hacker inspiration was like the dude from National Treasure that was like, all right, I'll turn off the security cameras, you know. Wow, that's actually Matt Brown's like, Tuesday, you know.
+
+[01:06:29.46] - Joseph Thacker
+Yeah. The reason why I recommended Claude Co just for all the listeners is it's just such a malleable, agentic rapper, you know, Like, I think that that's what's so powerful about it. I think they're building it that way on purpose, you know, like, Daniel Meisler uses it for his like, personal assistant and he gives like all the context about his project and his businesses and a bunch of skills, and he used it for that. Right. In this case, Matt Brown basically made a hackbot out of Claude code. And it's so much easier and better to do that for most people than to build it from scratch, right? Because you're, you're writing all of that wrapper logic anytime you're going to build an agentic system. But you can just like borrow the agentic wrapper or the agentic harness from Claude code and then just give it the ability to do the things you want to do. And for $100 a month, you basically have like written your own custom agent, right? That's actually like really good and will always improve as they improve their system prompts, as they improve their models, as they improve the tool calling. And so anyways, that's why I recommended that to Matt and I think, you know, for 99% of use cases, that's the best thing you can do. Obviously with like, with Kaido, Justin and I incorporated Shift deeply into it because it needs to have access to all of the different things that Kaido can do. And so, you know, I think that's the next step for a lot of things. But if you have a desire or a goal to achieve with some sort of AI agent, I think the first thing that most people should do is poc it by like, you know, just giving skills to cloud code.
+
+[01:07:53.26] - Matt Brown
+Yeah, yeah, and that was such a good suggestion because I think I linked to you one of the open source agent, you know, you know, pen testing or security testing agent systems. I'm like, oh yeah, I'm thinking about doing this and you're like, you should just use cloud code. I'm like, that was, that was, that was a good move. I would have gone way too far down the rabbit hole that did not need to go, did not need to be explored at that time.
+
+[01:08:12.84] - Justin Gardner
+So yeah, it's, it's amazing, man. I actually, instead of using cloud code, I'm actually using Gemini cli. And after hearing more about cloud code, I'm not sure that that's 100% the best, you know, decision. But I am sort of living in that ecosystem a bit right now, so I think I'm going to stick with it for the time being. I have seen in Shift that Claude is way better at tool calling, you know, so that, that is definitely goes to Claude, but I had a similar situation where, you know, I kind of give it a, you know, obscure protocol that, that is just horrible to write and I say like, look, just map this to like a JSON file for me please and then write, you know, write a Python file to map it back to, to whatever like garbage you know, this is. And it did it and it totally changed the game for hacking that target because you just reduce so much friction in creating your payloads and, and you know, how much more thorough can you be when you're not like spending an hour on one, you know, API endpoint crafting the, you know, XML you need, right? Versus like, you know, you might get two through two or three of those before you're like, ah, they probably all have authentic, you know, versus like, if you, if you can just spit them out. You're like, oh, well, I'll just test all of them really quick and then you find that you know, second to last one that is like, doesn't have op and gives you a shell.
+
+[01:09:31.84] - Joseph Thacker
+So, yeah, it's unlocking and then reducing friction. Those same two things, right?
+
+[01:09:37.27] - Matt Brown
+Yeah, exactly. And I love the ability of claude. Yeah, reversing binary, like binary protocols or some undocumented protocol. So that was the other cool video I did on this same video camera. So did one where we found all of the phones in the protocol that was documented that followed this specification, this open specification. There was also this UDP port that had this completely undocumented protocol. And that led me to develop these other skills and one of them was the ability to interact with my hardware hacking tools. So my UR interface that I had hooked up to this camera that in this case was able to give me a root shell. I wrote a CLAUDE skill for picocom, which is just one of the Linux utilities that's a terminal emulator that allows you to interface with the device. So now I can give CLAUDE code a shell on an IoT device and it can run commands to enumerate the system, just like I would do in a pen test. And this was really important for, in the, in this video for reversing a binary protocol because helpfully, the main binary that was running this binary protocol would send logs to standard out that would appear on the console. And so it was able to, you know, craft a script, run an exploit over the network so that the device is connected over the network, it can talk to it over the network. And it had a shell on the device and so it could, it could get that feedback. Because as a security researcher, that's the flow. I, that's what I would do, right, is I would craft POC scripts, I would send a payload to a service, and then I would try to get any kind of intelligence on the device. Like, is there something going to a log file that I can see, an error message that will help me fix my, my poc, my, my exploit?
+
+[01:11:54.17] - Justin Gardner
+Yeah, I think, I think that this is very similar to, I think this is just an overarching principle for LLMs. Like a lot of people, they just want them to work because you see, you know, the magic of cursor or whatever. Right. But I think a lot of stuff that's a little bit more nuanced like this, and I'm finding this out with Shift, and you've seen this with your own cloud. Hackbot is making sure that they have the right tools and the right information. Right. Because our brains sort of fill in the details. I'll give an example from this like I. Because by the time this, this pod airs, my nomicon talk will already have run. But one of the things I'm talking about in that is how like Shift agents, which is essentially the web version of this right within, inside of Kaido, they get so much more effective when you give them things like the session token in an environment variable, right. That it can sub in very easily or additional pieces of context surrounding that. Right. So if you, if you, and a lot of times, you know, as humans, if we look at the session token we can say, okay, that one starts with 983 or whatever. That's this user. Well, the other one's got to be the other user user then. Right? But if you can, you know, define this for the LLM, spell it out a little bit easier, give them tools to make this stuff a lot, a lot quicker, the performance just like goes through the roof. So building that, that tool, right, for you to get access to standard, standard out and, or standard error here and like watch these logs. I mean that's, that's got to be the game changing move for the, for this whole thing. And then it was able to completely based off of those logs and with the Python script it would just reverse it. And they gave you something that can speak that protocol.
+
+[01:13:30.06] - Matt Brown
+Exactly, yeah. And the one other piece that is a future improvement. So the other piece I was giving it also was decompiled source code that I had copied and pasted out of Binary Ninja. So the next piece for me is to do MCP to those tools. So I'm exploring different options. Ghidra obviously has Gieder mcp. There's some limitations of that. I think you have to manually open the binary. You can't have it programmatically load a binary. At least that's my understanding at this point. So I'm looking at some different options for that.
+
+[01:14:08.67] - Justin Gardner
+I know that Caleb Gross, an operator, has done some really interesting research on reverse engineering and then using LLMs to identify specific pieces of the code that he did it specifically with. Patch diffs, right? So you can say, okay, hey, you know, here's the cv, here's the description. Here is a patch diff, you know, in, you know, the, of the binaries, right? What function is the one that fixes the patch and where the vulnerability was, you know, and then he's got it nailed down to like the top like 4% of all the functions. It can be like, okay, this is the one, you know, that are, that is related to this. So I think, you know, Being able to use something like that. I know he's got a tool called Sift that can help you really sort of narrow down. Okay, well, these are the pieces of functionality that we're really interested in for the specific piece of functionality. And then pass that to the AI. It seems to get substantially better results.
+
+[01:15:06.85] - Matt Brown
+That's awesome. Yeah, I need to check that out.
+
+[01:15:09.01] - Justin Gardner
+Yeah, I'll hook you up with him after this. After this. Pod. Yeah. Joseph, I think we've hit a lot of the items here on our list. Did you have something else here?
+
+[01:15:20.10] - Joseph Thacker
+No, I'm. Yeah. All of my questions have been asked, all of my answers have been found. No, I'm excited to mess with this stuff more. I think that honestly I'm going to have some sort of like hardware arc in 2026. That'll be the goal, dude.
+
+[01:15:35.93] - Justin Gardner
+You and me together, man. I was thinking, I was talking to Matt. We'll see. We'll see. Maybe we'll put this in the pot or not. But it would be really awesome to do a pwn to own team, you know, together, you know, and if next time they, they release like their, their target list, just pick one and then you know, have, have Matt do, do some of the hardware stuff. Have us go, you know, find out the vulnerabilities in this in the software stack once we've got access to source code or whatever or you know, gray box. Right. Decompiled binaries as it always ends up. I think that could be a blast.
+
+[01:16:08.43] - Joseph Thacker
+Yeah, that'd be slick.
+
+[01:16:11.88] - Justin Gardner
+All right, Matt. Well, thank you so much for coming on the podman. It has been very insightful as always. And yeah, definitely going to do some hardware hacking with you this upcoming year if we can.
+
+[01:16:20.84] - Joseph Thacker
+Sweet. Can't wait.
+
+[01:16:22.11] - Justin Gardner
+See you, dude. That's the pod. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end y'.
+
+[01:16:29.35] - Joseph Thacker
+All.
+
+[01:16:29.56] - Justin Gardner
+If you want more critical thinking content or if you want to support the show, head over to CTPB show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of master classes, hack alongs, exclusive content and a full time hunters guild. If you're a full time hunter. It's a great time, trust me. I'll see you there.

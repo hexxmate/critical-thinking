@@ -1,0 +1,122 @@
+Episode 116: Auth Bypasses and Google VRP Writeups
+Source: https://www.criticalthinkingpodcast.io/episode-116-auth-bypasses-and-google-vrp-writeups/
+======================================================================
+
+Justin Gardner (00:05.936)
+Ladies and gentlemen, boys and girls, hackers, this kind of week is the week that makes the podcaster, let me tell you. Our boy Rezo is out sick and I have been in a wedding all weekend as one of our close friends is getting married and we are the primarily responsible party. And it is now 2.30 on a Sunday when this podcast was due on a Thursday and I'm still showing up for you guys. Hopefully that shows how much I love you guys.
+
+So we're just gonna do a quick little solo episode this week. We're gonna run through some research and we're gonna call it a week. But I had to give you guys something to listen to, right? You know, I can't disappoint my listeners. So yeah, and shout out to the production team for dealing with my late, missing the deadlines. Thanks Richard, thanks Christian, appreciate you guys. All right, so let's get into the research. This week we're gonna cover four pieces of research. We're gonna cover Port Swigert's...
+
+Sammel Roulette that they just released. We're gonna cover three Google reports that just got disclosed with some cool attack vectors and then finally we're gonna wrap it up with this next JS corrupt middleware research that just dropped a couple days ago, which is like crazy. All right, let me get some water. Let's jump into it.
+
+All right, so first up, let's look at SAML Roulette. This is, once again, an awesome piece of research that was released by the Portswigger research team, Gareth and one of the other researchers who's listed around here somewhere. Where is he, Zach? Yep. And this was, unfortunately, a research collision with Alexander Tan, a hacker one, who I've mentioned several times on the podcast, who's kind of like the SAML god.
+
+I've reached out to them and said, hey, could you like come on the pod? And they said, sure. Let me just get some CVEs disclosed. So if you're listening to this, Alexander, now's your time, Come on, let's go. Let's get on the pod. But I'm definitely gonna ping him after this one because it's pretty sick. But yeah, let's kind of go through this specific attack. This was a SAML bypass completely in Ruby SAML affecting GitLab, unauthenticated account takeover.
+
+Justin Gardner (02:13.992)
+and it was pretty awesome. So this type of attack comes from a technique called round trip attacks, and I'll read this one line from the write up here, which describes it pretty well. SAML libraries often parse an XML document, it as a string, and then later reparse it. In Ruby SAML, this process involves two different parsers. Re-XML, which is used to parse the document and validate the signature, and Nokogiri, which is used to access attributes.
+
+And that should be sending alarm bells off in your head, right? Because anytime there's sort of like this double parsing environment, then there's a chance that there will be discrepancies. And that's exactly what the Port Sawyer Research Team manipulated in this specific environment. So how did they do that exactly? Well, they came up with this excellent payload, which is being shared on the screen for any of you who are following along on YouTube. this is a podcast, so I will also say it out loud.
+
+Essentially what's happening here is they present a XML document that has a single quoted attribute in it. And this attribute contains an XML comment and some entities inside of it. And essentially what happens then is when this document is parsed the first time, the single quoted attribute will be parsed as an attribute, but then when it's put
+
+know, stored as a string, like we said in the first part, that single quoted attribute becomes a double quoted attribute. Well, that's a problem because the first attribute had a double quote in it. So that would close the double quoted attribute that was being converted from the single quote and then allow you to specify various other tags and comments and stuff like that. So what they did here is they specified a comment and were able to insert a malicious assertion into the SAML response.
+
+which then gets picked up by the auth engine later and used to determine which user should be logged in. So essentially what they're doing here is they're using attribute manipulation. They're using a double quote or a single quoted attribute. And then when it's converted into a double quote attribute, it does something different to the XML document. Very cool stuff there. And it definitely makes sense that that would be happening when there's two different parsing engines being used to affect the XML there.
+
+Justin Gardner (04:37.224)
+So that's kind of the TLDR of the first part. You can read more thoroughly on the actual writeup if you'd like. But the idea was double parse the XML document and then have some data that is in a attribute in the first time around that is not in an attribute the second time around, allowing us to insert some malicious XML. But the attack gets a little bit more difficult than that because of a couple factors. One, they kind of want arbitrary unauthenticated account takeover, right?
+
+But the way that this works is they need to provide a valid signature for them to go through the first signature check XML document parsing, right? So they said, you in the beginning, let me see if I can find that quote. They said that this process involves using different parsers, reXML, which is used to parse the document and validate the signature, and Nokogiri, which is used to access attributes, okay? So in order to get past that first one, the reXML, they have to provide a valid signature to their SAML response endpoint, right?
+
+And one of the ways that they did that was super cool. Is that they used this metadata endpoint that was associated with the XML environment. Let me see if I can pull it up here. Yes, right here. says, finding a signed XML document can be challenging. Fortunately, the identity provider silently provide a single sign on protocol, WS Federation by default for every tenant. WS Federation provides signed metadata XML endpoints.
+
+such as this, and they link to an XML endpoint. So essentially what they're able to do is hit this metadata endpoint that is signed, and then because that has a valid signature on it, they can reuse that signature to bypass that first part and then utilize the attribute discrepancies to insert their own assertion into the XML document on the second parse through. So very creative attack vectors here. The other piece that I kind of wanted to mention on this one that I kind of skipped over for a second was
+
+how exactly they got it to look at their assertion versus the assertion that was originally provided in the document. And the way that they did that was by using something that I had never seen before in XML. Let me see if I can find it here in the document. Yeah, here it is right here. Which is a, you know, we all know about entities being defined in doc type, right? That's how you do traditional XML entity attacks. But what I hadn't known is that you can specify other types of objects as well.
+
+Justin Gardner (07:01.786)
+inside the doc type. You can specify attributes, entities, and elements, right? So those three. Elements, attributes, entities. And if you think about it, that's kind of what makes up an XML document. Or if you even think about it from HTML, which is sort of a tweak of XML, you know, you've got your elements, you've got your tags, right? You've got the attributes for those tags. And then you've got these entities, right? You know, your dollar sign or your ampersand sign.
+
+and then the entity and then the semicolon, right? So it's cool that you can define all three of those inside of the doctype. it just, when I was thinking about this and when I was researching it, it kind of made me realize a little bit more, wow, okay, I kind of feel like I have a better grip on XML now that I know what this doctype is used for and it's being used to define these various elements. So what they ended up doing here was they looked at the way that Nokogiri was checking for the
+
+the signature piece, I'm sorry, not Noho Yidi, this is the one that is re.xml, searches for the signature element. And the way that it does that is that it does a XPathSelector on a specific attribute, so it looks for a DS signature, and it looks for the DS attribute to point to XML dsig. So then what they did is they changed what,
+
+what assertion would have that using that uncommented out attribute, right? So when the attribute went from single quote to double quote, they applied a doctype att list, which is as opposed to a doctype entity, they used the bang att list to define a specific value for the xmlns attribute on the signature block, which allowed them to sort of hijack.
+
+which of the assertions or which signature, excuse me, it should be looked at at different times in the document. really, really creative technique here to take advantage of the fact that they have the ability to modify the XML document essentially after it's being parsed using document types. They use that to insert an attribute to a specific signature that they wanted, which was a really, really creative technique. And so I kind of went down the...
+
+Justin Gardner (09:24.498)
+the rabbit hole a little bit when I was researching this and reading through it. And I figured out that there was elements, attributes, and entities. But then I also found this really, really weird image. And Christian, I've got it in the doc. So just go ahead and put that up on the screen, the use of elements versus attributes. There's this picture that I took from the docs that says, apparently data can be stored in a child element or in an attribute. So if you have something like the example that they gave here was
+
+They have a person tag in XML, right? And they have sex equals female. And then they've got additional data about that person, such as their first name and last name, in the XML document, and they close off the person tag. So the sex for the person is defined in the attribute. And then they said, this is an equivalent document. And they say, close the tag. And then inside that, there's another tag that has sex, that has first name, that has last name, and then you close the person tag.
+
+And apparently you can use attributes and sub-elements interchangeably in XML. Which I was like, what? That seems super whack. So yeah, anytime you have an attribute on a tag, you can also specify that attribute as a sub-tag of the tag that the attribute should have been on. Which seems a little bit weird to me, and I'm sure there's weird shit out there that takes advantage of that fact. So definitely check that out if you're interested in XML.
+
+or XML confusions, that sort of thing. All right, let me take a look at my notes really quick here and make sure I didn't forget about anything else. Yeah, I mean, I would just say everybody who is interested in XML, you should take a look at how doc types work. I just read the WW or W3 schools sort of write-ups on how they work, and there's some really interesting stuff in there that isn't sort of surface level what you would think about when you think about doc types. So I definitely recommend that. All right.
+
+solo episode guys so I don't get the chance to take you know a breather while while Joseph's talking and I gotta get my water real quick before we move on to the next one.
+
+Justin Gardner (11:27.43)
+All right, so this next write-up that I kind of wanted to cover with you guys, let me give a little bit of context to this. So the Google VRP does have disclosed reports, but they don't get disclosed very often. And recently, they just kind of did a batch release of some of the reports from 2024. So I kind of went through and skimmed through each one of them and tried to find the ones that had the coolest attack vectors to it. And I'll go ahead and kind of go through those now with you guys.
+
+and just kind of give you the TLDR on what you could take away from those. So this one right here is entitled, loophole of getting Google Form associated with Google Sheets with no editor slash owner access. So essentially, this is a way for you to take the Google Sheet that is associated with a specific Google Form, where it stores the results from the Google Form, and get that original URL for the form so you can make more submissions.
+
+And I just thought that this was such an excellent example of understanding how your target's security model and your threat model works, right? Because I think if you're not intimately familiar with Google Drive and what you should or what you should not be able to see, then you wouldn't know that you're not supposed to be able to get the form associated with a given spreadsheet that contains the results of that form. So the researcher here dove really deep.
+
+understood the threat model really well and was rewarded with a $7,500 bounty for this finding. And essentially what he did was he took the document ID from the resulting spreadsheet and he created another spreadsheet and added an app script to that. Excuse me, my voice is getting a little raspy.
+
+He took the document ID and put it inside of a Apps Script function in a spreadsheet that he does own and have editor access on, and used the spreadsheet app.openById function to open up the ID of the spreadsheet that he had read access on but not owner and edit, and called the getFormURL function on that specific spreadsheet. And that returned the form that the user was not supposed to have access to.
+
+Justin Gardner (13:40.796)
+So
+
+$15,000 for this one, which is nuts. And this one is very similar, just does the exact same flow, grabs the document ID from the read-only document, and then passes it into an Apps Script on a document that he does own, and calls the getEditors function to get a list of people who have edit rights to this specific document. And apparently, if you have read-only right to a document, you shouldn't be able to see the email addresses and users information.
+
+of the other editors on the doc. So this one actually dumped back emails and stuff like that, usernames, which Google considers pretty valuable information. And so this was a really awesome find. I love that model. And for any of Google hackers there, I'm sure this guy went through and totally milked all of this. And you should definitely not look for any of the ones that he missed using Apps Script. And you should also definitely not
+
+diff the Apps Script docs to make sure when new functions are added that you can't be abused to do something similar. I think that's probably a waste of time because this guy definitely found everything, as all testers do.
+
+Justin Gardner (15:20.488)
+All right, let's go ahead and move to the next one. little bit of water popped out there and got on my glasses. All right, let's go to the next one. Let's see, right here. Okay, this was another write-up that actually only got $500, which I was a little bit disappointed on, but I kind of wanted to talk on it because it was relevant to a sort of topic I wanted to discuss with you all. So.
+
+Let me first dive into it and then tell you what's happening. So the title for this one is Cloud Tools for Eclipse Chaining Misconfigured OAuth Callback Redirection with Open Redirected Vulnerability to Leak Google OAuth Token with Full GCP Permissions, which one sounds sick. So Mr. Moe Sucker that reported this, you rock. But essentially, the TLDR of this one is with Google OAuth in this specific environment, you could redirect
+
+to a local host, essentially, which is something that we often see in OAuth flows that either a default URI that is approved is any port on local host, or specific client IDs have started local host on any port opened up as available for a redirect URI. And what this guy did is he actually went and found a product from Google that listens on port.
+
+on this port that was allowed, port 8080, and then found an open redirect in that product and chained it together, right? So they can't say like, well, if you have local host access to catch the callback, then you have the device owned or whatever, right? They have to take responsibility for their own tool that had an open redirect on that specific URL and port and then sort of chain that all the way through. So I thought that was brilliantly done by the researcher here.
+
+And it also made me think of another attack vector that sort of was recently came to my attention with regards to local host redirects for OAuth callbacks. And that is that when you are on mobile, on a mobile device, any app on that device can listen to any port above 1024 without any additional permissions. So you can just have an Android mobile app that just binds to port 8080 and then gets a callback from these specific.
+
+Justin Gardner (17:45.071)
+OAuth callbacks that allow access to port 8080 or localhost whatever port, right? And so I had a friend recently that pucked that out and submitted it to a program and it got informative because you have an app on the device, which is just so dumb. And I'm not gonna name and shame the program, I'm gonna give them some time to like do their thing. But yeah, I was pretty disappointed by that outcome because
+
+you cannot just let every other app on the device have access to your account, right? Like that's not okay. So I think that this is a very valid attack vector and I think that it was really easy, surprisingly easy with cursor and such to pock that script that creates the mobile app and catches the OAuth code. So definitely something you guys want to be on the lookout for. All right, so that was all I had for the Google write-ups.
+
+Definitely some cool ones there. There are some other good ones there. I just didn't decide. They just weren't as broadly applicable to everybody. So I grabbed those three just because I thought they were like, this is a really cool way to approach a target for the first one. then obviously, the callback to local host stuff is just really applicable to so many programs.
+
+All right, last one, guys, and then I'm gonna go chill. It is Sunday, so I normally try to take Sunday pretty chill, but this week was crazy with the wedding. All right, this next piece of research is by Zero Websec, Zero with an H-Z-H-E-R-O, maybe it's Z-Hero, I don't know, kind of a cool name. But they also did some research, before I jump into this one, the Next.js and the corrupt middleware.
+
+They also did some other research earlier this year that released in January on web cache stuff for Next.js, which actually I don't see in there. it's under the Research tab on their website. Yeah, right here. So they've been kind of pwning JavaScript-based frameworks for a little while. This is the one I was thinking of right here, Next.js cache and chains, the stale elixir.
+
+Justin Gardner (19:56.584)
+So there's lots of good research here if you're interested in Nuxt or Next.js. So definitely go check that out. But this one in particular I thought was hilarious because the payload is so simple. So the researcher kind of went through the Next.js source code and was looking at middleware. And apparently deep within the code of the Next.js middleware there is this blob of code that checks the x-middleware-subrequest header.
+
+And if this header contains a specific string, then it will just skip all the middleware. Lovely, right? And the reason that they created this was, as the researcher noted in the writeup, so that there isn't like an infinite loop of middleware, right? If the middleware sends a request to another route on the application, then it's not just gonna infinitely loop on the middleware. So that's cool, I like that. But...
+
+the way that they implemented it was so funny. It was like, okay, X middleware subrequest, and then the value for it is like the path of where the middleware lives, which is like extremely predictable in this Next.js environment, because at the time, there was only like one router that exists, the pages router, and your middleware had to be placed underneath that in underscore middleware. So this payload right here, X middleware dash subrequest,
+
+with the value of pages slash underscore middleware was all you needed to bypass any middleware, which is often, very often where authentication or authorization checks are being done. So that was a great find by the researcher here. And this specific exploit affects versions before 12.2. But after 12.2, there's a different exploit that is required because of
+
+the middleware code getting moved around, which is this one. With that in mind, the payload for the first version starting with version 12.2 is very simple. X middleware dash subrequest, colon, middleware. Right, just super easy to tack on there. And then there's another variant where it could be in the sources directory. So source slash middleware. Really awesome, awesome stuff that they have here. They built out all of the different paths. There are a couple edge cases as well.
+
+Justin Gardner (22:18.93)
+where you might need to repeat your payload across different versions. But this, feel like, is massively exploitable in a bug bounty environment. And they did go through and milk it on some bug bounty programs, as they said in the article. Obviously, the biggest impact would be, you know, auth bypass here, and you can access some routes that should be protected. But they also mentioned that oftentimes CSP headers are implemented in middleware, so you can use it to bypass CSP and get that version cached.
+
+Or you can do DOS via cache poisoning as well if there is a rewrite that was happening in the middleware for various location-based stuff. Really great finds here, very thorough. I think it's really applicable to bug bounty. think any of you recon boys out there that can do mass scanning may want to look for those 403 endpoints that are coming back from Next.js middleware.
+
+and then try to tack on a few variants of the payloads that are in this write-up to try to bypass off in those environments. So, all right, I think that's about all I had from the research for this week. Let me see if there's anything else. We do have a fun episode planned for next week when Rezo gets feeling back better. So I'll save most of the stuff that I had planned for that for the next time around. I guess as I'm closing out here, I will say...
+
+Would love to see all of you guys in the Critical Thinking Discord. We've got a really awesome community over there, especially in the Critical Thinkers. We've got some fun master classes up. We've got some hack along scheduled. And then we've also got the Full-Time Hunters Guild for any of you guys who doing this full-time. That's been particularly helpful for me. I've essentially said to Yuji, who's the community manager here at Critical Thinking, hey, I want you to run this. And I'm going to be a member of the Full-Time Hunters Guild, because that's what I need.
+
+And so I've just kind of been chilling. I'll pop in and do the meet and greets and stuff like that. But I've mostly been using the Full-Time Hunters Guild as an accountability thing for me and collaborating with some of the other hackers there. And I can personally say it's been really helpful. So for any of Full-Time Hunters that are listening, I would love to see you in that. Definitely apply. You can find the application at ctbb.show slash fulltimehuntersguild.fthg, right? Slash FTHG for Full-Time Hunters Guild. All right. That's a wrap on this week. Love you guys. See you next week.

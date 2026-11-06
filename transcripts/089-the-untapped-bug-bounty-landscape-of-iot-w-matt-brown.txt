@@ -1,0 +1,974 @@
+Episode 89: The Untapped Bug Bounty Landscape of IoT w/ Matt Brown
+Source: https://www.youtube.com/watch?v=tSpDLTm5POs (YouTube captions, auto-generated)
+Note: caption transcript — punctuation and speaker labels are not present.
+======================================================================
+
+[00:00:00] exactly like there's an adrenaline or like a dopamine hit that you get when you like reverse engineer something that you never understood before and then it leads to like a it freaking works you know I love it [Music] [Applause] [Music] hey guys our sponsor project Discovery
+
+[00:00:34] has dropped a new tool in collaboration with Google's own Mandan team called TLD finder okay picture the SubFinder but for top level domains did I say anymore check it out Al righty guys today we have Matt Brown with us Matt uh you live pretty
+
+[00:00:50] pretty close by two hours or so right yeah just a little bit under two nice man so he uh he made the drive down to Richmond thanks for doing that and we get to do a nice uh a nice live in person version of the Pod um which I
+
+[00:01:02] always look forward to those are always a good time um and man looking at this doc I'm very excited um but I have to we have to start at the very beginning a very good place to start um and get a little background about Matt Brown and
+
+[00:01:16] how you became the hardware hacking specialist that you are yeah so my uh experience with uh cyber security and hacking started from a young age I don't know I just loved computers and playing around with them at first and then I uh one day was at a
+
+[00:01:34] bookstore and I actually brought my book from when I was 16 years old look at this practical packet analysis uh so so I bought the this book and it was all about using wire shark and examining all the packets that are flying across the
+
+[00:01:51] network dud check this out they're analyzing HTTP in wire shark you know like oh my gosh this is great I love this there was a lot of clear text HTTP flying around back then um and so I got that book and I was hooked and so I was
+
+[00:02:06] just running wire shark and watching what kind of traffic my computer was generating and super interested in understanding like every packet how it works how TCP UDP works all that stuff and so uh that's kind of got me hooked I also tried a little wi-fi hacking at
+
+[00:02:25] home on my on my parents a weap uh Wii back in the day that was still a thing so uh yeah I mean obviously super easy but you felt like this like hacker God when you could like run a program and have it print out the Wi-Fi password in
+
+[00:02:43] a black terminal right go unbelievable man I I remember the first time I I cracked a web Network also my home network at the time yeah man it it what a rush yeah so so so following that I went to college I started as computer
+
+[00:02:57] science later transferred to Mis because I didn't want to take physics one and two or Cal 3 dude that those are so hard man so but you did CS I would have assumed that you did like Computer Engineering yeah so I eventually came
+
+[00:03:13] full circle to that in grad in in grad school but in my undergrad just uh got in interested in general hacking and security we had an awesome uh information security student group at Iowa State and they were talking my freshman year about uh all all of these
+
+[00:03:31] session tokens that would be flying around in clear text and I was also in my first programming class at the time and it was a Java programming class so back in this would have been 2010 back then Facebook thought it was a good idea
+
+[00:03:44] they had https on the login page but nowhere else on the website oh my gosh so and and and later later on no joke Facebook made it an optional feature you could drill down into the settings of your Facebook account and optionally opt
+
+[00:03:58] into https every no in the actual settings for the in the settings for your account you could opt into this technology called wow dude so at that point there was session tokens and stuff like that flying around and playing text for Facebook they were
+
+[00:04:14] flying around and on college campus at the time uh encrypted Wi-Fi was not as popular so oh my gosh you hop on and man open wi-fi open wi-fi so literally flying through the air were session tokens and so I I might have grabbed a
+
+[00:04:29] couple of those from my friends Facebook Browser you know sessions and pop their Facebook accounts uh pretty sure it's uh more than seven years ago stat limitations yeah it's all gone so wow dude that's crazy man yeah it was the Wild Wild West
+
+[00:04:44] and I remember um one of the first things I did in college was we had like a computer science 101 course and they were supposed to like have you you know you're supposed to build something it was a very like abstract assignment they're like build something and like
+
+[00:04:58] present it for everybody and we're like okay sure and so what we did was we built a um a a system where we would get FTP credentials as they were coming over the wire and we demoed this whole like hack and you know this person would log
+
+[00:05:11] with FTP and then the hacker would like grab it and and that sort of thing and um with man in the middle and our our our professor walks up to us afterwards and he's like that was great you guys don't have to come to class for the rest
+
+[00:05:22] of the semester if you want and I'm like oh my gosh I love you so he was like a TA you know he's like a like a grad student like a student that was teaching this course um so yeah lots of good times with that but the days and I
+
+[00:05:35] actually thought that the days of you know seeing that sort of stuff being able to to proxy and men in the middle and get all those tokens were gone but actually we've got some some exciting stuff on the on the dock today about
+
+[00:05:47] that so we'll swing back around to that um so you're in college you're stealing you know Facebook your text credentials and that sort of thing freshman year sophomore year they started to actually crack down on that but um yeah yeah and and the other really cool thing we had
+
+[00:06:01] at College were these cyber defense competitions where uh you'd give be given about a month to prepare they give you a bunch of VMS you with a bunch of holes in them you know purpose purposely put there web apps vulnerable to all sorts of stuff and you had to go and
+
+[00:06:15] secure those and then they brought in real world pent testers professional pent testers to come and like test you for eight hours on a Saturday what was it what was those called those competitions uh cuz I competed in it as well there there's there's a few
+
+[00:06:30] different levels of them yeah so Iowa state does their own at my the college I was at um but there are a like National Collegiate cyber defense competition can't remember the name of it but it was so it was so much fun man because uh the
+
+[00:06:43] one we did you could you could be on the offensive or you could be on the defensive so you've got to balance your time between hacking other people's stuff and securing your own stuff oh that's awesome and it was it was pretty cool it was really fun that was cool so
+
+[00:06:56] yeah my experience at Iowa State is uh as an undergrad was on the defensive side you couldn't go hang out with the but in grad school they let some of the grad students go and hang with the professional pentesters and be on the
+
+[00:07:08] red team and that's where a lot of my offensive skills came from and my start to uh yeah professional pentesting wow it's cool because you get to work right alongside you know propen testers that's that's a really cool opportunity I'm glad to hear College was good for you
+
+[00:07:22] with that I really for for me like my college experience was very much like trying to claw some some semblance of cyber security into my curriculum because the only piece of curriculum we had at the time for cyber security was this one course where it was all like
+
+[00:07:39] theoretical cyber security they're like you know here's what this is but no hens on nothing and so I went to the the professor and I was like please like let me do some Labs every couple weeks and she's like sure no problem like and and
+
+[00:07:51] so we we were able to do that and we got the cyber security club up and running and then we were able to get some good labs in place but um it's good to hear that some universities especially earlier on too um were were
+
+[00:08:03] doing that at a at a good level and getting students into this sort of thing yeah no that was a big thing uh Doug Doug Jacobson he's the head of the information security department at Iowa State he was kind of been on the
+
+[00:08:14] Forefront of that you know focusing on Ed practical education for for engineers not theoretical you know stuff that actually hands on you know at the end of the day you know college it's kind of hard for the colleges to keep up with the pace of it you know but end of the
+
+[00:08:29] day if you actually have your hands on something and you're actually doing something you're going to get some semblance of experience right is you know rather than theoretical stuff so I would definitely rather have older material that is you know might be a
+
+[00:08:42] little bit out of date but is Hands-On than Cutting Edge stuff and not Hands-On education um I agree so not a whole fan of the whole college process anyway but whatever okay so so fast forward I mean do you jump right into red team stuff as
+
+[00:08:56] you come out of college or how does that go yeah so uh So speaking speaking of all those competitions I uh also won a like forensics competition that like locky Martin put on and and that brought me to a job opportunity that was out in
+
+[00:09:09] the northern Virginia area here so that's what brought my family out here um it wasn't exactly the best job for me so I hopped around to some startups and uh and and then I got a job opportunity to actually move back into iot hacking
+
+[00:09:23] which had always been a side passion project of mine but now I got to do it professionally which was a pretty big blessing that's awesome man okay and then fast forward a little bit we are this is our paths have not crossed to
+
+[00:09:34] this point yeah and then I go to this uh live hacking event in 2023 and you know I Joel and I are hacking on a on an iot device um we're crushing it we've got shells we're so pleased and then we show up to this event and in freaking there's
+
+[00:09:50] like rumors going around like mat mat Matt Brown he's shells you know random induction sh shells for days you know and and we're like what's going on and and you had so many bugs at that event man you guys absolutely crushed it um so
+
+[00:10:04] that was my first introduction to you there and you guys you guys walked away with the NBA that time we did uh my first experience this is probably not the normal uh bug Bounty path but my first ever submitted bugs were at the
+
+[00:10:15] live hacking event that I got the NBA chat so that was an interesting introduction to bug Bounty for sure you got plus one into that event I did yeah so uh yeah random deduction uh Jesse she invited me on uh found me through my
+
+[00:10:28] YouTube channel so I know we've been talking a bunch about content creation so uh yeah she found me through a YouTube video where I was uh doing some firmware extraction on an Amazon Echo device um and that yeah so that happened to be related to uh the target of this
+
+[00:10:43] event and so uh yeah and and this this event was made for a hardware hacker right because I think it was hacker one's first Hardware only or or that was the majority of the the scope for this event so uh definitely an event that was
+
+[00:10:56] made for me dude that was s that was very much so one of my favorite events that I've ever been to just because it's a different skill set for me and I got to also see Joel really shine in his area you know that he he really loves so
+
+[00:11:10] um yeah what a what a great memory that one and we definitely want to have random deduction Jesse on as well I I've talked to her a couple times about coming on the Pod so we got to get that on the books because she's also got a
+
+[00:11:20] tremendous amount of knowledge in in a variety of areas not even just you know iot and Hardware hacking stuff but outside of that as well um so I guess clearly you had some experience with network pen testing from the competitions you um you know did some
+
+[00:11:38] practical packet analysis so we got some binary level stuff you know protocols that sort of thing um what other pieces did you kind of pull together because iot hacking is such a challenging specialization because of the fact that it's so broad you know you you have to have some
+
+[00:11:57] reverse engineering you have to have some you know networking experience you've got to have web stuff you've got to be able to do source code review like all and then Hardware you know obviously Hardware right um and so like where where did you get the web hacking skills
+
+[00:12:11] and the the other components that you need to be able to do the stuff you do today yeah that's a good question I think what makes me good at all this Hardware stuff and like you said or or hacking an iot system because it's not
+
+[00:12:23] just a hardware device right there's you know there maybe there's a mobile app that controls it or and then there's talking to web apis there's there's all these different components and I just feel like over my time in technology I've fought tooth and nail to to try to
+
+[00:12:37] be as much of a generalist as I can and to understand a whole breadth of Technologies and not be like I'm the hardware only Kai because there are some Hardware security only people out there who are like finding bugs in like Intel or AMD chips right that's not how deep I
+
+[00:12:56] go into the hardware side of things I like to understand the iot system as a system where there is a embedded device you know with code to reverse engineer that has Network Services that's communicating over the network so you have data in transit and in and and
+
+[00:13:14] stored right and so it's a cool way for me to get to keep learning about all these different Technologies because I just love learning about technology I think that's what got me interested in this uh in computers at a young age because there was kind of this Limitless
+
+[00:13:28] exploration you could do into the digital world all components yeah yeah no that and that's that's one of the things you know that we've we've got here as well on the schedule to talk about is like iot hacking as a specialization I think is
+
+[00:13:42] underrepresented in the bug Bounty Community I think it's really hard to find good Hardware hackers that will go and hack on these programs yeah um and I think one of the number one problems with it is and why it's not there aren't more people going down that path is is
+
+[00:13:55] really hard because you are constantly learning and you are const L you know having to use all of this information from all the various um different disciplines of hacking um to attack the holistic system that is an iot device because there's going to be a user
+
+[00:14:10] interface you know there's going to be backend services that are listening there's going to be you know local privilege escalations right you know that sort of thing so there's it's so expansive um but yeah I guess I guess that makes sense that it's really well
+
+[00:14:24] fitted towards somebody who wants to be a generalist or someone that wants to be a lifelong learner and always come up against stuff that they don't fully understand yeah no no the some of the funnest uh bugs to find are when I have
+
+[00:14:38] to develop a new skill in order to attack problem how reing is that to yeah exactly like there's an adrenaline or like a dopamine hit that you get when you like reverse engineer something that you never understood before and then it leads to like a freaking works exactly I
+
+[00:14:53] love it yeah I talked about this bug in in my Defcon talk um and it was the first time that I'd ever like written a python script from the spec to exploit a binary protocol oh yeah and I was like and I was like man it just feels like
+
+[00:15:08] I'm G to get some like something wrong here and of course like I I had to tweak in a couple places but eventually like within like an hour it was working and I was like whoa this is like I this is not magic like they actually just built it
+
+[00:15:23] like the spec um yeah man so so rewarding um so yeah I'm looking at this list of of you know cross cross field knowledge that we that I had here and and there's there's so many I mean like we were talking about earlier today
+
+[00:15:37] without giving too much information away but there's a mobile hacking component too to a lot of these iot devices because they'll be running off of like um you know some bastardized version of Android right and they've got like all these like super weird apks that have no
+
+[00:15:52] UI and or just like a service running in the background you know all sorts of things on there um so there's a component to that too and then there's the hardware hacking piece the web hacking all of those so lots of lots of
+
+[00:16:04] really cool pieces that come into the whole iot system yeah I would say to to that point and to somebody who is intimidated by uh you know hacking on an iot Target because of that like you can bring your one expertise in one of those
+
+[00:16:20] areas to bear on the Target and I think I think I get get into this in the doc but um the hardware hacking skills all this super technical advanced stuff you it gives you more uh more attack surface to look at right so you had Jason hadock
+
+[00:16:37] on and like to talk about the whole Recon thing and how it just gives you more stuff to hack on D I love that you listen and can quote every episode of this podcast he's quoted like four or five episodes today just in our like two
+
+[00:16:48] hours of conversation so I I'm caught up I think we I'm caught up on all the epod so um in there there there's there's an interesting analogy it's not going to be perfect but in the hardware world right the more you dig into the hardware so
+
+[00:17:01] like I don't dig into the hardware for the Hardware's sake I dig into it to find bugs oftentimes in the so in the actual software running on the device or in a mobile application that or or a mobile API that is in this whole iot
+
+[00:17:17] system right and like I think of it like it's Recon right it is Recon for for these iot devices for you to be able to understand what you're actually working on you know because at the end of the day the most impct is going to be some
+
+[00:17:29] remote vulnerability right that can allow you to pone the the iot device right and and if it's a remote vulnerability it's coming from some you know service that's sitting on that on that device that you can interact with and for that you need to get your hands
+
+[00:17:43] on what that software is yeah and that's the goal of a lot of the hardware hacking piece right is to be able to get at that uh you know internal firmware and understand what's happening there a little bit better absolutely yeah so like every iot uh hacking exercise
+
+[00:17:59] starts out as a blackbox assessment you have this device sitting in front of you you know nothing about it you could maybe like interact with some of the Network Services over the network but you don't really know what's going on inside the the hardware hacking the
+
+[00:18:10] firmware extraction the getting a uart shell on the device those are all tools that's going to turn that black box assessment a little bit more into a gray or a white box assessment and and get you access to more stuff to hack on
+
+[00:18:22] absolutely okay so so just talking about I iot hacking as a specialization again you know the first problem that I men I I wanted to bring a couple of these problems to you that I think present themselves to hackers trying to get into
+
+[00:18:33] iot hacking as a specialization the first one of course was the breath of knowledge that you needed um but the other one that I had here was how much upstart time there is to find a vulnerability right so me as a web guy
+
+[00:18:46] and I struggle with this all the time because of the concept of opportunity cost right like do I just log into a web application and start turning attack vectors right on that web application and start turning out bugs or do I spend for me what often turns to be you know
+
+[00:18:59] 16 24 hours of of work hours like working specifically on uh extracting the firmware getting my hands on like something so where I can actually start even testing these Hardware devices right um so I guess how how do you address that and how do you weigh the I
+
+[00:19:17] mean obviously there's a lot of passion for iot devices with you but how do you weigh the pros and cons of that and do you have any advice to hackers that are just coming up and starting to come into iot hacking on that the the cost of even getting
+
+[00:19:32] started yeah so I guess the one thing is when you look at Bounty tables a good program is going to have much more uh much higher Bounty tables for the device category than you know it's usually device mobile uh web is is what you kind
+
+[00:19:48] of see a tier system um so there is more of an investment and and there's there is a risk to your time right you're talking about that opportunity cost there there absolutely is but oftentimes what I think you find at the at the end of that exercise is a lot
+
+[00:20:05] of untouched scope because of that barrier to entry that's big so I I like like an analogy in the in the mobile space is you know mobile apis are not as tested as much as your your web apis because there's this barrier to entry of
+
+[00:20:20] unpinning the app right in an in an even greater sense there's this bar there's a bigger barrier to entry in the hardware world but there apis that are that that that device interacts with or services that run on the device that no one has
+
+[00:20:34] ever really assessed because maybe they had a pentest one time and the pentester like clicked scan against the IP of this system and like no no real assessment with any reverse engineering or understanding of what's going on on so wow sometimes these these devices that
+
+[00:20:51] make their way into bug boundy programs they could actually be completely unassessed they could they could yeah yeah that's crazy man yeah no that makes sense there's definitely a good amount of reward there and I I like what you said about having higher Hardware um
+
+[00:21:05] Bounty tables I think that's really good I think also and this is something we'll cover a little bit later on as well but I think people coming from the web or mobile world you know even talented hackers in those spaces have a hard time
+
+[00:21:17] with attack Vector ideation for Hardware devices like what actually constitutes a vulnerability you know in a hardware device so I think that's that's another challenging piece of it so if you can nail that down you can start thinking okay well maybe I could get that you know 88k
+
+[00:21:31] medium you know that there is in the device World versus like a thousand right in the web World um and so that yeah I think that that I think you've said it on the podcast as like a full-time bug Bounty you're like I'll
+
+[00:21:42] report a low or a medium right I'll do that all day long like especially when those Bounty tables are advantageous for me like a handful of mediums I'm I'm all in for this yeah you're you're all set I mean you're you're out earning some
+
+[00:21:56] crits on on uh on web scope often times yeah and especially when you think about the CVSs uh I think I mentioned this in the doc right like as harder hackers a lot of times yes of course we'd love our attack to be remote you know over the
+
+[00:22:09] network but a lot of times we're sitting uh in that adjacent category and so uh it's sometimes hard to get the high or the crit you need especially when those other categories I haven't had a bunch of experience with CVSs scoring Hardware vulnerabilities I mean how does it do it
+
+[00:22:25] is not as built out for the Hardware scope it it just isn't and the result of that good programs what a good bug Bounty program will do is they'll say yeah yeah we understand there's this CVSs thing but we understand the threat model of our device better and things
+
+[00:22:42] that might have technically been you know a high got called a crit or medium get called a high because they understand the the context that that device lives in um I haven't had too many programs be super strict about CVSs they usually have their own internal uh
+
+[00:23:00] rating system so I'm wondering how doing something like providing a initial research stipend for Hardware hackers would really I think I think for me that would be an extremely motivating thing right so if like a like a program comes on and says like hey um
+
+[00:23:19] you know we're we're gonna be offering $1,000 you know $2,000 to anybody who accepts the hardware devices and says we're going to give shot right y um and I think these people have to be vetted you know Hardware hackers right people that are actually interested in hacking
+
+[00:23:35] it or whatever but I think that extra $2,000 would really help because that gives you a couple days of like all right well you know there goes the opportunity cost problem that I had and even at the end of those couple days I
+
+[00:23:48] could write up my you know approach to doing this so that the team if they're really interested in securing it could actually put some you know blockers in place like an encrypted partition or like you know whatever um and then so there would be benefit
+
+[00:24:01] for them on that front as well but then that also solves some of the upstart problem for us and then we can start zoning in a little bit more on on the actual hacking portion of that rather than just the setup but also on the
+
+[00:24:12] other side of this you know Matt I've seen some of your videos where you go from like zero to I have firmware in like an hour and a half um so I think maybe it could also be a skill issue you know on on this side where it takes me
+
+[00:24:25] like eight hours to 16 hours to actually like get firmware um so I mean is that how often do you let me ask you that because you've you've assessed a ton of of Hardware devices what what is your if you had to just sort of rough shot it
+
+[00:24:39] what is your average time to um firmware yeah so I'm always going to go down a cascading uh list of steps that are more and more extreme in nature to get at that firmware right like because first if I can get a UR shell on a device that
+
+[00:24:57] gives me more than just fir because that gives me the ability to debug the device while it is while it is running and that has even more benefits that that allows me to you know understand it makes it much more again gray or white box of an
+
+[00:25:11] assessment than that completely Black Box assessment or if I'm just doing static firmware analysis if I can't get that then I am going to go to that method of pulling a chip off of a device and yeah I guess that is a thing that
+
+[00:25:24] helps over time with experience that I've just pulled enough devices out of e-waste I mean that's literally how I practice this stuff is I find devices out of East Goodwill or if you have a workplace that has big East Bin you just grab a bunch of devices and then you
+
+[00:25:36] don't care if you brick it right right you can practice you know uh you know desoldering and soldering the chip back on all day long but you only get one shot though too if you just have one copy of it right like that's that's the
+
+[00:25:47] thing that I that gives me anxiety like you know I would love to I loved an event where they gave us like six of the devices I was like six this is great I can brick three of these and be tot fine like I
+
+[00:26:01] just felt so much more um emboldened at that event to like try stuff and and you know not be anxious about it especially when these devices can be pretty expensive um but yeah I think that's a great approach to like learn how to you
+
+[00:26:14] know pull chips off and stuff like that is doing the E-Waste thing that's that's pretty solid yeah and the and the other thing you get out of uh you know targeting those devices or like older Wi-Fi router you get off of eBay you do
+
+[00:26:25] get uh softer targets to to look at to kind of build up those hardw reverse engineering exploitation skills that you know if you're in a live hacking event the device is going to be a little bit more hardened than your average device that you pick up out of an eway spin
+
+[00:26:42] right yeah for sure but it's I mean you still get surprised what you see sometimes like not naming any names but there have been events where that has been really surprising to me um all right so one last little problem with with iot hacking I just specialization
+
+[00:26:58] that I wanted to discuss was like it costs a lot of money to get started in iot hacking right like so this is mostly oriented this this question is mostly oriented towards like or for the for the people that are already experienced web
+
+[00:27:12] or mobile hackers that want to also get into this space right um You have to buy a ton of devices and a ton of like um equipment and and all that sort of thing which can get pretty expensive on the on just the upstart cost before you can
+
+[00:27:26] even have a device to hack um do you think what do you think is like the bare minimum setup and what are you doing with that bare minimum setup to get started with with the hardware hacking stuff speaking to you know an experienced mobile or web pen tester
+
+[00:27:43] yeah so I would say yeah there are tiers that you can get into of like more advanced gear but you do not need to start there right there are some basic devices uh or sorry equipment that you can get to get yourself started and I go
+
+[00:27:59] back to what I said about iot testing it starts as blackbox and you can start an iot assessment or you know bug bounty hunting on a device without any of this Hardware hacking gear it's only going to get you more insight into hacking the
+
+[00:28:13] device um but I would say the first thing let me you said you said that before and you've said that even off air before this when we were talking but I want to double click into that a little bit like what are you doing are you just
+
+[00:28:26] like and mapping it and like looking at the services and like playing around with the if you're going to do a true blackbox assessment like that without any hardware hacking stuff like what would that look like so sometimes you'll find web interfaces right and so as a
+
+[00:28:39] web hacker you're like oh hey web interface just on an embedded device I understand that and uh it's just it's just it's just a web server that might have command injection because they do sketchy stuff they do sketchy stuff and maybe it's running as root who knows you
+
+[00:28:53] know uh yeah never seen that before have you no no no never yeah that's why you you mentioned uh privilege escalation that doesn't really happen very often in iot because if you get a shell you're you're just right you're rude it's impossible to do privileg
+
+[00:29:08] escalation some of them are so immune because everything runs is everything just is that's hilarious dude so um yeah so you're you're you're hacking the the the web application what else you got yeah so the other thing it goes all back to my
+
+[00:29:22] roots data in transit right so not just targeting the system and what services it has but what is that system communicating over the internet to its Cloud servers to its apis and stuff like that is it shooting data over over the network in clear Tex HTTP like like I
+
+[00:29:41] mentioned like back in the day back in the Golden Age of Facebook uh you know account poning uh there are still iot devices that will just blast data over the internet and clear text un all sorts of consequences that you can have uh
+
+[00:29:56] that will come from that and then and then you take that data and you're learning more and more about uh about the device and about the whole iot system as a whole um and then if it's encrypted are they doing certificate validation correctly so all all the
+
+[00:30:10] stuff that uh we're probably going to get into about about certificate validation in in the TLs context or the SSL context that can all be done in a completely blackbox test you can have no access to the device and attempt to man in the middle of the traffic o that is
+
+[00:30:26] flying over the network and then if you if you see anything then you can start playing around with okay well I've got an access token here or maybe I don't even see any traffic here but I see the SSL certificate you know host name or whatever right and I start
+
+[00:30:42] playing around with that server and that all gives you stuff to keep in your notes because then when you do get the firmware the first thing you want to do if you see an SSL connection to a server you're like okay I have a host name now
+
+[00:30:53] can I go into the firmware and find out where that request is being generated what binary what program is creating that request the find the request game I love that from Sam herb like like that was one of the one of the pivotal
+
+[00:31:06] moments for me collaborating with with Sam herb was like he's like yeah whenever I'm reversing enterprise software I always play the can I find this request game where I where I see some request that comes through and then I you know I go into the the software
+
+[00:31:20] you know that we reverse engineered whatever figure out where that request originated from and trace it all through and that's the same thing we do there um yeah no that that that makes sense I didn't even really think about the fact see this is what I'm what I'm talking
+
+[00:31:32] about like just understanding how the the various attack perspectives even for these uh iot devices right because you have you've got like um you've got adjacent Network right you're on the same land and you can can you pone it from there can you pone it with physical
+
+[00:31:47] access to the device can you pone it can you pone the server that's that's communicating with the device that you know there is no user land thing even really like this is the device calling back to it you know Home Server um so
+
+[00:32:00] there's lots of different perspectives from which you can Bluetooth yeah Bluetooth again that adjacent Network context that includes Bluetooth Wi-Fi uh all of those type of so not even just Lan or like Wi-Fi related stuff internet related stuff you also all categorized in CVSs as adjacent Network so yeah that
+
+[00:32:16] that all is really good scope to hammer the Bluetooth stuff is really interesting too man I I I thought that it was going to be a lot more complicated than it was when I took a look at it um it there it is not hard to
+
+[00:32:28] get up started in that with just like a mobile app that you can install on your phone and just write various properties into this you know yeah n NRF connect yeah on any mobile phone iOS or Android although iOS has some weird permissions
+
+[00:32:42] that it won't let you see the MAC address of the device you're connecting with but you can still like communicate with it yeah it's iOS being really oh my gosh yeah it'll show some weird U like U uid or uid or whatever it won't actually
+
+[00:32:54] show you the MAC address of the device they're like no you are not allowed to see you are not allowed freaking Apple Man classic apple okay so yeah um I want the next section that I wanted to hop into was this one regarding one of your
+
+[00:33:08] recent videos uh decrypting SSL to Chinese Cloud servers that did really well by the way congratulations on that video doing so well um and one of the things you cover in that is exactly what you were just talking about a moment ago of bumping SSL on these iot devices and
+
+[00:33:23] um you know getting access to the communications from that that device calling home sending data out the back door that sort of thing yeah um so for me the way that I understood how that would work normally was I need something like a Wi-Fi pineapple or some malicious
+
+[00:33:39] router device that I can use to um you know make this router connect to that router right or whatever and and send the traffic through that and then you know have it come back to my computer or whatever and that scared me a little bit
+
+[00:33:52] because it's a lot of like all right now I got to get a malicious router and I got to set all that up but when I looked at the way you did it in this video it was freaking beautiful man there's like a like a 15 line config file that you
+
+[00:34:04] wrote that does everything and it was just awesome so could you talk a little bit about that methodology and what kind of equipment SL setup you need to do something like that absolutely so yeah that tool on GitHub is called man inthe middle router it's all it's doing is
+
+[00:34:18] it's you know duct taping together a few different open source Linux utilities that at when they're brought together are going to effectively do the same thing a Wi-Fi pineapple is going to do it's going to set up an access point with whatever SSID password encryption
+
+[00:34:33] type you want and then it's going to and then optionally my program you can also have like a USB to uh ethernet dongle so if you have an Ethernet based device it can feed into this same uh Network yeah that's kind of the way that I thought
+
+[00:34:46] that you would do it was you would just take like an ethernet cable and put it on the WAN Port of your router or whatever if you're attacking a router and have that go through something so when you're attacking routers is that normally the way you do it or do you
+
+[00:34:59] like link one router to the other somehow yeah so so with this with this manal router program it's actually making my Linux computer into a router with by kind of again it's kind of cobbling together a router but because basically all that a router does I mean
+
+[00:35:15] it does some other things but the bare minimum that a router needs it needs to you know spin up a Wi-Fi hotspot right so we can do that with host APD and all your Wi-Fi routers 95% of them are doing that under the hood anyway
+
+[00:35:28] gooey or mobile thats it which you figure out once you've shed of them yeah you're like where's the host F and the SSID and password that's clear text on the device or what right um so there's that and then we have some IP tables
+
+[00:35:43] rules that are going to like pass the the traffic that are going to forward the traffic out to whatever your Wan inter interface is and in the context of my program The W interface means whatever interface on your computer has internet already right so be connected
+
+[00:35:58] to Wi-Fi ethernet whatever on the Upstream side and then optionally I have a bunch of Ip tables rules that can take traffic that's egressing out of there and say no no no don't go out come over to my my TLS proxy that's going to man
+
+[00:36:15] in the middle all that traffic and so in that place of that proxy program you can run any number of things so uh so bur Suite can run in transparent mode so you need a transparent proxy right um so you can use kaido but you have to put
+
+[00:36:30] something else front of it like man in the middle proxy so you can have man in the middle proxy which is a transparent proxy and use kaido as an up y um or this new tool that a researcher named APO uh gave a defon talk on which is
+
+[00:36:45] called C mum and Co and uh the the the advantage to this C mum tool is that it will it will try to intercept the requests with a number of different tests so like let's say that the iot device was merely checking that your CT
+
+[00:37:06] was signed by a uh a CA Authority that it trusts it trusted but it didn't check the name the CN the common name of the certificate so if you had aert like attacker. nm.com that was signed by let encrypt and that device trust trust let
+
+[00:37:24] encrypt well then he's got a test for that where you can can load in your your let en Crypt signer and then it will it will perform these tests but it will perform all the tests and then the other really cool thing is tool does is if it
+
+[00:37:37] fails if it fails to intercept right if the device is properly performing certificate validation it will then let it pass through because what you'll find a lot of time on an iot device is maybe the device will get make request one it'll get a response it'll parse it and
+
+[00:37:54] then it'll make request two and then you know same thing in request three but maybe it's only request three that has a certificate validation issue well if you're just black if if you're if you're just doing this attack over and over again on the first request the iot
+
+[00:38:07] device is never going to move through to that state where it's making that next request because there's lots of different I mean it seemed when I was reviewing this talk I was amazed because this is essentially like like access control like my my web brain says this
+
+[00:38:22] is Access Control validation for SSL you know essentially there there's so many things you would just assume that I don't know why I would assume this because this is such a terrible thing to assume but that you know something at at that lower level is is going through all
+
+[00:38:35] the checks and like you know is sticking to the spec or whatever but that's never what we've seen ever in the history of security the opp it's just so smart to look at all these edge cases you know you can really when you watch the video
+
+[00:38:46] you can see how he is intimately familiar with TLS and familiar with all of the different spots along the way where you know edges could be cut you know Corners could be cut and you're not actually you know doing the full validation and then he built this into
+
+[00:39:03] this super easy to use tool um so I'll definitely be using that I think in the future for this sort of thing because um if you can I mean if you can bump SSL on those sort of things I mean it's very impactful to be able to see what is
+
+[00:39:14] actually happening between the device and the the call Home Server there's so much weird that happens there that they never expect you to see exactly you yeah and and again it's it's all this untouched scope a lot of the times yeah the the um the piece that you mentioned
+
+[00:39:29] about it passing through is so brilliant as well because they abuse the retry um you know parts of of TLS where they're like okay something funky happened that time let's just retry it right so he's like do something funky do something funky H most of the time they don't like
+
+[00:39:42] it if I do it more than like three or four times so I'm gonna let him through on this one but I'm gonna get them on the next one you know it it was very it was very well built I've got in here the
+
+[00:39:50] the various lists of of um you know attacks that they do with this software um very cool shout out also to loopin who who uh brought this to me uh when it was first released he was like dude this is crazy like all of these mobile apps
+
+[00:40:05] are like not doing any validation at all and and I was like oh okay cool L you know I didn't I never went back to it until I watched his video and I was like oh of course like iot men in the middling this makes so much sense um so
+
+[00:40:19] yeah Lupin you you you you were early on that man you you rocked it um Okay so we've got okay so just coming back to your your router thing really quick you've got this beautiful like I mean the thing's like 15 lines but it it
+
+[00:40:33] spins up a DNS mask you know thing to deal with dhtp and then you've got the that's the part I left out about what you need in a router you need a dhtp server because who does static IPS noway right exactly so you've got your DHCP
+
+[00:40:45] three lines of DNS mask config you've got your host APD like 10 lines of config I just wanted to just give you a public shout out here on this because this shows true understanding and true Mastery of these things when you're able to make it this Bare Bones and this
+
+[00:40:59] simple right because as hackers the more complexity we have the more like noise that we have it prevents us from seeing the edge cases and the the um what's truly being happening you know behind the scenes right so when you have something so simple and beautiful that
+
+[00:41:16] just routes everything through it just makes me so happy um so when I saw this I was really really excited and I think that this reduces a lot of the friction needed to start man in the- middling these iot devices so thank you so much
+
+[00:41:29] for that and then I I just want to clarify some of the requirements for this so obviously you need a Linux device right whether that's going to be a Linux desktop or or a laptop you probably need something dual booted so it's like actually at the OS level um
+
+[00:41:42] yeah you could you could in theory do this on a VM you just need to do USB pass through yeah yeah yeah I I I need to figure out how to do this with um with WSL because I switched to WSL and it it's a little bit dicey man like yeah
+
+[00:41:55] no no promises on WSL it it seriously and it it works so well like 90% of the time but there's just like that little extra bit that I'm like ah wouldn't it be really cool if I could do this but this is need really needs to be native
+
+[00:42:07] Linux sort of thing so I do miss my my my dual booted computer for that so I will say as a hardware hacker yeah being native on Linux it just it makes it makes sense for me because that's where I live um most of the devices I'm
+
+[00:42:21] targeting if they're not a microcontroller they are Linux based or some Android you know some derivative really good too what are you using for your like um Window Manager within Linux oh yeah so so I run Arch Linux like like a crazy person running Arch Lin here
+
+[00:42:39] um and uh I run I3 which is a like a tiling Window Manager uh I'm basically a complete Linux snob when it comes to all that stuff when you said Arch and I3 I was like okay get off my PO um okay and the other things you need
+
+[00:42:54] I mean do you need any sort of special wireless card for this like I feel like this is not something you can do you don't but in practice you might want one um laptop Wi-Fi drivers I have experienced this with the poor triers
+
+[00:43:08] who have had to triage my bugs that involve Wi-Fi I'm sorry for that um uh it's who knows what your Wi-Fi driver what capabilities it will have and won't have on Linux and so what I like to use always for the Wi-Fi just for consistent
+
+[00:43:24] experience is a good uh Alpha so Alpha makes USB wireless cards and you want to get one and again Linux wi-fi this is a pain you want to get one with a Medi Tech driver so I can I can give you a link to leaving the show notes if people
+
+[00:43:38] want a good suggestion seen these yeah I've seen these before yeah Alpha Alfa yeah so those are pretty much like the hacker go go-to and if you have a mediatech uh you know chipset it will work out of the box on pretty pretty
+
+[00:43:52] much any Linux drro and because you need different capabilities to depending on which attack you're doing for for for for this setup for the man inthe middle router setup you just need to be able to put it into Master mode which is like AP
+
+[00:44:04] mode in Linux but if you want to do wi-fi hacking then you might want to do things like have packet injection where you can spoof the MAC address that it's sending as and things like that so there are different attacks and th that
+
+[00:44:18] adapter is going to versatile you is going to be a used for any of that stuff so you um you had also here on the sort of list of requirements for this a USB ethernet adapter and I'm wondering why you you do that because I feel like you
+
+[00:44:30] can just use your ethernet port often times to be able to you could use you can use your onboard ethernet if you aren't already using that for yeah I'm yeah so I'm usually like sitting at my at my desk at home and I
+
+[00:44:44] have ethernet just because it's more reliable and so uh my Upstream internet will be uh taking up the ethernet gotta so you want to have another oneop yeah that makes sense very cool man yeah no that's there's lot lots of uh lots of
+
+[00:44:58] uses for all of this stuff as well you know lots of ways you can apply it so I think it's I think it's worth the investment for me to grab one of these Alpha um cards just for consistency as well and I'll keep that in mind you said
+
+[00:45:08] it was mediatech drivers the mediatech drivers are much better on Linux um yeah you'll have all sorts of problems with other Wireless drivers it's one of those things on Linux it's uh yeah yeah I appreciate that you speak to that because whenever you get those sort of
+
+[00:45:23] incompatibilities I think those are the times when I've been the most frustrated in my entire life is when I've got something like a driver like some device that just won freaking work between like freaking yuntu you know it's like this is like the most popular Linux drro like
+
+[00:45:37] how am I having this problem right and um and I I think there have been times where I've literally spent multiple days trying to deal with just setup issues like that and I just have to walk away I I don't ever get that frustrated but no
+
+[00:45:51] know and it definitely drives people away from the Linux Community but what what are you going to do yeah you got to figure it out you know and then I think once you get a better understanding of some of these things you go through that
+
+[00:46:00] trial by fire it becomes a lot more doable and I haven't run into issues like that in a couple years and I'm really grateful for that because it's it's a pain in the ass sometimes for me it's actually a lot of times it's it's
+
+[00:46:11] dual booting stuff I'll get myself into a pickle with like grub and like trying to get things to like I just I just hate it or you'll update Windows and it'll like what it did man it it'll be like grub you don't need this yeah like what
+
+[00:46:24] is that I am the only operating system clearly you don't Windows come on all right man um yeah I think for any of you is just I'll just shout to the audience real quick for any of you that haven't seen this video decrypting uh SSL to
+
+[00:46:39] Chinese Cloud servers um you know it's it's really you know it's a very Niche thing that he's working on here but I think a lot of the the the principles are very widely applicable to iot hacking so if you're looking to men in
+
+[00:46:52] the- Middle these devices I think this is a really cool video for that so we'll link that down in the description as well definitely check that out um the next section that I wanted to move on to was the General iot hacking methodology
+
+[00:47:04] I've been holding off asking you questions today as we've been hanging out a little bit before this episode but I'm really excited to dive into this so um when you are approaching a device obviously you've got your ways of getting um a shell on the device prior
+
+[00:47:21] to pulling the chip off right you've got your uart you've got JTAG um you got like glitching at into those two things right yeah um and so I'm wondering what what time what do you try before you switch to a chip off methodology and and
+
+[00:47:40] you know effectively break your device there but we'll come back to that because there are some nuances with that yeah oh yeah um yeah so so uh uart is always going to be my first goal on any device um I guess we got to talk about
+
+[00:47:53] devices in two different categories because one there's a microcontroller a and Os like Linux orid and so I I treat those two very differently in my process a microcontroller if you if you found the lucky device that they didn't disable JTAG on then you can use JTAG to dump
+
+[00:48:16] the firmware and that is the way to dump the firmware and then if JTAG is locked then glitching is the way to glitch the system into unlocking J tag or or the read whatever readout you know protocol is being used so um but that methodology
+
+[00:48:35] I am not experienced with I I tend to to to uh favor and Target the Linux based devices a lot more uh glitching is something I want to learn and get into more it's a very Advanced skill and kind of like I talked about how there's
+
+[00:48:49] people who just focus on like Hardware security there are people who like everything they do is glitching chips and and pulling firmware off of them engineer mic when you're when you're talking about microcontrollers versus I guess micro computers or like micro actual you know Linux systems yes um
+
+[00:49:06] yeah I mean on some of these boards there there may not even be a core OS for you to get very much off of right correct it's just like a board you know with with its own firmware attached to it there not running uh a you know an OP
+
+[00:49:19] a very minimized version of Linux like which is what we often see and then you know even further there's like okay you're actually run running like a strip down version of Android or whatever um that's a good differentiation I like that I will say in the microcontroller
+
+[00:49:32] case uh I I I I might even tend to jump to chip off faster if and this is a big if so microcontrollers have built-in flash pretty much all of them do but they optionally can have external flash and so if it if it's external flash then
+
+[00:49:47] it's just a flash chip like any other flash chip you can pull it off pop it in your Universal programmer and you can read that that that firmware out that so I've never hacked a micro controller I've always hacked uh microcomputers you know um stripped down Linux versions or
+
+[00:50:02] whatever so when you're dealing with a microcontroller what kind of stuff can you expect to get off not very much not very much without uh again very involved reverse engineering which again being really honest like like in a bug bouty context where you are considering Roi
+
+[00:50:20] and like like like time money like like is this going to pay off it might not right might not um there is uh a case though there are always exception to these rules cuz uh I believe the bug of mine that we're going to talk about that
+
+[00:50:34] has performed on a microcontroller so um occasionally you can find files or or something like that but what you're going to be looking at the firmware is going to be a binary blob because if you think about what a microcontroller is I I I again I'm from the Linux world right
+
+[00:50:49] so I think of everything through that lens so how I like to think of a microcontroller is it's one static program like think if there was only one process you know binary exactly and when you boot up the the processor it starts the program and when that program exits
+
+[00:51:07] the CPU halts wow right like like that and so and so that's why you know when you're coding a microcontroller you have like an infinite Loop right and then you you know you call various threads or do your stuff um but it's always running
+
+[00:51:19] that one process me to think about that even like yeah I I so think about that whole ecosystem from a Linux and Os perspective as well and you think that there's this thing called a file system which sometimes they build in sometimes there are these uh microprocessor os's
+
+[00:51:37] you know that where they will build out the concept of a of a file system that that can exist on a microcontroller but most of the time that's not a thing gez dude that's crazy so a lot of this stuff is just getting held in in memory and H
+
+[00:51:49] yeah yeah but if you can if you can extract that firmware and you see things like Secrets or uh certificates uh like like well like talk about in our finding down the road uh you can maybe do something with that maybe you can do
+
+[00:52:01] firmware modification maybe you can grab those secrets and then uh or URLs right if you see API endpoints any kind of clear teex string you're going to look at that and right DD and strings is your friend there people ask me all the time
+
+[00:52:15] like oh you're this like really Advanced like iot hacker how do you find that password in that program did you reverse I ran strings like half the time literally the first first thing I do if I get a binary blob I run strings pipe it into less and
+
+[00:52:29] then I just hit the down page uh button on my keyboard what what what are you doing with less man you got to pipe it into a Vim buffer and then it like oh geez what what get what are we doing I know oh my gosh okay so so very good
+
+[00:52:43] differentiation I'm really glad you you brought that up because there those are definitely two different worlds right yeah so back to the Linux path because I think this is where some of these skills really come into use more so so my first goal is uart because uart gives me more
+
+[00:52:59] than just the firmware if I if if I get a good Art Shell so when you connect when you find your art interface right uart is a Serial protocol that allows you to communicate over you know you know some some Vol some digital signal
+
+[00:53:12] over a voltage you know maybe usually 3.3 volts so you connect up your cable so we go back to what equipment do you need my first piece of Hardware hacking equipment I would ever suggest is a multimeter and a 3.3 Vol uh uart to USB
+
+[00:53:29] cable yeah that is going to help you get so much on so many devices that the ROI on that is just that seems and it's like a $15 cable and it's pretty Universal too you know any hardware hacker that I've talked to is like yeah man just get
+
+[00:53:43] a multimeter and a and a UR cable and you know you're you're good a very large portion of the time yeah maybe a soldering iron because sometimes they take the they they don't populate the pins and the production devices so you have to put a little you know like you
+
+[00:53:56] know half a cent pin and soldered on but yeah yeah so so um when you're identifying you are are you often doing that from the data sheet are you just kind of like poking around on the on the device with the multimeter are you I
+
+[00:54:09] mean obviously you you know after a little while you kind of get a trained die for it you can say okay that's like four to six pins or whatever right there um it and it's four to six right no it can be it's it's depend but if you see two
+
+[00:54:23] things that look like connectors on the board the one with more p is J taged one less is you are but yeah it's all it's all pattern recognition like I can just look at a board and be like okay there's the flash there's the ram there's the
+
+[00:54:34] CPU you know over time you do get that trained eye and that's why I really always suggest people go dig through E-Waste and just like open up devices even if you just open up the device and look at it you're gaining something because you're looking and you identify
+
+[00:54:49] the components on the board because you're you're getting those reps in to be like okay there's art there's the flash chip those are the things that I care about this is the same thing we tell new web hackers is you don't even have to hack anything you don't have to
+
+[00:55:02] try anything just get start looking at htttp requests as they come through the proxy and start understanding what that does as as correlated to the action that you just performed in the web browser right if you can categorize those requests and start understanding okay
+
+[00:55:16] anything Sentry related you know or whatever like that's that's metrics I don't need to look at that super much it's funny because that contradicts what I said last week about about Sentry being an interesting attack surface which it is but you see you know if
+
+[00:55:27] you're focusing not for the new hackers exactly if you're a new hacker you want to you know zone right in on the the functional API that's that's targeting the main website right and I think this is the hardware version of that of like
+
+[00:55:40] break these break these things open um start identifying all the various components know that's a flash chip know that might be a UR connector you know that sort of thing exactly exactly yeah yeah the things I'm looking for on a board are art and the Flash chip that's
+
+[00:55:53] it on a Linux based system I'm not really worried about J tag at at all honestly I'm just kind of leaving that by the wayside um with art then I'm then I'm going if I if I if I see something that I think is uart I'm turning on that
+
+[00:56:06] device I'm probing with my multimeter with ground I find ground somewhere uh Wi-Fi uh antennas or always connected ground you find you find shields that are grounded and I'm probing the pins to find a voltage that fluctuates especially on boot and that's probably
+
+[00:56:22] the transmit pin uh and then usually next door to that pin uh to the right or the left I found weird devices where it's somewhere else you'll find the rece you'll find the receive pin where where you from your Ur cable are going to
+
+[00:56:35] transmit to it so you've got transmit you've got receive you've got some voltage one what is it what is the so you don't need VCC that's only if you're going to be powering the device over the U cable which usually doesn't work anyway so you actually want to just
+
+[00:56:48] completely ignore that yeah and sometimes I think people have been like don't mess with that Port because it'll blow your if you hook it up to the wrong thing it'll like screw your USB port on your laptop it it might do something bad
+
+[00:56:59] just just just leave it alone don't touch that Justin is what I've heard um Okay cool so you identify that um you give that a shot that doesn't work JTAG is is disabled we could go the glitching route but more often we're going to go
+
+[00:57:12] the chip off Route exactly um and so that process as far as I look as I know about it and and maybe you can sort of walk me through that is um you get like a hot air station and you are you know
+
+[00:57:27] fluxing this thing up the the flash chip you have to identify the flash chip first right y you're you're hitting it with hot air until you're able to pull it off right yes and then you're cleaning the chip off getting it in good
+
+[00:57:37] shape putting it into a chip reader yeah um and then hopefully you'll be able to just read that chip just like the actual system would um as it's booting up and then you can you know access all the various partitions and file structures
+
+[00:57:50] that they have on that device um how often is it that simple it's I would say it is usually that simple assuming that you have the right reader so almost like Step Zero in that process before I ever shoot hot air and I talk about this on my videos is
+
+[00:58:06] just like read the serial number on the chip and make sure you have the right device like to to take it off because especially in the context right where uh you are new and starting out you don't want you don't want to unnecessarily
+
+[00:58:17] brick a device uh because you pulled the chip off and you're like oh well I don't have a reader for this now and I got to go order one from China or whatever it's yeah it's going to take long time to get here um yeah so I would ident I I always
+
+[00:58:29] read the chip cial or you know the the the identify the model number I go and I look in my software so the the chip reader I use for everything that's not emmc based stuff is going to be the XU uh T56 that is a universal programmer it's
+
+[00:58:46] got tons of different sockets that it can me uh can fit into it it actually does do uh emmc chips now um yeah I was going to say so if you're not talking about an emmc chip what is is this like a flash chip that you're what is this
+
+[00:58:59] other alternative I I've only hacked emmc yeah so emmc is only on like high-end Android devices or like yeah it's it's it's usually where you're going to have more storage on board the system a cheaper iot devices are going to have Nan flash chips or even spy
+
+[00:59:16] flash um which are just slower right um and uh usually don't have as much capacity they can emmc chips they kind of hook up I mean you can almost I've seen some some people mention that you can kind of wire them into an SD card
+
+[00:59:30] reader itself like you can literally connect the some of the the pieces on the the the um what are they called the plates or whatever on those directly into a USB to micro USB converter and it'll read like an SD card it it it it
+
+[00:59:46] like it like fundamentally is an SD card in a different shape yeah yeah yeah so that that that's pretty cool about that um and then there's this new kind of chip uh called ufs which it looks exactly like emmc but your normal emmc
+
+[01:00:01] reader can't can't read it so I've ran into that before yeah that's tricky but those I've got I've got another reader for that but again I'd say this ex geu platform it is I mean it's got some sketchy like Chinese software that you
+
+[01:00:12] have to run in Windows or I run it under wine because I'm you know I like to stay in Linux right okay yeah um but I uh yeah I'm I'm a snob it's okay I'll own it um I I like that programmer because it does the the widest amount of
+
+[01:00:31] type of types of chips out there and I just have to get one device I have to buy new sockets occasionally to fit different chips and stuff like that yeah because there's like there's like little molds or whatever right that you or at
+
+[01:00:42] least this is my experience with the with the um emmc chips where you know you have to get it in a specific mold and then you put it in there and that aligns everything properly so it can read up through those those uh those
+
+[01:00:53] ports um yeah that's you need you need some specialized stuff for that so yeah yeah so in the in the like you know electrical engineering world it's called the package so the package type defines like the shape it defines the geometry of the of of the Chip And then emmc is
+
+[01:01:09] even weirder because you'll have the same pin out on the bottom but there'll be different dimensions of the Chip And then so you'll have these different like guiding rails that you put into your emmc reader yeah that's what I'm talking about okay and so in the Nan you know
+
+[01:01:23] Nan flash world or in other those other things you actually have to have the the the layout of the pins is different on the bottom and so you actually have to have specialized adapters for that or yeah so the universal programmer it has
+
+[01:01:37] basically a a set interface and then it has different sockets that all fit this one common interface and so the software inside this Universal programmer is smart enough to know like you configure the software so instead of like the emmc reader where you can just like it just
+
+[01:01:52] can mount onto your onto your Linux computer like like like like it's a mass storage device or SD card right uh these other types of reads you have to read it out through the software and it literally just gives you the firmware file and it's not partitioned so you
+
+[01:02:08] have to go through there and use bin usually you can use walk and it'll just it'll just extract the file system okay gotcha so you're getting just a Big Blob out of that um and then you're you're you're not actually looking at a whole
+
+[01:02:21] file system or whatever you're having to extract that file system and binw can get messy sometimes too it can it can there's another there's another tool called un blob I I I swear every every like six months I like you know we like
+
+[01:02:34] curse binw walk and be like I need to just not do anything else for like you know like for like at least a quarter and just like program a new tool that does it better a new binw yeah yeah dude it's probably so much harder than we
+
+[01:02:46] think it is it is it is you B I'm so sorry like you are amazing yeah they are they're awesome um that's great that's great Okay so so we go down that process we do the chip off we load it up into our reader we get either you know this
+
+[01:03:01] this Big Blob and we binwalk it extract the file system or we just mount it like an SD card and read off all the various partitions or whatever yeah um we look around we identify the main partition we start you know we we can we can mount it
+
+[01:03:14] just CD into it start playing around start reading all these config files grapping for Secrets getting our hands on source code hopefully um and and uh so once we do that are you like where do you go post exploitation most of the time are you looking at like
+
+[01:03:30] Network Services are you looking at the way that that device communicates back up to the the you know home the mother server whatever you know like you know that's running this Fleet of iot devices um what is your go-to approach from there yeah so it's definitely
+
+[01:03:45] contextualized based on the iot device but I'd say those are my two approaches right it's what network services are available on the device and uh what communication again again again like like data and Transit I love looking and understanding data and Transit and if
+
+[01:04:02] there so okay so if if I have a device where it is doing all the SSL verification correctly and I haven't yet been able to Peak inside of that traffic I can either statically analyze the firmware to understand what types of requests can be made to those Cloud
+
+[01:04:21] servers or if I've got the skills to reattach the chip I can patch in my own CA certificate and then I can put the chip back on and now it trusts my certificate uh and and and now I can now I can use man middle proxy I can use
+
+[01:04:39] whatever one of those transparent proxies to inter the we're gonna we're going to talk about the BGA reballing and that remounting later so we'll we'll hold that for now yeah but that applies to any kind of chip that technique will apply to any kind of chip which is way
+
+[01:04:54] easier when it's not BG right so think think a spy flash chip just has eight uh legs it just has eight legs yeah it doesn't have 153 you know pin pads at the bottom and the legs are Exposed on the sides of the
+
+[01:05:10] chip so these are probably like the easiest to you don't even need a hot air gun you could you could one at a time with a soldering iron reattach yeah yeah yeah you could you could do that to put it back on W I've actually seen some
+
+[01:05:23] hackers get like these little mini clips that they use to like clip onto those legs and then you can just essentially like cuz it's just electrical signals going over that you know reading out of there so when it boots up you could justo and just slurp
+
+[01:05:36] up the data yeah so you can do that I love my I love my my technical hacker uh you know sound there that I may slurp uh no that's great that's awesome so those clips there's some pros and cons of those so obviously if it works the pro
+
+[01:05:51] is you didn't have to desolder the chip off the board and you still have a functional device right right the con is that sometimes uh when you're doing that read it it actually is sending power from your reader and it's trying to because it is powering on the chip and
+
+[01:06:07] sometimes it can like inadvertently power on different circuits but in an unexpected way and it just won't either either won't work I mean in really rare cases you might blow something but that probably not okay um and also sometimes where you just have to chip off it
+
+[01:06:22] practically the equipment is is pretty expensive I think for that too so I think the um yeah especially when it's simple and you've got like you know eight points that you need to solder back on yeah it may not be that bad of
+
+[01:06:33] you just pull it off and then resolder it back on afterwards yeah especially once you get a little bit more familiar with how to do this soldering thing because for me I mean the only soldering experience that I that I have um is
+
+[01:06:46] getting essentially soldering on those little connectors so you can connect up to art or whatever and uh and so I think that's a little bit more intimidating to me but but I think uh I think flux is the magic of all the reattachment right flux
+
+[01:07:02] is just this magical substance that makes the solder go where it's supposed to go dud I think every Hardware hacker has like this amazing image of flux every everyone's like man they'll just sit down and I'll be like hey guys let's talk about Hardware hacking they're like
+
+[01:07:15] have you ever heard of flux like flux is the dude like it just makes everything I'm like okay listen guys like can we move along from the flux please um it's so funny dude uh okay so I guess I'm I'm gonna I'm gonna push you
+
+[01:07:30] again on that last question though so if you had to pick one or the other let's say it is a it is a call home device so there is some sort of cloud management um are you first going to go after the network service or you're G to go after
+
+[01:07:43] the call home stuff I think this goes back to how I think I I am always interested in data and Transit and so I'm always going to look at that traffic going out and try going out and trying to understand those API I think that's where the impact is too
+
+[01:07:57] you know because if you can pop something up in the cloud then you can pone all the devices exactly imagine imagine if there's like in the in those call home API requests there's an idor and now you can now you can make a
+
+[01:08:08] request on behalf of any device imagine that yeah there would be an idor in those devices I know right yeah so that you're right that's where the bigger impact can lie and so that's where I want to Target first but the Network Services I I mean again I'm I'm going to
+
+[01:08:24] be doing all these in assessment and going down every tracking once you once you get firmware how important is it to you to get a dynamic shell like so you can do Dynamic analysis of what's happening on the device it's moderately important I I I I I can totally you know
+
+[01:08:43] do static reverse engineering all day I like doing you know static analysis I actually really rarely will connect up GDB but rce isn't my best V class actually that that that I'm the best at so I'm better at like reverse engineering weird binary protocols I
+
+[01:09:01] don't know like I said I get I get the dopamine Rush from when the only thing standing in between you and absolutely poning something is understanding how the stupid protocol custom protocol that some engineer invented out of hul cloth right yeah roll rolled their own crypto
+
+[01:09:16] and everything into it it's like oh my god um yeah that that makes sense okay so Moder important to get sh but it it does help it has huge benefit right because sometimes you'll be rever you'll be doing your static analysis and you'll
+
+[01:09:30] be like I just don't understand or maybe you know gedra or whatever other reverse engineering binary reversing tool is giving you a pain in one spot and if you can just log into that shell and see what's actually going on on the device
+
+[01:09:45] like oh it's writing a file here but I don't really understand what the file contents look like I could spend eight hours reverse engineering the static binary to figure out what it's writing into that the and look at it's writing into the F
+
+[01:09:58] right yeah yeah it's so it's so helpful uh once we have like the device that I'm I'm talking about it was just talk just getting getting the shell dude was just unbelievably helpful like and and I know I did another interview with um one of
+
+[01:10:12] the guys from Pon to own sinology and um you know he talked about the importance of to him of getting you know dynamic analysis on these devices because he's specifically looking for RC Zer days um and you know you really have to to be
+
+[01:10:25] able to get in there and sort of dynamically debug it's going to save you so much time yeah um so I think I think depending on what kind of approach you have there's a different there's a different route that you might take there um but I for that for that exploit
+
+[01:10:37] development that is necessary I would say it's necessary to get that to get so it depends on your goal if you're looking for a zero day on the device firmware that's good but I think oftentimes in a a bug Bounty context we're just looking for Maximum Impact
+
+[01:10:49] right so getting an idor in the the mother server of the iot devices right um uh is actually way more impactful because not only can we just pop this one device we can pop all the devices potentially I I like that um okay so I I
+
+[01:11:06] wanted to ask you this one as well what does you know after after you're you're on the device you've got some some some grip on the device whether it be firmware whether it be a dynamic shell whatever um what kind of post exploitation attack
+
+[01:11:22] vectors do we need to think about there like you mentioned getting access to you know API keys or whatever so we can talk to the mother server um what other things might uh web hackers and mobile hackers that aren't thinking in this iot
+
+[01:11:35] hacking realm yet not realize is extremely important when actually you know the rubber meets the road you've got the firmware now it's vul time you know what I'm saying yeah no I I would say yeah the the attack surface is yeah we've already talked about data and
+
+[01:11:50] Transit we talked about Network Services I would say within that category of Network Services right you have the common Network Services that they're going to be more used to the web based ones and then there's going to be all this custom stuff that's going
+
+[01:12:02] to uh lead them into binary reverse engineering and just to understand how the whole system works there's a lot of binary reverse engineering you you you're very rarely going to find uh I say this uh and and I know what you're gonna think when I say this
+
+[01:12:18] you're very rarely going to find python on an iot device yeah y but sometimes there's an exception to every rule I'm like put that it's slow it's slow right and that's why they don't do it but maybe when you have a lot of resources
+
+[01:12:32] on a system it's fine um but the other thing that I'm looking at is again thinking in that adjacent category Bluetooth right Bluetooth Wi-Fi any kind of RF uh that that chips that are on the device that there is code on the device
+
+[01:12:48] that will process that input and and give an output right so breaking this down you know you're saying don't don't necessarily just focus on the communication you know HTTP based oftentimes communication between the device and and the mother server or um just focusing on the web application
+
+[01:13:06] that's that's being exposed on this device also look at these these more these more binary level protocols and understand what function these play in the bigger ecosystem of the device right and and how to affect the business logic use cases of this device via those
+
+[01:13:24] protocols absolutely abolutely and and yeah it's especially in those protocols where you will find that the only security that is being implemented is uh security through obscurity right it's it's it's just that oh this is a weird custom protocol or process or something
+
+[01:13:40] like that and that's really what's providing the security to the system I've seen this so much too like sometimes these things will literally just shell out you know to like to like a binary that's on the system and it's like oh my gosh so just diving deeper
+
+[01:13:54] into um what's happening on the back end of all these services and on even on the web stuff um really really impactful and then I think also sometimes there's like device to device uh communication that's happening you know if you've got like an
+
+[01:14:08] a uh you know a mobile app that can also connect to this you know diving into that mobile app and then understanding how that communication is happening Bluetooth or whatever the other day I was literally uh testing an iot device and I also was listening to Spotify
+
+[01:14:24] which will scan your local network which will broadcast across your local network and look for UPnP Services running on devices and it was like contacting this iot device that I was looking at and I'm like what the heck like Spotify please stop that yeah but it's like oh okay
+
+[01:14:42] there's up on this or so yeah there there there is uh again in that local network context you're right so mobile app Communications to the device or device to device Communications if you have uh so so for that you want to think of if
+
+[01:14:56] there's a company that has multiple devices that are in this ecosystem where they talk to each other and they have all these cool Integrations with each other you might have to go buy another device to to observe there there might be a code path that you will never
+
+[01:15:11] actually see until you possess this other device and put it on the same network and then they all of a sudden start talking to each other I'll be explicit about this because it's it's a well-known protocol that's way out there but um Amazon sidewalk protocol is
+
+[01:15:24] really because itess isy to replicate what they've done with um the find your iPhone like you know Network essentially of devices that have this devic to device communication that provides very minimal data but will also allow you to just sort of identify your device
+
+[01:15:42] wherever it is yeah and like I was reading the spec for this thing and it's like whoa this is super weird um because and there's a white paper out there you can read the whole thing they're very public about how this is a secure
+
+[01:15:53] protocol um but essentially it's allowing the your phone that has no relationship to this other device or or whatever other device to send HTTP requests as a proxy through these Amazon devices I'm like wow this is like ssrf you know if I can figure out a way to
+
+[01:16:11] get this to connect to any host like this is really bad um and and obviously you know they've done their due diligence trying to engineer it in a way that that is um you know more secure for that but that was a real eye opener for
+
+[01:16:23] me as it as it pertains to um devic to device communication and what kind of stuff they try to build into these to create these seamless product experiences that we take for granted in a lot of context like like the Spotify thing right where it's
+
+[01:16:35] communicating with all the other you know Google home devices that are like you know allowing me to control my Spotify from any device in the house you know uh you take that stuff for for granted but then when you start assessing those sort of products it's
+
+[01:16:48] like oh this is really sketchy yeah another thing I want to mention uh talking about yeah strategy when I'm going after a device I think it was on your last podcast you talked about the the pros and the cons of like the the setup process or the
+
+[01:17:04] initialization of an account and whether or not you should focus on that I will say in the iot context there are some bugs or there are some requests that will only go out the first time the device ever is set up and there's a lot
+
+[01:17:18] you can learn from that uh and and like like I I found a device that even after factory reset it would never again send an HTTP request because it kept something in the firmware that persisted that some piece of information in the firmware that pers persisted across
+
+[01:17:33] factory reset so I only caught the request using my man- in-the middle router setup the first time the device ever connected to the internet so uh with iot devices another big uh maybe maybe I'd call this an attack Vector but the bootstrapping process how does the
+
+[01:17:52] device get its initial connection to the internet right so there's a lot of different choices that an iot manufacturer here we're considering a like a Wi-Fi based iot device right so that device obviously needs some way to get your Wi-Fi SSID and password so that
+
+[01:18:10] it can connect your network and once it does that it can talk to its Cloud servers and it's Off to the Races but that bootstrapping process of how the device gets added and again this is never going to be some remote exploit this is going to be Network adjacent or
+
+[01:18:24] physical or something like that or local network um some devices will spin up their own Wi-Fi access point that then has like some API that you can then that you then feed it the the the SSID and password and if you can jump on there
+
+[01:18:39] and access some other API yeah like services are Exposed on that interphase or something like that it's like oh my gosh absolutely C or or you know just I mean there's even the risk of I mean most devices are moving away from that
+
+[01:18:50] because it's a it's almost a design flaw I find I find myself in iot system systems uh I don't know I feel like I'm psychoanalyzing the developers of these iot systems because I'll find these bugs that I'm like yeah there's no way to fix
+
+[01:19:03] this unless you like scrap the project because because it's from the from the design phase they did something that necessitated uh initially trusting something that is untrusted again this bootstrapping process of how do I get this device connected the first time another class of of vulnerabilities
+
+[01:19:23] that's like that is squatting on a serial number so let's say the device once it connects to its cloud or its Mothership right uh it says here's my serial number please add me to this user's account well what's stopping me from just hitting that API and
+
+[01:19:40] registering every you know sequential and the serial numbers are usually sequential right and registering every device to my account and then when the actual user goes it says this device error this device is already registered right and some denial service and and wow see that that's exactly what I'm
+
+[01:19:56] talking about right like that that is the sort of attack Vector stuff that I love to hear on this podcast right like like the stuff that you wouldn't necessarily or you you've developed over years of working on this stuff that is that is more specific to these Hardware
+
+[01:20:10] devices and the way that they interact with all these Services excellent I love that um what a cool idea and then also there's there's also the the the resale approach to this as well you know if you do a factory reset or whatever I don't
+
+[01:20:23] know if this is an accepted bug or not but if you do a factory reset on this device right and you sell it and then you are able to maintain a serial number a key or something like that that then allows you to take over that device
+
+[01:20:36] after somebody else has used it again like is are those sort of bugs accepted or like what are your what's your experience I don't know about bug Bounty programs accepting those findings um I have definitely uh talked on my YouTube channel at length because again I get
+
+[01:20:50] devices out of ewaste and then I and then I present them on my YouTube channel and that is uh some of the occasional times where I need to censor things in my video because if I grab some device that's added yeah like you can we're talking
+
+[01:21:03] about host APD yeah right if I can get into that firmware and find that host APD config file it's going to have the SSID and the password in there or other credentials and stuff like that yeah I think you said I think in one of the
+
+[01:21:16] videos you said like yeah guys this is why we shred devices when we when we get rid of them like this is why you never resell a device if you care about your security because um here's this person's access key you know or whatever yeah
+
+[01:21:28] there's a popular iot device out there which I won't name that if you sell it on eBay uh others can buy it and if you perform chip off and you go into that hostapd file and you you find it SS ID and password then there's this attack
+
+[01:21:44] Vector where you using maybe man the middle router you set up a Wi-Fi access point with that same SS ID and password well now that device is going to happily connect and have internet access again and what if that device still has fresh
+
+[01:21:57] tokens on it that where where that device now grants you access to somebody's account oh my go gosh D crazy that may or may not be a thing out there who knows who knows um I I don't I don't know how in depth we'll go with this
+
+[01:22:09] question but if you've got anything on this great if not we'll move along but um I wanted to ask so like we talked about already on the Pod a decent bit um these attacks uh that we're doing on iot devices are often limited to adjacent
+
+[01:22:24] Network or local right um let's say we've got a local device um what are some ways that you have been able to Pivot this more into an adjacent or remote environment um is there I know it's kind of a a very product specific question um and I think
+
+[01:22:43] probably if I were to answer it myself what I would say is you have to have a thorough understanding of the application you're hacking um to understand how to hit those code paths but I'm wondering if you had any tricks up your sleeve with regards to this
+
+[01:22:55] because things do get rated much lower right they they they do and that is unfortunate um one thing I've I've tried to do in the past with mixed success let's say I have a network service that maybe is intended only to be accessed on
+
+[01:23:12] the local network and and I find a vulnerability in that but I can prove through using like showen or census iio that a bunch of people are port forwarding to this and I actually see real iot devices of this and I like so so what I have to do then
+
+[01:23:26] is find some fingerprint that makes a good search uh on those platforms and I can prove say no no there are actually remotely exploitable devices of this of this type with this service that are on the internet and you know several thousand of them sometimes yeah I've
+
+[01:23:41] definitely seen that and actually when you said that it made me think about something um I did hear at a talk recently at rvac the Richmond uh security conference talking about how a lot of these devices you know have ufw or whatever set up you know firewall on
+
+[01:23:57] their W interface and you can't access all these ports but then on the IPv6 interface they don't have any any firewall right so you can interact with all of these services that are just binded to you know star or whatever to every interface um over IPv6 and and get
+
+[01:24:15] access to all of these internal services that are not listening on the ipv4 um so I I just and and apparently that was a massive Trend the guys that were talking about it at the um uh at the the talk they they did a bunch of router
+
+[01:24:28] exploitation and they saw that a lot which I was like that is terrifying as we move to IPv6 what kind of stuff we might run into with that yeah Microsoft just had their big IPv6 bug I don't know if we're ready for I IPv6 I don't know
+
+[01:24:41] man I it's G to be it's G to be a doozy for sure yeah um all right last one I had in this section was what is one area that you could grow in as a hardware hacker what are you trying to grow in oh
+
+[01:24:51] yeah that's uh like I mentioned before it's microcontrollers and uh glitching so they're uh so I not associated with them at all but hex.io has some pretty sweet Hardware hacking content coming out and uh definitely when there's a lull in the action for me I want to I
+
+[01:25:08] want to start digging into that content because um again like I said in the microcontroller context that's that's my weaker area as opposed to Linux based devices and oftentimes a necessity to extracting the firmware from those devices is uh glitching yeah that makes
+
+[01:25:25] sense yeah I think they were running I think they were running a glitching Workshop or something like that at at Defcon this year they were they were yeah so bummed I didn't make it to that man Defcon is such a difficult thing as
+
+[01:25:35] a content creator as well because you're you're pulled in the direction of producing right like I want to give to the community at Defcon but also there's such cool going on you know like I I want to just go and just sit in all
+
+[01:25:47] these talks and I was so salty because um a couple of the talks that I really really really wanted to go to this year just had hard conflicts with my own engagements and I was like so annoying um okay so let's go into some of the
+
+[01:26:01] more um Advanced Hardware stuff um uh we can we can go to to BGA reballing at some point but let's hit um the certificate pinning versus Certificate validation section first and kind of talk about um how uh certain minum does you know takes advantage of
+
+[01:26:20] that whole situation and what the differences between those two things are yeah so to start off I'm sure every uh person who's looked at the scope of a bug Bounty uh of a bug Bounty program will see uh that certificate pinning is out of scope on every program and mostly
+
+[01:26:37] you know this in the mobile device context but it's it's it's an identical situation in the iot context right and so uh first we have to understand what the differences arec and it's really hard to understand the differences between CT pinning and SSL like like
+
+[01:26:52] certificate validation let's just call it that that um because certificate pinning is just a stricter form of of certificate validations so if a device is doing certificate validation if they're actually checking that the the the Ser the server is presenting a certificate that is signed by a trusted
+
+[01:27:14] CA in its trust chain then but it's not pinning pinning meaning it only trusts the leaf node the server certificate not just any CT signed by a CA in its trust chain um then that's fine like like that's not a problem if they're not
+
+[01:27:32] doing certificate pinning and not strictly saying hey you have to have this exact server certificate or a hash of it there's different ways you can Implement a certificate pinning but if they are doing neither of those then that is a huge problem right it goes
+
+[01:27:48] from being na to like you know high or critical depending on the context depending on what type of information is being communicated in that TLS uh Channel because specifically if it's not doing this validation correctly you just have clear text access to everything
+
+[01:28:03] that's happening through that device right exactly and it should again there this is where you sometimes have to argue with triers and stuff like that I think it's getting better because there's becoming more understanding of these attacks but uh understanding that that should be Network that that that
+
+[01:28:19] that that is a remote that is a remote attack because although often times that attack is going to happen on the local network on the same subnet through ART poisoning this is an interesting or po or like having control of the local router any router along the path between
+
+[01:28:37] the iot device and the server if any of those is compromised right so if you want to get crazy you can go look at like some of the like Snowden docks of like what the one of the NSA programs alleged that they had the ability on
+
+[01:28:52] internet routers to per man the middle of TLS traffic so if you think of a threat actor like that they don't need to be on your local network as long as they're a that path that the data will take from the iot device to the Cloud
+
+[01:29:07] Server where yeah I mean and think about when you're using um you know how many routers may be along the path in some of these public networks you're connecting to as well I mean it's it's a lot it's a lot yeah if you've Le
+
+[01:29:19] if you run if you've ever run a trace route you see how many routers like it's what we're saying is that any one of those routers if they're compromised and and can perform this man in a middle attack then uh that's very interesting I
+
+[01:29:33] wonder I wonder if that would be I wonder what the trade-off is between uh in CVSs between adjacent Network and or adjacent and network versus attack complexity High because you know what what I'll see them do sometimes is when you want to make these changes you'll
+
+[01:29:51] you'll do like you'll flip one uh of the metrics and then add complexity high or whatever I don't know where it stands on it you know and obviously I I I'm in I'm with you you know I think it should just be Network without the int complexity
+
+[01:30:06] High because the risk is there but um yeah do do you know where yeah it's like unfortunately I understand the attack complexity High argument but yeah but I kind I actually kind of understand that trade-off I hate to say this because on the local network
+
+[01:30:22] it's trivial right like if somebody is on the same subnet as you they can art poison and get themselves in a position of of a man in the middle quite easily uh that is that is pretty trivial whereas you could you could argue well
+
+[01:30:37] having an attacker have to compromise some internet router that's that there is some complex so I'm looking at it now Jon network will give you and in this specific scenario that I'm looking at a 1.1 uh boost and then if you move attack complexity
+
+[01:30:56] to high that will drop you down way lower so it would it would be better for you to have just adjacent adjacent network with low yeah then attack complexity high with network well I'll know what the for couple points from now yeah by by seven on on the scale um so I
+
+[01:31:12] mean you're still Landing within that high range it's a high seven the way that I've got it is like um confidentiality High uh Integrity low availability none scope changed user interaction none privilege required none and then I I'll switch the the network in the attack complexity Fields um and
+
+[01:31:30] it looks like we're landing at like a 7.5 um on the network attack Vector with attack complexity high and if we switch it to adjacent network instead attack complexity low we're looking at an 8.2 okay so I think I think um I think the
+
+[01:31:44] best bet there is to go adjacent Network um we we are bug bounty hunters right now we are strategizing on what green hat man green hat all day let's go um okay so so cool so the important thing to understand here is if you can
+
+[01:32:02] find a problem with um the certific validation at any in any of the services that are working on this on this device calling back out that could be a big problem and um and I think there's there's more techniques you know obviously this this really great talk by
+
+[01:32:17] uh Oppo right is is really great for that but if there's more ways for us to sort of test the implementation of of TLS in this environment um that's great I mean that's that's you can really pop some impactful bugs from that you can
+
+[01:32:33] and and and yeah when you're talking about how that's going to get rated in my experience it's always going to be based on what kind of data is being transferred in that right if it's just your if it's just your metrics log they're going to be like h no no that's
+
+[01:32:48] not very that's not not very impactful but if uh if there are session tokens in there then that's an account take that that is account takeover right and and and so that is going to be impactful and so um yeah and even if there is attack
+
+[01:33:04] complex attack complexity high or it's adjacent I've I've had those be critical be scored as critical if the data in there is really juicy yeah and you know CVSs isn't necessarily built for that environment either so I think talking with the team talking understanding
+
+[01:33:22] their threat model is important in any area of B County but specifically in Hardware stuff that's important um and yeah you know a high in uh a high in the hardware world is like you know what they say two birds in the high you know
+
+[01:33:36] I'm not even gonna I'm not even gonna try but um but yeah you know a high in the hardware world you know is could pay as much as a crit in a in the web world so and more sometimes and something uh important to point out if you need
+
+[01:33:48] ammunition for your reports uh hacker ones uh I believe it's for standards they have updated those to include man certificate validation and I think the default is a high uh really yes that's really cool so so default is a high Depend and then you know various factors
+
+[01:34:06] so that's helpful if you need to include that in your reports that's really helpful dude actually I'm gonna look that up right now certificate I certificate validation that's awesome yeah they do have that wow that's yeah should be applied as a high and they
+
+[01:34:20] give you the CVSs 3.1 score very awesome man I love that thank you hack link that in your reports yeah that one is going in the in the description for sure let me just go ahead and put that in there now so I don't forget um perfect okay
+
+[01:34:35] great so um before we get on to the uh the hacking stories and and such which I'm really looking forward to let's hit this um this PGA reballing thing man because I am scared as heck of that so essentially my understanding of that is
+
+[01:34:49] you you've chip off you pulled a chip um it's it's a BGA and you've cleaned it all off you know gotten all the gunk off there popped it into a reader probably modify the chip in some way right like replacing you know inserting your own
+
+[01:35:02] certificate as a certificate Authority um you know maybe even uh added something to the the the OS so that you can get a shell or something like that and now you are reattaching that device you know or that chip back to the device
+
+[01:35:15] and then trying to boot the device back up and have it use that chip so bad and you're hoping you're hoping that you see the light flash whatever is the indicator that it's not completely borked yeah right exactly wow that is just such a badass technique um talk to
+
+[01:35:31] me a little bit about that how difficult it is and if you have any tips for it you said you've done it a couple times right yeah so this is a new skill set that I'm developing and uh that's why I say with this Hardware hacking stuff
+
+[01:35:43] like you can always hack on a device with less of the hardware hacking skills and then build them out over time you're just adding these tools uh to your tool belt so uh yes I've done it about three times successfully ofices I've you pulls off but yeah
+
+[01:35:58] effectively what we have so we have a PCB and it has so so PCB is made uh out of etch it's etching copper so there's a copper uh like inter face basically to the to to your PCB and then it cuts out around the copper it
+
+[01:36:19] cuts out copper so that you have all your connection points to where your different uh components connect to the board and so yes so we're going to clean the uh the the uh the pads on the chip and we're going to clean the pads on the
+
+[01:36:37] board and then what we're going to do is you're going to use these BGA and you're cleaning them with uh solder and and some a lot of flocks and you're trying to just get those guys all and solder braid or Wick and so that's that's just
+
+[01:36:51] a metal substance that or you know like like that you that you heat up and then the solder is attracted to the braid and it takes it away from the PCB or your chip okay cool and when we're doing that we want to be careful not to pull off
+
+[01:37:06] any of these pads right because these pads are connection points uh from the chip to the board and so there's pads on the chip that you could accidentally pull off because you because if the solder gets cold and then you pull on the braid you're G to pull off those
+
+[01:37:23] those on the chips or the board but if you pull them off you're not complet you might not be screwed because on a 100 like 153 is a pretty standard BGA there's ones with more there's ones with like 200 pads and stuff like that but on
+
+[01:37:39] like a a 153 BGA chip I think there's like 12 pads that are actually used all the other on when you look in the data sheet it'll say not it'll say NC not connected or reserved for future use which is effectively means it's not
+
+[01:37:55] connected now but maybe someday they'll create a new emmc standard and it will be connected right but most of them are not connected which means on the PCB side there are just floating floating like there are just pieces of copper copper circles where the chip connects
+
+[01:38:14] that are not connected to anything under the circuit board wow so so so but but the ones that actually do carry signals they're going to go down under into the into the intermediate layers of the PCB and connect to some electrical component right to the CPU or something like that
+
+[01:38:30] the pads that are not connected anything are way easier to pull off because of that there's less resistance right they're not they are literally not connected to anything and so oftentimes and it's funny when you look at the the pin out for one of those BGA
+
+[01:38:46] chips all the pins that are used are on one side and one time I accidentally pulled off a ton of pads from the other side I'm like oh well I'm screwed and then I go and I look at the at the pin out of the data sheet and I'm like wait
+
+[01:38:59] no I'm fine like I pulled off like 20 pads but I'm but I'm okay you know cuz all the because all the ones that matter the like you know the 12 or so that matter were fine and that makes me feel so much better dude like to to know that
+
+[01:39:13] out of like you know this massive amount there's like 12 all right I just got to get there's only if I pull one off there's only like a 10% chance that that is actually one that is necessary yeah and it's even better than that because
+
+[01:39:25] again the ones that are easier to pull off are the ones that you don't care about because just because of the physics of how that works so so so when we clear that off then what we want to do is we need to apply new solder Balls
+
+[01:39:38] to the chip so that we can reattach it and so I've got these stencil devices that you lay the chip down in and then you lay the stencil which is just a metal shield and then there's this solder paste there's solder that's in a
+
+[01:39:55] paste form that you can spread with a little squeegee uh almost like you know and so you fill in all the holes of the stencil that perfectly uh sit on top of all 153 uh pads and then uh once you have enough that solder paste you just hit it
+
+[01:40:11] with hot air for about 10 seconds and they all just they they they turn into perfect little solder balls I love that if if you if you did it right if not you have to take it all off and start over again but once you have those so balls
+
+[01:40:23] there then you just put a light amount of flux on the PCV not too much because otherwise it can like swim off to the side when you beat it up um and but you blast it with hot air and then it reattaches perfectly and then you boot
+
+[01:40:36] it up and yes you cross your fingers and you hope that you didn't screw something up right so so when you're when you're um going back to chip off when you're when you're taking the chip off um how let me ask you this how hot are you
+
+[01:40:49] blasting it with air like what do you normally set it to I think had mine set to like 750 fit thank you Joel that's what I'm saying like Joel is like okay so I I actually made you know I had a really funny meme in the in the um in the
+
+[01:41:07] presentation I did for def Cod where you know I put up like a particularly like a younger picture of Joel that's like he was looking really cool and he like had his hoodie up and he's like looking like a hacker and um and I put a bunch of
+
+[01:41:19] like little uh bubbles you know around his face uh thought thought bubbles whatever and he's like don't don't set your your freaking hot air gun to like 700 Justin you know you're going to burn the chip don't pull the the board off before it's ready Justin you know I
+
+[01:41:33] bricked like three devices this time when I was working with Joel on this um and uh and so I so appreciated his guidance with that but man you know when you're using a a hotter hot you know a higher setting on that hot air gun yeah
+
+[01:41:46] it just goes so much faster you know with that I mean we we probably sat there and and um you know went over the chip for 20 minutes sometimes you know and and and I think he's correct in that you know you can't burn burn up chips
+
+[01:42:00] and you can cause problems you know with with higher higher um uh settings and stuff like that but uh that that's so gratifying for me to hear I love that I I am not a scientist let me let let me be clear I'm an engineer so like what
+
+[01:42:15] works is what I do right maybe not like the technically correct way to do things like that that's that's how I judge these methodologies said it to 700 goes so fast that's why I do that's great I love that this is how you go from from
+
+[01:42:29] breaking it open to Firmware in an hour huh you don't spend an hour yeah yeah yeah I don't got time to wait around for that shooting it with hot air that's great man wow that is an advanced technique man I uh I'm still a little
+
+[01:42:41] bit scared about that but definitely more interested I got to get myself some of that thread I actually don't have any of that that um uh you know what is that the braided wire that you using yeah yeah yeah braid yeah and uh I saw in
+
+[01:42:53] your videos you know essentially you're just taking that and you're putting the soldering iron on the back side of it and just kind of rubbing it over those those pads I think that that is really really cool we were trying to do something simar that that's something
+
+[01:43:04] that takes practice because that's where that's where you're likely to pull the pads off because you're yeah yeah you're you're more likely to pull it's kind of odd using braids for that though because I feel like braids have more texture to them and would be more likely to like if
+
+[01:43:17] a corner of a pad is sort of like up a little bit you know getting under it and like pulling it out I don't know they they they they are and they do yeah all right very cool man uh well my favorite time of the episodes has come let's talk
+
+[01:43:30] about some bugs so um we've got missing secure but on a device and then well I won't I won't spoil the second part so take take it away with this uh this bug that you've prepared for us so yeah uh yeah so can't talk about the name of the
+
+[01:43:42] device or anything like that but it was a it was a microcontroller based device which again is is usually the the device that I'm not as good at targeting but I think this story actually illustrates my point that even if you can't completely
+
+[01:43:56] understand the firmware or something like that you can still get something out of it right like all these tools of Hardware hacking they help you solve a problem they help you find vulnerabilities you don't need to have all of them at once so uh so on this microcontroller device
+
+[01:44:12] I you know probably the first thing I did was look for Ur nothing you know look for Ur J JTAG enabled none of that going to work but it did have an external flash chip so I didn't have to go was going to have to do any glitching
+
+[01:44:24] to extract the firmware so uh this was one of these really easy like eight pin I think one of the models of the device had a 16 pin chip but pretty easy to remove and put back on the board so I removed it read the firmware out ran
+
+[01:44:37] binw walk so this is a microcontroller firmware it's just a it's just a binary blob of data and so there's no file systems to extract but what binw did identify in it are a few certificates and I had already been looking at the
+
+[01:44:53] Network traffic over that that I saw from the device I tried some I tried a man- inth middle attack so I tried using man inth middle proxy which uh so this is before I was using I might have found I might have found a vulnerab I
+
+[01:45:08] might have found part two of this explanation a lot faster if I would have been using C mum so that's a good advertisement for it but I was using man and the M proxy so the way that man in the middle proxy works by default is it
+
+[01:45:20] has its server certificate has a CN the common name is man in the middle proxy so or man in the middle proxy CA or something like that right and so then it signs it forges certificates so let's say the traffic that it's trying to
+
+[01:45:37] intercept is going to dubdub dub. example.com then it's going to forge a certificate with the the server certificate is going to have the CN of dubdub dub. example.com and then it's going to sign it with the man-in-the-middle proxy CA right and then it's going to present that to the
+
+[01:45:56] the client and see if the client takes the bait right um and in this case the device was not taking that that form of bait so uh so then what I did is uh yeah so chip off the and read the firmware and I found that there
+
+[01:46:11] there were these certificates they were in the deer format which is a binary encoding it's not like the pem file where you see a bunch of basic 64 encoded stuff it's completely a binary protocol uh or a file format and then I was like you know what okay that's the
+
+[01:46:27] ca for the traffic that I'm seeing going out to the Internet so what I'm going to do okay and and and because I didn't understand anything about the microcontroller firmware so I'm like I need to generate a certificate that has exactly as many btes as this other
+
+[01:46:41] certificate so I need a bite forbite like duplicate of the certificate but my key but I need my key to be in there right so I you know I I I worked with OP s sell for a while and all the weird options that I needed to set to get it
+
+[01:46:56] exactly the correct number of btes oh my gosh and so then I took the firmware and I knew the offset of their D their uh de certificate so I just you used the DD command and like some of the arguments there yeah they have that in yeah yeah
+
+[01:47:12] yeah so in DD you can say uh block size BS equals one and then so then you're doing things uh one bite at a time you're dealing with btes uh as the block size and then then you can say skip so you can skip a certain number of bites
+
+[01:47:27] and then you can say size so size says how many bites you'll copy from the source to the destination so I I just very carefully uh I think in my I think when I presented this finding I had the uh Indiana Jones meme of like like
+
+[01:47:42] placing in I'm just very carefully seeing if this S I can I can place the CT right in place of the other one right where it was um and so uh I did that and then I had my and so then I had a new
+
+[01:47:55] firmware image and I flashed that back to the chip soldered it back onto the board booted it up and now man in the- Middle proxy can intercept the SSL traffic uh not all iot devices uh or manufacturers care about or have in their threat model secure boot but this
+
+[01:48:14] this company did care very much about that and they called this a high because I effectively proved that I was able to get modified firmware to boot successfully uh by the by the microc like I said earlier you know grub and like anything boot related is like not
+
+[01:48:33] my like I I do not like that at all um and so can you talk to me a little bit about what that process was like you know I I I'm I'm tracking with you you know you pull the The Blob out um
+
+[01:48:44] obviously this is a uh a microcontroller system so it's a little bit different than the way I'm thinking about it probably but you know you you figure out you've been walk it you figure out offsets you overwrite the CT I'm I'm tracking with you there writing it back
+
+[01:48:56] onto that chip is something that I've never done I mean are you just doing how do you doing that is that a part of the the software using so this is going to be a difference between the way the emmc readers work they just kind of Mount as
+
+[01:49:07] a file system on your computer right but the ex geeku uh that Universal programmer that I use you're when you do a read you do a read of the whole firmware image on the Chip And you get an image back one image of the full
+
+[01:49:23] length of the chip of everything that's stored on there so then all I was doing is I was taking that firmware image modifying my one little piece with a certificate and then going back into that software again it's not as direct as when you're when you're doing things
+
+[01:49:38] on with emmc you you go back into the software and you you know upload the file from your computer the modified image and then you do a right operation back to the chip so it's all through the universal programmer in the MMC side if
+
+[01:49:54] you've got it just mounted like an SD card you can just you can just modify it in in that file system and then just pull it out and you know slap it back on the device if in that scenario yes yes you would be able to do that yeah you
+
+[01:50:06] you mount it uh read WR and you yeah that would totally work W that's that's crazy man yeah and then I guess if there was Secure boo that would get in the way of that right um and and secure boot definitions differ across you know
+
+[01:50:21] manufacturers and stuff like that but in the context of a microcontroller right that that certificate I was modifying it like I wasn't modifying a part of the file system I was modifying code right like like that certificate was embedded in probably in like a c program that
+
+[01:50:37] then got compiled for this microcontroller and loaded into Flash and basically by by me modifying it and getting it to boot and operate just normally right uh well except you know with trusting my my certificate instead of the other one I was able to prove by doing that that
+
+[01:50:56] was like a way for me to prove that there was no validation of the firmware happening and then I mean they confirmed that on their side what they need to be doing is some sort of like check on the actual binary that is the firmware in
+
+[01:51:13] these uh microcontrollers and where would you even do that check from also maybe they should have done a check on the actual certificate itself and said you know in somewhere El and the code said hey has this certificate been tampered with I I don't know how would
+
+[01:51:26] they even fix that yeah so so the typical way that secure boot is implemented is this is the actual microcontroller or the CPU will have some very small internal storage where you can program in you can burn in a a public key and then you who are develop
+
+[01:51:45] are the firmware developer have that corresponding private key and you will sign the firmware uh with the private key that a person with the public key IE the CPU or or the microcontroller can can can perform that check and it will halt the
+
+[01:52:01] CPU if if it if the signature doesn't validate gotcha wow that's that's pretty freaking cool dude okay so you you were able to to modify this uh microcontroller based firmware binary blob yep you did it specifically within this offsets you got aert that would
+
+[01:52:17] just create that at that length and that exact size inserted it in there fire back up man I can't imagine the rush of being able to see that traffic you know oh my gosh that must have been amazing um and then where do you go from there
+
+[01:52:31] yeah so this is a funny part of the story of how I I stumbled even into a a larger a more critical vulnerability uh so okay so I should note that that Mo that new you know firmware modified CA certificate that I generated I didn't
+
+[01:52:47] put the man in the-middle proxy certificate in there I created one again I wanted it to be exact like the existing one so I created a new self-signed that was the same common name the CN of whatever CA they were using I I don't remember the name of it
+
+[01:53:07] but um they were using some kind of certificate Authority it was probably an internal company certificate Authority and so I I just kept that that name exactly the same so literally the only difference between my certificate and theirs was the the key was the public
+
+[01:53:21] key portion of this certificate this is actually kind of like the implementation of this a certain minum attack in a that's one of those attacks I I stumbled into yeah exact and that's why I say certaint mum would have caught what I found next and that is that okay so if
+
+[01:53:39] the device was 100% doing certificate validation the correct way then my with in this new modified State the device would only trust my fake CA certificate not the real one from from the real server right so I had to keep my man- in- the- middle setup
+
+[01:54:01] running in theory for the device to be operational well I was like doing something I had some you know problem with my computer um it was probably the only time Arch Linux ever had a problem yeah you know you never have to reboot
+
+[01:54:13] that um but I rebooted and I like forgot to set up my man- in- the- middle setup again and I turned the device on and then I had this realization of like oh I forgot to put my man inth middle uh you know setup in there the device probably
+
+[01:54:27] isn't working now because it doesn't trust the certificate on the server and it's modified State and then I like checked with the mobile app or some way you know and I'm like oh it's working like and then I'm like like there's at this point I'm like there is something
+
+[01:54:40] terribly wrong with with the device firmware and so so yeah so I effect you're right I effectively performed the ctmm attack where I created a a CA only I put it on the device not not not in the man- in the middle proxy
+
+[01:54:59] where uh it had the same exact uh where I wasn't just faking I wasn't just faking the server certificate I was faking the CA and the server certificate and it turns out that on this device what it was doing what it was programmed
+
+[01:55:14] to do was programmed to check when it when the client connected to the TLs server and it got the server back the only thing it was was checking in that certificate was that the the ca who signed that certificate had the CN equals to whatever string value it
+
+[01:55:33] expected what the heck and so so anyone obviously can craft a self-signed certificate with that value in there and perform a man in the middle and this led to account takeover because there were you know I mean it was like the devices like auth all the devices Communications
+
+[01:55:50] which included its authentication credentials were in that TLS you know I wonder if this type of attack is more common on microcontroller based devices because they're not relying on you know I say these battle tested libraries there's like a ton of CVS that dropped
+
+[01:56:06] with the thing of like every uh TLS validation software out there had a a cve but you know they're not using these more trusted methods of doing that they're they're often optimizing for size because those things the storage on those devices are much
+
+[01:56:22] smaller um so I wonder if they're they're cutting corners on on TLS imple 100% right and so so often times when you get a certain brand or a certain type of microcontroller you will be provided with an SDK that will include utilities for making web requests like
+
+[01:56:41] you know connecting to W to Wi-Fi um and so yeah they will there will be a A diversity of functionality whereas when it's a Linux device if it's if it's you know connecting to Wi-Fi it's like yeah it's going to use WPA supplicant it's
+
+[01:56:56] going to act the same way every time or when it's making a web request it's like oh they're probably using lib curl or you know some common library right uh that is Battle tested yeah you see a bunch more sketchy and iot hacking
+
+[01:57:09] stuff which is really fun I think that's one of the things that's really exciting about it too um so all right man we've done it we've made it through the whole dock thank you so much for doing this this was a uh really eye-opening talk on
+
+[01:57:22] on iot hacking stuff um yeah I'm definitely reimbold to go after iot hacking targets once uh when I can get my hands on a program to do that um so thank you so much man thanks for having me on of course and that's a wrap on this episode
+
+[01:57:37] of critical thinking thanks so much for listening and if you want more critical thinking content head over to ctbb Dosh show/ Discord join the Discord there's lots of great conversations and chats going on over there and if you want to support the show there's the Discord
+
+[01:57:50] subscriber tiers which give you access ACC to master classes amas hack along alongs exclusive scripts and an exclusive chat Channel with us we'll see you there [Music]

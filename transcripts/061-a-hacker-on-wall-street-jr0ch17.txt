@@ -1,0 +1,1568 @@
+Episode 61: A Hacker on Wall Street - JR0ch17
+Source: https://www.criticalthinkingpodcast.io/episode-61-a-hacker-on-wall-street-jr0ch17/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:01.099)
+You know, I'm not even sure we should say this on the podcast, but the link that I sent you to actually get into this is the exact same link as the last one. So there's some sort of auth mechanism problem that's happening here with guests getting into the studio.
+
+Jasmin Landry (00:18.07)
+Seems to be, yeah. Exactly the same thing.
+
+Justin Gardner (@rhynorater) (00:19.171)
+It's weird man. We got to figure that out. Alright, well, that aside, welcome to the podcast J-Rock. It's good to have you on here, man. Yeah, of course, of course. And the, it's just us this week. Joel is moving across the country, so it'll just be me and you. And the sort of impetus for this podcast is...
+
+Jasmin Landry (00:28.078)
+Thanks for having me, man.
+
+Justin Gardner (@rhynorater) (00:41.691)
+I don't know, man. You send me cool stuff from time to time, and I appreciate that. You listen to the pod, and you comment on stuff, and you add stuff, and you also be like, hey, I've got this situation, you know, collab on it. So I appreciate that. And the other day, you sent me this really cool bug that you ended up being able to exploit, relevant to some of the content we had on the pod before. And I was like, dude, you gotta talk about this on the pod. So let's do this, man.
+
+definitely need to do an introduction to J-Rock and that sort of thing. But let's give the listener a little taste of what's to come with this meta tag plus DOM Purify bug. So I'll let you give a summary of that bad boy.
+
+Jasmin Landry (01:27.798)
+Sounds good. So I was testing an app where I had found an HTML injection in many places, but the latest version of Don't Purify was used. So getting an XSS required me to pretty much focus on Don't Purify only and get a zero day on there. And I figured that it wasn't really worth the time. So I looked at, I started looking at the O-Watt flow.
+
+Justin Gardner (@rhynorater) (01:47.019)
+If.
+
+Jasmin Landry (01:55.398)
+and noticed that there was a path traversal in the redirecting right parameter. So it allowed me to redirect the code back to any page that I wanted on the web app. So I tried redirecting it to the page where I had initial injection and it worked. So I was like, I can redirect the code to my initial injection where I had the, I mean, where the injection is located at. So I...
+
+I was thinking of ways to leak the URLs, like it's still the code, right. So started off by just testing like with image tags. I mean, it worked, I could put in any image on there, except that because of the default refer policy, it would not be the full URL to me would only use like the origin. So like the domain or subdomain. So that did not work. Yeah, it used to work in the past, right? We could just put it that way. And we could leak data, but that's not the case anymore.
+
+Justin Gardner (@rhynorater) (02:45.997)
+So annoying.
+
+Justin Gardner (@rhynorater) (02:49.601)
+Yeah.
+
+Justin Gardner (@rhynorater) (02:53.395)
+It makes you miss the good old days. Doesn't it? Like, can you, like, I don't know. Nowadays, I've just become so used to that, you know, default refer policy, you know, was it cross-origin strict or something like that. Now where it's like, okay, that isn't even a thing, but like, man, back in the day, we had it good when we could just leak anything from the URL by just getting an HTML injection. That was sick.
+
+Jasmin Landry (02:56.167)
+Yeah.
+
+Jasmin Landry (03:04.93)
+Right.
+
+Jasmin Landry (03:13.423)
+Exactly. Yeah. So I thought of like, try to see if I could change the refer policy itself. So I looked at the MDN docs, because I wasn't really familiar with that. I mean, I knew what it was, but I did not know like if it was possible to change it with like a header or something or, or by my initial injection. And turns out that we can with a meta tag. We can set the meta tag.
+
+Justin Gardner (@rhynorater) (03:24.523)
+Mm.
+
+Justin Gardner (@rhynorater) (03:30.663)
+Mm.
+
+Jasmin Landry (03:40.606)
+I mean, we can set up a refer policy through the meta tag and we can set it to unsafe URL, where it'll send the whole URL in the refer header. I was, I thought so. Well, actually, first, I did not know if it would have worked because the meta tag was not in the head of the HTML page. But it turns out it does work. It does work. But like I said, I thought that I'm pretty if I would have
+
+Justin Gardner (@rhynorater) (03:51.139)
+Don't peer if I had to catch that though, right?
+
+Justin Gardner (@rhynorater) (04:00.715)
+Right. It does work.
+
+Jasmin Landry (04:08.322)
+caught that and turns out that it did, except that first it did. It's actually strips it out from the DOM itself. So when I refresh the page, um, I can see the refer policy is set to unsafe URL, but the meta tag has nowhere to be found in the DOM. Like dumper five seems to do its job, but for some reason, Chrome still sets the refer policy to unsafe URL. So it.
+
+Justin Gardner (@rhynorater) (04:12.247)
+It did? What?
+
+Jasmin Landry (04:37.714)
+All of that said, I was able to leak the OAuth code with initial injection using like an image tag so they can send the URL to my, to myself and along with the meta tag that is gone, but still sets the refer policy to as if URL. Um, so with both of these, I can leak the OAuth code and get an account takeover.
+
+Justin Gardner (@rhynorater) (05:01.071)
+Dang dude, that is lit. And this is still like a actively, like this can be exploited, right?
+
+Jasmin Landry (05:08.69)
+Yes. Uh, so I was discussing it with the program itself and, uh, it turns out that while we found the, the GitHub issue on their, on Dumperify, uh, they said that it's like a Chrome issue. And by looking at Chrome and the Chromium bugs, we found that it's not fixed. It's still out there. So this can still be exploited. Which is cool, right? Yeah.
+
+Justin Gardner (@rhynorater) (05:18.233)
+Yeah.
+
+Justin Gardner (@rhynorater) (05:29.187)
+my favorite type of issue man, let me just give you a little golf clap here, that's clutch. A lot of times we get people coming on the pod being like, look at this crazy thing that I found, it's fixed now, but cool story, and there's lots to benefit from that, but this one's actually still active, that's the best kind. And I was kind of clicking into this.
+
+I was kind of clicking into this sort of GitHub link that you gave me before. So on Dom Purify, they're like, interesting, thanks for the heads up. Seems like it's a Chrome issue. And then you, like you said, you know, you click over to the Chrome one, and I thought this was hilarious. Like, first, they like, this issue's kind of old, from like 2020. So they like have migrated, you know, issue trackers since then. So it's like, I go to this issue tracker, go to this issue tracker. And then at the bottom of it, it says,
+
+David von Cleave is no longer working at Google. And so this is, you know, issues up for grabs. And then that was like 2021. So it's been like three years, the issue has never been touched. And I feel like this is massive, dude. Like this, this has really massive impact because what it seems to me is like without that meta tag even being added to the DOM, maybe just that meta tag being created as like a tag object in JavaScript.
+
+that meta or that refer policy is being applied to the page, which is kind of nuts.
+
+Jasmin Landry (06:55.723)
+Yeah, that's crazy. So like, I've been looking at other targets where I saw that dumper if I was used and see if I can abuse that somehow because I'm sure it's pretty common in many places, right?
+
+Justin Gardner (@rhynorater) (07:00.695)
+Mm.
+
+Justin Gardner (@rhynorater) (07:09.911)
+Yeah, yeah, 100%. And I see, you know, I'm looking now at this issue. I just sent it to you on Discord as well. And if you, okay, so I misread it. I was, because the, we'll link the GitHub issue in the comment section or the description section. But you can even see up at the top, it says under headers general in the DevTools console, says on the top picture, it says,
+
+refer policy strict origin when cross origin and the other on the one in the bottom after they've done the HTML injection it says No refer so that's pretty weird man that this is actually allowed and It definitely this is a good trick to get us back to the good old days of like of being able to leak data through the refer
+
+Jasmin Landry (07:48.555)
+It is, yeah.
+
+Jasmin Landry (07:54.786)
+Ha ha.
+
+Jasmin Landry (08:00.182)
+Yeah, I was, I actually had never found something like that. Cause it's not something that I used to look at. Um, but I was like, really, I really wanted to steal the OAuth code just because I had been looking at OAuth over the past couple of weeks or months. And, um, so I focused on that HTML injection, tried to see what I could do with it and started looking at the ref policy and ended up with meta tag. And luckily for enough Chrome hasn't fixed their stuff yet. So it worked.
+
+Justin Gardner (@rhynorater) (08:04.711)
+Mm.
+
+Justin Gardner (@rhynorater) (08:10.631)
+Mmm.
+
+Justin Gardner (@rhynorater) (08:14.205)
+Mm.
+
+Justin Gardner (@rhynorater) (08:29.743)
+Made it happen, man, made it happen. All right, so that's the little taste of J-Rock and J-Rock's work. But one of the cool things about you, Jasmine, is that you're not just a bug bounty hunter, you're also a pretty high-level security guy as well. And I kinda talked about this on a podcast with Jason Haddix a while back, but like.
+
+Jasmin Landry (08:31.019)
+Yeah.
+
+Justin Gardner (@rhynorater) (08:56.763)
+I feel like there's multiple routes for me in the future. You know, when I'm kinda thinking about my future, I feel like I could go the, I could go like the CISO route, or like the, you know, head of information security route or whatever. You could go the corporate route there. I could go the entrepreneur route. I could go the, you know, government hacker route. Or I could, you know, stay doing bug bounty forever, which is probably what I'm gonna do, not gonna lie. But if I were to go the...
+
+Jasmin Landry (09:21.327)
+Thank you.
+
+Justin Gardner (@rhynorater) (09:25.495)
+the C-suite-ish route, I would want to be like you. Because you have, while still being a top dog in an organization from the security perspective, you're also very, very technical and doing bookbounding on a regular basis and in the weeds. And you're also a model, I understand. Is that accurate?
+
+Jasmin Landry (09:47.59)
+Yeah, I wouldn't say a model, but yeah, I guess I was approached to do the cover of a front page of an IT or security or computer magazine, which I did. I found it really cool, so I did it.
+
+Justin Gardner (@rhynorater) (09:59.955)
+Oh my gosh dude, it's so-
+
+Justin Gardner (@rhynorater) (10:04.235)
+Not just my role model, you're a model. That's great dude. So we'll put the picture up on the screen, but I'm not gonna lie man, it's pretty good. Like that is a pretty, I mean that's about as good as you could ever hope for them to, you know, have the results come out, so.
+
+Jasmin Landry (10:06.661)
+A model, yeah.
+
+Jasmin Landry (10:22.098)
+Yeah, well, shout out to the HackerOne photographer. That picture was taken in Austin a couple of years ago. Yeah, yeah, at one of their LHC's and I asked HackerOne if he could use that picture. He said, yeah, go ahead. So I sent it over and the result is pretty cool. I actually have a few copies here in my place, but yeah. Yeah, frame it.
+
+Justin Gardner (@rhynorater) (10:27.315)
+No way, really? Wow.
+
+Justin Gardner (@rhynorater) (10:42.903)
+Dude, you gotta send me one of those. I'll put it up on my wall. All right, man. So I've trolled you enough. Let's swing back around to the origin story. How did you get into security in general and how did you get into bug bounty?
+
+Jasmin Landry (10:57.862)
+Um, so I actually, it was actually don't have like a typical background as many people who do about who do black bounty. Um, I started after high school, um, a program in, uh, in accounting, cause I used to be good at math. Uh, but after years like, huh, this is not for me. So I stopped, um, I just like worked a student job for, for a year. And then, uh, one day on my way back home, I saw, um, a poster.
+
+where it said like, I mean, on my way back home in the metro or somewhere, however, how you guys call it, of a poster of a school that started a new, I guess, computer science program. And I wasn't really like, into computers, my whole life, like as a kid, teenager, it wasn't my thing. And then at that time, when I was 18, I was like, I know there's are plenty of jobs in that space. Let me give it a shot. And turns out
+
+Justin Gardner (@rhynorater) (11:31.319)
+Mm, mm.
+
+Jasmin Landry (11:54.77)
+I really loved it. So I let me know. I did not love it because my first course ever that program was C. And I hated it. I barely passed. Yeah. I'm not sure why I decided with C like you should start with the basics. Like I didn't even know back then like what a CPU was and you want me to code in C. So yeah, so I ended up like passing the course like making that
+
+Justin Gardner (@rhynorater) (11:55.992)
+Hahaha
+
+Justin Gardner (@rhynorater) (12:02.541)
+oooo
+
+Justin Gardner (@rhynorater) (12:13.747)
+I know dude, that's nuts. Wow.
+
+Jasmin Landry (12:21.09)
+the project that we had to create like a game like a Tetris or snake game, I forgot what it was. So I did it, but barely passed. And I actually like consulted with the with these cool, I guess, directors whatnot. Because I said I told them like, it's not my thing. Like, do you have any other like options? Like, oh, yeah, we have like networking and security was like, let me try that. So in those classes, I learned all of like TCP IP.
+
+Justin Gardner (@rhynorater) (12:33.447)
+Mm, yeah.
+
+Justin Gardner (@rhynorater) (12:47.927)
+Mm-hmm. Mm.
+
+Jasmin Landry (12:48.438)
+all of the OSI layers and all that stuff, firewalls, VPNs, and mostly networking, like Linux servers, stuff like that. I did not do any programming at all in those classes. But it was something that I liked a lot, and I got really good at it. So after I was done with school, started working as a sysadmin, so working with networking, like Cisco, routers and switches, like typical sysadmin work.
+
+and I could directory power cell and stuff like that. But after a couple of years, I started to get bored. So I started looking into pen testing. Because at school we had a few classes on security. Yeah. So we had a few classes on security, but like it was really like the basics. Like they told us what our firewall was, what a WAF was, what an IPS, IDS, and to various all that stuff. And I knew that
+
+Justin Gardner (@rhynorater) (13:20.738)
+Hmm.
+
+Justin Gardner (@rhynorater) (13:30.279)
+Muahahaha. Welcome to the dark side. Hahaha.
+
+Jasmin Landry (13:46.93)
+week, I could hack as a job. I was like, just sounds, sounds it sounds like illegal, but if it's a job must be legal, right. So I looked it up a bit and saw that it was like a regular job that people had. So I started to see what I needed to do to get a job as a pen tester. So I decided to do the OSCP certification. And keep in mind, since I started school in 18, I only started getting to hacking was like 25.
+
+Justin Gardner (@rhynorater) (14:10.649)
+Mm.
+
+Justin Gardner (@rhynorater) (14:17.123)
+Wow.
+
+Jasmin Landry (14:17.342)
+Um, which is like not common in the bug bounty space. Cause I think you started hiking with your like in your teens. Yeah. Exactly.
+
+Justin Gardner (@rhynorater) (14:23.783)
+Yeah, yeah, a lot of us have started really early, but there have been some really amazing people in the community that have done what you've done as well, or even later, and just kind of come into it and then just, you know, shwoom, absorbed all the information and, you know, have amazing results. So either way works out, but this is definitely, I think, probably not the typical route.
+
+Jasmin Landry (14:35.18)
+Mm-hmm.
+
+Jasmin Landry (14:41.826)
+Right.
+
+Jasmin Landry (14:45.642)
+It is, yeah, true. So yeah, so back in 2016, I completed the OSCP. And it's funny, because I actually did an interview for a cybersecurity company in Montreal. And they did not, it was like in January, February. And they didn't take me because they thought that I was like too far back. So for me to get up to date in terms of training, it wouldn't cause them too much. So I was like, you know what? This is like the game changer. Like I'm gonna get, I'm really motivated now. I want to get it done.
+
+Justin Gardner (@rhynorater) (14:57.644)
+Mm.
+
+Jasmin Landry (15:14.878)
+And then in April, I finished the OSCP in like two months, which is, I think, pretty good because I think the common, I think timeframe is like three months where people do OSCP and a lot of, a lot of times they don't pass on the first attempt and I did within 60 days.
+
+Justin Gardner (@rhynorater) (15:14.953)
+Mmm.
+
+Wow, that's fast.
+
+Justin Gardner (@rhynorater) (15:23.343)
+Yeah.
+
+Justin Gardner (@rhynorater) (15:28.375)
+Hmm. You passed in the first attempt? Dang it, J Rock. You know, I failed the first attempt. I went through it and I yeah, you know, I was five points shy for the for the first attempt, which was so sad. And I and I didn't make any progress the last five hours. It was like is heartbreaking.
+
+Jasmin Landry (15:32.094)
+Yep. Ha ha ha.
+
+Jasmin Landry (15:38.048)
+Oh, really?
+
+Jasmin Landry (15:43.809)
+Ah, that sucks.
+
+Jasmin Landry (15:49.346)
+Oh really?
+
+Justin Gardner (@rhynorater) (15:52.739)
+And I didn't do the lab write up either, right? Cause I was like, oh, you know, I'll pass it, right? Or whatever, but you get bonus points for doing the lab write up. So if I had done the lab write up, then I could have passed, but yeah, it sucks. I'm curious to your thought. I mean, obviously you went that route with the certifications and stuff like that. You know, I hear two major sort of groups of people in insecurity. Some people are like, ah, you know, training courses, certifications, blah, blah. It's not.
+
+Jasmin Landry (15:58.038)
+This is, yeah, right. You would have gotten it, yeah, NSX.
+
+Justin Gardner (@rhynorater) (16:22.547)
+you know, all of it's fake or whatever. But the other, and then the other group is like, certifications, classes, these sort of things, they really add value. And I think it largely depends on the person, you know, it largely depends on like what your learning style is and whether you're able to sit down and do structured learning and that sort of thing. But I'm curious your take on your academic experience, you know, doing some cybersecurity courses and then all versus your certification and versus self-taught and where you're getting the
+
+Jasmin Landry (16:35.842)
+Right.
+
+Justin Gardner (@rhynorater) (16:52.135)
+most bang for your buck out of those three. Yeah, yeah.
+
+Jasmin Landry (16:54.55)
+Definitely self-taught. So like, for example, with the OSCP, it's, as you know, like a lot of self-taught when you do your own research, you need to look things up, learn how things work. But now, like, they reflect back to when I did it, I realized that the OSCP is like really just the basics. You learn the basics, nothing more, especially if you think that's web app related. Like, you still have like...
+
+Justin Gardner (@rhynorater) (17:03.704)
+Yeah.
+
+Justin Gardner (@rhynorater) (17:15.885)
+Mm, yeah.
+
+Mm.
+
+Jasmin Landry (17:21.962)
+remote file inclusions in the OSCP. Like nowadays, you'd never see that, right? And it's like really like basic stuff. And yeah, so like, I think for me personally, I learned better by like myself, like self-thought. I mean, actually like me watching a course or a class doesn't work. So for like the OSCP, you know, we have like videos of things, I do not watch a single one.
+
+Justin Gardner (@rhynorater) (17:26.095)
+Yeah.
+
+Justin Gardner (@rhynorater) (17:39.687)
+Mm.
+
+Justin Gardner (@rhynorater) (17:45.316)
+Mm.
+
+Jasmin Landry (17:51.95)
+I was better while reading the book, Googling stuff. And so same thing today. I have hard time learning while watching someone talk. I'm just really better at learning and by reading. And yeah.
+
+Justin Gardner (@rhynorater) (18:05.859)
+Yeah, I feel like there's multiple, I feel like I read somewhere that there's like visual learners, auditory learners, and like kinesthetic learners, right? I don't remember like the actual term for it, but it's like, there's some people that need to just get their hands on it, and there's some people if they read it, you know, it'll be good. There's some people if you see it and it'll be good. You know, so I guess it highly depends on the person. But I have to say, you know, especially in an industry like Bug Bounty,
+
+Jasmin Landry (18:13.015)
+Right.
+
+Jasmin Landry (18:16.502)
+Mm-hmm.
+
+Jasmin Landry (18:30.514)
+Exactly, yeah.
+
+Justin Gardner (@rhynorater) (18:34.139)
+or offensive security in general, where there's so much tinkering required, where you've gotta sit down there and you've gotta fiddle with this and move this part around and adjust and that sort of thing. I think the people that learn by having their hands on something really have a benefit. Metaphorically, of course, because you can't put your hands on it. But playing around with it and fiddling with it, I think that's a big advantage and I think that's a trend we do see across a lot of the successful hunters is that ability to.
+
+Jasmin Landry (18:51.371)
+Yeah.
+
+Justin Gardner (@rhynorater) (19:01.911)
+learn from having your hands on it and kind of grow from that regard.
+
+Jasmin Landry (19:07.11)
+Exactly. Yeah, definitely. And for me personally, like, as you know, in the recipe, there's not much of web in the course itself. So I actually learned all of my web app hacking with the web application hackers handbook. Look, I read it. I read it twice. All 900 pages twice. Yeah. It's long. But this is how I learned the most. I just read through it. Started
+
+Justin Gardner (@rhynorater) (19:14.68)
+Yeah.
+
+Justin Gardner (@rhynorater) (19:22.784)
+Oh really? Nice. Yeah, it's long. It is long.
+
+Mm.
+
+Jasmin Landry (19:36.554)
+like some websites. I remember back then I was looking at Tesla, I think, on bug crowd. This is like back in 2017. And my first year that I did bug bounty, well, I wouldn't say I did bug bounty, but like, after I did do it, I actually got a job as a pen tester, by the way. So this helped me land the job. This was like in February 2017. And in that month, I also got my first ever bounty for Microsoft.
+
+Justin Gardner (@rhynorater) (19:42.22)
+Mm.
+
+Justin Gardner (@rhynorater) (19:55.052)
+Oh, nice.
+
+Justin Gardner (@rhynorater) (20:04.377)
+Ayyy
+
+Jasmin Landry (20:06.454)
+But since I was just new, I did not find another bug or I did not get another bounty for the next six months. And ended up with my first year doing like 5K. Not really, I was still like in a learning phase where I was reading books. I read Peter Jaworski's book as well to get like real life example. Yeah, it's a really cool book, yeah. Yeah, that's what it's called, yeah.
+
+Justin Gardner (@rhynorater) (20:14.989)
+Oof.
+
+Justin Gardner (@rhynorater) (20:19.003)
+Were you hunting on a regular basis though? Hmm. Right, right.
+
+Justin Gardner (@rhynorater) (20:27.911)
+Ah, love that book, man. Web Hacking 101. Freaking, freaking Pete, man. Like, I love that book. And I'll tell you, dude, I, when I read that book, I don't know whether, I don't know, maybe I just didn't notice it at all. But I read through the whole book. And I loved the book. I was like, this is the best book ever. Anyway, my wife, you know, she doesn't do any computer stuff. But she was looking at it one day. And she was kind of just reading through it a little bit. And she noticed a bunch of like.
+
+like grammar errors and stuff like that in the book. And she's like, Justin, how, like, what is going on with this? And I'm like, I don't know. And maybe I had like some sort of beta copy or something like that. But I like to think that I was just so intrigued by the content that I just skipped over all of that. Because the way he breaks down the analysis of the hacktivity reports, that's exactly what you've got to do for all of the hacktivity reports. When you're...
+
+Jasmin Landry (20:58.944)
+Oh really?
+
+Jasmin Landry (21:20.642)
+Mm-hmm.
+
+Exactly, yeah.
+
+Justin Gardner (@rhynorater) (21:24.491)
+Yeah, when you're getting started. I mean, I imagine you learned from that as well. Yeah.
+
+Jasmin Landry (21:27.742)
+Definitely. I spent a lot of time in just reading reports and activity. I remember like, daily looking at like, let's say, let me look at access today to look at as many excess reports that I could see in activity. And yeah, this is how I learned pretty much my skills that I had today is through just reading.
+
+Justin Gardner (@rhynorater) (21:38.713)
+Yeah.
+
+Justin Gardner (@rhynorater) (21:49.615)
+So, so let me ask this then. Did you do Bug Bounty before you got the Pentester job at all? Cause you said the same date or the same month you got it. Yeah.
+
+Jasmin Landry (21:57.142)
+Simone, yeah, so not really. So I started with my mountie roughly after I got the job. So I had a colleague that did it a bit. He was like, Oh, you should try it. So I was like, Okay, I'll give it a shot. And tried it. And my first attempt worked, luckily, with Microsoft. Yeah. But then, like I said, the next six months did not work out pretty well. But I was still
+
+Justin Gardner (@rhynorater) (22:05.786)
+Mm.
+
+Mm.
+
+Justin Gardner (@rhynorater) (22:16.844)
+No way, wow.
+
+Jasmin Landry (22:25.778)
+learning a pretty junior pen tester. So I was learning while testing. I had colleagues who helped me out and with time, I guess I gained skills.
+
+Justin Gardner (@rhynorater) (22:32.513)
+Hmm.
+
+Justin Gardner (@rhynorater) (22:35.935)
+That's good, yeah. I feel like that's also a little bit, like for me, maybe that's my opinion, but my sort of journey was a little bit different than that, which was I was trying to get the job. I didn't have the OSCP, right? And I wanted them to pay for the OSCP for me, to get the OSCP.
+
+So I was trying to get these jobs beforehand and the way that I might end with that was bug bounty. So I did some bug bounty beforehand and I was like, hey, you know, I found all these bugs. I've got, you know, a thousand rep on HackerOne, made X amount of money off of bug bounty. And sorry, something's floating in the screen. I just all of a sudden just grabbed the screen. But, and that was kind of my way in was like, hey, I've already got all the skills. You can put me to work on a web app right away. Here's the proof.
+
+Jasmin Landry (23:00.014)
+Okay.
+
+Jasmin Landry (23:08.962)
+Hahaha
+
+Justin Gardner (@rhynorater) (23:21.671)
+And you also did that a little bit the other way around, paying for your own OSCP, getting put into the company, and then starting to learn Puck Bounty. And then did you continue doing it while you were as a pen tester? Yeah, and were you working on network pen testing at the time, or you're doing web stuff? That helps.
+
+Jasmin Landry (23:25.102)
+Mm-hmm.
+
+Jasmin Landry (23:35.502)
+Uh...
+
+Jasmin Landry (23:40.814)
+Uh, mostly web stuff. Um, so yeah, uh, cause I didn't actually, I did not want to do networking stuff. Um, I really liked web app, even though I was bad at it. This is, I had a passion for it. I found it so interesting that you could get access to a file on the server. Through the web. I was like, how is this possible? Like what is going on? And I think that curiosity might think helped me in terms of learning what app, cause I really wanted to know how it works.
+
+Justin Gardner (@rhynorater) (23:49.371)
+Mm.
+
+Justin Gardner (@rhynorater) (24:01.121)
+Mm.
+
+Justin Gardner (@rhynorater) (24:11.959)
+Yeah, no, absolutely. That's huge. I mean, it's the biggest service exposed in a lot of things. If you just look at it from a networking perspective, I did a lot of networking pen testing when I was at my pen testing consultancy. But you do the port scans, you figure out, okay, what services can I interact with? And 99.9% of the time, if there's a HTTP service, HTTP-based service exposed, that's gonna have.
+
+Jasmin Landry (24:12.663)
+So yeah, so yeah.
+
+Jasmin Landry (24:18.312)
+Right.
+
+Jasmin Landry (24:28.107)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (24:38.347)
+the biggest attack surface, you know, as compared to other services. So it definitely makes sense to focus on it just from a networking, network hacking perspective as well. Yeah. So then you worked there, you built your web hacking skills and how did you turn into the bug bounty beast that you are nowadays?
+
+Jasmin Landry (24:40.078)
+Exactly.
+
+Jasmin Landry (24:48.324)
+True.
+
+Jasmin Landry (24:59.154)
+Um, I think I, so at that job actually, uh, we use one technology in particular. So I, since I was looking at it almost on a daily basis, uh, found a few tips and tricks, applied that the background tea, it worked. Um, and I think in the end, just gaining experience. Um, like I think what I learned while doing the testing, I applied the background team when I learned to it, but once I applied to testing and doing both at the same time.
+
+Justin Gardner (@rhynorater) (25:04.161)
+Mm.
+
+Justin Gardner (@rhynorater) (25:15.289)
+Nice.
+
+Jasmin Landry (25:28.942)
+helped me a lot and to build that, I guess, reputation. I think while I was pretty active back in like 2019, while still doing bad bounty as a hobby, and not full time, I had made my way like in the top 40 on blood crowd. I was mostly active on blood crowd at that time, but 2019 is also the year my son was born. So my activity of doing bad bounty went way down since. But as...
+
+Justin Gardner (@rhynorater) (25:43.34)
+Nice.
+
+Justin Gardner (@rhynorater) (25:53.551)
+Yeah, things get a little complicated.
+
+Jasmin Landry (25:55.974)
+Yeah, a bit more. So back then I could pretty much do like all-nighters of hacking. I remember like going to bed at five, waking up at eight, being in the office at nine and being like really, we do fine with that. But now, yeah, this was before like in 20-
+
+Justin Gardner (@rhynorater) (26:01.488)
+Mm.
+
+Justin Gardner (@rhynorater) (26:09.563)
+What? No, dude, you're not one of those people that needs to sleep three hours a night, are you? Oh my gosh, that's ridiculous.
+
+Jasmin Landry (26:16.342)
+I can't sleep at three, four hours a night and be okay. Yeah. But now like just last night, I was on something, stayed up until like two. So I did my report, went to bed at 2.30, wake up at eight and like I'm tired, but I'm still like, I can go through the day totally fine. I know it's not healthy. So like I try to sleep as much as I can still. So like I might take a nap later this afternoon.
+
+Justin Gardner (@rhynorater) (26:36.912)
+Wow.
+
+Jasmin Landry (26:44.977)
+But yeah, I can do that.
+
+Justin Gardner (@rhynorater) (26:46.603)
+Wow, dude, I'm jealous. I, if I don't get at least seven hours of sleep, then I'm, I'm feeling it. So I'm like trying to get back my, I was kind of staying up late for a little while and now I'm trying to get back to like waking up at six. So I'm, I'm the past couple of days have been like, you know, feeling great in the morning, getting up, getting my workout in, you know, hitting the hot tub with the coffee, you know, it's great. And then get started with the day. But then it's like, you know, at four or five, I'm like,
+
+Jasmin Landry (27:05.054)
+Yeah, nice.
+
+Justin Gardner (@rhynorater) (27:14.912)
+So I am jealous, I have to say. So, okay, you've been doing pen testing. Now, did you ever do a stint as a full-time book bounty hunter?
+
+Jasmin Landry (27:25.01)
+Uh, roughly, um, like six months where I, where I did like multiple time and also was like a consultant, um, it was like four, four years after my first testosterone, uh, at the same company. Uh, so I decided to give it a sin for like six months. Uh, my son was roughly six months as well. Um, when I decided to, to do that. Um, but I did not.
+
+Justin Gardner (@rhynorater) (27:28.345)
+Six months.
+
+Justin Gardner (@rhynorater) (27:32.663)
+Hmm
+
+Justin Gardner (@rhynorater) (27:45.063)
+Mm.
+
+Jasmin Landry (27:51.082)
+It's not for me. I realized after those six months that I can't do this full time because when I wake up in the morning, I don't feel the motivation to hack. Um, for me it was like mostly maybe because I was exhausted. I'm doing that full time for like the past four or five years where I was constantly hacking day and night because of me, it was pentesting 40 hours a week hacking on evenings, um, two, three times a week plus on weekends, once in a while. So I probably did like six hours of hacking.
+
+for the past couple of years. So when I did it full time, I was like, let me just relax a bit. So I barely did any hacking on, well, on those six months. Yeah. So I actually built up my own recon tool in that timeframe, which I don't use anymore.
+
+Justin Gardner (@rhynorater) (28:21.929)
+Wow, dude.
+
+Justin Gardner (@rhynorater) (28:29.231)
+Oh no. J-Rock, no.
+
+Justin Gardner (@rhynorater) (28:40.819)
+That's another thing, dude. I feel like I often, I guess I've been doing full-time bug bounty for four years now. It's like, I feel like for me, programming was a bit of a escape that didn't pay good dividends for me. I mean, it did for a little while, but like oftentimes I'm like, you know, because bug bounty is so untangible, like.
+
+Jasmin Landry (28:48.727)
+Mm-hmm.
+
+Jasmin Landry (28:56.119)
+Yeah.
+
+Justin Gardner (@rhynorater) (29:04.463)
+sure you can have gadgets and stuff like that, or maybe you'll get a vuln here or there. But if you don't submit a report, you're not really feeling very accomplished, and you don't know for sure that you can go and do something. You don't know for sure that today, if I sit down at the desk, I'm gonna find a bug and I'm gonna make $5,000 or whatever. So instead, you say, oh, well, but I know for sure that I can write a script.
+
+Jasmin Landry (29:17.87)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (29:31.727)
+to scan these ports and put it in a database today. So I'm like, that's something that I know I can do. So I've got the thing I know I can do versus the thing that I'm not sure that I can actually do. And it becomes very attractive to do the thing that you know you can succeed in and feel like you made progress in. But it kind of takes you away from the thing that's actually generating revenue a lot of the time. Did you generate, did you experience something similar?
+
+Jasmin Landry (29:45.496)
+Yeah, true.
+
+Jasmin Landry (29:52.802)
+Mm-hmm.
+
+Jasmin Landry (29:57.074)
+Yeah, I think others have mentioned in the pot as well, where the cost of maintaining the tool itself was greater than the investment that you were putting in. So like, for me, yes, I was able to like, get a database of everything that I wanted, but I will still not first on some low-hanging fruit recon related bugs, because there are people out there who have like crazy automation, I did not. I only wanted like half data.
+
+Justin Gardner (@rhynorater) (30:04.42)
+Oh yeah.
+
+Justin Gardner (@rhynorater) (30:07.792)
+Mm.
+
+Justin Gardner (@rhynorater) (30:19.855)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (30:23.257)
+Yeah.
+
+Jasmin Landry (30:26.894)
+For example, let's say there's a zero day on, I don't know, Confluence. If I know I have like a page where I can find Confluence on my database, I can maybe go to it and I report it, if they accept all this. But I found that I was not always first and for the times that I was, it wasn't really worth it, worth my time looking into it. So I decided to just like do what I love and which is just using burp repeater and.
+
+manual hacking. And if I do need recon, well, there's today's new, not the plenty of people who have data that I need. So it goes collaborate with those guys.
+
+Justin Gardner (@rhynorater) (30:58.041)
+Yeah, man.
+
+Justin Gardner (@rhynorater) (31:06.931)
+Exactly. And it's pretty low cost too. You know, like, I mean, depending on the amount of involvement from the person, I've done splits of 25% to, you know, 50%. And it's like, okay, well, you know, if you're, if you're providing the POC, they're providing the data, you know, it's like a match made in heaven there. So it's good. It's good that we have friends like that, that will, you know, it's kind of like a VOLN. VOLN is a service there, right?
+
+Jasmin Landry (31:09.69)
+Mm-hmm.
+
+Jasmin Landry (31:26.207)
+Right.
+
+Jasmin Landry (31:34.445)
+I'm just thinking about that, yeah, exactly.
+
+Justin Gardner (@rhynorater) (31:35.827)
+Yeah, it's good because like you said, there's cost, you know, there's cost to just running the infrastructure itself, you know, just, you know, whatever, $100 a month or $200 a month or whatever. But then there's also like the opportunity cost of how much time have I spent coding this tool versus how much money I could have made, you know, hacking. And especially when you're good enough to do bug bounty on a regular basis and, you know, that cost is pretty high.
+
+And thinking about it in terms of opportunity cost is pretty tricky. The flip side of that for me as a full-time hunter is it's very hard for me to take time off because I don't have any, you know, I'm not taking paid time off, right? I'm taking unpaid time off by nature of the, you know, the career path. And so it's like, it would be nice to have that automation running and, you know, hear a ding from time to time being like, ooh.
+
+Jasmin Landry (32:18.534)
+Right, exactly.
+
+Justin Gardner (@rhynorater) (32:29.359)
+boom, you know, that sort of thing. I do miss that from my recon experience.
+
+Jasmin Landry (32:29.526)
+Something came up, yeah. You should, let me do, do you still have a recon tool or you don't anymore?
+
+Justin Gardner (@rhynorater) (32:38.567)
+I mean, it's, you know, like you say, it's there. It's written in Python 2.7, you know, but it doesn't, it's not running anymore actively. So Nugly is my recon tool now. Ha ha ha.
+
+Jasmin Landry (32:42.859)
+Okay.
+
+Jasmin Landry (32:47.294)
+I see.
+
+Jasmin Landry (32:51.888)
+I was just gonna say, you know, like when someone gets a bounty in LHC's, the sound that is on the Leigh Bird, you should put that in your tool when something comes up. Maybe it'll motivate you. Oh, you did.
+
+Justin Gardner (@rhynorater) (32:55.787)
+Yeah. Yeah, yeah, yeah.
+
+Dude, I did that. I did, I did. So I like, I like Pavlovian dogged myself and my father-in-law too, because like, you know, anytime I hear it, I'm like, you know, the heart rate would go up, the slack ping or whatever. And my father-in-law also, I told him, you know, hey, you know, whenever this sound happens or whatever, it's a vuln that I found, because this is when I was really hitting the Route 53 takeovers. And it was like, you know, they were
+
+Jasmin Landry (33:14.487)
+Yeah.
+
+Justin Gardner (@rhynorater) (33:29.071)
+drop in every day, every other day. And so anyway, we'd be hanging out with them and we'd hear it go off and he would be like, woo, you know, he needs to get up and start doing a dance, it's like, yeah. So it's pretty fun, you know, there's definitely fun sides of the recon stuff, but I don't know, I think for me, sitting down actually dropping some crits every once in a while from good old, sitting down and doing research is really big. And then also, like you just shared right here on the pod, you find cool stuff.
+
+Jasmin Landry (33:36.889)
+Nice. That's pretty cool.
+
+Justin Gardner (@rhynorater) (33:58.779)
+sort of revolutionary techniques and innovative techniques that you can share with other people and you can keep to yourself and utilize when you're actually in the weeds doing the research rather than just trying to be the first one to find a well-established technique.
+
+Jasmin Landry (34:13.914)
+Yeah. And for me, since it's only like as a hobby, but I don't need the money. So I don't live by, I don't need to find bugs. I do what I want to do. And for me, I have more fun doing manual hacking than focus on the right gun only. So it's. Yeah.
+
+Justin Gardner (@rhynorater) (34:20.46)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (34:30.775)
+Yeah, I believe that man. That's one of the things that I've been kind of, kind of, you know, we're going deep here. But you know, lately I'm a full time Bounty Hunter and I do the podcast. So I've got like one standing meeting a week or whatever, right, of like, you know, record the podcast with Joel on this time or record the podcast with J. Rack at this time. But you know, for some reason I still have that like, and I could take the rest of the week off, no one would be the wiser, right?
+
+Jasmin Landry (34:46.583)
+Yeah.
+
+Justin Gardner (@rhynorater) (35:00.015)
+but I still feel that anxiety of some sort of, why am I not working right now? Or even when I am working, it's like, I don't know, should I be working more? It just doesn't feel as free as I actually am. And I know in my head, I'm free. I could go do whatever I wanted, I could go get lunch or whatever. So I think lately what I've been trying to do is I mentioned...
+
+Jasmin Landry (35:00.194)
+Mm-hmm.
+
+Jasmin Landry (35:14.645)
+Yeah.
+
+Justin Gardner (@rhynorater) (35:21.023)
+I talk about my hot tub time fairly often here on the pod, but it's kind of like a meditation and prayer time as well. Go out there, enjoy the nature, pray, meditate, that sort of thing. But I've been trying to reflect on that freedom in the mornings and be like, sort of gaslight myself into feeling that freedom that's actually there, but it's not as easy to feel sometimes. So...
+
+Jasmin Landry (35:39.995)
+I see.
+
+Justin Gardner (@rhynorater) (35:48.915)
+Yeah, I definitely understand the draw of traditional employment though, which brings us back to what you're doing now, right? You left that full-time Buck Downey and you went back into the workforce and where did you land?
+
+Jasmin Landry (36:02.746)
+I landed in a small company in Montreal, I guess in the startup phase. It wasn't, I mean the company had been founded like in 2009, so for roughly 10 years, a bit more than 10 years. Yeah, so they hired me to be the head of IT and security. And I reported to the CTO. Yep. They looked at my resume, they saw that was...
+
+Justin Gardner (@rhynorater) (36:15.887)
+10 year startup.
+
+Justin Gardner (@rhynorater) (36:24.887)
+Okay, so that was the first jump there. Nice.
+
+Jasmin Landry (36:32.086)
+pendesting for a couple of years. Back then my bug bounty resume was building up as well. I wasn't a model yet, but my name was like you, our names can be Google and they see what we do and something like that. So, and the interview went really well. And then, yes, I got hired. So I worked with everything from app set to compliance, like all of the topics in security, physical security as well.
+
+Justin Gardner (@rhynorater) (36:40.141)
+Hahaha
+
+Justin Gardner (@rhynorater) (36:45.849)
+Yeah.
+
+Jasmin Landry (37:01.018)
+for that startup and then for the office, yeah. And then a year later, we got acquired by NASDAQ, which is where I work now. So yeah, so I joined NASDAQ to an acquisition and I currently work at NASDAQ, an InfoSec as a Senior Director.
+
+Justin Gardner (@rhynorater) (37:01.815)
+Oh wow, physical security as well. Hmm.
+
+Justin Gardner (@rhynorater) (37:09.536)
+Nice, nice.
+
+Justin Gardner (@rhynorater) (37:17.411)
+Very cool, man. I'm wondering about that transition, because if I, you know.
+
+I can say with a high degree of confidence that I understand a lot about the offensive security side of security stuff. I understand how to get in. I've done network pen testing. I've done AppSec stuff. I've done mobile stuff. I've done IoT stuff. I haven't done as much hardware stuff, but here and there with Joel and stuff like that. So I have a diverse background there, but I feel like going into a head of IT security or in your case, sort of head of security.
+
+you know, physical stuff at the office. Um, I feel like that would put me out of my comfort zone, which wouldn't, which wouldn't be bad, and I feel like I could figure it out. But like, how is that transition?
+
+Jasmin Landry (38:04.91)
+Uh, but you just said the word. It was definitely out of my comfort zone, but I'm a type of guy where I like challenges, so, and as soon as they reached out to me, it was like, man, I want this job, uh, it's like, it's out of a comfort zone. I know there's like great potential and I think this can lead to something really cool, which in the end it did through the acquisition. Um, but so like their main goal was to get a SOC 2 report and I had heard of SOC 2 in the past since I.
+
+Justin Gardner (@rhynorater) (38:08.335)
+Yeah.
+
+Yeah. Ah, that's cool.
+
+Justin Gardner (@rhynorater) (38:25.122)
+Mm.
+
+Justin Gardner (@rhynorater) (38:32.587)
+Yeah, it's intense.
+
+Jasmin Landry (38:33.578)
+As a consultant, I worked with it a bit. But like I would, I never led like a company getting to a SOC 2 report. Uh, so learned a lot, um, on the job. Uh, had to do lots of research on what is SOC 2, um, what is ISO 200001 and what is all that stuff. I already knew what PCI and stuff like that, but we don't use it, but getting an idea of what those frameworks are and what they require, um, same thing for like standards like NIST.
+
+Justin Gardner (@rhynorater) (38:56.644)
+Hmm.
+
+Jasmin Landry (39:03.59)
+Um, all of those, I guess, acronyms that are important in compliance world, uh, what are they, whether they, whether they require something like that. Uh, so learned a lot on, on that, on for the compliance side of things. Um, also my guests created our app sec or building management program. Um, I had already had experience in doing that as a pen tester where I kind of helped out in terms of like code reviews, uh, using SAS last and something like that.
+
+Justin Gardner (@rhynorater) (39:08.149)
+Right.
+
+Jasmin Landry (39:32.062)
+So pretty much started the security program from scratch. This also includes like security awareness training program, making sure that, and also another part of my job was managing IT. So I managed the users. Yeah, I was also the head of IT. So I had like both umbrellas under me. Yeah. So I worked.
+
+Justin Gardner (@rhynorater) (39:38.607)
+Wow.
+
+Justin Gardner (@rhynorater) (39:45.591)
+I'm sorry, what? Ha ha ha. Oh my gosh, dude. You're like definitely in a startup dead. He's like, all right, you take any, you take care of all those computer things. Like. Ha ha ha.
+
+Jasmin Landry (40:00.342)
+So I was alone for a couple of months and I was the first employee in IT and security. So I had to build things up from scratch. And the only thing that they had, uh, this company that did like, uh, or still do, um, ESG, I'm not sure if you've ever heard of ESG, like environmental social governance. It's like, um, hard to explain. Um, but it's like something that's pretty, not pretty common, but it's getting pretty common out there nowadays. Um,
+
+Justin Gardner (@rhynorater) (40:06.623)
+No way. So what was this company?
+
+Justin Gardner (@rhynorater) (40:15.767)
+I don't know what that is now.
+
+Jasmin Landry (40:29.738)
+So we did an ESG SAS tool. So considering it's SAS, we do, well, I mean, we host it on the cloud. And so I had to make sure that our cloud was secure. So yeah, so when I joined, the only security, I guess, tool or topic that I had covered was passwords. They had a password manager for the company. That's it. So I made sure that all.
+
+Justin Gardner (@rhynorater) (40:34.855)
+Ah.
+
+Jasmin Landry (40:56.754)
+endpoints had antiviruses and literally build up from scratch like to a fade like just get the big sis covered.
+
+Justin Gardner (@rhynorater) (40:58.896)
+Yeah.
+
+Justin Gardner (@rhynorater) (41:03.607)
+I mean, in their defense, like, that's, I mean, at least they're using a password manager. I mean, that will stop some stuff, you know? So if you had to pick one thing...
+
+you know, that might be it, which is pretty cool. I did just Google this ESG thing. I have heard of this. This is environmental, social, and corporate governance. It says, is a set of considerations, including environmental issues, social issues, and corporate governance, that can be considered in investing. Gotcha, so you guys were building a SaaS tool for that.
+
+Jasmin Landry (41:32.162)
+Exactly.
+
+Jasmin Landry (41:35.806)
+Yep. So are you almost a, almost exactly a year after I joined, we got acquired by NASDAQ. Which makes sense because NASDAQ is in that space. Yeah.
+
+Justin Gardner (@rhynorater) (41:42.603)
+Wow, dude, what a timing, man. That is awesome timing. And yeah, and you got in at a pretty good level, too, running all of the IT stuff for them.
+
+Jasmin Landry (41:54.934)
+Yeah, exactly. And I think it's what deserves my senior director role at NASDAQ because without me at that startup, we wouldn't have gotten acquired by NASDAQ. So I think it's, yeah. Thanks.
+
+Justin Gardner (@rhynorater) (42:03.085)
+Mm.
+
+Justin Gardner (@rhynorater) (42:06.403)
+Wow, that's sick dude. Congratulations, that is one boss move right there, I have to say. So.
+
+Jasmin Landry (42:13.738)
+Yeah, he's quite the jump and I learned a lot while in that year. But I'm pretty confident that I did a good job because I think without, like I said, we've got a carbon ASAC, so I think it in the end, it's, I think I did a good job on that. So yeah, I'm proud of it. Yeah.
+
+Justin Gardner (@rhynorater) (42:25.735)
+Mm.
+
+Yeah, absolutely. That's a big dub, man. So that's where you are now, senior director at NASDAQ, doing similar things as you were doing at the startup, you know, managing a large security program or?
+
+Jasmin Landry (42:41.57)
+Um, not really. So, um, since in the end at the startup, we were only two employees in security, myself as the head and I got a, uh, an employee as well. Um, NASDAQ is obviously a lot bigger, right? So we have several different teams in InfoSec. Um, and then I work mostly, well, not mostly, I still work in lots of different areas because I'm a senior director, so I need to look at certain stuff. So I do work with like the sales team once in a while.
+
+Justin Gardner (@rhynorater) (42:53.857)
+Yeah.
+
+Justin Gardner (@rhynorater) (43:09.928)
+Mm.
+
+Jasmin Landry (43:11.502)
+marketing, AppSec compliance still need to talk to our SOC team once in a while in case something happens, threatened to like a bit of everything, but mostly on like on a manager type of task. So I won't do any pen testing. Sometimes I do jump in because I want to do it. I see something I'll take a look. So I do it just for fun. Same thing like red team. We also do red teaming.
+
+Justin Gardner (@rhynorater) (43:27.631)
+Mm.
+
+Jasmin Landry (43:40.486)
+And yeah, so a bit of everything, but mannered type. Yeah.
+
+Justin Gardner (@rhynorater) (43:42.307)
+You got to flex on the team a little bit too, every once in a while. Like I had a, you know, when I was working at this consultancy, you know, my boss was not in the requests, you know, at all, pretty much. And then sometimes we'd have like, you know, somebody was on PTO and like we needed to double down on something and he would like just jump in and like pop something. And I'm like.
+
+dude, this is lit, you know? And so I think also, you know, from time to time, you show the people that you're working with on a regular basis that even though you're not, you know, maybe in the request every single day as a part of your job, that you can still get in there and do stuff, I think that does a lot for respect as well.
+
+Jasmin Landry (44:08.982)
+Yeah, that's cool. Yeah.
+
+Jasmin Landry (44:27.378)
+Yeah. And also since, um, seen as a manager, some people don't know my background. So I've had someone telling me what a cookie is. I was like, dude, uh, I know what a cookie is. Like look, look me up a bit. Just kidding. But like, yeah, I see people like trying to think that I'm not technical and then had to explain them like, oh, by the way, I know what this is like, blah, blah. So just to get an idea of like, um, I don't know, like.
+
+Justin Gardner (@rhynorater) (44:31.031)
+Hmm. Right. HAHAHAHAHAHA! HAHAHA!
+
+Justin Gardner (@rhynorater) (44:45.081)
+Right.
+
+Justin Gardner (@rhynorater) (44:48.608)
+Yeah.
+
+Jasmin Landry (44:56.51)
+I can say this, um, get an idea of like, difference between manager type positions and the goals. So people think managers are only managers and don't have medical background, but I think having both definitely helped in terms of both managing and doing technical work and understanding certain risks associated to different issues. Right.
+
+Justin Gardner (@rhynorater) (45:02.545)
+Mm.
+
+Justin Gardner (@rhynorater) (45:08.697)
+Yeah.
+
+Justin Gardner (@rhynorater) (45:15.279)
+It's a big differentiator, I think, for you as well. It gives you a lot of job security. I know even in the outside of management, in the sales aspect as well, people that actually understand the technology that they're working with on a regular basis can do sales well if you have that additional, excuse me, if you have that additional little skill set because it's like you're actually able to talk to the points that people are caring about when they're thinking about buying a product.
+
+Jasmin Landry (45:27.842)
+Mm-hmm.
+
+Jasmin Landry (45:43.182)
+Exactly.
+
+Justin Gardner (@rhynorater) (45:44.413)
+I love being technical, man. I love being technical because it applies to so many realms.
+
+Jasmin Landry (45:46.804)
+Yeah.
+
+Justin Gardner (@rhynorater) (45:51.147)
+All right, so that's the career path. Once again, I'm gonna just, you know, that move that you made from full-time book bounty to head of IT, it's kinda nuts. So it's great to see your friends take dubs like that. And thanks for giving me the holes. I've heard that story in little bits and pieces, obviously seen your face on a cover of a magazine or whatever, but I hadn't had the full story. So speaking of your technical capabilities,
+
+Jasmin Landry (45:55.807)
+Yeah, thanks.
+
+Jasmin Landry (46:06.295)
+Yeah.
+
+Jasmin Landry (46:13.284)
+Yeah.
+
+Justin Gardner (@rhynorater) (46:21.141)
+Let's go back into some of that stuff and talk about some of the cool bugs that you found and topics that...
+
+that you had. So the one that came to mind that was on my list and your list was about a year ago now. You tweeted out, it took five years but I finally found my very first critical OAuth related bug last night. I found a bunch in the past in penist engagements but never on a bug bounty program. And so I was like, oh, well, you know, he did the OAuth thing, that's great. OAuth is a commonly abused technology, I'd say.
+
+Jasmin Landry (46:58.079)
+Right.
+
+Justin Gardner (@rhynorater) (46:58.865)
+And it showed up in your list here as you've been finding a lot of OAuth related bugs. Can you talk a little bit about how you developed that methodology and maybe talk about some of the quirks of the bugs you found?
+
+Jasmin Landry (47:10.494)
+Um, yeah, sure. So I, back in the days when I started doing my bot, I was almost like a server side kind of guy and still, um, I focused mostly on, on server side bugs. Um, but with time, I think I gained, um, an appreciation for what all of this and how complicated it is and how, I won't say easy we can find bugs, but like, there are so many different type vectors in it. That
+
+a lot of times you'll find something no matter what. And it only takes like one extra little piece that you can chain with it. For example, that HTML injection with the dumper if I would metatag. Since with that price reversal, I only needed one more thing with until like the URL and so token. And a lot of times like it's, I wouldn't say easy, but I've been finding a lot. So I find that like,
+
+Justin Gardner (@rhynorater) (47:40.631)
+Mm-mm.
+
+Jasmin Landry (48:05.878)
+people are maybe not looking at it or because I'm not finding like really crazy thing apart from one which I was, I actually put it in the list, which was like what is that what is going on here was like just basic stuff like redirect your eye open redirect. Open read. I mean, sometimes it allows some domains. So an XSS on that subdomain works as well. I can still that old code that way. It just like basic OOP.
+
+Justin Gardner (@rhynorater) (48:21.969)
+Mm.
+
+Jasmin Landry (48:35.11)
+vulnerabilities. Nothing like, no like crazy technique, just regular stuff.
+
+Justin Gardner (@rhynorater) (48:35.709)
+Mm.
+
+Justin Gardner (@rhynorater) (48:41.287)
+You have here in the little notes that we created, mentioning Franz's dirty dancing blog post on OAuth. And I love that blog post so much. We talk about it on a regular basis here on the pod because it's like, he gave a name to something that was kind of, I guess, unnamed before, this whole concept of like a not happy path where the code is not parsed, right? Because the normal flow for OAuth is, you go through the flow or whatever, the code gets redirected back to the callback.
+
+Jasmin Landry (48:47.967)
+Yeah, true.
+
+Jasmin Landry (49:02.367)
+Right.
+
+Justin Gardner (@rhynorater) (49:09.503)
+And then that code gets consumed and either traded for an auth token or that token gets used directly with the API.
+
+But if you can find some way to manipulate that callback location, then that code doesn't get consumed. And then you can use something like a XSS in a subdomain like you mentioned, to leak that code to the attacker, and then the attacker can provide that, you know, do that swap and get the token or use the token itself for API calls. So that, you know, my pulse starts to go up a little bit. Anytime I see a, you know,
+
+Jasmin Landry (49:22.741)
+Exactly.
+
+Jasmin Landry (49:43.22)
+Hahaha
+
+Justin Gardner (@rhynorater) (49:46.308)
+a lot flow where I can control any part of the redirect flow essentially where it's not just totally static.
+
+Jasmin Landry (49:50.842)
+Right. And I put the friends that are doing the dancing article in there because it is what helped me really, I guess, I wouldn't say master, but I guess, understand better all up because I knew what it was. I knew how we could find roles with it. But I did not know like certain things that he mentions in that blog post that I now understand. And for me, like every time I look at a lot, I just opened the tab just in case I need to go back to it.
+
+Justin Gardner (@rhynorater) (50:03.639)
+Mm.
+
+Justin Gardner (@rhynorater) (50:13.468)
+Mm-hmm. Yeah.
+
+Jasmin Landry (50:20.594)
+and I don't get ideas on certain things that I maybe haven't looked at. Um, so shout out to him. Like this is a really excellent, um, and blog post and not child of the like tanks as well, because it has led to a couple of bugs of mine just by reading his blog posts. So, uh, yeah.
+
+Justin Gardner (@rhynorater) (50:30.671)
+Yeah.
+
+Justin Gardner (@rhynorater) (50:36.223)
+Absolutely, man. Yeah, Franz is always coming up with crazy stuff like this. And you also have here, you know, reading the RFC. That is one of the things that I actually haven't done for Awath yet. I need to go down and, you know, check it out. Do you know how chunky it is?
+
+Jasmin Landry (50:52.994)
+Um, well, there is like, uh, the, or see, but there's also one, uh, that's like the security best practices, uh, which is where I looked at the most because it says like, it shows like all attack vectors, uh, on all, uh, well, not all, but I guess most that they have, um, thought of, um, so I've looked at that quite a bit, um, to understand. Yeah.
+
+Justin Gardner (@rhynorater) (51:00.564)
+Oh really? Oh.
+
+Justin Gardner (@rhynorater) (51:09.816)
+Yeah.
+
+Justin Gardner (@rhynorater) (51:15.595)
+Is it this one? Hold on, I'm gonna send it to you in the chat. Is it RFC 6819? It's OAuth 2 Threat Model and Security Considerations.
+
+Jasmin Landry (51:25.755)
+Let me look at the... Nope, I don't think it is. One sec. I'll look it up.
+
+Justin Gardner (@rhynorater) (51:30.479)
+Okay, I'm gonna link this one as well. Dude, man, I wish more, and I suppose we should probably just read the whole thing anyway, because it's like, I'm sure there are security considerations that a lot of the RFC writers hadn't really written. Oh, look at that, a lot to security best practices. Interesting. Very nice, dude. So this is not a specific RFC. This is a...
+
+Jasmin Landry (51:52.318)
+Yeah, this is what I read.
+
+Jasmin Landry (51:58.162)
+No, you're right. Yeah, right.
+
+Justin Gardner (@rhynorater) (51:59.731)
+It's a draft associated with it. That's cool. That's really good. I'm gonna go ahead and link this down in the description. I've never seen this before. I'm gonna go ahead and read this afterwards. But yeah, this seems like there would be some great takeaways in here.
+
+Jasmin Landry (52:01.614)
+True, yeah.
+
+Jasmin Landry (52:12.714)
+Yeah, definitely. So it shows like the best practices, but us as attackers, we can see if those are applied or not. So definitely helps in terms of finding bugs. So yeah, so.
+
+Justin Gardner (@rhynorater) (52:24.707)
+Wow, I'm pulling a Joel here and I'm getting nerd sniped in the middle of a podcast. I'm like starting to read this. I was like, wow, I actually haven't seen a lot of the attacks that are kind of mentioned in here. Very cool.
+
+Jasmin Landry (52:27.969)
+Hahaha!
+
+Jasmin Landry (52:33.226)
+Yeah, I agree. And one of I'm not sure if actually, sorry, recently I found the bug, which I put in the doc, but not sure if I can just talk about it now. Because yeah, it's not mentioned. So I found a weird race condition bug recently. So you know, the OAuth flow once you're logged in, I mean, you're logged in, but after a while, you need to refresh the token. So
+
+Justin Gardner (@rhynorater) (52:42.779)
+Mm.
+
+Justin Gardner (@rhynorater) (52:57.987)
+Right. Yeah.
+
+Jasmin Landry (53:03.198)
+I accidentally noticed that I could send a, the call that refresh the token, I could send it without the refresh token and just the client ID and still get access to an access token. This
+
+Justin Gardner (@rhynorater) (53:19.183)
+That's weird. So just using the cookies associated with it? What?
+
+Jasmin Landry (53:22.494)
+No, no cookies, no authentication at all. Yeah, but it only worked while a user was getting logged in. So what I did was just send requests constantly to the endpoint without authentication, without a refresh token to get an access token. And when the user logs in, eventually it spits out an access token that I can use until his next token expires. Yep, any user, unauthenticated. Yeah.
+
+Justin Gardner (@rhynorater) (53:44.943)
+for another user?
+
+What the heck dude that is the weirdest thing ever. What is the server side code for that even look like?
+
+Jasmin Landry (53:55.671)
+What is what?
+
+Jasmin Landry (53:59.39)
+They explained it to me. I would have to read it through. But this, yeah.
+
+Justin Gardner (@rhynorater) (54:03.579)
+Uh, that's nuts. I I've never seen anything. And dude, it's a miracle that no one has logged into somebody else's account on accident because of that, because you'd think that there would be some sort of like collision or something.
+
+Jasmin Landry (54:18.474)
+I thought about that as well. Like, so when I was testing it, I was just like testing the OAuth flow. Then like I went in repeater, took a request, send it over, playing with it, remove the refresh token and it works. Like, huh, why is this working? I don't have any cookies. There's no refresh token. Why am I getting an access token? Yeah, but then the issue is how to reproduce. So after a while, after like a minute or two, it stopped working. It was like, okay, this is weird.
+
+Justin Gardner (@rhynorater) (54:36.535)
+You must have been losing your mind. Like, you must have been like, what am I missing?
+
+Yeah.
+
+Jasmin Landry (54:48.586)
+So I thought maybe it's during the login. So I sent like request an intruder, logged in and see if intruder, I got an access token and indeed I did get an access token. Yeah, so just like.
+
+Justin Gardner (@rhynorater) (55:01.415)
+No way. I could see you just sitting there like How how did this? I get how like you just you you've got the tab You know the repeater tab open in burp or their history and you can see it giving with no cookies with no IDs with nothing On the left-hand side and then somehow it's giving the access token. You're like What the frick?
+
+Jasmin Landry (55:06.019)
+Yeah.
+
+Jasmin Landry (55:15.052)
+Right.
+
+Jasmin Landry (55:21.086)
+It's funny because I actually messaged Sebastian and Ramsexy. I was like, guys, what do you think is going on here? And explain it was like, I don't know, a risk condition and turns out it is a risk condition. But I was like, I'm not sure if it's a risk condition. It's not risking against anything. It's just like, ends up getting an access token somehow. But in the end, it is a yeah.
+
+Justin Gardner (@rhynorater) (55:24.407)
+Yeah.
+
+Justin Gardner (@rhynorater) (55:39.475)
+Yeah, it's just yeeting authotokens out there like no one's business. That's crazy, man. Wow. It just, and is this on a bug bounty program or is this on a pen test? No way.
+
+Jasmin Landry (55:49.406)
+Bug about the program. I actually got paid out yesterday. I fixed it yesterday as well, so I'm happy they fixed it yesterday so we can talk about it today.
+
+Justin Gardner (@rhynorater) (55:54.947)
+Dude, that's nuts, man. I cannot believe that actually happens in a bug bounty environment. Cause like, you know, on, on pentest, you see all sorts of weird stuff, you know, and it's like weird as normal on pentest. Cause it's like, okay, all these sketchy little apps, you know, but like in, on bug bounty, I like to think that people try to do some due diligence, right, before they actually start a bug bounty program and you know, essentially bet money on their security. So.
+
+Jasmin Landry (56:02.614)
+Yeah. True.
+
+Jasmin Landry (56:14.286)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (56:21.719)
+The fact that showed up in a bug bounty environment is just nuts to me. Very cool though. So, indeed.
+
+Jasmin Landry (56:25.564)
+Yeah, that's crazy, crazy. Really lucky as well. Like, what are the chances of me just trying that removing the refresh token and, and by default, there was no authentication cookies. It only relied on refresh token to get a new access token. So yeah, I'll bug.
+
+Justin Gardner (@rhynorater) (56:43.295)
+So weird, dude. So weird. Yeah, that's one of the things too, man, is like so much of our job, that's one of the things that I think is a little bit unsettling for me as well. It's like so much of our job is luck of sorts, just sort of manufacturing your own luck of sorts, just like trying everything and like trying weird stuff and then noticing when something weird happens. And so, yeah.
+
+Jasmin Landry (56:55.95)
+Mm-hmm. Right.
+
+Jasmin Landry (57:07.462)
+I found a really, I've been lucky of getting luck, if I want to say it that way. So back in an LHC in LA a couple years ago, I'm not sure if you can see the target or not, but I won't say it just in case. There was an application that many people tested. I went through it, fuzz the bit. So you had like a weird authentication form, like login form, and it just felt like
+
+Justin Gardner (@rhynorater) (57:12.735)
+Yeah.
+
+Justin Gardner (@rhynorater) (57:18.615)
+Mm.
+
+Justin Gardner (@rhynorater) (57:22.611)
+Mm.
+
+Jasmin Landry (57:37.886)
+I could probably bypass that somehow, but I did not bypass it. So I moved down a day later. I started getting emails from like an internal distribution list. And those emails have like PII. Um, so with my fuzzing somehow I got added in a DL and was getting like access requests for two to data. So those emails have like, um,
+
+employee, full name, full number, address, and the requesting access. It was like a access request form. So they're requesting access to certain data, and I was a recipient of those access requests. So in the, yeah.
+
+Justin Gardner (@rhynorater) (58:08.931)
+What?
+
+Justin Gardner (@rhynorater) (58:13.889)
+No way.
+
+Justin Gardner (@rhynorater) (58:18.81)
+I wonder if you submitted an access request form and they're like, CC all access request form.
+
+Jasmin Landry (58:24.33)
+No, because in the email itself, we could see everybody who got the email. And it was all like the company email and me, my jrock at we are hacker one dot com email in that, in that list. So I had no idea what happened. Uh, so yeah, this is one issue where I was really lucky. Another, another funny story is, um, I was hacking on a big company while back. They do, uh, many LHC's and, uh,
+
+Justin Gardner (@rhynorater) (58:35.168)
+Hahaha!
+
+Justin Gardner (@rhynorater) (58:41.508)
+Wow, man.
+
+Jasmin Landry (58:53.19)
+I was I had found a few bugs on the app. But I was kind of stuck and just sent a few XSS payloads and a blind exit payloads and hope that when they went out a year later, it pops. And then around the same time, one guy messages me on Twitter, and I guess me shit like, Oh, you just ruined my day. But I was like, what how's going on? Yeah. So obviously, I looked at the my
+
+Justin Gardner (@rhynorater) (59:06.184)
+What?
+
+Justin Gardner (@rhynorater) (59:16.296)
+Oh my gosh, what?
+
+Jasmin Landry (59:22.518)
+That's where first gets me I cared more about that than the Twitter DM. But I had just I was just coming back from work It was on a Friday evening had my laptop. Yeah So I was at the mall with my girlfriend was like, hey, baby one sec I'm just gonna sit down at the desk here and pull up my laptop and see what's going on so I looked it up and From what I had understood is that guy who DM me on Twitter to give me shit
+
+Justin Gardner (@rhynorater) (59:26.136)
+Right, right.
+
+Justin Gardner (@rhynorater) (59:31.243)
+Of course, of course. Yeah.
+
+Jasmin Landry (59:52.686)
+He created a report and complained on my behavior of putting blind access payloads. And that complaint got sent to an email system and it popped on there. So without his complaint, without his complaint of my access payload, I would not have gotten that, I think 9k bounty that I got for the blind access.
+
+Justin Gardner (@rhynorater) (01:00:00.149)
+Oh my gosh.
+
+Justin Gardner (@rhynorater) (01:00:08.654)
+Dude, no way.
+
+Justin Gardner (@rhynorater) (01:00:15.899)
+Dude, no way. That's clutch. You should message him back on Twitter being like, hey man, I just wanted to let you, you made my day. Like.
+
+Jasmin Landry (01:00:22.878)
+Oh, I did. I did. I was like, Oh, sorry, mom. I'm doing like ethical testing. Like here's a program page. It's public. Like we're allowed to, to hack. So sorry that it ruined your day for whatever you're doing. But like what I did is completely fine. I asked for the policy here and was like, Oh, sorry. Uh, I didn't know like you guys were doing that. So yeah.
+
+Justin Gardner (@rhynorater) (01:00:28.482)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:00:32.826)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:00:37.368)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:00:41.019)
+Yeah. And also you just made me ten grand, so thanks. Wow.
+
+Jasmin Landry (01:00:45.434)
+Pretty much, yeah. I don't think it was that much, but it was like a large 4k balancing for sure.
+
+Justin Gardner (@rhynorater) (01:00:51.051)
+That's great, man. Wow, that's a good one. And I have this on the list too, because I went and watched, as I do, before these episodes, I went and stalked you a little bit and watched some of your talks you've given at ActivityCon and some write-ups you've done in other places, and it seems like you, I would say you skirt the line a little bit. When it comes to social engineering and Bug Bounty, I saw a write-up I think of like,
+
+Jasmin Landry (01:01:13.645)
+I used to, yeah.
+
+Justin Gardner (@rhynorater) (01:01:19.871)
+you saying like I submitted a contact form with a link in it and then some admin clicked that link and then that like one-shot RCE to Jenkins instance in the back end or something like that. And so I'm wondering, so one, like one you said you used to, so I'm wondering if you still do that. And then the other one is how has that been received in, you know, if you had to give a number to your hit rate on those, like how many times are they like, no, that's social engineering, bad, you know, hand slap.
+
+Jasmin Landry (01:01:32.356)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:01:47.939)
+versus like, oh my gosh, you just shelled my CI. So I'm gonna give you a bounty.
+
+Jasmin Landry (01:01:53.83)
+It worked once or twice. This is one case where it did work through a contact form, but I don't usually do those anymore because I mean, it never pops. But one thing that I do find that it did work, again, back in the day before the refer policy where you talk in the beginning, is that sometimes like when you test for SRF, you put in your URL, it can be in Webhook or whatnot.
+
+Justin Gardner (@rhynorater) (01:01:59.249)
+Mm.
+
+Justin Gardner (@rhynorater) (01:02:05.731)
+Yeah.
+
+Jasmin Landry (01:02:21.158)
+And sometimes it does get like hyperlinked and you can have admins click on it and when they click on it, um, the refer if it used to be sent to your, to your server. And I was able to disclose a few, I guess, um, sensitive data with that. Just being like an admin, uh, path that it had not seen, uh, certain, uh, UUID or whatnot. And this still works. Um, I had the case that happened like this week.
+
+Justin Gardner (@rhynorater) (01:02:35.012)
+Yeah.
+
+Jasmin Landry (01:02:49.878)
+where someone clicked on an employee clicked on my link on my link and with the same program actually that the meditating so with the unsafe URL that I had set up the transaction and set it to multiple pages. So when the employee clicked on my link, it sent the refer header to my server so I was able to leak data with that. But yeah, it's most of the time that it didn't work was to like a refer header leak.
+
+Justin Gardner (@rhynorater) (01:02:57.351)
+Mm.
+
+Justin Gardner (@rhynorater) (01:03:11.536)
+No way. That's clutch.
+
+Jasmin Landry (01:03:18.666)
+where it's something sensitive internally.
+
+Justin Gardner (@rhynorater) (01:03:22.212)
+I wonder how many of these applications are using DOM Purify under the hood. I wonder if we should just start spamming meta tag, refer...
+
+unsafe URL plus some sort of image tag around to try to harvest these. Because image tags are going to get through DOM Purify. And then it'll send a request out and then you'll get the referrer. And then you can kind of, you know, maybe if there's like a security by obscurity or something like that, or even just knowing internal paths could be really helpful. Or you might get lucky and there's an auth token in the URL. So.
+
+Jasmin Landry (01:03:57.534)
+Yeah, maybe true. I never know.
+
+Justin Gardner (@rhynorater) (01:03:59.311)
+Crazy man, I like that. Do you do any other, I guess, on the fringe of social engineering stuff? Like some people will do typo squatting or something like that to trigger their payloads or anything.
+
+Jasmin Landry (01:04:12.482)
+Um, not really. I did buy a few domains in the past, but it was for a bug. For example, a bad regex or regex measure. Never knew what it is. But like, you found that in the past, for example, you actually mentioned in an interview, I think like, github.com, you could do like a github.com. And so I bought some domains for that to chain with other bugs. But it's not like social engineering, right?
+
+Justin Gardner (@rhynorater) (01:04:18.406)
+Hmm.
+
+Justin Gardner (@rhynorater) (01:04:23.292)
+Ah yeah. Yeah.
+
+Justin Gardner (@rhynorater) (01:04:34.947)
+Hmm.
+
+Justin Gardner (@rhynorater) (01:04:39.511)
+Share.
+
+Jasmin Landry (01:04:40.47)
+But like if you're talking about social media specifically, the only things that I've done is what you just said in regards to sending a link to like, to our contact form where I knew I was confident that if they clicked on it, it was gonna work because I had recon and I knew that it was reachable through other means and whatnot. So yeah.
+
+Justin Gardner (@rhynorater) (01:04:53.278)
+Mm.
+
+Justin Gardner (@rhynorater) (01:05:01.085)
+That's, yeah, I feel like that's acceptable personally. I don't know, some programs might get a little bit pissy about you submitting something through the contact form, but I feel like that's fair play. Mm, mm.
+
+Jasmin Landry (01:05:11.758)
+Just one last thing about that. It actually happened in a life hacking van and they had a necessary sheriff So in there, I obviously put my name to identify myself and they've got a hit Turns out is actually employee who clicked on my link. So it looked like I hit it, but I did not So today the investigation They found out that it was an employee who clicked on my link. So it wasn't It wasn't necessary. So
+
+Justin Gardner (@rhynorater) (01:05:29.727)
+Oh, how did they take that?
+
+Jasmin Landry (01:05:40.33)
+just informative. Bye-bye.
+
+Justin Gardner (@rhynorater) (01:05:41.187)
+They didn't, yeah, but it does show, you know, like how easy it is to get an SSRF of sorts, you know? Within an organization when you just send a link to an employee, they click the link and that's, you know, depending on if they've got a privileged, you know, position in the network, that's an SSRF of sorts. Yeah, it's tricky, man. You know, I'm sure you as a...
+
+Jasmin Landry (01:05:47.497)
+Right, right.
+
+Jasmin Landry (01:05:59.647)
+Exactly. Yeah.
+
+Justin Gardner (@rhynorater) (01:06:05.451)
+you know, head of security guy, you know, being a senior director of security, you kind of have to think about these things as well. But like bug bounty is great for anything that doesn't affect like social engineering and stuff like that. But man, it's so much easier to get in via social engineering than it is to get in via these application bugs. So.
+
+Jasmin Landry (01:06:23.019)
+Oh yeah, for sure.
+
+for sure. Yeah, just last year or two years ago, the biggest event. Remember what happened there? Yeah, this is crazy.
+
+Justin Gardner (@rhynorater) (01:06:31.531)
+Yeah, I do. Yeah, I freaking do, man. It's nuts, man. So I think there should be absolutely, and this is, you know, my naive opinion, but I think there should be a lot of resources allocated to preventing that sort of thing in an organization because that seems to be the easiest way to make something happen.
+
+Jasmin Landry (01:06:43.935)
+Mm-hmm.
+
+for sure. Yeah.
+
+Definitely, yeah.
+
+Justin Gardner (@rhynorater) (01:06:52.763)
+Looking at the list we've got here again, it seems like you also are an advocate of getting intimate with the application, which is good. And you said that there might be some stories relating here with regards to this leading to a Moab, which I assume is a reference to the episode with mayonnaise, the mother of all bugs. Tell me a little bit about that.
+
+Jasmin Landry (01:06:59.689)
+Yeah, for sure.
+
+Jasmin Landry (01:07:11.902)
+Yep, exactly. Yeah. So it's not like a mother of all dogs, but like I found many issues because of that. So I was getting intimate with the app, reading the docs and I was.
+
+Justin Gardner (@rhynorater) (01:07:19.735)
+Mm.
+
+Justin Gardner (@rhynorater) (01:07:26.789)
+I love it. I love it so much, dude. I was, you know, getting intimate with the app. Yeah, I'm sorry, continue.
+
+Jasmin Landry (01:07:35.691)
+So yeah, I was reading docs and found that it did like XML parsing. It literally said like, Oh, we do XML parsing, blah, blah. But yeah, and also realize that in some cases, the docs don't necessarily mention that it parses XML, it'll just say like the acronym, for example, I don't know, let's say
+
+Justin Gardner (@rhynorater) (01:07:46.979)
+Love that.
+
+Justin Gardner (@rhynorater) (01:07:58.247)
+Mm.
+
+Jasmin Landry (01:08:03.042)
+ML. So there's a market language, a lot of times it is XML. And I had found an XSC already, by reading through docs where it said like, literally said XML parsing. But in those other lesser known XML formats, standard or specs, it did not say XML at all. It only said like, refer to the spec on W three, blah, blah. So I
+
+Justin Gardner (@rhynorater) (01:08:08.879)
+Mm.
+
+Justin Gardner (@rhynorater) (01:08:31.451)
+Bye!
+
+Jasmin Landry (01:08:32.714)
+in the docs, I looked for W3, I found plenty of them. And most of them were vulnerable to XSC because by default they did not do like, they don't protect against XSC properly. So just by like analyzing the docs, seeing how they write it up, they don't always say XML but they'll say like, we reparse these kinds of files to refer to the doc on W3. So I looked at
+
+Justin Gardner (@rhynorater) (01:08:37.135)
+Oh wow.
+
+Justin Gardner (@rhynorater) (01:08:40.291)
+Wow.
+
+Jasmin Landry (01:09:01.678)
+for the poetry and like I said, found plenty of them and they all led to more, more bugs.
+
+Justin Gardner (@rhynorater) (01:09:07.299)
+That's definitely an underestimated, I think, trick when you're dealing with applications because I often see so many bugs in parsing of custom file formats. It could be server-side bugs, could be client-side bugs. Just the other day, a friend of mine found a bug. I think we'll probably write this up and put it up somewhere, but he had to download this software.
+
+Jasmin Landry (01:09:20.705)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:09:33.583)
+And like this proprietary software, and we were trying to do it without downloading the proprietary software, but each one of these files, because it's a proprietary software, is signed by a RSA key, you know? And it's like, you can't fiddle with it at all. Because we were just gonna kind of reverse the binary format and just elongate a specific field to put our payload in there. But it was signed, so we actually had to like.
+
+Jasmin Landry (01:09:44.553)
+Uh.
+
+Jasmin Landry (01:09:48.503)
+Right.
+
+Justin Gardner (@rhynorater) (01:10:00.963)
+boot up the software and inject the XSS payload in this piece of code, or in the field in the software, and then export the file, and then give that file to a JS file that was actually doing the signature validation in the browser, which is nuts, and then it would actually pop the XSS.
+
+And so like these custom formats, whether they're XML, whether they're some binary level format, that sort of thing, there's almost always bugs there. And so to your point about reading the docs though, I'll never forget the first live hacking event I went to. There was 20 minutes left in the live hacking event. My, this is actually Inty. Inty was talking with some people and comparing notes and somebody was really close to finding a bug.
+
+Jasmin Landry (01:10:33.855)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:10:54.875)
+or to passing another person and all they need to do is find one bug. So like, man, how can I find a bug, um, in the last couple of minutes of this event? And so he's like, you know what I'm going to do? I'm going to go to the docs and I'm going to control F for URL is what he did. And he went to the API docs, control left for URL, found an API request that was taking in a URL as a parameter, you know, and, and just sent that request off and his boom, full read SSRF.
+
+Jasmin Landry (01:11:08.071)
+Nice.
+
+Jasmin Landry (01:11:21.444)
+Really?
+
+Justin Gardner (@rhynorater) (01:11:21.859)
+It dropped in the last 20 minutes of the live hacking event. He probably got it in under five minutes at the end. And so reading those docs and searching for things like W3 or, you know, XML or URL or that sort of thing. Yeah, man, that always pays dividends. Yeah.
+
+Jasmin Landry (01:11:24.234)
+Oh, that's crazy.
+
+Jasmin Landry (01:11:37.778)
+Yeah, it does. I'm taking time to read it and just not only to like find certain keywords, just to read and understand what is expected on application, how it works. And especially when the application is really complex and many features, sometimes it's just good to read docs and get a better idea of what you're looking at and understand what you're doing in the end. Yeah.
+
+Justin Gardner (@rhynorater) (01:11:47.803)
+Mm-mm.
+
+Justin Gardner (@rhynorater) (01:11:56.492)
+Absolutely.
+
+Nice. Well, we got to wrap this episode here shortly, but you have two cool bugs here that I can't skip over. You've got arbitrary ATO via GraphQL and SSTI to RCE via Ansible Expressions. So where do you want to go, man? This is I'm going to sit back and get my water bottle and listen.
+
+Jasmin Landry (01:12:09.598)
+Right, forgot about that.
+
+Jasmin Landry (01:12:13.836)
+Yes.
+
+Jasmin Landry (01:12:19.118)
+Yeah. So let's go with the arbitrary ATO. So let's say the app is similar to Slack where in Slack, not sure if you know, but you can add like external users to your Slack workspace. And they only have access to a specific channel. It's not the same thing, but the other thing was similar where if I, as an admin, or let's say you as an admin, add me as an external user to your own tenant.
+
+Justin Gardner (@rhynorater) (01:12:23.141)
+Heck yeah.
+
+Jasmin Landry (01:12:47.614)
+I would get access only to data that you give me access to. Turns out though that the GraphQL endpoint on that application did not have proper authorization checks. So me as a user, I could make GraphQL queries. I did not have access to the data, but I did access the endpoint itself. I could run queries, but no data was returned. So I was able to generate as I stood.
+
+Justin Gardner (@rhynorater) (01:12:50.875)
+Sure.
+
+Justin Gardner (@rhynorater) (01:13:13.271)
+Was it just kicking back like null or something like that?
+
+Jasmin Landry (01:13:15.838)
+No, just like data, like, you know, the data object is empty. But for some mutations, it did not work, but queries it did. Yeah, I think so, yeah. Ha ha.
+
+Justin Gardner (@rhynorater) (01:13:19.566)
+Okay, interesting.
+
+Justin Gardner (@rhynorater) (01:13:23.887)
+This is pretty common, I've seen this many times. Something that I need to understand here. Continue, you've piqued my interest.
+
+Jasmin Landry (01:13:31.89)
+So I, as the attacker, AKA external user to the application, I can do a graph QL queries. And then one query itself where there was like an ID related variable, I put like a single quote. And it generated a nice verbose error message in the response. And in the error message in the response, it did have an internal JWT.
+
+which the scope was assigned to sysadmin. And it, yeah. And it also leaked two headers. One was related to the customer ID. For example, it was my tenant's ID, which is just like a public ID to my own tenant, so it's not authenticated. But without authentication, you can't get those IDs, in a way. And also the current user ID, which was...
+
+Justin Gardner (@rhynorater) (01:14:00.568)
+Mm.
+
+Justin Gardner (@rhynorater) (01:14:04.425)
+Ugh, you'd love to see it.
+
+Justin Gardner (@rhynorater) (01:14:21.155)
+Mm.
+
+Jasmin Landry (01:14:30.382)
+the admin of the application, which was like the, let's say you. So it took me, so I reported that bug as is, cause I felt like the token is like as a ssadmin or super admin. I'll let you guys like investigate it. I don't want to abuse it by now. So I reported it, ended up self closing it. Cause the impact wasn't shown. So I was like, okay, I'll, I'll think about it. And.
+
+Justin Gardner (@rhynorater) (01:14:33.115)
+Dude.
+
+Jasmin Landry (01:14:59.114)
+read the docs, read the API docs. I forgot about it. Three months go by, I was like, oh shit, let me look at this again. Tested it again, it works. But like, okay, now I need to find like, I need to show it back. So I read through the docs, found a way to, I mean, found the API call that I need to do to make that token work, or not like, make it a Chrome, but like, see where the token was used. Found the endpoint.
+
+I confirmed that if they work, I could take over that admin account. I mean that admin account. And I can also switch the header that was leaked with another ID, another user ID, so I could take any account over from my own tenant. But remember that tenant ID that I shared earlier? Those IDs are MongoDB IDs. So they're not, yeah. So.
+
+Justin Gardner (@rhynorater) (01:15:48.665)
+Right.
+
+Justin Gardner (@rhynorater) (01:15:54.616)
+Ooh, enumerable.
+
+Jasmin Landry (01:15:57.482)
+it's possible to change the tenant, remove, so like change the tenant ID, remove the user ID in the header so that you have access to only like the tenant data. And there is one endpoint in particular where it listed the users and the user IDs. So, in the end I could take over, as Excel user from tenant A, I could take over any user accounts from tenant B, C, D, E.
+
+Justin Gardner (@rhynorater) (01:16:16.367)
+Ugh, you love it.
+
+Justin Gardner (@rhynorater) (01:16:26.363)
+Oh my gosh, dude. That's, that's clutch. So what clarifying question there? Where, where was the JWT leak? Did you say it was in a header?
+
+Jasmin Landry (01:16:27.682)
+So yeah, it was pretty big.
+
+Jasmin Landry (01:16:35.748)
+in the response, the error message in the response.
+
+Justin Gardner (@rhynorater) (01:16:37.166)
+Eh.
+
+So was that like, you know, but like, was it just saying, hey, there's an error, by the way, here's the token, you know, like, ah, so some sort of reverse proxy was going on there. Very interesting.
+
+Jasmin Landry (01:16:46.083)
+It lead like the whole HTTP request. So we have like a.
+
+Jasmin Landry (01:16:53.282)
+So I leaked the headers, cookies, there were none, C-Surf token as well, but it was like set to nothing, so it's nothing as well as, so the headers that have the genuability, authorization, barrier, and then the value, then that specific header with the tenant ID and the other custom header with the user ID. So by all of that together, as an external user, I could take over any account on any other tenant. So.
+
+Justin Gardner (@rhynorater) (01:17:22.015)
+Dang dude, you love it. You love to see it. That, whenever you get a nice verbose hair, that helps so much. You can really infer so many things about the application, bye.
+
+Jasmin Landry (01:17:23.135)
+Yeah, it was a...
+
+Jasmin Landry (01:17:29.759)
+Yeah, really.
+
+Justin Gardner (@rhynorater) (01:17:35.207)
+using those a lot of the time. And even if it doesn't contain a bunch of information, doing error-based testing as well, I've seen Franz do that at a live hacking event not too long ago, and just essentially using his input in such a way that it would generate an error about something that he couldn't see, and use that to infer what kind of data type this is or what kind of object this is. Really, really fun stuff there. All right, last one, ssti to rce ansible expressions, dude. I'm excited, hit me.
+
+Jasmin Landry (01:17:55.852)
+Right.
+
+Jasmin Landry (01:18:02.548)
+Yes.
+
+So do you remember you just spoke about him in his talk on emails and RSC so like that Ever since this talk I've always been putting SSCI payloads in my email for example JROG plus seven times seven word like really brackets blah and It rarely works it worked once but it was like out of scope but in this case it did work so
+
+Justin Gardner (@rhynorater) (01:18:09.421)
+Yeah.
+
+Jasmin Landry (01:18:32.798)
+I put in my payload, like in my email, as my registered user worked on the app a couple of days. And it was like an app where people could spin up their own WordPress instances. And they would also get access to like their own PHP My Admin console where they could manage like the database and whatnot. And after a few days, I spent time just looking at the tables in PHP My Admin, looked at the user table and noticed that.
+
+Justin Gardner (@rhynorater) (01:18:52.484)
+Nice.
+
+Jasmin Landry (01:19:01.494)
+My email was jrockplus49. I was like, oh shit, my SSTI payload worked. But how and where? Few days later, literally spent probably eight to 12 hours on figuring out what engine was used. I think I might've even asked the developer from the program on a previous report, like what could this be? And they told me.
+
+Justin Gardner (@rhynorater) (01:19:08.392)
+Interesting.
+
+Justin Gardner (@rhynorater) (01:19:28.039)
+Help?
+
+Jasmin Landry (01:19:29.178)
+Yeah, I think I figured myself what they told me. They probably told me that it was Ansible. So since you could spin up like your own instances, it did use Ansible to like configure all of that. And in the end, my input was being made a sink was in an Ansible a complete file in a playbook to be more specific. So I could use I could leak Ansible variables.
+
+Justin Gardner (@rhynorater) (01:19:34.573)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:19:40.536)
+Interesting.
+
+Justin Gardner (@rhynorater) (01:19:51.956)
+No way.
+
+Jasmin Landry (01:19:57.77)
+For example, like remember just like as my as my original POC, I leaked like the ansible config file, I could be like the current user so like that. And then later on, I was like, I can leak stuff, what if I can actually do stuff. So looking at the ansible docs, I found the ansible lookup command. So if you do like lookup, and then like in parentheses, pipe, comma followed by the command, it'll actually
+
+Justin Gardner (@rhynorater) (01:20:06.683)
+Wow.
+
+Jasmin Landry (01:20:28.07)
+execute the command. Yeah, there were a few restrictions on the characters though, so I could not put all characters, I just had to hex encode them actually. So I actually downloaded Ansible, created my own playbook and tested to see how it worked. And it turns out that URL encoded characters did not work. I mean, it worked locally, but not on the application, but by hex encoding.
+
+Justin Gardner (@rhynorater) (01:20:29.244)
+Ohoh
+
+Justin Gardner (@rhynorater) (01:20:40.311)
+Ah.
+
+Justin Gardner (@rhynorater) (01:20:54.501)
+Oof.
+
+Jasmin Landry (01:20:56.31)
+the characters that were blocked on the application. It still worked on Ascibo locally. So yeah, it just led to a lots of reading and researching to finally an NRC, which was pretty cool. So my...
+
+Justin Gardner (@rhynorater) (01:21:10.975)
+Dude, that's awesome. So this is what, you have it as called SSTI here, and surely it is, but also it's kind of like configuration file injection as well. I'm wondering if, yeah, because configuration file injection is something we've kind of talked about a couple times on the pod, specifically surrounding some live hacking events that we were working on. And...
+
+Jasmin Landry (01:21:21.068)
+Right, right.
+
+Jasmin Landry (01:21:30.302)
+Mm-hmm. Heh heh.
+
+Justin Gardner (@rhynorater) (01:21:38.696)
+It's such an interesting vulnerability type. And it really does make you dive deep in reading the docs to actually figure out how to fully explain it because then you've got to become a master of this, you know, this arbitrary tool that you've never used. And you've got to figure out, you know, hey, can I use hex encoding inside of this config file? And like that sort of thing. So it definitely expands your mind a bit as a hacker to do those sort of ones.
+
+Jasmin Landry (01:21:45.634)
+Right.
+
+Jasmin Landry (01:21:53.364)
+Exactly, yeah.
+
+Jasmin Landry (01:22:01.399)
+Mm-hmm.
+
+I think I called it XSTI because when I originally reported it, I can only leak data. I could not get an RFC. And I was like, this is probably just like a, some kind of engine where it was weird. Um, I think before even I found out that it was answerable. Uh, so to me it was like, it's evaluating my 7x7. It must be some kind of server side template engine that is evaluating that. And then the end, it's like, so it's not really, uh, an SSTI is, I mean, yeah, I won't say it's an SSTI, it's like, it's more of a config injection leading to.
+
+Justin Gardner (@rhynorater) (01:22:09.964)
+Yeah.
+
+Jasmin Landry (01:22:34.269)
+NRC, yeah.
+
+Justin Gardner (@rhynorater) (01:22:34.709)
+Yeah. Dude, Ansible is not what I, you know, you're going through like, is it ginger? No, is it twig? Is it Ansible expressions?
+
+Jasmin Landry (01:22:39.69)
+Well, Asible is, I mean, the expressions are, I mean, Asible, the expressions are based on Jinja actually. So originally when I found out, I tried the typical payloads and that did not work, but I found out that lookup, I mean, lookup is actually a plugin, but it's installed by default. So with the lookup plugin, you can just do pipe and, I mean, the little string pipe in parentheses and then execute your own command. So yeah.
+
+Justin Gardner (@rhynorater) (01:22:46.656)
+Oh are they? Okay.
+
+Justin Gardner (@rhynorater) (01:22:57.357)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:23:06.923)
+Wow, that's awesome. And that's a good takeaway too. If you're really, really stumped on an SSTI or something that looks like an SSTI, think maybe, hey, there could be some surrounding functionality that's using a temp letting engine that you're actually injecting into. That's a possibility that I've never considered before.
+
+Jasmin Landry (01:23:08.834)
+Pretty cool, actually.
+
+Jasmin Landry (01:23:21.004)
+Right.
+
+Jasmin Landry (01:23:24.694)
+this, the same thing happened with Terraform, actually. I had a case where I could leak Terraform variables, but nothing more. Now, Terraform, I didn't dive too much in it since it was on the pentest, so I didn't want to spend too much time on it. But it has happened in the past where I could inject, I guess, strings or whatnot in a Terraform pentagall. Yeah, so there is potential with like everything.
+
+Justin Gardner (@rhynorater) (01:23:28.269)
+Oh really?
+
+Justin Gardner (@rhynorater) (01:23:49.211)
+Dude, very cool man.
+
+Jasmin Landry (01:23:54.346)
+infrastructure as code related and you know, tools like that.
+
+Justin Gardner (@rhynorater) (01:23:58.087)
+Whenever there's these applications that do things like spin up other services and stuff like that
+
+even the most advanced stuff I find is duct tape together. You know, like somewhere somebody's shelling out, or you know, or somewhere someone is like dynamically generating a config file and then, you know, having it loaded into this service. So those are the places where it really pays to dive deep and really understand, hey, especially if you have code, you know, it really helps if you have code, you know, to understand where those sort of...
+
+Jasmin Landry (01:24:10.857)
+Oh yeah.
+
+Jasmin Landry (01:24:14.26)
+Yeah
+
+Jasmin Landry (01:24:28.334)
+Mm-hmm. Yeah, for sure.
+
+Justin Gardner (@rhynorater) (01:24:35.347)
+sort of delimiters where those the line between one environment starts in one context starts in and ends There's so many there's so many bones to be found in that in that area Dude awesome bugs. Thank you so much for coming on and sharing all of these This is probably you know, you've shared a ton of bone stories and lots of lots of cool tips and tricks in there So thanks for being so open with that and sharing your hacking success
+
+Jasmin Landry (01:24:39.415)
+Right.
+
+Jasmin Landry (01:24:46.478)
+That's true.
+
+Jasmin Landry (01:25:01.95)
+Yeah, my pleasure, man. I was happy to talk with you this morning.
+
+Justin Gardner (@rhynorater) (01:25:05.187)
+Yeah, absolutely. All right, man, have a good one. That is the pod.
+
+Jasmin Landry (01:25:08.003)
+Thanks for the care. Bye.

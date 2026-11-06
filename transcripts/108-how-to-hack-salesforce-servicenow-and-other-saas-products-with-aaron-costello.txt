@@ -1,0 +1,1256 @@
+Episode 108: How to Hack Salesforce, ServiceNow, and Other SaaS Products With Aaron Costello
+Source: https://www.criticalthinkingpodcast.io/episode-108-how-to-hack-salesforce-servicenow-and-other-saas-products-with-aaron-costello/
+======================================================================
+
+Joseph Thacker (00:01.343)
+Yeah, me and Aaron were at a, at an event for app Omni and it was, it was me and him and then our manager at the time for labs. name is Alec and Alec is like ex military obsessed with fitness. Like he literally like runs cold plunges does BJJ like every day. And we were just looking around all the vendors like, yeah, I think we could take any of them. Yeah. Me, me, Aaron, Alec, we could take anybody, any, any booth in the, in the building. That's pretty funny.
+
+Justin Gardner (00:10.307)
+Mm.
+
+Aaron Costello (00:14.203)
+you
+
+Justin Gardner (00:17.572)
+my gosh.
+
+Justin Gardner (00:22.286)
+Dude, that's great, man. Yeah, dude, I don't know. There's something about, I feel like there's a higher percentage of people in security that are actually just totally ripped too. Like, that just my impression? Cause there's like, you know, that stigma going around of like the 400 pound hacker in their mom's basement or whatever. But I'm like, most of the hackers I know are like actually pretty ripped.
+
+Aaron Costello (00:40.023)
+Not a of sleeper girls.
+
+Joseph Thacker (00:49.345)
+Yeah, I will say it's probably because at least in the bug bounty space, everyone's really high agency, right? I everybody's working really hard. They learn a ton, they go dominate their field. So they're probably also dominating their health in a lot of ways. Yeah.
+
+Justin Gardner (01:00.098)
+Yeah, yeah, for sure, man. All right, cool. So let's get back on track. Aaron, thanks so much for joining us on the pod, man. The way we do it here on the Critical Thinking podcast is we bring on a guest, we say their name, Aaron Costello, and we say, hey man, show us a bug. So what bug did you bring for us today?
+
+Aaron Costello (01:19.771)
+Yeah. So today I'll be talking about a bug that I found God very late 2020, early 2021, most likely the latter. And it's combining your SaaS based misconfig, cause we'll be talking a lot about SaaS security today and also more traditional kind of web hacking, some kind of janky browser behaviors. So right off the bat for a private program on, on HackerOne, the travel company.
+
+that had a one of the subdomains was running on Salesforce. So it was built entirely on Salesforce and integrated with Salesforce platform in that way. So now we're getting to the site. It was mostly unauthenticated access and they had this functionality that would allow for one of their customers to upload documents in detail, a support request, right? So talking about issues with
+
+passport or flight or anything like that. And then based off the kinds of things that they were saying on that form, I thought, okay, so these attachments could be sensitive, like, oh, make sure your ID is cleared, that kind of thing. I uploaded a basic blank image, random text, was trafficking all of it through burp. And what I noticed was the actual image
+
+Justin Gardner (02:20.59)
+Sure, sure.
+
+Joseph Thacker (02:32.032)
+Mm-hmm.
+
+Aaron Costello (02:48.409)
+was being uploaded to an external book provider, which is very, very unusual because Salesforce has its own storage for images and documents. And how it was actually doing this was using Apex. And we'll get to that later on. That's from Salesforce nomenclature, but Apex is like server side code on the platform. So it's kind of Java syntax. It's an object oriented.
+
+or in the program language. And so in the actual request itself, when I sent those details, one of the parameters being provided was a path. And the response was a URL of the image and also along with that a key to access the image on this bucket. So you navigate to the URL, you get access. By removing the key from the URL and the external storage bucket, you'd no longer have access, okay?
+
+Justin Gardner (03:47.2)
+Okay, so it's like a signed access sort of thing.
+
+Aaron Costello (03:49.403)
+Exactly. So I was kind of playing around with it and tested out some couple of things. So I managed to validate, okay, yeah, I could replace another user's like file if I wanted to write. But then again, the actual file names were randomized. So unlikely. I was also able to traverse the path. So in the request, I was able to modify the path that is being uploaded to the bucket. Once again,
+
+Justin Gardner (04:00.974)
+Snap.
+
+Aaron Costello (04:19.387)
+potentially writing as a directory of writing sensitive files, that kind of thing. But you need to know the names of these files, right? Now, one key thing that I noticed was there wasn't really any file type validation being performed. And I couldn't execute any server side, probably PHP or anything, right? But I could upload things like HTML, SVG, XML, that kind of stuff. Just nothing server side.
+
+Joseph Thacker (04:27.136)
+Mm-hmm.
+
+Justin Gardner (04:38.604)
+Right. Cause it's a bucket. Yeah.
+
+Aaron Costello (04:49.133)
+So using a technique that I actually read from, I think it was file descriptor, which is about app cache manifests. Okay. So then you also have to lock in for this one. And I feel like a lot of the newer book hunters won't know what this is because it app cache manifests were pretty much replaced by service workers. But what I was able to do was I could upload an app cache manifest and additional HTML files.
+
+Justin Gardner (04:59.054)
+Dude, what a thing, Yeah.
+
+Aaron Costello (05:18.479)
+And so how the AppCache manifests work is it's a special file type and it's used for providing the ability for users to access content offline on a website. So it stores the content of a page in your browser. So the manifest defines what content is effectively cached in your browser.
+
+So there's an interesting attribute within this app cache manifest called a fallback. any file in that same directory, or sorry, every user's file is uploaded in the same directory. And so the app cache manifest would apply to every file in the directory. And so the fallback, what it specifies is a path to a file in that directory that is requested
+
+if the other files become inaccessible. So using the technique from file descriptor, what I was able to do was I uploaded one file that was specified as the fallback. And this is a HTML file that would exfiltrate the URL. So when the fallback redirects to this file, it would exfiltrate
+
+Justin Gardner (06:20.302)
+Mmm.
+
+Aaron Costello (06:44.645)
+where it was being redirected from to my own web server.
+
+Justin Gardner (06:47.566)
+and that was the path and the key.
+
+Aaron Costello (06:51.419)
+Exactly. Right. So I'd grab that key. I just needed to make the actual content to everyone else inaccessible. So how do I kind of do that? Well, cookie bombing. Okay. Oh, very, very underrated technique, right? Very, very underrated. So I was able to upload a HTML file that's specified at the beginning, use this manifest, and then proceed to just fill the browser with like junk cookies.
+
+Justin Gardner (07:03.382)
+Yeah, my man uses cookie bombing. That's what I'm talking about. I freaking love cookie bombing.
+
+Joseph Thacker (07:03.808)
+Hmm.
+
+Aaron Costello (07:19.619)
+And so when that happens, when the cookies become too large, the content becomes inaccessible in the browser. So the actual attack vector here, or theoretically what it would be, is you would upload these files, set the stage, and when a support engineer goes to view that file, it would load the manifest. It would basically DOS their browser.
+
+And they'd think, okay, so like what's, what's going on here? I don't know what's happening. Maybe the file is corrupted or something. So they'd go to view another case and look at their files. When that file is viewed, it would kick in the fallback, which points to basically my HTML that performs Ajax to my, own, externally hosted web server. And it would capture that other customer's sign in key. And so I was, I'd be able to access.
+
+Justin Gardner (08:16.175)
+Dude
+
+Aaron Costello (08:19.131)
+potentially sensitive documents through that. So that's kind of combining the SAS misconfiguration there with your typical exploit. And that's what I found interesting. There is a little bit of user input required there, but I think it's a nice little chain. It kind of shows what you can do when you're a of a jack of all trades in a lot of areas.
+
+Justin Gardner (08:38.006)
+Yeah, yeah, no, I love that dude. I love anything that utilizes one. I freaking love anything that utilizes cookie bombing, man. Cookie bombing is just such a fun technique. And I just am so like in awe of the fact that that still exists, you know, like why do we allow the browser to just set so many cookies that it freaks out the web server, right? And causes these mistakes to happen. So I love it when it's mixed with service worker with app cache and
+
+The ability to exfiltrate those paths and those keys is just perfect. And combining that, I was thinking, okay, so we use this attack on the victim and then when they go and submit a service request, then I'll get access to their files. But really, you're right, the more impactful thing is hit the engineer that goes through and is actually triaging each one of these tickets. And then you get access to all of the paths and all of the tickets that they click on. That's pretty sick.
+
+Aaron Costello (09:33.975)
+Right, that's exactly it. you know, part of that attack and why it wasn't very applicable to other customers was that once the form was submitted, it was like fire and forget. So you couldn't actually view what you just submitted. You'd probably get an email in a couple of days from a support engineer saying, I just received your ticket. Right. So, yeah, it was is a very, very interesting bug. I think it was classified as a high. Probably being a bit generous there, but I think the novelty.
+
+gave me a few extra bonus points.
+
+Justin Gardner (10:01.688)
+Mmm. Dude, 100%.
+
+Joseph Thacker (10:04.554)
+Do you think that actually this kind of question for both of you all, do you think that if it was loading any kind of like summary images or thumbnails or anything like that, that it could have potentially triggered a bunch on a single page?
+
+Aaron Costello (10:14.691)
+Yeah, yeah.
+
+Justin Gardner (10:15.34)
+Yeah, yeah, potentially.
+
+Joseph Thacker (10:16.128)
+Yeah, that would've been kind of neat depending on how the back end was written.
+
+Aaron Costello (10:19.535)
+That's it, exactly, yeah. So they could have been like a restricted area, that Salesforce platform that had like preview thumbnails of all these support requests and it was just firing off all of them, you know, so.
+
+Joseph Thacker (10:31.615)
+Yeah, that's sweet. Dude, well, Aaron, now I'll officially do your intro now that we've got a bug under our belt and people know that you're well worth your salt, though I can also vouch for you. I worked at App Omni where Aaron currently works with him for three or maybe four years. It's been a long time since we both worked there together. Obviously I recently left, so I left Aaron standing as the only member left of the App Omni Labs team, but...
+
+I can personally vouch for how bright Aaron is. And I think that his depth of knowledge and expertise in the SaaS security space specifically is completely unparalleled as most bug hunters will know if you've seen his blog. So his blog is enumerated.ie and specifically there are Salesforce and ServiceNow misconfigurations that have made him and others lots of money from Bug Bounty. But more importantly, has secured the data of
+
+probably hundreds of millions of users. know at App Omni, it's like we check for these things, of course, but then lots of bug hunters have reported them on companies that don't use App Omni or other providers. And I'm sure that the other competitors in the SaaS security space are checking for these same things. So, so it's a pleasure, to interview you. And I know that Justin and I are both really excited to hear your opinions. Specifically, let's dive straight into just misconfigurations in general.
+
+You know, you and I have talked a lot about this, but our listeners maybe have not thought deeply about it. What makes misconfiguration such a really, both lucrative and just like neat thing for Buck hunters to look for.
+
+Aaron Costello (12:01.851)
+Yeah, absolutely. So if you think of a traditional web app vulnerability and like a custom and a custom site, it's a once off, right? So you find like a SQL injection, they use parameterized queries or something to fix it. And that's it done. Now you're off hunting for maybe other injection points, you're hunting for other kinds of classifications of vulnerabilities. But with this kind of stuff,
+
+It's it's SAS, right? So every customer, for example, using Salesforce to the plot to deploy a publicly accessible site. The core of it is the same across all these different organizations, so the core APIs are the same, how the access controls are configured are the same. So if you find a way to exploit misconfigured access controls by, let's say you're unauthenticated and you can pull data if they've accidentally made some data public.
+
+you can just use the exact same payload on another customer.
+
+Joseph Thacker (13:04.82)
+So it's basically like an end, it's like an end day in that regard, right? It's not exactly a zero day because these are things that the customer could go in and fix, presumably.
+
+Aaron Costello (13:08.037)
+Yeah.
+
+Aaron Costello (13:12.347)
+Right. Yeah. And that's, and that's the kind of important distinction here is like, classify these as misconfigurations because the customers themselves, typically 99 % of the time have accidentally made some data, sensitive data public. The vendor, so Salesforce or ServiceNow have just provided them with the tools and said like, Hey, we're a powerful platform. You can do a lot with us. Use this how you want to.
+
+And generally they will say things like, just don't, you know, don't touch this or like look out for this. And people will ignore it because they want the easy button. And by pressing the easy button, it's like, okay, you've just leaked 5 million people's vaccination records. You know, that's, that's exactly what happens. That exact scenario has happened multiple times.
+
+Justin Gardner (14:00.14)
+Yeah, yeah, that's crazy, dude. And I think that's one of the beautiful things about it all as well is like, you know, the customer, it's a third party software, right? Which is so that we know that there are patterns to it. We know that there are tricks to it. Because we can go and work with the software ourselves, get our hands on it, of mold around with it. And then the problem that you normally have with third party software is that, you know, the company is going to kick it back and be like, no, that's third party vuln. You know, not our problem. We're not going to pay you for that. But with this one, because they
+
+induced the vulnerability themselves, you know, in the system, then I don't know, I would suspect that you almost always get paid for these. you run into situations where they're like, yeah, but it's Salesforce and, you know, given some excuses like that, do they get paid like 80, 90 % of the time?
+
+Aaron Costello (14:46.907)
+first? I mean, so typically when I was reporting all this stuff, it's before anything is necessarily like public, right? So there's a ton of pushback of like, what is this? Like, what is this? Like, how did you find this? Like, what's going on here? And there's been a panic. And then they'll go to the vendor and the vendor will be like, yeah, you you messed up your access controls here. Like you did this, right? And then they're like, oh, okay. And they'll pay you. So since
+
+Joseph Thacker (14:58.218)
+Mm-hmm.
+
+Aaron Costello (15:16.631)
+inception of most of my research and the application of it by a lot of bug bounty hunters globally, it's become a lot more understood. So I haven't heard of pushback in a long time. And so it's a safe bug to hunt for, right? You're not going to get an NA at all, unless it's at a scope, of course.
+
+Joseph Thacker (15:42.751)
+Yeah, I guess, I guess, Justin, would kind of only be potentially, you know, shut, shut down or closed. It's informative. If it was not like an open scope program for most bug bounty companies where it's open scope, then, know, if you, they own it or it's their customers, they're probably going to pay for it. the one thing that I was going to mention, about this was that I think,
+
+Aaron specifically and I have farmed this just like one or two times on some stuff. The biggest issues that we ran into, and I know that Aaron has to fight with sometimes that app Omni, is that some of these vulnerabilities are in a gray area if they are defaultly configured that way, Justin. know, like SaaS security is near impossible to configure.
+
+Justin Gardner (16:21.806)
+Mm-hmm, yeah.
+
+Joseph Thacker (16:25.31)
+properly for a lot of companies because they're basically full blown operating systems. And these companies spend an entire year instead of setting up their service now or their, or their work day or their, or their Salesforce. But when the configuration is kind of by default exposing something, then it gets kind of tricky about whether or not it's, on the provider's fault or if it's like on the implementer's fault.
+
+Justin Gardner (16:44.47)
+Yeah, yeah, I could definitely see that.
+
+Aaron Costello (16:44.707)
+It's happened. Yeah, it's happened a couple of times. And typically how we will handle those responsibly is if you do find an endpoint that can be used to exfiltrate data or leak data out of, and you notice that there is a default access control that's coming with the system out of the box, you would, well, I would recommend to submit the access control
+
+issue to the vendor. And then for the rest of the bugs that find that are basically figured by the customer, those would be on their side of the shared responsibility model.
+
+Joseph Thacker (17:15.477)
+Mm-hmm.
+
+Justin Gardner (17:25.676)
+Yeah, and I imagine it would be a little bit difficult too. Like you're going to almost run into, don't want to break anything sort of responses from the SaaS vendors where they're like, yeah, that shouldn't be the default. But I don't have any data on whether if I just globally flip this switch for everyone, whether it's going to break anything. So it's kind of hard for me to like globally be like, maybe I should just turn this off. So yeah, I don't know. I guess that's sort of the best situation where it's default, but it's something that they can change.
+
+Joseph Thacker (17:32.671)
+Right.
+
+Aaron Costello (17:46.874)
+Yeah.
+
+Justin Gardner (17:54.976)
+Is that like, so let's talk a little bit about your methodology because looking at your blog and looking at your research, you you've hit a bunch of different SAS's and identified misconfigurations across a lot of different SAS's. When you are going into this scenario, is this like your holy grail is like this insecure default or do you really like to try to find something that is not default but is like the most common configuration that the customer has to do to get the product to work?
+
+Aaron Costello (18:24.923)
+Yeah, that's a great question. And I'll sort of set the lay of the land here when we kind of use a certain nomenclature really. So for these kinds of bugs, you need two things. In order to kind of retrieve this information, you need an API endpoint, if you want to call it that, to pull the data from, and then you need data that is exposed. Okay? So these APIs, these endpoints,
+
+Justin Gardner (18:28.511)
+Mm, mm.
+
+Aaron Costello (18:54.565)
+These, the existence of these is not a vulnerability. These are used to serve a purpose and often some core functionality. on the flip side, the access controls, those being misconfigured is on the customer and the out of the box misconfiguration is in the vendor. So I actually want to avoid situations in which the vendor has misconfigured something.
+
+Justin Gardner (19:22.67)
+Mm-hmm.
+
+Aaron Costello (19:22.799)
+because once I report a misconfigured access control, they just fix it. And what I'm hoping for is when applying these techniques to a ton of customers in an authorized fashion, obviously, they've all misconfigured access controls. So it's fully on them, you know? That's the dream really. And it is kind of my bread and butter. It's this kind of data exposure because there's a lot of noise.
+
+Justin Gardner (19:28.472)
+Right.
+
+Aaron Costello (19:52.731)
+about like third party risk and supply chain risk and a lot of the high profile SaaS attacks by kind of these threat actors are through like supply chains like a compromised service account for an integration and stuff like that. But you have to remember like you need a foothold there. You needed to have access to that in some way or gained access. This stuff I find so much more interesting because you're unauthenticated. Like you don't need anything, right? So there's no prior access, no prior knowledge needed.
+
+Justin Gardner (20:15.822)
+Yeah
+
+Joseph Thacker (20:17.375)
+Mm-hmm.
+
+Aaron Costello (20:21.197)
+And that way it's far more dangerous. And I can honestly say, hand to my heart from doing this for four years now, or five years actually, that I've probably compromised in an authorized fashion through bookbinding platforms and things like that. Like a hundred X what these threat actors are compromising to supply chain. Like this is, this is the real, this is honestly the real risk with SaaS. It's like this unknown, like what are these API endpoints? Like what are they used for?
+
+Justin Gardner (20:42.19)
+I'm sure.
+
+Aaron Costello (20:50.501)
+that kind of thing. And to speak to my methodology a little bit, never approach these platforms. I try not to, it's hard, but I never approach these platforms with the intent of hacking. Generally speaking, I sign up these platforms if they have some kind of free developer account or something like that. And I just try and become an expert on the platform and its functionality, the use cases, all of that.
+
+Justin Gardner (20:53.986)
+Yeah, please.
+
+Aaron Costello (21:20.731)
+So when, when I was hunting or let's say hunting when I was becoming an expert on ServiceNow, that's actually how I found my ServiceNow disclosure, right? Where there was massively widespread misconfigurations in customer access controls and there's API endpoints that you could pull data from. So these API endpoints were not documented anywhere. Okay. They were legacy and legacy is where the gold is. know with, you know,
+
+Justin Gardner (21:32.398)
+Mm-hmm.
+
+Aaron Costello (21:50.277)
+all the AI stuff is very, very hip and trendy and it introduces a lot of new attack service and I get it, but like, let's not forget the stuff that's been sitting there 10, 15 years. So.
+
+Joseph Thacker (22:01.056)
+Mm-hmm.
+
+Justin Gardner (22:01.068)
+Yeah, isn't even necessarily in the forefront of the documentation or something like that.
+
+Aaron Costello (22:05.295)
+Oops, half the stuff is deprecated but not even disabled.
+
+Justin Gardner (22:08.522)
+Exactly. And I'm thinking probably, you you say you come in here and you kind of just try to become an expert on it. And that's what we say on the pod all the time is, you know, whenever you're hacking something, you just need to become the world expert on that application, no matter what it is. Right. And I think that can be accomplished a lot of times by reading the docs, but I think there's also a little bit of a hacker mentality that needs to go into it as well, where you're looking at the, you you've read the docs or whatever, but then you're actually looking at the code.
+
+Joseph Thacker (22:08.874)
+Yeah.
+
+Aaron Costello (22:20.539)
+That's exactly it.
+
+Joseph Thacker (22:20.864)
+Mm-hmm.
+
+Justin Gardner (22:36.024)
+you're looking at the JavaScript files, you're looking at the front end, you're seeing the way that all of these calls interact together and sort of reverse engineering and be like, hey, what's that weird sketchy little API over there, right? I think that's where we see a lot of those bugs pop up too.
+
+Joseph Thacker (22:50.557)
+Yeah, and Aaron maybe didn't say that specifically, but that's often what he is having to do at App Omni. He'll be given a new SaaS vendor.
+
+Justin Gardner (22:56.845)
+Yeah.
+
+Joseph Thacker (23:01.02)
+and be told to like, figure this out so we can implement it for the engineers. And he basically does like that initial recon of like, okay, yeah, we'll use these API points to pull the users and we'll use these API points to pull the groups. And so he kind of has to become an expert in it in order to like hand that off to our developers or to hand off to the developers at App Omni so they can go through and get it all. So he's kind of like by necessity learning it as an expert, which is really cool.
+
+Justin Gardner (23:08.163)
+Mm-hmm.
+
+Justin Gardner (23:17.196)
+okay.
+
+Aaron Costello (23:18.371)
+Look, it's
+
+Justin Gardner (23:25.87)
+That's awesome.
+
+Aaron Costello (23:26.807)
+It's, honestly even further than that with, ServiceNow. Like I built the integration, like the whole thing. So I'm, actually a, well, I didn't renew it last year, but I'm like a certified platform administrator and a certified developer. I have the certifications for, I went through the exams. So I actually built the, whole, the whole integration and the app. But so, so what happened there with the ServiceNow findings was like, I thought to myself, okay.
+
+Justin Gardner (23:31.802)
+Ha
+
+Joseph Thacker (23:39.818)
+First note.
+
+Justin Gardner (23:41.262)
+That's awesome.
+
+Aaron Costello (23:55.887)
+This is like a Salesforce equivalent in respect that it's very, powerful and very customizable. So I thought to myself, there must be some way that they let organizations like put record data on a page. Okay. So think about an implementation like customer support requests. Surely there's a lot of use cases where someone wants to deploy a site on service now.
+
+Joseph Thacker (24:12.032)
+Mm-hmm.
+
+Aaron Costello (24:26.299)
+and allowed for customers to authenticate or sign up and authenticate and submit requests and then view their ticket information. And that ticket information is being pulled from the database, right? So I this functionally must exist somewhere and I could not find it anywhere. And this is just a testament to how hard work outweighs intelligence because I'm living proof, okay? The service now actually let you see
+
+Joseph Thacker (24:35.444)
+Mm-hmm.
+
+Aaron Costello (24:55.127)
+every table in the schema. So just hundreds and hundreds of tables. I went through every single table and was like, what is this? What is this? What is this for like hundreds? And that's how I came across widgets. so I was looking through the widgets and I was using a bit of filtering cause I knew the, the syntax for the, the on platform.
+
+Justin Gardner (25:04.812)
+Wow. Wow.
+
+Aaron Costello (25:24.217)
+server-side programming language. So I was looking for widgets that were querying, for like user input like tables. That's how it came across a simple list, an unordered list, which are the both of the widgets that they're public by default. And for people watching, like a widget is effectively just an API endpoint. And it would take user input, specifically like a table name and a column name. And it would let a user read data from
+
+that table and that column if the access controls are misconfigured. So that's how came across it. So it was just through sheer countless errors and nights going through the schema, hunting for this stuff.
+
+Joseph Thacker (25:58.549)
+Mm-hmm.
+
+Joseph Thacker (26:08.544)
+Yeah. So when you and I were hunting this and reporting it, noticed that there were like, for most implementations, there was a few that were like almost always shared, which like, weren't that sensitive. Like it was like, maybe like, I don't know, usernames, but then for some customers, we found that like the entire internal knowledge base was exposed. Do you like, is this D was there like, what was the functionality that made them or like, you know,
+
+Aaron Costello (26:27.365)
+Yeah.
+
+Joseph Thacker (26:32.702)
+Did you ever figure out why the certain fields or certain tables were by default enabled? Was it for that customer support portal or was it for something else?
+
+Aaron Costello (26:41.519)
+Well, all right, so I think to answer your question, because I remember, I think I remember the company you're talking about. And that was a knowledge-based disclosure, right? And I have two blogs. have one specifically for like table data and then one specifically for knowledge-based exposures. And that's just because the access controls are implemented differently. But the knowledge base...
+
+Joseph Thacker (27:01.416)
+Hmm. Got it.
+
+Aaron Costello (27:08.411)
+So they just misconfigured their access controls effectively. What would happen at that point was they just didn't put any access controls on because no one knew that these endpoints existed. These widgets, they were like, it's not public. Right. And I also remember for, for that affected organization, this was actually insane. Their knowledge base had like access tokens in it. And like, for like, for external systems, it was like absurd.
+
+Joseph Thacker (27:36.062)
+Yeah, it was a disaster.
+
+Aaron Costello (27:37.627)
+the kind of stuff that they're storing in knowledge-based articles is wild, right? Like it was crazy. And that was actually an interesting one because when I released the article on knowledge-based disclosures, which use a different widget, ServiceNow actually stepped in and basically saved all their customers and said, yeah, we're just going to lock down.
+
+Joseph Thacker (27:43.108)
+huh.
+
+Joseph Thacker (27:54.528)
+Mm-hmm.
+
+Aaron Costello (28:06.691)
+all of your access controls. And they were communicating this very, well with their customers to say like, hey, just letting you know this is gonna happen, things might break. Like we'll give you some time to like, you know, work around it. But that was the first.
+
+Justin Gardner (28:20.6)
+Did they do this manually? Like, you think that they, staff members had to go in and be like, all right, you know, this is what the current situation is. This is how the access control should be.
+
+Aaron Costello (28:30.437)
+They just deployed it. They just deployed to production everyone's stuff. they naturally obviously...
+
+Justin Gardner (28:36.002)
+So wasn't like granular, it was like blast. Here's access controls, go. Wow.
+
+Aaron Costello (28:40.559)
+Yeah, so they had tested all this stuff beforehand naturally, because they were trying to gauge the best way of solving this problem, because they were sending communications out to customers and saying, like, hey, your access controls suck. Like, everything's exposed. But the issue with that is not everyone reads their emails. stuff was exposed everywhere. So they kind of took that brave leap. And I have to give them
+
+Joseph Thacker (29:00.276)
+So some stuff was still exposed.
+
+Aaron Costello (29:07.963)
+kudos for that because they put their customers in a much better position. It's a difficult position. They've now got to, or some organizations may need to figure out a way around it to implement whatever functionality they have there, but they're better off for it. And look, I'm sure some of them have just undone it. They just...
+
+Joseph Thacker (29:27.09)
+Yeah, just flip it back. Because if they were using it for like an external dev documentation or developer portal or something, then where there was nothing sensitive in it, it was totally fine to be that way. They could have just rolled that back. The other thing I was going to ask you about the one of the, I think it's the simple list widget is the, noticed that when you and I reported it, there was some specific, there was like one specific endpoint we were using, but then I was like, talk like your blog got posted. And I remember seeing a bunch of people like tweeting or talking about it afterwards where they were using a completely different.
+
+type of payload, it was like we were using like a post request or something and they were using like a get request at a different endpoint. Do you remember the nuances around that or like, you know, does that ring any bells?
+
+Aaron Costello (30:06.651)
+There were like five or six, maybe a little more, different widgets that you could use. I mean, that's really where it comes from. There was limitations with some. Some widgets would allow you to kind of filter through the data, which could be helpful when looking for particularly sensitive things like phone numbers or whatever it is. But all of those got hit with the patch. So they did roll out a
+
+Joseph Thacker (30:10.56)
+well.
+
+Aaron Costello (30:36.581)
+kind of a defense in depth mechanism, like a security guardrail for those widgets in which they effectively made it so organizations would need to like set all these system properties in order to allow for data to be exposed through them. I know, I, I'm talking about this, I know you guys were curious, like, is there any more widgets? can we get more widgets? Not that I know of, unfortunately.
+
+The knowledge base one, I believe still work. So there's like a ton of knowledge base ones. They all still work There's no I don't believe there's any like Pre-requisites such as a system property or anything that needs to be set by the customer So those are still applicable
+
+Joseph Thacker (31:24.128)
+Sweet. Yeah. I've got two more quick things about service now before we pivot to something else. The first thing is one thing that I saw that I'm sure you've seen a few times, Justin, which is really cool. I know we have a lot of program managers listening is, for SAS.
+
+specific things, if you're worried about them being misconfigured and you want to give researchers a specific target to hunt for, you can actually put a flag. Like you can create a user where their details are a flag. And then if someone's able to get access to that, they can submit it for a vulnerability or in service. Now can be a ticket or it can be a user, user details, like user PII or something like a sign or put a flag there. know that T-Mobile has done that. And it's a pretty cool way to like have someone validate that they got access to something they shouldn't have inside one of these.
+
+ask platforms. but what I was going to ask you, Aaron, specifically was one, if you have any comments on that, of course you can mention it, but do you think they're like, what would be, if there's any hackers out there that have been looking at service now, cause I'm pretty sure they have a private program floating around or at least a public VDP. What, what are some areas for future research, on service now that, maybe has been interesting to you. If there's a specific API path or piece of functionality or feature that recently came out, that you would recommend if, if a hacker's looking for something to dig into, what should they dig into?
+
+Aaron Costello (32:37.307)
+That's a great question. That's a fantastic question. I mean, this is the thing. looked at it all. looked at it, probably not well. I have looked at a ton of stuff. I would say things like UX data brokers. So that's another kind of like API endpoint. Data brokers, I'd recommend playing around with the UI builder. so you're designing like a front end.
+
+Joseph Thacker (32:40.244)
+What did you not have time to get back to? guess is the real question. I know you've got notes over there.
+
+Aaron Costello (33:07.419)
+And you've got a couple of different means to which you can implement the backend functionality. So looking through those available API endpoints that can also return data, playing around with those and see if there's kind of another, maybe not like a simple list, but it is any kind of maybe lack of validation on a param or see if you can get around it. That's, that's definitely what I recommend, but still kind of legacy stuff. I know they are doing a lot with, with AI as well. So.
+
+Joseph Thacker (33:16.853)
+Mm-hmm.
+
+Aaron Costello (33:36.027)
+Naturally, that's kind of your wheelhouse. But yeah, think when it comes to data exposure, I've rinsed service now fairly hard. Yeah, yeah. It's, you know, on that note, actually, when you talk about what I recommend for hackers and SaaS apps and things like that, I would definitely recommend that this will require some money, some prior input.
+
+Justin Gardner (33:44.686)
+That's funny man, so yeah
+
+Joseph Thacker (33:44.736)
+Look elsewhere. Leave it alone.
+
+Aaron Costello (34:03.107)
+If you got a group of skilled people, because a lot of these, these SaaS apps costs a lot of money, like a lot. We're talking, I think I've seen like 20K a month in like at a peak. So band together with the group of guys, group of bug bounty hunters, get yourself like a production license for some big SaaS organization. I'm not going to say which ones.
+
+Justin Gardner (34:14.712)
+my god.
+
+Joseph Thacker (34:21.416)
+Enterprise. Yeah.
+
+Aaron Costello (34:31.695)
+but ones that are old and ensure that you're getting the right license, something that allows you to implement that kind of external functionality. And I've know dead as well, like five or six people or up to eight people just hacking on the one platform, like you're making money back definitely. But that is kind of the barrier or the entry barrier for people getting into this. It's like the instances cost a lot of money.
+
+Justin Gardner (34:51.79)
+100%.
+
+Aaron Costello (35:01.947)
+I do have to go through a of a process sometimes to buy them.
+
+Justin Gardner (35:04.686)
+It's a little bit, it's crazy too, because you say, wow, know, 20 grand, up to 20 grand a month. And I'm like, my gosh, that's crazy. And then you think about like, wow, we pop one critical, you know, on like one of these major organizations and that could be 20 grand easy, you know? So I think that the investment is definitely there.
+
+Aaron Costello (35:21.784)
+It's, you
+
+Yeah, it's funny. We've had that in in a family where I've made the argument. I was like, look, we need this license. Like I'm telling you, there's stuff here. We need this. I'm going tell like, OK, for one month, you've got one month. So for one month, I just sweat it out. I'm like, come on, return an investment, please. Yeah, so.
+
+Joseph Thacker (35:25.119)
+Yeah.
+
+Justin Gardner (35:39.543)
+Hahaha
+
+Joseph Thacker (35:43.417)
+Before Justin takes us to talking about Salesforce or one of these other topics we've got listed here, I did want to reframe one thing you said. I think you said you have basically rent service now for all they're worth, but just as a reframe to you personally and to the audience, I think it's a really healthy reminder to be like, no, what you actually did is help secure hundreds or thousands of companies and hundreds of millions of users' data. And so I'm thankful to your work in that regard. And I think that listeners and customers should be too.
+
+Justin Gardner (36:05.304)
+Mm.
+
+Justin Gardner (36:11.288)
+Yeah, absolutely. Yeah.
+
+Aaron Costello (36:11.737)
+Yeah, I think big shout out to ServiceNow as well because they handle it very, well given the circumstances. So kudos to them too.
+
+Justin Gardner (36:19.564)
+OK, so I'm dealing with two app omni guys here. So I've got to just take a step back in and sort of recap for the newbie SaaS hacker like myself what exactly the approach is here. So for ServiceNow, what you guys are saying is we need to utilize these specific sections relating to widgets, which I imagine is loading widgets onto a page on the front end or whatever. The API is associated with that to leak data about the
+
+given objects inside service now. Is that sort of like the TLDR of this approach?
+
+Aaron Costello (36:54.469)
+TLDR widgets, API endpoints, provide a table name, provide column names or whatever kind of input to leak the data. And if there's misconfigured access controls, then the data will be shown.
+
+Justin Gardner (37:06.602)
+And in.
+
+Joseph Thacker (37:06.664)
+Yeah. And if, and if listeners are confused, like Aaron's two blogs on service now are extremely clear. It's like, walks you through exactly what they all mean and exactly the request to you. So.
+
+Justin Gardner (37:14.956)
+Yeah, yeah, and so the widget piece there, the reason why using a widget here is important is because that's that piece that you mentioned before where it's like, that's the API endpoint that we use to pull that data out. And there could be other API endpoints as well that can give us access to that misconfigured data. So the overall problem here is that there's bad access controls on the data itself, but then we are using the widget-related API endpoints to extract and to...
+
+Joseph Thacker (37:29.502)
+Mm-hmm.
+
+Justin Gardner (37:44.354)
+get at that data that actually has bad access controls. Is that right? Okay. And so then what you were saying before was like, now we gotta find another avenue. Maybe it's not simple widget like it was before, or simple list widget, but maybe it's in the UX. What was that piece? Could you say it one more time? The UX designer or something? Yeah. Yeah.
+
+Aaron Costello (37:49.103)
+Completely correct, yeah.
+
+Aaron Costello (38:03.677)
+the data brokers. The data brokers, yeah. Yeah, there's a ton of legacy widget-like APIs out there. So look for those hidden gems and maybe you'll find something that you could use to hack 1,000 plus companies.
+
+Justin Gardner (38:10.83)
+Mmm.
+
+Justin Gardner (38:17.464)
+data brokers, okay, and that's a part of the UX builder stuff that's related to ServiceNow. And then what we'd be looking for is another one of those sort of API endpoints where we could query the data that is already misconfigured because of access control stuff, right? And I think the interesting thing here is that the fix, you you said, and correct me if I'm wrong here, not necessarily to fix it at the widget level, which is that API endpoint, but to fix
+
+Aaron Costello (38:33.125)
+Thank you.
+
+Justin Gardner (38:47.372)
+the overall access control problem that happens with ServiceNow. So ServiceNow pushed a bunch of access control updates to their users. So now, even if we find another API endpoint where we can query misconfigured data, mean, do you expect to see as grossly misconfigured access controls as we did see the first time, or do you think that those access controls have been shirred up in large part?
+
+Aaron Costello (39:11.729)
+yeah, you'll still see so many, so many disclosures, 100%. There's going to be a ton of regressions, absolutely. And I want to touch on that point of, yes, ServiceNow pushed out some by default access control changes. And yes, in the widget code, they implemented some guardrails where it's like the organization has to flip a flag for the widget to be accessible.
+
+Joseph Thacker (39:12.884)
+Yes, I'll say it.
+
+Justin Gardner (39:38.478)
+Mm-hmm, okay.
+
+Aaron Costello (39:41.081)
+but too many organizations are gonna fix it on that latter part. They'll be like, well, I can just undo these access control changes now because the widget isn't accessible. That's what's gonna happen, right?
+
+Justin Gardner (39:52.14)
+Okay, gotcha. So there's two fixes, show up the access controls and then fix your widget. And a lot of people will be like, okay, widgets not accessible, no worries. And then leave access controls wide open. And that's why we go search for another API endpoint, another path through data brokers or whatever, where we can get at this misconfigured data.
+
+Aaron Costello (40:00.909)
+Exactly.
+
+Joseph Thacker (40:11.006)
+Yeah. And I also think like they're going to be adding new features as well, Justin and a lot of SaaS providers have, this is like a thing Aaron always looks for cause he kind of coached me and helped me on this as well when doing SaaS security research is like basically guest user access. And so that's kind of like the, you know, key word that kind of makes a lot of this possible is there's just, and guest user is almost like one step away from unoff. In fact, you know, most people could still probably just consider it unoff. But if you think about it in the context of the application, it still is giving you some sort of token. It's given you some sort of cookie or it's
+
+giving you some sort of API token that is expected to have like little to no sensitive data access, but often it does get misconfigured to have it. And I would say one step further than that, Justin, like let's say ServiceNow fixed all on off and all guest user stuff. Like there's going to be some organizations where like you can get like as a customer, you can get like a support.
+
+access and now support access might be able to have access to like all, all cross customers, right? They're like, so each of these API and points, each of these widgets, each of these pieces of functionality could be vulnerable at any step. They might be on a lot. might be accessed with like a no privilege token and then they might be, they might be misconfigured with a privilege token. So those are kind of the ways that I think about it.
+
+Justin Gardner (41:17.208)
+Mm-hmm.
+
+Okay. Gotcha. Aaron, any comments on that and how like the different roles are utilized by the different organizations?
+
+Aaron Costello (41:27.234)
+I'll touch on that more when we talk about the Salesforce things and if you have time for Power Platform 2, I'll be talking about that a lot.
+
+Justin Gardner (41:34.358)
+Okay, sweet, yeah, let's hop right into it then. Salesforce. And I sort of read over the whole Salesforce thing and man, makes me wanna go hack on this stuff, man. It's crazy the way that they've got this whole thing configured. And I guess the first question that I wanted to say here was this article was written, this legendary article. is like, whenever anybody talks about Salesforce, they're like, they're using Salesforce. I'm like, this blog, go. I always just copy paste this blog and be like, hack it with this.
+
+And so very legendary blog on the space. But it was written in 2020, so five years ago. And I'm wondering if all of this stuff, I kind of know the answer to this already, but I'm wondering how much of this is still applicable and has much changed since the 2020 write-up of this.
+
+Aaron Costello (42:26.415)
+Very applicable, very, very applicable. Exact same payload. Run it, still run it. Yeah. There has been some minor, minor changes with respect to some of the payloads where they've actually baked in some restrictions and people won't really know this stuff unless they're very Salesforce savvy. So.
+
+Joseph Thacker (42:30.72)
+I found this on a program like two weeks ago, so.
+
+Justin Gardner (42:33.189)
+my gosh, guys. Yeah.
+
+Aaron Costello (42:52.911)
+what those restrictions were, or one example restriction was, so using one of those payloads from the article, at that time you were able to access both record data, so data being stored in tables, and also data being stored in what are called custom settings. Now typically custom settings are very sensitive. So what Salesforce did there, they made it so that those payloads couldn't be used to access custom settings.
+
+Justin Gardner (43:11.096)
+Mm-hmm.
+
+Aaron Costello (43:22.747)
+So there's like minor kind of baked in restrictions like that. But yeah, mean, Joseph and someone two weeks ago, so it's still very, very applicable. And at AppOmni, we have so many Salesforce customers and prospective customers that we still see this stuff, right? Like it's wild.
+
+Justin Gardner (43:39.587)
+Yeah, absolutely. And so there's lots of different pieces to Salesforce security. There's like the Apex classes, there's the Salesforce object query language and all that stuff. What would you say is like the 80-20, the things that we are gonna get the most bang for our buck for with like knowing about those Salesforce misconfigurations and security controls?
+
+Aaron Costello (44:04.827)
+All right, I'll talk about three things there. Well, it's really two things and then one is just like a tip. So the first is the access control misconfigurations in the same manner that we spoke about with respect to ServiceNow. So using the payloads that are outlined in my blog, looking for objects that are publicly accessible, that you can read sensitive data from, okay?
+
+So there's payloads in there that you enumerate all the object names and then you can just iterate the extraction payload effectively over those object names. That's one. Two is the Apex, so the custom Apex code. So briefly what that is, I spoke about it in the initial kind of bug talk. Apex is like server side code.
+
+it's Salesforce's kind of proprietary language, right? And some object-orientated language. Apex provides the business logic. So if someone clicks a button on a forum, it could fire off some Apex that would maybe retrieve some data or insert some data. So it's that kind of server side logic. So
+
+Justin Gardner (45:26.958)
+Okay.
+
+Joseph Thacker (45:27.198)
+Is that written by the customer?
+
+Aaron Costello (45:29.399)
+So yes, it is written by the customer. Now there is some other box stuff.
+
+Justin Gardner (45:31.598)
+Okay, so they click a button and then it does like an RPC call, is this like a remote procedure call type thing on the server or? Okay.
+
+Aaron Costello (45:40.442)
+Right. we're getting into it. So effectively these, so in Salesforce, you can have what are now known as digital experiences. Previously they're called Lightning communities. So it's just like a website to put in Salesforce and how it was built a while ago was through what I call Aura components. And these are just front end components like forms and buttons. And
+
+You would pair an aura component, like a forum or login form or something with an apex class that was or what we call aura enabled. So what apex is aura enabled. means it is accessible via the aura API. Okay. So if you look at the payloads in my, in my article, you'll notice that those payloads are being sent to the aura API because that's the API endpoint that
+
+Justin Gardner (46:23.438)
+Okay, and that's what we can get access to it through.
+
+Aaron Costello (46:37.019)
+exists within these public sites to put in Salesforce. yeah, it's the Aura kind of UI framework being paired with the kind of backend Apex business logic. And where these kind of issues arise and why this is kind of like the 80-20 is you've got a lot of customers implementing their own functionality. So when I spoke with that bug, for some reason they were...
+
+integrating with an external storage book through Apex. So really what was probably happening there was using the Aura API, that kind of Apex was being called. And then in the core code, the core Apex code in the Salesforce platform on the server side, that Apex was probably pulling some credentials from a credential store, like name credentials or something in Salesforce. And then
+
+pushing that to the storage pocket. So I have a specific paper on Apex. I don't know how applicable it is today with that, because I talk about how you can find what parameters are required. You can find Apex methods that aren't even in use. So definitely give that a look to understand the fundamentals. think of it as just, or enabled Apex, or just custom API endpoints.
+
+Justin Gardner (47:53.037)
+Yeah.
+
+Aaron Costello (48:03.849)
+That's all it is.
+
+Justin Gardner (48:04.066)
+Right. And you say there's a way to enumerate those from the external attack surface without having to read the JavaScript files or whatever client side code we have in place?
+
+Aaron Costello (48:12.303)
+Well, you would need to kind of pull apart the client side a little bit. So there is some, I think that, I mean, I'd hope to find out there's some automated tool to do this for you, but you might have to do it manually. So you're effectively pulling apart, yeah, as you said, like the JavaScript and looking for the methods that are exposed to the ORA API. And you know, what inputs are they expecting? Okay, this parameter and it's a string.
+
+Justin Gardner (48:16.406)
+Okay, gotcha.
+
+Aaron Costello (48:39.449)
+and you play around with those. And so the reason I mentioned that this is so important is take a scenario in which you're applying method one of querying for exposed objects. And let's say all the access controls are locked down. Okay, so you're out of luck, nothing you can do. Well, you can develop Apex in an insecure way.
+
+so you can develop Apex in a way that it just doesn't respect access controls. I've seen that so many times.
+
+Justin Gardner (49:10.958)
+Okay, it's like running as like a system user or something on the back end.
+
+Aaron Costello (49:15.481)
+So yeah, it's called like without sharing is when it's running in system context. When it's running in that context, it effectively means that whatever it's accessing, it's not respecting whose data you can read. So you could, I've seen Apex that just pulls all users. So straight away, okay, you've got phone numbers, everything addresses or whatever it is. There's a lot of different things that you can do. There is...
+
+what you alluded to earlier, the Sockle Queer language, which is like SQL, very, very similar. It just doesn't allow for any DML. So like no insert, update, delete, just read only. So you can have instances where user input is being put into a Sockle query, but it's not being sanitized. So it opens up these kind of very SQL injection like attacks.
+
+So I speak about that, I believe in the Apex white paper as well. And that's why it's so important because what might be restricted by access controls may not be restricted by this kind of custom Apex that's being developed and exposed as an API.
+
+Justin Gardner (50:28.792)
+Hmm.
+
+Joseph Thacker (50:31.036)
+Aaron, you should tell Justin the way that I don't remember if it was you or if so we actually figured it out and then he told us and you use it or something later. But, I assume that it was probably your finding. How did you, what was the workaround you found for leaking named? I think it's fixed at this point, but there was a way to get around leaking name credentials.
+
+Aaron Costello (50:48.505)
+Yeah, yeah.
+
+Joseph Thacker (50:49.428)
+Justin will love this.
+
+Justin Gardner (50:50.584)
+Dude, this sounds great.
+
+Aaron Costello (50:52.183)
+Yeah, so, yeah, it's got, it's an interesting one. the name credentials in Salesforce, I very briefly mentioned it. it's a method in which Salesforce can integrate with an external platform. So you, as a Salesforce administrator, you log into Salesforce and go to the name credential page and you can basically specify,
+
+again, typically an API endpoint. And you can specify how it authenticates. So you can provide like an access token. can provide like
+
+Joseph Thacker (51:30.304)
+So this is just straight up credentials. Like these are like secrets basically.
+
+Aaron Costello (51:32.163)
+You can credentials, right? You can provide credentials to it. And once you save that, you can call it from Apex. So it's just a way that allows developers to call an external system in an authenticated manner without needing to embed the credentials in the code. Because, yeah, exactly, right? So it's just safer. Now there's two ways you can set name credentials up.
+
+Justin Gardner (51:52.94)
+in the apex code.
+
+Aaron Costello (52:01.433)
+So one is, or was in the past called named principal. Named principal means that anyone who's or performing this call out to an external system through Apex, everyone's using the same type of credentials. It's the credentials that were provided when it was created. And then there's also per user, which means that each individual user has their own. Okay. Now we all know that no one's using the ladder. Okay. Everyone's using the shared credential. That's why this happened.
+
+and so the issue with kind of like hacking this stuff is you can't just run apex, right? Unauthenticated. Like you can't just run server side code. Like that would be insane. but if you were to go to a site to put in Salesforce that allowed you to sign up.
+
+Justin Gardner (52:46.03)
+Right.
+
+Aaron Costello (52:56.581)
+you're then what's called generally a community site user. And you've got extra privileges just by signing up, self sign up, takes you seconds. And there is another API endpoint that lets, and it's called like execute anonymous. And it lets you run Apex.
+
+Justin Gardner (53:18.446)
+So you just sign up, like you go through the normal like sign up to create a support user or whatever, so I can like submit my ticket or whatever. And now that I've got this community user, I can just run Apex code within the privileges of my specific user. Wow, okay, interesting.
+
+Joseph Thacker (53:34.452)
+Yeah, as an anonymous user.
+
+Aaron Costello (53:34.917)
+Yes. So, well, you're not anonymous. You're like authenticated. You're just like a low-priv user. You're an external user. But the issue was like, okay, yes, this execute anonymous Apex, does run with, like, it doesn't run in system context. So it's only in your privileges. But with named credentials, if it was set up as a named principle, aka the credentials are, the credentials used are shared by everyone, you could just brute force the name credentials.
+
+Justin Gardner (53:40.835)
+Right.
+
+Aaron Costello (54:04.943)
+So all you need to do that is basically you would, so when you perform a call out through Apex with a name credential, it's just a label. So you could say like Amazon, okay? And in Apex you'd say call out, call on Amazon. So you would just brute force all the commonly used names. So you could go to GitHub, scrape a ton of name credential names.
+
+Justin Gardner (54:05.088)
+no.
+
+Justin Gardner (54:22.488)
+Mm.
+
+Justin Gardner (54:27.243)
+Mmm.
+
+Aaron Costello (54:33.883)
+turn them into a word list. And through that mechanism, you could see the responses from these APIs and you're authenticated because you're using the credentials that were set up by the admin and they're all shared under named principal. And the best part as well is you can modify the path. So you can actually like access resources outside of what was intended. So
+
+Justin Gardner (54:48.053)
+Wow.
+
+Aaron Costello (55:03.395)
+Yeah, it was a really interesting one. That was once again another one of those things where because I had that on platform knowledge, I knew there was an execute anonymous API. I knew that you needed to be somewhat authenticated to use it.
+
+Justin Gardner (55:15.576)
+Right.
+
+Justin Gardner (55:19.598)
+Dude, that's gonna be a new term. Somewhat authenticated. So many bugs happen in the somewhat authenticated environment. That's really key.
+
+Aaron Costello (55:31.547)
+And so that's the third thing I was going to talk about when I just asked my question. So the first was kind of that misconfigured access for objects. The second was custom Apex exposes as an API. And the third is just privilege escalation yourself by signing up. You would have, you've no idea how many lightning communities I've tested that were so locked down when you're unauthenticated.
+
+You sign up two seconds later, you click an email confirmation link in your inbox. You're now authenticated as a community site user. And all of a sudden, everything's accessible. Everything's accessible. You'll also then have access to not only more objects, chances are you'll be able to see some leaked data that you couldn't see before. We'll also have more custom Apex. So you're just expanding on it.
+
+Justin Gardner (56:09.708)
+Everything's just totally... Wow.
+
+Joseph Thacker (56:25.28)
+Is it Soqwul or Apex? It sometimes will return like an obfuscated response for secrets. And then you thought there was a way around it by like renaming it as a part of the query or renaming the key as a part of the...
+
+Aaron Costello (56:42.651)
+There's a lot of stuff I can't talk about. Yeah, there's a lot of interesting attack vectors. So yeah, I would advise everyone to just read the original paper, read the original numerator blog, read the Apex white paper on App Amni and look into kind of Sockle as well. See how that underlying, those underlying database calls are working with Apex. And yeah, it's very, very fruitful for sure.
+
+Justin Gardner (56:44.271)
+Okay, we're have to bleep that, who knows.
+
+Joseph Thacker (56:44.467)
+Okay
+
+Joseph Thacker (57:10.462)
+Maybe one, maybe one clarification here, Aaron, because I know that people have messaged me about this in the past. Sockhole injection is not always sensitive, correct? So if just because you found a sockhole injection, it doesn't mean necessarily that there's going to be sensitive data accessible to the authentication context that you're in, right?
+
+Aaron Costello (57:27.855)
+Gotta validate these things 100%, right? It's you can't just throw, well this wouldn't work for Sockle anyway, but you know with like SQL injection, people just like throw in a dash or like a percentage 27. And it's like, it threw an error. like, it's probably tons of sensitive stuff. And you find that like the DB is just empty. It's like unused. So the same thing here, make sure you validate what is accessible and what is not accessible.
+
+Justin Gardner (57:36.462)
+Mm-hmm.
+
+Aaron Costello (57:50.243)
+Like it's crucial because the last thing you want to do is go through all the effort of writing a report to be hit with an NA. And like, I think like a 10, is it still in like a minus 10 reputation fine? Or is that saying, yeah, so it's brutal. So don't be that guy.
+
+Justin Gardner (58:00.93)
+Yeah.
+
+Joseph Thacker (58:01.086)
+Yeah, I think so.
+
+So what is your go-to payload to, like, let's say you had sock hole injection, what is your go-to at least like thing to try to achieve with sock hole injection?
+
+Aaron Costello (58:12.651)
+A sense of information disclosure, right? Because we are limited with respect to the operations we can perform its only read. And you are also limited to the context of the query. So what object is being accessed, what's being pulled and how is it being pulled? So the same way, if you look at SQL injection, your injection point can be in different clauses. So it could be like the where clause, right? Same with SOQL injection. Depending on, for example, if you...
+
+have a Apex, it's probably a soccer query and your user input is being part of like, it's being used in the like operator. Okay, you might be able to get some good sensitive information through like using like wild cards, right? To just pull everything or.
+
+Joseph Thacker (59:01.748)
+Yeah, it's wild card in Sockwool, the percent symbol.
+
+Aaron Costello (59:05.747)
+I believe so. I believe so. Could be.
+
+Justin Gardner (59:12.302)
+Okay, solid. there's three, I'm just gonna repeat it back. There's three primary things there. We're hitting these objects, which is kind of like tables, right, if I understand correctly. Yeah, so trying to see if there are any tables that we have access to that we shouldn't be able to have access to, right, through the Aura API. Same thing, we're hitting Apex classes where it's like, okay, let's see if we can enumerate all of the Apex classes either via,
+
+Aaron Costello (59:22.587)
+Happy holidays.
+
+Justin Gardner (59:39.35)
+looking at the client side or like, I guess you just look through the client side, identify what Apex classes we have access to, what kind of server-side functionality we can trigger and what kind of permissions that might access. And then third is like sign up for a community user and become a community user. And then you'll get access to that sort of ability to execute some Apex code yourself. And then you can also get access to maybe different objects and stuff like that because you're a different role.
+
+Aaron Costello (59:42.319)
+That's exactly it. Look to the client side.
+
+Justin Gardner (01:00:07.904)
+Is that all accurate?
+
+Aaron Costello (01:00:08.923)
+Yeah, when you sign up as a community user, I wouldn't focus too much on like being able to execute Apex yourself. I would look towards, what objects do I have access to and what additional custom Apex do I have access to?
+
+Justin Gardner (01:00:18.541)
+Mm-hmm.
+
+Justin Gardner (01:00:26.062)
+It's interesting because I would think that if it exposed an interface for you to run some code, then I feel like you should be able to utilize that to check the objects that you have access to. Is that not accurate? really? Okay.
+
+Aaron Costello (01:00:41.563)
+So you can. It's just slower. Yeah, because if you use my payload, for everyone that uses burp suite, shout out James Kelly for that, put in your payload into like Intruder, and then you put your characters just around the object name, and you just throw in the word list and let it run. Whereas with the Apex, you kind of have to write like the SOQL query, and then you've got to basically dump it into the response. And it's like an ugly response because you're technically like...
+
+Justin Gardner (01:00:47.79)
+Mm-hmm.
+
+Justin Gardner (01:00:56.014)
+Mm-hmm.
+
+Justin Gardner (01:01:01.634)
+and you just brewed it.
+
+Aaron Costello (01:01:11.899)
+putting it into like a debug statement. yeah, it's not, it's not, could, it's just not as efficient.
+
+Justin Gardner (01:01:13.59)
+Mmm, okay.
+
+Justin Gardner (01:01:19.79)
+OK, OK, solid. So then we just brute force for the specific object names. And you've got the payloads in here in the article that will allow us to just hit those specific objects. And then we kind of iterate through and check the permissions that we have as a community user and maybe compare those to the ones that we had as an anonymous user and say, OK, here's the difference. Maybe I should sort of zoom in on that one a little bit.
+
+Aaron Costello (01:01:44.387)
+Yeah, absolutely. And you can, you could even possibly change it too. You could get a list of objects as a community user that you couldn't see before. And maybe as a guest user, unauthenticated user, there was Apex that lets you put in an object name. So then can pass it back and now you've just elevated the criticality and you found another book. So try and play around with it and kind of be smart about it too.
+
+Justin Gardner (01:01:58.734)
+Mmm.
+
+Justin Gardner (01:02:06.776)
+That's a great idea. So try to utilize the information that you get as a community user, saying, I've got access to this object. I've got access to this object. And then take that back to unauthenticated Apex. I like that. That's really good. All right, so just looking through here, here, I'm going to go ahead and share my screen for those of you that are on YouTube. I'm just scrolling through Aaron's article here on Salesforce. And we're looking at the payload glossary section.
+
+Can you just sort of talk me through these payloads that you have on here and give some context surrounding these?
+
+Aaron Costello (01:02:41.883)
+Yeah, and funnily enough, the first two, it's all you want. It's all you need. The rest is just making you look better than I am at this stuff. the first two, okay, so the first one is the payload that we use to actually extract the data from objects. So you'll see, it's kind of a messy payload, but this is just the format of the Aura API, like post data. You'll see...
+
+Justin Gardner (01:02:47.202)
+Yeah, this is the object related stuff.
+
+Aaron Costello (01:03:10.223)
+in the entity name or ID, you'll see marker, right? And that's where you put the object name. And it'll automatically pull those records for you. Okay, well, how do we get the object name? That's payload number two. So payload number two can be run as is. It's been a long time since I've run it, so I'm not too sure what the output's still gonna be, but that would return you a list of objects. So you would run the second payload first. You would copy all the list of objects in the response.
+
+Justin Gardner (01:03:14.893)
+Okay, gotcha.
+
+Aaron Costello (01:03:40.217)
+So you've got your out of the box objects that Salesforce provides you like the user object. And you may also see some custom objects that the customers created themselves. And you'll take that, you'll copy it into Intruder and you'll use the first payload to iterate over them to see if there's any data exposed through an access control misconfiguration.
+
+Joseph Thacker (01:04:02.674)
+And then usually from there, Justin, I'll sort by a largest response size. And that's what, you know, those are the tables that typically exist.
+
+Justin Gardner (01:04:09.304)
+Right, that makes sense. And then we're just kind of looking through to see what kind of data is returned back, see if we're dumping data about other users or not. OK, cool. That makes sense. use the second payload to get all of the currently available objects, and then use the first payload to get the data out of those specific objects and kind of see how many different items we have or what kind of information we have access to.
+
+This payload that you put in here, like you said, it is a little bit messy. And there's this descriptor component, and then there's the params aspect, which I assume is specific to the actual function we're calling. Can you talk a little bit about that structure for the listeners?
+
+Aaron Costello (01:04:54.465)
+Yeah, yeah. And you got to remember that like this is so this specific payload, well, all of the ones you're seeing in this article are Salesforce created. So they're vendor created Apex.
+
+Justin Gardner (01:05:05.421)
+Okay, so these are Apex. This is going to be similar for all of the Apex classes.
+
+Aaron Costello (01:05:10.713)
+still lot, yeah, to a degree. So certain things will be different. So at the moment on the screen, like all of that stuff, so the ID will always be a present parameter, right? And that does not matter the value of that. doesn't matter at all. If you look at the descriptor, okay, so that is the actual apex being called. So exactly.
+
+Joseph Thacker (01:05:36.96)
+That's like the path to the Apex code.
+
+Aaron Costello (01:05:40.013)
+Exactly. So get items there at the very end. So it's the suffix. So that's your apex method. Okay. And selectable list data provider controller is your class. That's your apex class, right? Right. Exactly. So if you've got custom apex, naturally, that'll be a different string than what's apparent there. Calling descriptor does not matter. And then you've got the prams. So the prams
+
+Justin Gardner (01:05:53.166)
+Okay, class then method.
+
+Aaron Costello (01:06:10.043)
+The parameter will always be present. And naturally the parameters within that and the values will depend on how that apex works. So these parameters you're seeing, such as layout type and entity name or ID will not apply necessarily to other ones. If you look at the second payload, it's got different parameters. So
+
+When we speak about like, or when we talk about custom Apex, the importance of kind of manually pulling apart the JavaScript to look for those parameter signatures is because of this. Like we want to craft a payload that's valid. So that JavaScript will contain what needs to go in that params list and what kind of value is expecting like a boolean or a string.
+
+Justin Gardner (01:07:02.478)
+Okay, gotcha.
+
+Justin Gardner (01:07:08.46)
+Okay, so it's all about, so in Salesforce, it's all about identifying these Apex classes and or using these Apex classes, right, the default ones from Salesforce to query specific objects and to try to attack custom Apex classes that the customer has written. And in order to do that, we need to know the descriptor, right, and the descriptor contains the sort of a path to the class that is the Apex class and then a specific method descriptor as well.
+
+Aaron Costello (01:07:33.529)
+Run it.
+
+Justin Gardner (01:07:38.238)
+And then once we've got that, we need to identify the specific parameters that we pass into that, and then boom, we're off to the races. We're calling that Apex function, just like we would be in a normal REST API. You need to identify the path to the REST API and then the parameters that it takes for it to actually function. And this is just the Salesforce version of that.
+
+Aaron Costello (01:07:48.527)
+Yes.
+
+Aaron Costello (01:07:57.571)
+Yeah, exactly. And so that's why this article pairs really, really nicely with the app on the white paper on Apex, because they complement each other. So the white paper will explain a lot of the format and the reasons as to why the payloads are as they are.
+
+Justin Gardner (01:08:03.743)
+Mmm. Mmm.
+
+Justin Gardner (01:08:13.24)
+Gotcha, I'm gonna grab that paper and put it in the notes. Hold on, let's see. perfect.
+
+Joseph Thacker (01:08:17.396)
+put it in the notes already, Justin. Yeah, I will say to the listener, so if you're interested in like digging into this or looking for it specifically, one kind of key thing to note is what to search for. So if you have like some massive burp or Kaido projects and you're wanting to search through them, you wanna search for slash aura, A-U-R-A. That's a word that Aaron says kind of funnily since he's from Ireland. I'm just kidding. It's actually a hard word to say even.
+
+Justin Gardner (01:08:39.796)
+Hahaha
+
+Aaron Costello (01:08:41.243)
+I'm closer. I live closer to where the language was invented and you guys.
+
+Joseph Thacker (01:08:44.574)
+That's fair, that's fair. That's fair. Or you can search for slash S slash or slash SF sites for Salesforce sites. Those are kind of things you can search for. then with those requests, you can kind of read his blog and kind of start to build out the actual request.
+
+Justin Gardner (01:08:44.952)
+to the Ara.
+
+Justin Gardner (01:09:01.4)
+Sweet, solid. Okay, all right, so that covers ServiceNow in Salesforce. Any last little shout outs or tidbits of wisdom you can give us, Aaron, on the Salesforce front?
+
+Aaron Costello (01:09:13.115)
+I think that's everything on the Salesforce front to be honest with you. It doesn't need to be too complex. Like these are tried and tested methods that I've been using for four years, right? And I haven't really changed too much. So yeah, you learn those aspects of testing Salesforce communities. You've put yourself in a good spot.
+
+Justin Gardner (01:09:14.296)
+Mm-hmm. Sweet.
+
+Justin Gardner (01:09:35.214)
+Awesome. OK, cool. And then the next one we had on the list here was one that came out a little bit more recently through App Omni, which is the Microsoft Power Pages stuff. Can you kind of hit us with that research and tell us a bit about it?
+
+Aaron Costello (01:09:48.963)
+Yeah, absolutely. And this one's kind of interesting in contrast to how I found the service on the Salesforce stuff, because Microsoft are very, very open about like every API path. So I didn't need to spend a ton of time on the platform to discover the API through which data is exposed. So getting into that, the Power Platform is a Microsoft
+
+of SaaS offering and it's like low code web development. You know, so very, very similar to like your UI builder for in service now and things like that. What it allows you to do is drag and drop, create a website that also can store data and fetch data from Microsoft Dataverse, which is like the database. And so it's really attractive because you
+
+don't really need any prior programming knowledge. There's no Apex equivalent there or proprietary language associated with it. I had noticed when going through the Microsoft documentation for Power Platform, and it's more specifically Power Pages is what it's called. With Power Pages, they mentioned OData feeds. And there had been some research done on OData feeds in the past.
+
+Justin Gardner (01:10:51.022)
+Mm.
+
+Aaron Costello (01:11:17.859)
+as a means to kind of exfiltrate data that's been exposed through misconfigured access controls again. But I noticed this banner and it said like, we've just deprecated this. You should use this other API instead. So I started reading that and it was just as simple as like slash underscore API slash table name.
+
+Justin Gardner (01:11:37.986)
+Yeah, dude, I had that in the notes. like, is, I love how like we just spent so long on like ServiceNow and Salesforce, like, and then you got to hit the aura and the aura lets you access the Apex and the classes. And then when we get to PowerPages, you're like, yeah, so there's this underscore API path. And then you hit that with the name of the column and it just dumps like, what is going on here, man?
+
+Joseph Thacker (01:11:49.066)
+Hahaha
+
+Aaron Costello (01:12:00.279)
+It's, yeah, it's funny because like slash API with no underscore is the authenticated one. So underscore as a prefix is the unauthenticated. And so, yeah, same kind of stuff again, tons of parapages customers were just exposing their data through a mis-configured access controls. So what they would do is they would give the anonymous user.
+
+Justin Gardner (01:12:11.662)
+No way. my god.
+
+Joseph Thacker (01:12:12.704)
+That's secret path.
+
+Aaron Costello (01:12:30.999)
+access to way too much information. Which is funny because on Power Platform, it's kind of tricky to expose so much data. Like it's, it's, I'm actually surprised. You have to jump through like a couple of hoops. You've got to like, you've got to make the table accessible to that API. Then you've got to pick which columns you want to make accessible for that table. Then you've got to pick which role.
+
+Justin Gardner (01:12:46.382)
+That's hilarious.
+
+Joseph Thacker (01:12:46.506)
+Hahaha
+
+Aaron Costello (01:12:59.355)
+And then you've got to pick, so like the anonymous role, then you've got to pick like, okay, but who's records should they be able to see? So there's like four steps there. So I really don't know what's been going on with people, but yeah, tons of customers were misconfiguring it. And it was an easy button scenario again. So you could, let's say a customer wanted to expose like the first names of some users for some public blog where people can comment or something. What they would do is they would expose the
+
+Justin Gardner (01:13:09.634)
+Wow.
+
+Aaron Costello (01:13:29.339)
+like a count object or something, they would intend to, let's say expose like five fields, like the first name, maybe the last name, a couple of things, time zone. But they didn't want to type in all the five fields. So instead they were like, oh, I'll just use the wild card and expose like every field. And that's how it happens. And then they assign it to the anonymous role and all of a sudden every column, like their address or their phone number.
+
+would be exposed. And yeah, that's pretty much that, but the same tip applies for this as I gave for Salesforce, which is you'll see in my blog, I talk about the different error messages you will receive from the API endpoint when you're attempting to access objects. So you'll receive certain error messages that are obvious indications that it's not accessible.
+
+So you try and access an object, it'll say like insufficient permissions or like even better, it'll say the object's not exposed. So it says the object's not exposed to the API. You're done. Okay. You're cooked. If it says something like, the wild card is not supported. It means that you actually have to add a fields parameter and manually brute force or programmatically even script, which fields are exposed. So that's a good error to get, cause you know, you might be able to get something and then.
+
+Justin Gardner (01:14:43.789)
+Mm-hmm.
+
+Justin Gardner (01:14:54.542)
+Mmm.
+
+Aaron Costello (01:14:57.709)
+Another one is, you don't have sufficient permissions, which is also sometimes a nice one to get because you just self escalate by registering. And that actually netted me most of my findings. So I spoke about it in the NHS. So for, I don't know if in the UK, it's like the government healthcare body and they exposed like over a million.
+
+Justin Gardner (01:15:06.798)
+once again, the somewhat authenticated.
+
+Justin Gardner (01:15:27.374)
+Jeez.
+
+Aaron Costello (01:15:27.513)
+records, individual's records. And that was through parapages.
+
+Joseph Thacker (01:15:30.816)
+Through PowerPages? Okay, because I remember you reported something similar through Salesforce like a few years ago around COVID time, right? To the same organization? that was Ireland's high healthcare.
+
+Aaron Costello (01:15:38.171)
+That was actually my government's healthcare. So I, yeah, I did finish with Ireland. I was done there. went to the UK, it's the closest island and I was like, you're next. So, yeah, that was one of those situations where I was able to just register.
+
+Justin Gardner (01:15:46.628)
+You
+
+Joseph Thacker (01:15:50.11)
+Watch out Scotland.
+
+Justin Gardner (01:15:51.286)
+Yeah, right? Seriously.
+
+Aaron Costello (01:15:53.369)
+Yeah. Yeah. I'm, I'm not going to say too much about that, but, yeah, it's, very interesting. And I also, one of the weird things about parapay is, the amount of public sector government bodies using it. Like tons of, just tons, which was really strange because I thought it more of like a hobbyist developer, kind of like you want to host a blog, but, no, there's tons of government applications across like healthcare.
+
+Joseph Thacker (01:15:56.373)
+hehe
+
+Justin Gardner (01:15:56.718)
+It's
+
+Justin Gardner (01:16:07.32)
+Mm, I imagine so.
+
+Aaron Costello (01:16:22.435)
+or like your local council, you're signing up for like a permit or something.
+
+Justin Gardner (01:16:24.226)
+Hmm. Yeah. It's something about that pseudo tech, man. Like SharePoint and like these sort of things where it's like, just, business people love it, man.
+
+Aaron Costello (01:16:30.863)
+Yeah, mean, obviously.
+
+They're all naturally going to be Microsoft customers for a long time and they probably just want to stick to what they know. And it does integrate with other kind of Microsoft products within the Power Platform Suite. So it does make sense. It was just something interesting that I noted.
+
+Joseph Thacker (01:16:52.446)
+How widely have you hunted this?
+
+Aaron Costello (01:16:55.172)
+not that widely. I'll be honest with you.
+
+Joseph Thacker (01:16:58.932)
+I was gonna say I'm on a program where I'm looking at a PowerPage right now. So I may have you try to stay on after the pod to take a quick look. One thing that I did notice was their table or I guess, yeah, their object names are all custom. So their prefix would like the name of the app underscore then the thing. So like, it's not like accounts or contacts. It's like something, something, something underscore account, something, something, something underscore contacts.
+
+Aaron Costello (01:17:13.018)
+Yeah.
+
+Aaron Costello (01:17:20.847)
+Yeah, the annoying thing about pair of for a call correctly was like you can't, there's no payload like in Salesforce that just give you all the custom table names. unless those objects, yeah, exactly. Unless those objects are actually being used or embedded in the client side, maybe something like deprecated API call isn't actually being made, it's hard to discover them. But I didn't hunt that wildly for it. Honestly, I didn't hunt that wildly.
+
+Justin Gardner (01:17:30.272)
+objects. Yeah.
+
+Joseph Thacker (01:17:31.146)
+that we've found yet.
+
+Joseph Thacker (01:17:40.117)
+Right.
+
+Aaron Costello (01:17:50.155)
+for anything other than Salesforce. I think Salesforce, that broke my spirit a little bit because no, honestly it did. I spent it, I was reporting it and I spent like two days of my life with barely any sleep just reporting it. And I got so sick of writing reports. So I actually started paying my non-technical friends to like write reports. I was like, my dude, please just write this. And then shortly after that,
+
+Justin Gardner (01:17:59.0)
+That's hilarious.
+
+Justin Gardner (01:18:15.288)
+Yeah, yeah.
+
+Aaron Costello (01:18:18.169)
+I just made it public. was like, I can't do this anymore. it was just writing reports is getting so tedious because it wasn't.
+
+Justin Gardner (01:18:23.67)
+Aaron's the guy we want, man. He's like, I can't write all these reports. Might as well just give it to the community. Dude, you rock.
+
+Aaron Costello (01:18:28.857)
+Yeah, I mean, there was no chat GBT. if there was, I mean, yeah, I would have rinsed it completely, but no, I wasn't doing that. I went for cheap labor for my friends and then publicly disclosing it.
+
+Joseph Thacker (01:18:29.386)
+Seriously.
+
+Justin Gardner (01:18:32.151)
+Yeah.
+
+Justin Gardner (01:18:35.725)
+Yeah.
+
+Justin Gardner (01:18:43.854)
+Gotcha. So looking through all of this, I mean, the big takeaways from this one for me are look for powerappsportals.com, right, anywhere where that might be being used. That's the sort of suffix for anything running on Power Apps here. And then once we're there, we hit that underscore API endpoint and we try to identify what objects we can hit and kick back. And then based off of the given
+
+error messages that will come back from that API, like resource not found or attribute star in table contact is not enabled for the web API or something like that. Going through each one of these errors that's listed here in the writeup, we determine, we have access to this object, but we don't have access to this field at the field level security. And then we identify what kind of things we can access, and then we dump it all.
+
+Aaron Costello (01:19:40.525)
+Yeah, yeah. And the important thing to note there is like you, so you can't enumerate all of the custom table names, right? And you can't even really technically enumerate the out of the box tables. What I did personally, and like anyone can do this, is if you sign up for free, you just get a trial of a of pages, sign up, you can get access to the entire schema, the entire like out of the box schema. You can export it.
+
+and just get yourself a nice word list of all of the default object names. You could then also go to GitHub or Ask Chat GPT what the most common custom object names are, throw those into. Because yeah, you can't just send a payload like Salesforce to enumerate them. And the other thing I want to mention that you touched on was, you know, how do we identify these PowerPages sites? So we talked about like the powerappsportals.com domain, I think. There is also...
+
+off the top of my head, think it's MicrosoftCRMportals.com. That's like a legacy domain that I think I'd use any longer for new tenants, but a lot of customers are still on it. And you will also see, and this is all in the Microsoft documentation online for para pages. There are custom domains for US government too. So they will have their own probably because of like a FedRAMP stack or something.
+
+Justin Gardner (01:20:41.774)
+Okay, there's another one.
+
+Justin Gardner (01:21:02.785)
+Okay.
+
+Justin Gardner (01:21:09.026)
+Right. Very cool. OK, so we've got Microsoft CRM portals and Power Apps portals and then potentially some other custom stuff for FederalGov.
+
+Aaron Costello (01:21:09.039)
+that they need to comply with for regulations.
+
+Aaron Costello (01:21:18.267)
+There is, I can't, you know, it's on my head, but all on the Microsoft documentation online for pages.
+
+Justin Gardner (01:21:23.438)
+Okay, we'll see if we can identify it, drop it in the notes afterwards. Wow dude, okay, and then let me ask you this. So sign up for this, how do I get into the somewhat authenticated state? Is there ever like, and I guess this could apply to the other SaaS providers as well, is there ever a scenario where there is not a clear sign up flow for the somewhat authenticated state, but you know the API end point so you can hit it and register yourself an account?
+
+Joseph Thacker (01:21:52.489)
+I have that exact problem right now. There's no way to sign up in the app, but I want to be able to sign up. Is that possible?
+
+Aaron Costello (01:21:52.812)
+Yeah.
+
+Justin Gardner (01:21:57.708)
+Dude, are you just hacking right now? That's hilarious.
+
+Aaron Costello (01:21:59.131)
+Yeah, there are.
+
+Joseph Thacker (01:22:01.107)
+Maybe?
+
+Aaron Costello (01:22:03.225)
+Yeah, so, so what? Just as a final methodology. So yeah, what can happen is I have seen this happen is instead of actually disabling registrations, organizations will just deactivate the signup page or this is actually even worse. This is I've seen this even more prevalent is they'll just not list the signup page in the menu on the side. You can just like force browsing. You can just navigate to the signup page.
+
+Justin Gardner (01:22:06.988)
+Yeah.
+
+Justin Gardner (01:22:26.862)
+Right.
+
+Joseph Thacker (01:22:27.742)
+Mm-hmm.
+
+Aaron Costello (01:22:32.409)
+if it's just not listed, but not deactivated as well. And sign up that way. For what Joseph, what are you hacking right now? I can, I'll sync up with you offline about that one. I can take a look, but yeah, you can use like force browsing to kind of go to these sign up pages if they haven't been fully deactivated. That's definitely a way to do it. And if people want to identify what those endpoints are.
+
+Joseph Thacker (01:22:35.328)
+Do you know what the path is or no?
+
+for the login page on PowerApps.
+
+Joseph Thacker (01:22:44.672)
+Okay, perfect.
+
+Aaron Costello (01:23:02.295)
+Once again, for like Salesforce, like Power Pages, get a trial, yeah, deploy a, and they're free trials as well, deploy a website on Power Pages or Salesforce and look at the URL when you navigate to like the templated signup page. So they'll have like a skeleton template that you can just deploy for like a blog or something. And.
+
+Justin Gardner (01:23:09.432)
+Get your own account.
+
+Aaron Costello (01:23:29.531)
+Yeah, just copy the URL that it sends to and see if that's exposed and not deactivated for these other sites.
+
+Justin Gardner (01:23:39.086)
+Gotcha.
+
+Joseph Thacker (01:23:39.317)
+Yeah. So I will say there are other paths that are prepended with underscores. Since I've been looking at one, I'll mention it for the listener. There's like an underscore services slash, then like custom, like a services that can be ran on the, on the backend. And I think that's more than just data. It's actually running some sort of code on the backend. They can set up like a custom service inside of power apps. And then there's
+
+slash underscore layout. think where you can put like a custom HTML that you can load in the page. it's so there's a slash underscore API slash underscore services and slash underscore layout that are all used on Power Apps pages.
+
+Justin Gardner (01:24:07.278)
+Hmm, okay.
+
+Justin Gardner (01:24:16.206)
+Very cool. All right, man. Now I kind of got the blood flowing. Now I want to go hack this thing with Joseph. I did have one more question, Aaron. What are some other big SaaS companies you kind of got your eyes on for some more security research that who should we go pop and find these misconfigurations on?
+
+Joseph Thacker (01:24:35.614)
+Checking in their boots.
+
+Aaron Costello (01:24:37.019)
+I mean, yeah, I've got ones that I haven't disclosed and published everything yet. There's stuff in the pipeline. There's stuff in the pipeline. I'll give you some names because I simply don't want to do it myself. I don't like the UIs and just not bothered anymore. I'm running out of steam here, guys. So I would look at organizations like SAP. OK?
+
+Joseph Thacker (01:24:51.178)
+Perfect.
+
+Justin Gardner (01:25:02.306)
+Jeez, I wonder why that's the one you chose.
+
+Aaron Costello (01:25:05.143)
+I mean, yes, I'm not going to say the exact reasons, but I think we're all thinking it. because with, after more like with SAP or like, he's kind of ERP vendors, not just SAP or other ERP vendors I'm alluding to, they've typically got like a suite of products. So Salesforce has like a suite of products. You've got the core Salesforce platform, which is we talked about, but they also have like marketing cloud, which is like a separate product.
+
+Justin Gardner (01:25:09.782)
+Yeah.
+
+Aaron Costello (01:25:34.075)
+So with SAP, they've got a ton. Adobe have got a ton. I think we all know Adobe AAM. Probably most of your, we all know Adobe AAM. Yeah, right. So that's what we're hoping for. We're hoping for like a second one of those. Yeah, look at getting access to those tenants. Unfortunately, it'll be a slow process because acquiring access is one.
+
+Justin Gardner (01:25:43.256)
+Mm-hmm. yeah. yeah. Yep.
+
+Joseph Thacker (01:25:44.64)
+Every bug hunter knows what AEM is.
+
+Aaron Costello (01:26:02.555)
+I'll set you back a little bit of money. So group together, okay? Everyone put it in a little bit. Makes it much, much more affordable to, yeah, the process is kind of lengthy. Like you will have, it's not just enter your credit card and you know, pay now. You probably have to email someone and then it'll get back to you with a quote and then, but I promise you, I promise you it'll be worth it in the end because if you manage to get an SAP tenant,
+
+Justin Gardner (01:26:04.333)
+Mm-hmm.
+
+Aaron Costello (01:26:30.457)
+you're probably the only group of hackers with an SAP talent ever. So you're gonna find not just misconfigured, you'll probably find zero days, you'll find a ton of stuff. And if you work at it, I promise you, you'll make your money back. Like, just no question.
+
+Justin Gardner (01:26:33.538)
+Right, right.
+
+Justin Gardner (01:26:43.118)
+Yeah, yeah, 100%. That makes sense.
+
+Joseph Thacker (01:26:46.08)
+I personally would love to see, cause I never figured it out. I obviously worked at App Omni and one of the things that I looked deeply into was Workday. They may or may not have a private program floating around there out there, but one thing that I think would be some amazing research, I mean, it's like the biggest HR platform by far. And they do have a way for you to be.
+
+kind of authenticated or sorta authenticated, whatever we called it. Basically there are portals where like you can sign up and apply for jobs. There's like workday, like job portals. And so you can like sign up on there and they're given at least some sort, some form of auth token. And so I think with that, it'd be really interesting if you could then pivot into or see any data that was actually, or get access to any data that's like behind that in the real workday tenant. And I would love to see a bug hunter find that and share it. would really, it would bring me joy. So.
+
+Justin Gardner (01:27:34.766)
+Yeah.
+
+Aaron Costello (01:27:35.427)
+Yeah, that would be huge. Workday would be huge.
+
+Justin Gardner (01:27:38.102)
+Lots of cool targets out there, man. Lots of cool targets in the SaaS space. So Aaron, thank you for giving us your methodology and some of your thoughts on these SaaS that you've pwned. Yeah, really appreciate it, man. Great episode. Any closing thoughts, Joseph? Or is that about it?
+
+Joseph Thacker (01:27:55.561)
+No, just thank you so much, Aaron. It's pleasure working with you and hopefully we can collab on stuff going forward.
+
+Justin Gardner (01:28:00.332)
+Yeah, anything you want to shout out, Aaron?
+
+Aaron Costello (01:28:03.063)
+Well, Joseph, I miss you at App Omni. So that's the first thing, like come back, please. Yeah, I'd actually love to give a shout out to my company at App Omni. I'm not being hate to say that. Just because I have learned so much about SaaS security from working there. Really, really knowledgeable group of people, experts in their field coming from, actually coming from Salesforce and actually coming from these organizations. So yeah, I wouldn't be the kind of SaaS.
+
+Justin Gardner (01:28:18.638)
+Mm.
+
+Aaron Costello (01:28:30.799)
+hacker.am today with the folks over there. So big shout out to those guys.
+
+Justin Gardner (01:28:34.158)
+Very cool. Very nice.
+
+Joseph Thacker (01:28:35.412)
+Go follow Aaron's blog and his Twitter slash ex account as well.
+
+Justin Gardner (01:28:39.63)
+Yeah, it's a conspiracy proof on X and enumerated.ie for the blog. All right, I think that's a wrap. Thanks, gentlemen. Peace.
+
+Aaron Costello (01:28:47.771)
+Thanks for having me on. Peace.

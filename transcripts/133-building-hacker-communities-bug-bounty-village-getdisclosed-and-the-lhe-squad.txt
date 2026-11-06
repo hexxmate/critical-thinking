@@ -1,0 +1,617 @@
+Episode 133: Building Hacker Communities - Bug Bounty Village, getDisclosed, and the LHE Squad
+Source: https://www.criticalthinkingpodcast.io/episode-133-building-hacker-communities-bug-bounty-village-getdisclosed-and-the-lhe-squad/
+======================================================================
+
+Title: Transcript - Thu, 31 Jul 2025 13:18:05 GMT
+Date: Thu, 31 Jul 2025 13:18:05 GMT, Duration: [01:16:14.40]
+[00:00:00.88] - Justin Gardner
+It's like a vibe coded thing. They're like. And the AI was like, and now you. Here's the slash cookies. At point it was like, I didn't ask for that. Don't write that.
+
+[00:00:31.19] - Justin Gardner
+One of the cool things about going to these live hacking events is the ability to look at what you found and what other people have found and understand where the holes are in your methodology, right? By comparing notes. And thanks to Adobe sponsoring this episode today, we have an opportunity very similar to that for you guys. Okay, so here's how this is going to work. Adobe has agreed to give you guys a 10% one time bonus on your first valid report to any of the following products. Listen closely. Adobe Behance, Adobe Portfolio, Adobe Fonts, Acrobat Web, okay, those four. And to get that you have to use the code CTBP0907. Okay? The, the description will have that information. Also. This is valid through September 7, right? So keep that in mind. Then what we're going to do on top of that is we're going to do a hack along in the CTBB discord for everybody, okay? And we're going to start looking at these targets. And so what'll happen then is you guys will take a look at it, you'll see what you can find, then we'll do the hack along and everybody will be hacking on them, finding vulnerabilities, I'll be hacking on them, finding vulnerabilities, and then we can compare notes and see where we missed the sketchy pieces of information or the leads or the vulnerabilities themselves. Okay? So really good opportunity. This is the kind of stuff that we have at live hacking events and Adobe is bringing this to you guys. So definitely check out those targets. They're in the description along with the code. Also, the Adobe team wants me to let you know that they're going to be at Bsides Las Vegas sponsoring August 4th to August 5th. Come check it out, go to their booth, have a chat with them. They'll also be at DEFCON in the Buggani Village. So if you see anybody with like Adobe Swag or whatever, don't hesitate to come up and say hi. All right, that's it. Thank you, Adobe. Back to the show. Sup hackers? I am pulling myself away from a live hacking event right now to give you the TWIB segment for this week. The this week in Bug Bounty segment is where we cover quick hits on news that you need to know about even if we're doing like an interview or something like that. So here's what we got for this week. First up is the platform panel on triage at Bug Bounty Village, defcon. This is a super stacked lineup, guys. Listen to this. Michelle Lopez from HackerOne, our boy Michael Skelton aka Kodingo from Bug Crowd, and our boy Inti from Integrity, Eddie Rios from Synack, Anthony Silva from yes We Hack. And moderated by none other than CTVB's own JROCK. Okay. Who has been on the pod several times. Amazing hacker and was once on the. On the triage side as well. So this is going to be a great panel. Definitely. Check it out. Saturday, August 9th, 3pm at DEFCON. All right, next up is yes We Hack is making their debut in Vegas. They want us to let you know that they're going to be around. Swing by booth 2367. Meet the team. They've got a really awesome group of people there. I know specifically Alex Breuman has done a lot in the hacking community. Lots of really talented people and the S3 hack team, they've been pushing out amazing content. So if you're hitting Black hat, definitely stop by and check them out. Up next, very appropriately, is a new dojo from yes We Hack. Okay. And if you haven't checked out yes We Hack Dojos, these things are freaking awesome. Okay. Okay. This one in particular here as a little bit of like, you know, time, time prediction tokens and some deserialization going on. So definitely going to be an awesome one to check out. Last but not least, we have GMS gadget. Okay. And if you guys haven't heard of this, this is a new project by Kevin Mizu who's on a research lab team here. He released this and I just, dude, I love Kevin's style. I like right at the top here. He's like this project is inspired by the work of. And then lists a bunch of people from a 2017 a black hat talk. And that's like at the very top of his page. So humble, so giving respect to the original researchers. And then he put together all of these gadgets. So let me, let me explain what it is. I got a little overexcited here. GMS gadget is Give me a script Gadget is what it stands for. It's a collection of JavaScript gadgets that can be used to bypass access mitigations such as content security policy and HTML sanitizers like dompurify. So think about the episode with, with Johan Carlson, right? You know how Much. We talked about gadgets, right? This is a place where you can find a lot of these gadgets, depending on what kind of, you know, what JS libraries you have installed in your environment. So definitely a good project to check it out. We'll link it in the description. If any of you really are working in a very tight CSP environment, this is your new best friend. All right, that's it for today. Let's go back to the show. Where's your Reza? Where's your Hops?
+
+[00:05:17.54] - Joseph Thacker
+I'm already sitting down, like.
+
+[00:05:18.62] - Justin Gardner
+All right, whatever, dog. Whatever. All right, here we are.
+
+[00:05:22.33] - Harley Kimball
+We're rolling.
+
+[00:05:22.89] - Justin Gardner
+Harley ... Okay. There you go. Nice. Thanks for that. Now I'm going to redo the intro.
+
+[00:05:30.33] - Joseph Thacker
+Yeah, sure.
+
+[00:05:31.06] - Justin Gardner
+All right, we're rolling. Harley, Ari. Welcome to the pod, guys.
+
+[00:05:35.00] - Harley Kimball
+Thanks so much for having us.
+
+[00:05:36.97] - Harley Kimball
+thanks for having us. Happy to be here.
+
+[00:05:39.25] - Justin Gardner
+So here's what we do. You know, when we come on the Critical Thinking podcast, we drop some bugs. So, Harley, before we. Even before we. You need to earn the right to get an introduction here on the pod. So dazzle us with a little bit of a bug story, and then we'll move into introduction.
+
+[00:05:54.37] - Harley Kimball
+Yeah. So, I mean, honestly, none of my bugs are really all that impressive, but, you know, Joseph, I think you had a buddy on the pod. His name was Aaron a couple months ago. It was a great episode, if, you know, go check that one out if you haven't seen it. But when I was watching that episode, he was talking about hacking applications, and that was a topic that I had spent a lot of time doing. And it turned out like the blog that kind of inspired my research into that area was actually his, and so it was super interesting. So when I was pen testing for a company, I was. I came across this support portal, and when just interacting with it, I would see a bunch of post requests to this aura endpoint that I never really saw before. Right. I'm sure you guys all have probably seen this.
+
+[00:06:38.00] - Justin Gardner
+Oh, yeah. Oh, yeah.
+
+[00:06:39.29] - Harley Kimball
+And so when I came across that blog, I just was googling, what is this aura thing? I came across that, and just following it step by step was a gold mine and was able to. To pop some access to things that were pretty critical, like getting into support portal tickets, things like that, seeing attachments. It was crazy. And so that kind of led me down this rabbit hole of wanting to do this at scale for bug bounty, because this was before I'd ever done anything with bug bounty before. And so if you've ever kind of popped that bug, it's very tedious. You have to start by enumerating all the custom objects. You take all those objects, and you have to query each one by one. And then you have validate, like, okay, here's this id. Use that ID to download this file. And then you have to then open the files and check the responses. And some of it might be intentionally public and not sensitive. And so you kind of have to manually validate that. And so it was the perfect thing to try to write a tool for. To do if you're trying to do it at scale. But I've never been a great programmer. I've never been able to write code very well. And so it wasn't until I started working at HackerOne, actually, where I partnered with a buddy of mine, and we kind of, like, created, like, this V1 of this tool. And then we started just throwing against, like, Project Discovery's Chaos List and blasting about everywhere.
+
+[00:08:05.13] - Justin Gardner
+Yeah.
+
+[00:08:07.06] - Harley Kimball
+And then, anyway, that just kind of, like, led to probably my first flurry of bugs that I ever got in Bug Bounty. And it all kind of, like, started from Erens, you know, blog post. So I just wanted to call out that, like, that dude has done some really cool stuff. And so having him on the pod is really cool to see.
+
+[00:08:23.19] - Joseph Thacker
+Yeah, yeah, he's still finding stuff. He's speaking for App Omni at Black Hat. I think this year, like, on one of the main stages, I'm pretty sure about even more findings.
+
+[00:08:30.63] - Harley Kimball
+And that's amazing.
+
+[00:08:33.27] - Justin Gardner
+Wow, dude. Yeah. I also really like the. The. The thing you said there. The flurry of bugs. I like, I was thinking, like, swarm flurry. Like, I like the visual aspect of that. And surely there are those times, you know, when we're hunting where, you know, you find individual bugs or whatever and you try to extrapolate them as much as you can. But it is really cool when you find a pattern and then you spray it and you just get a ton of bugs flowing in. Like, that was one of them. When I did this research on Grafana with the unauthenticated SSRF back in 2020, that was, like, one of the craziest times of my Bug Bounty career because it was just multiple crits every day for, like, weeks. Coming off of that research. Flurries of bugs, man, they. They feel great.
+
+[00:09:17.87] - Harley Kimball
+Yeah. It's really cool when you have, like, a technique or you even if you find someone else's technique, and then you just kind of, like, learn how to capitalize on it, and it can just kind of keep paying you dividends throughout. Throughout Your journey. You know, nowadays I've been able to turn that into like a V2, you know, script with Vivecode in and just actually built this thing out that, like, you know, really helps with automation and, you know, so it's really cool. Like, I'm a lot more dangerous now with AI being where it is, because now when I have these type of ideas, I can actually turn them into tools and scripts where I couldn't do that before.
+
+[00:09:49.29] - Justin Gardner
+And so, yeah, dude, you've been putting out a lot and I kind of want to pick your brain on this because I know your job at HackerOne is not a walk in the park. And you're also doing a bunch of stuff here with Bhagvani Village, with disclosed with all sorts of stuff. So we'll, we'll get to all that, but you've earned your introduction. All right, guys, this is, this is Harley Infinite Logins, and we've got Ari here as well. These guys are both the Squad at the HackerOne live hacking events. You know, when you, if you ever make it to an H1 live hacking event, they. They are the faces that you see and you, you know, hang out with. So that's how I know these guys. But they're also running Bogdani Village at defcon, which is something we kind of wanted to double click into for this episode, is kind of talk about what we can expect this year. And, and man, it went amazing last year. Last year was like a knockout success. So I'm really, I'm really looking forward to, to this year. So, I mean, I'm looking at the doc here, guys. You know, where do we want to start? Do we want to talk a little bit about what you guys have planned for Pagbani Village at defcon?
+
+[00:10:59.50] - Joseph Thacker
+Let's give them both a quick intro first. And just to clarify to everyone, Bug Bounty Village is totally independent of, like, stuff that HackerOne has going on. You know, Hackero and I think is also a sponsor, but these guys are doing this independently of that, so definitely give them a lot of support and praise for that. Tell them thanks if you run to them at Bug Bounty Village or even on social media or if you're tuning in online or watching the recordings later because it's, it's a big workload. It's a big lift for them to do that. It's really cool. They do that for the community.
+
+[00:11:29.55] - Justin Gardner
+Yeah, see, I thought we were giving them an intro, right? So do you want to, like, I.
+
+[00:11:33.00] - Joseph Thacker
+Mean, I mean, on the docket we have information about them that you didn't say, like, lots of it here. So that's really what I'm. What I'm pointing out.
+
+[00:11:39.83] - Justin Gardner
+Okay, fine, dude, fine. All right.
+
+[00:11:42.59] - Ariel Garcia
+Let me say, Justin, I'm partially offended that you didn't ask me for a bug. You know, like, I know I'm a shitty hacker, but, you know, Ari, dude.
+
+[00:11:50.66] - Justin Gardner
+We added you to this call, like five minutes before this episode.
+
+[00:11:53.59] - Ariel Garcia
+I know, but that's the thing, you know, like, whatever, don't worry, I'll keep.
+
+[00:11:58.75] - Justin Gardner
+Do you have a bug?
+
+[00:11:59.59] - Ariel Garcia
+You want to talk about a bug? I do have. I do have a bug.
+
+[00:12:01.66] - Justin Gardner
+Listen, listen, dude, like, if I was coming on a pod and somebody like on the fly was like, hey, Justin, tell me about it. A bug you had. I would be like, you know, I didn't really think about a bug in advance.
+
+[00:12:10.59] - Ariel Garcia
+I wasn't prepared. But that's the thing, you know, I'm always prepared. You know, that's. That's a cool thing.
+
+[00:12:14.90] - Justin Gardner
+No, what you got, man?
+
+[00:12:17.19] - Ariel Garcia
+Now again, I. I do agree with Holly, like, definitely my bugs are not even close to any of the things I see in life, hacking events.
+
+[00:12:23.87] - Justin Gardner
+Like.
+
+[00:12:24.38] - Ariel Garcia
+Like, I feel the shittiest hacker when I see show and tell. It's like, dude, like, you think you're a hack and you see those things. It's like, I'm so crappy. But I do like a lot of the idors and authentication issues and APIs, and I feel like the APIs especially are not the main focus of a lot of people. A lot of people go straight into web apps and the EC stuff or they look for the iOS and the cross scripting, all the things, especially if you're not super, super scared and go. And I think sometimes if you find the proper endpoints of APIs and you find the swaggers, the endpoints, that's what I like to do. And then I start one by one all the endpoints and see what they do and the authentication, should they be using credentials. Do you need a token for it? Do you need a permission or something? And I am very good at doing the shitty manual work that nobody wants to do. Maybe you're probably going to write an automation. There you go. Kyle is going to buy code. Shit. I'm literally like one by one, like one tab in the burp or kylo, whatever you use. You just like creating one tab at a time and trying the endpoint. And I have found so many bugs that were super cool and some of the things that you find there blows your mind. I remember this one. I Was just in a web app and again got the swagger and start checking endpoint and I find this endpoint, which is this kind of irrelevant, there's like slash cookies or something. And I'm like, why do you need this? I start accessing it and suddenly it brings me all the cookies of the people logged in at the time. And I said, dude, I don't even know what that was there. It was in production and it was like this kind of be real. Why is this being used? Someone spying on us, you know, like all those things. And you will basically hit this endpoint and you get all the cookies and basically it's a session, you know, take over for any account that you know it will be online at the time. So you will try it like multiple times and you'll get like different cookies for different usernames. So again, nothing super crazy. It's like literally like a repeater tab, super easy to exploit. But the severity of that, the impact of that and the things that some people miss because this was not like a, you know, new program goes there. And yeah, so I guess the takeaway is like, you know, I love swagger endpoints. I feel like we need better lists to reinforce some of those endpoints sometimes, you know, those are not extremely, you know, visible there.
+
+[00:15:07.94] - Justin Gardner
+Yeah, I remember the Kite Runner stuff by the Asset Note team really helps with all that too. Right. Like the brute force software specifically designed for the APIs. Um, and, and I think that is a great shout though because like the, a lot of people will focus on like the, the main app and the APIs that power those main app. But there's also a client facing, you know, API sometimes that has weird stuff attached to it and doesn't have the same security boundaries as the API that powers the main app.
+
+[00:15:35.51] - Joseph Thacker
+I do, I do think that, yeah, I've had a lot of success fuzzing, I think on organically found paths. So a lot of times you'll be hacking app and there'll be some API calls like you're talking about Justin, and they're like six or seven paths deep. And I think very few people are then like taking that and then truncating it and like fuzzing at each level. And a lot of times at one of the, at like the third level deep, you'll find the swagger file or whatever else. And the cookie disclosure reminds me of like Django debug mode enabled or whatever where you can get that exact same thing. It's like, why do devs really need cookies of active Users, they never need that. So why is that in any kind of. Like, why are there ever Devin points that do that?
+
+[00:16:14.97] - Justin Gardner
+It's like a. It's like a vibe coded thing. They're like. And I was like. And now you. Here's the slash cookies. Edit point. It was like, I didn't ask for that. Don't. Don't write that. Oh, my gosh, man, that's great. Well, Ari, dude, I'm impressed, man. Nice.
+
+[00:16:30.16] - Ariel Garcia
+You're impressed with that? That is shitty. I mean, there's not even a clear, clever bug, but, you know, it's.
+
+[00:16:35.21] - Justin Gardner
+It's good, man. It's good. You know, I guess I know that. I know that I've run into you guys mostly in your community management roles at H1, but it's great to sit down and talk some. Talk some technical bugs with you guys. So, yeah, I guess let's go. Since we're doing more thorough. Thorough interest here. Harley, we'll do you first, and then we'll move to. Ari, can you give us a little bit of a history of how you ended up in the bug bounty world? Like, where. Where did your. Where did your hacking journey start? And why did you end up where you're at now?
+
+[00:17:05.35] - Harley Kimball
+Yeah, so, I mean, I started hacking at, like, 14. You know, back. Back then, I was playing this game online. I've heard so many stories start out this way, but I was playing this game online and some dude tried to phish me. And so this is like, 2010. Like, phishing wasn't quite as prevalent as it is today, right? But he's like, hey, add me in Skype and we're going to do this thing. And long story short, he ends up dropping a phishing link. And I've never seen this before, but I noticed, like, a few things were wrong. Like I said, like, TK in the domain. The, like, copyright year in the footer was like a year out of date. There was, like a broken image on the page. So, like, I could tell, like, hey, this wasn't legit. But I also was like, you can't just clone a website, right? So, like, I just thought it was the coolest thing ever. And so I start begging the dude. I'm like, bro, you got to teach me how to do this. You got to teach me. And he just.
+
+[00:17:58.01] - Justin Gardner
+Yeah, no, but also, please, that's great.
+
+[00:18:01.94] - Harley Kimball
+So he just. He just blocks me, you know? And I never. I never hear from him again. So I spend, like, the next two weeks coming home from school just, like, Googling, like, how to make fishing websites. And so I'm starting to play with all this stuff, playing around with like, you know, Dark Comet and remote administration Trojans and things like that. And I had no idea what the hell I was doing. It was very much a script kiddie. But that's what kind of led me down this path, right? And when I found out that there was a school nearby that had a cybersecurity program, I was like, I was like, I think this is what I want to do. So while I was in high school, I just hit him up and I'm like, hey, can I like, sit in on this ethical hacking class? And they're like, okay. And so I was able to get exposure and it kind of solidified, like, yeah, this is what I want. So I started on that path, got an associate's degree in cybersecurity, and then after that started working kind of like traditional help desks as admin type stuff, doing a lot of like, firewall config, management of active directory, things like that. So I did that for about four years at an MSP before I had an opportunity to finally go to Defcon. Actually back in like 2019 was my first year going to Defcon and I kind of just scraped up enough money to like couch surf and make it there. But once I was there and like, in the environment of all the other hackers, it kind of just, I don't know, like something. Something clicked for me where I always wanted to be a hacker, but I got stuck doing this like, sysadmin stuff. And at some point I started thinking like, oh, hacking's only for like, smart people, and I'm not able to do that, you know, But I don't know, like, I just realized, like, if I'm going to make it happen, like, I'm going to have to be the one to make it happen. And I started going down, like the OSCP journey, just learning a lot, consuming as much content as I could about this stuff, finding local communities. There's like a local security meet up here in Portland called rainsec. That group is awesome and helped me a lot and, I don't know, just really trying to brute force my way into becoming a pen tester. And I finally made that transition in 2020. At that point, I just, as I was learning things, I would write about them, I'd watch an IPSEC video, learn a new technique or two, and be like, okay. Instead of saving it as notes on my computer, I just published it on a blog. And honestly, it was because I kept Switching computers and I didn't want to, like, I just wanted to always have my notes with me. But other people started messaging me and they're like, hey, this is really helpful. It's really valuable. Like, it was somehow getting a lot of traction as a blog. And then that kind of like transitioned into, well, hey, if people like this content, let me make YouTube videos about it. So I did a YouTube thing for a little bit. I got like 10,000 subscribers on YouTube that I'm just not. I'm just not active anymore. But I used to upload a lot and that's when I created like the Infinite Logins brand and everything. So I did that and then, you know, was pen testing. I became a security operations manager for a bit. So doing a little bit of like blue team work, I also managed like another pen tester. And then eventually, like, I just, you know, hacker 1 reach out and they're like, hey, you want to come do community management? Manage our pen test community? I was like, sure, let's do it. That's when I met Arielle and started working at HackerOne. I've been there now for the last three years. And being in that environment, meeting people like you, like, it's really kind of like fired me up to do, you know, bug bounty and give that a shot and transition and that. Not going to lie. The transition from pen test mindset to bug bounty mindset is a whole different, whole different piece. But yeah, I've been able to kind of overcome a lot of that and started having success in bug bounty this past year actually. And I'm working on the ebook right now to talk about my bug bunny kind of like journey and how I really found that success and like what worked differently for me. And so that's. That'll be coming soon.
+
+[00:22:00.39] - Justin Gardner
+Dude, what the heck? How are you finding time to do all of this stuff? You're working on the ebook. This is. Okay. Okay. So anyway, we'll come back to that.
+
+[00:22:08.82] - Joseph Thacker
+Well, I'm going to go first.
+
+[00:22:10.67] - Justin Gardner
+Yeah, okay, go.
+
+[00:22:11.39] - Joseph Thacker
+Yeah. So the first thing I want to say is I'm going to introduce Ari in just a second and let him introduce himself. But I just want to mention that I feel like this arc of like finding like being a hacker something awesome to do and then like kind of radically pursuing getting to defcon, like, like getting a security job, then getting to DEF con and then like, you know, basically doing cool stuff and writing about it and then, you know, other people encouraging you to do that and then following like existing hacking content creators and Then eventually creating content yourself feels like just such a journey that so many people have been on. It just really works, right? And I do think that, like, what you said, like, I, I realize that, like, if I'm going to do this, I have to do it. I think that kind of like radical self belief, even if it comes with a lot of imposter syndrome, was like super true of my story and has been true of so many other people's stories. So anyways, I just wanted to highlight that, like, if you are up and coming or, or if you are like kind of unsure of yourself, I just feel like the, the, the, the patent or like the, the blueprint is laid out there, right? It's like, just get so stoked to be a DEFCON with a bunch of other awesome hackers, hold that in your eyes, like your goal or whatever, and then use current existing free content out there from like, content creators or, you know, this podcast or whatever else to then, like, just like learn and feel your learning, but make sure that you're sharing it because then that encouragement that comes from people that are like, oh, you found that, or, oh, this idea or this lead or whatever will then, like, help you kind of create, like, complete the arc, right, and keep going. So, yeah, super cool. Ari, do you want to give us your intro? What got you into hacking originally and then how did you end up where you are now?
+
+[00:23:44.83] - Ariel Garcia
+Yeah, definitely. So I won't make it super long and boring with my pen tester life, but definitely I started the whole hacking situation with, when I was hired at Deloitte, one of the big four, you know, consultancy. So I didn't hack much before besides, you know, cracking some video games or like, you know, and by cracking, I mean copy pasting a file into a folder, right? That type of cracking and, or, you know, like hacking my sister's laptop, like, whatever, you know, like that kind of thing. But I was never thinking about it as a, as a career, right? But I was in the university doing like, you know, engineering and things like that. I was not having fun. Eventually I got hired at Deloitte. I started doing Pentecost and I definitely learned everything I know from, from there because, you know, that got me a path. You know, I was shadowing someone. They were teaching me. They were super, you know, friendly. They were a great team. They're still my friends today. And that got me to like, pen test or pen test and pen test and, you know, consultancies, right? It's like you are the expert on everything and you learn, dude, Like, I, I used to travel to different countries and, and you know, like doing pen test and I was an expert. I was like, I was getting shitty payments and, and you know, but I was investing in my career. Like, I'm learning, I like it, I'm traveling, I'm. I don't care if I, you know, I kind of have to pay my lunch with a credit card. That was. Yeah, that was kind of my thinking. Yeah, and that's real, by the way. It's, it's, you know, it used to happen, but I was like, okay, I'm investing in my, in my career, so I'm okay with it. And, and eventually, you know, I moved to a different company. And at the time I was trying to go to defcon. Like, DEFCON to me was like a passion, was like, how do I go there? How do I make my company to pay for my trip? Because I don't have the money to pay the whole thing. It's super expensive. So I was like, okay, this training budget. And I was doing my best to get my training in DEFCON specifically. Eventually I went there, luckily multiple times. And I remember 2017 DEFCON. I was there with these, you know, the company paid for my trip. And I have this friend, Neiman Sec, he's currently doing buck money as well. He used to work with me at Deloitte as well. We're pen testers there. And he was doing back money. Back money hunting at the, at the side at that time. Buck money hunting is not what it is today. You know, it was a struggle, dude. Like, I will see his, you know, older payments. He was like one critical $50, you know, like, it was really growing up. It was trying to be what it is today. I'm talking before 2017. But then by 2017, they were hacking events and things were getting better. And Neiman said was invited to Las Vegas hacking event 702, which is big thing. And at this time, hack one used to do it in this rooftop with a pool. And all hackers were super. I don't know, dude. Like, you will go in there. It's a rooftop and hackers are hacking and like people are having dreams.
+
+[00:26:55.02] - Justin Gardner
+And it was pretty freaking.
+
+[00:26:56.30] - Ariel Garcia
+So sick, dude. I. I was like, I don't know what this is, but I want to be in, I want to be part of this. However, like, I don't give a crap, you know, like, if I need to do bug money, I will do it. If I need to work here, I will do it.
+
+[00:27:07.15] - Justin Gardner
+I don't care.
+
+[00:27:08.43] - Ariel Garcia
+And a lot of people just, you know, they're just still swag. And, you know, like, I did myself as well, you know, but getting free drinks, it's Vegas. Everyone is partying. I was like, with a different mindset, dude. I was like, I'm networking the hell out of this. You know, I'm talking to every single person who has like a hack 1T shirt or something. I was talking to everyone, meeting people, and I made friends there. Like, you know, I met some. Some cool guys. The VP of Engineering at the time, Hack one Alec, he was great. And Alex and. And yeah, we started talking and, like, again, working and stuff like that. And I'm like, dude, I am a hacker myself. I have a huge community in Argentina. I want you to come to Argentina for life, you know, and I want you to come to Buenos Aires. You know, it's like, I want this in Buenos Aires in my country. And I'm very passionate. You can tell. So I'm helping you. I mean, I don't care. I will help you do it. And they were like, okay, we'll see. And I was. I was like, okay, it's not much happen. And eventually, 2018, September, I received an email, and it's like, hey, you know what? We are actually going to Buenos Aires.
+
+[00:28:11.94] - Justin Gardner
+Oh, my gosh, that's.
+
+[00:28:14.18] - Harley Kimball
+Yes.
+
+[00:28:14.74] - Ariel Garcia
+That's like, so cool. And I'm like, come in. You know, like, I can help with whatever. And they were like, yeah, can you help us with, you know, a venue for like a happy hour or like a venue for this? Or, like, we also need your accommodation for local hackers, because, you know, we don't know Buenos Aires and, like, we don't speak Spanish, so, you know, we need translation. And I was like, I will help you. I don't care. Of course I didn't get paid. It was like, old passion. Old passion, pressure for me. And eventually that happened. So we did the, you know, that event, H1 5411 in Buenos Aires. And yeah, I invited, like, I don't know, 20 hackers or 30 hackers, you know, from the local community. And. And I think they kind of got mind blown because a lot of those hackers got their first bounty in that event, including myself, including Deli Seed, which, you know, is one of the hackers. I was collaborating a lot that.
+
+[00:29:10.52] - Joseph Thacker
+Who was the target?
+
+[00:29:12.76] - Ariel Garcia
+The Paranoids at the time. You know, they're not called the Paranoids anymore, but the Paranoids were the target. And, yeah, at that time, well, Stoke was here, Franz Rosen was here, Inti was here. Meals. I don't know, a lot of years.
+
+[00:29:30.23] - Justin Gardner
+What if. What a lineup.
+
+[00:29:31.58] - Ariel Garcia
+What a lineup. And. But also at the same time, it probably wasn't like a huge budget or something because we also invited these 20, 30 people from the local community. You know, I got a bunch from Buenos Aires specifically, but also some from Uruguay or Chile or Brazil, so. And yeah, I made my first bounty there, like paid bounty. I got like 20 or 30 duplicates before that, which was like very frustrating. So sad. And yeah, and I got like, I don't know, collaborating with Delisi. It was like a twelve thousand dollar bounty or something. And we got six games for us.
+
+[00:30:08.55] - Justin Gardner
+Was like, that's massive. Yeah.
+
+[00:30:10.24] - Ariel Garcia
+Imagine from coming from dupes and dupes and zero bounty to actually getting, you know, 6K total for the event or something.
+
+[00:30:17.03] - Justin Gardner
+Again, that's great.
+
+[00:30:17.79] - Ariel Garcia
+For the event to, you know, see what people are making today. For the event. It's nothing 6k is not. But for someone new coming from dupes first block triage in a hacking event and getting like, you know, two crickets or something, it was 12K total. It was insane, dude. Unbelievable.
+
+[00:30:36.49] - Joseph Thacker
+Do you think triggered a bunch of Argentinian hackers to like really dive in and like.
+
+[00:30:42.97] - Ariel Garcia
+Yeah, I mean, just for you to know, like, none of the evolved. Leandro, one of the greatest hackers I know, I invited him to the live hacking event and he got his first bounty there. Wow. Deli seed. He's also, you know, doing great pen testing, back money hunting. He also got one of first bucks or the first bug. But yeah, there were a lot of people from, from Argentina that saw this as okay, this actually, you know, it's real, you know, it works. So they started, you know, hacking from, from there and, and after organizing that event or helping actually, because of course I didn't do everything. I got hired for hack. So that's where the VP of marketing at the time was like, dude, I love this. You know, I want you to work with me. And I'm like, sure, you. Heck yeah. Yeah, I mean, I'm definitely on board, but I kind of didn't trust him. At the same, you know, the same time I was like, it's too good to be real, you know, and you.
+
+[00:31:42.13] - Justin Gardner
+Put yourself out there, Ben. I mean, you, you networked your way into it right at that event. And that is definitely something that a lot of hackers underestimate the power of.
+
+[00:31:49.08] - Joseph Thacker
+Just ask, right? This is Douglas Day's phrase, just ask. I mean, you literally went up to Alex Rice and we're like, hey, let's do this. In my country. And then it happened and then it changed the lives of tons of local hackers. I mean that's an insane story.
+
+[00:32:00.76] - Justin Gardner
+And you know, maybe, maybe it's a little bit of, you know, of luck of fortune there, right? Like you know, he says okay, yeah, sure, you know, we'll do it. And then bonus hours or whatever. And then you know, he's in a meeting a couple months later and you know, oh, this comes up as a potential venue and he's like, actually I think I've got someone who can help us with that. Like, and that just kind of tips it over the edge a little bit. Right? So if you're getting out there, you're talking, you're putting your dreams out there, it definitely helps that manifest, I think. Guys, I'm not gonna lie man, it's pretty sweet getting to sit down and hear Yalls story because we've seen each other a lot but I haven't heard these backstories stories. So thanks for talking about that this time. And I did want to ask you guys because obviously Rezo and I are living the full time Bug Bounty life, really leaning into Bug Bounty and we talk often about the fact that Bug Bounty is our dream. And I wanted to ask you what brought you into the community management side. And you guys are a very unique breed because very few people have tasted the pen tester, the book bounty hunter lifestyle and then choose to do a different side. And I think a lot of that comes from the love that you give to the community and that sort of thing. But I'm wondering why you made that decision to move into into community in the Bug Bounty world rather than, you know, staying on the technical route and doing that from your day to day.
+
+[00:33:36.14] - Harley Kimball
+Yeah.
+
+[00:33:36.42] - Justin Gardner
+And it feels a little bit, oh.
+
+[00:33:38.22] - Joseph Thacker
+You go ahead, I'll let you point to one of them. It feels a little bit like Skeleton and codingo or sorry, skeleton and hack Loop because they kind of were big hackers but then decided to like support the community obviously in a slightly different way, but kind of interesting. Yeah, you can direct the question.
+
+[00:33:50.57] - Justin Gardner
+I'll give that to Harley.
+
+[00:33:51.57] - Harley Kimball
+First, the fact that you, you know, or like, hey, you guys are kind of like skeleton and hack Luke is insane. But thank you, I'll take that compliment. But no, I mean, honestly it wasn't necessarily purposeful for me. Like it just happened naturally. Like it keeps happening naturally. Like every time I try to pivot into, you know, doing something different where it's like focusing on more technical roles, I always just end up doing things like this. And I think it's just my passion for helping others and really, like, kind of like trying to lift other people up. And, like, I think that that just is kind of what's creating a lot of this. Even when I was going through school, I was creating community. Like, I founded the cybersecurity program, or cybersecurity club, and brought people in and.
+
+[00:34:42.57] - Justin Gardner
+Me too. Dude, come on, do something. Let's go. That's how we do.
+
+[00:34:45.80] - Harley Kimball
+Yeah, but it's just like, I feel like, you know, you guys have talked about Bug Bounty being sometimes lonely and whatever it is. Like, I think that part of it is just looking to try to find people that you can experience life with. Like, you know, experience and have a journey together and share wins and share losses, keep you motivated, whatever. And then it's just in that path of, like, always looking for other people that I can kind of, like, share things with. I've also been wanting to help them, and in exchange, like, they've been helping me. And I don't know, like, just. I feel like my career has always benefited when I bring other people around that also are trying to, like, help people. And it's just. I don't know, it's not really.
+
+[00:35:29.94] - Justin Gardner
+That makes sense, man. You've got. You've got something that. That pulls you towards community, that pulls you towards people, rather than, you know, necessarily towards the technical piece. And I feel that, man. I mean, when I'm around you, I'm like, I like, you know, every time I see you, I come up and give you a big hug. So that's. That's great, man. And, Ari, I'd like to hear your side as well, because you were. You were doing the consultant life for a while. You know, you were traveling around, you were hacking stuff. And then you, you know, you chose to jump on this Bug Bounty role where you're helping with the life hacking event. So what. What made you make that transition?
+
+[00:36:01.01] - Ariel Garcia
+Yeah, so. So for me, it was like. And, you know, like, sharing, like, the passion to, you know, be part of this, like, to be part of this community, like, wanting hack, want to be here and try to replicate what I was seeing in Vegas and, you know, with all the top hackers and things like that. And. And what it keeps me here is also, you know, I always say it's kind of corny. Like, sounds cliche maybe, but it's like we are changing people's lives. You know, we are providing opportunities for different people that in especially, like, some people around the world are maybe outside of the U.S. right. Like I am from Argentina, I was gonna say.
+
+[00:36:39.78] - Joseph Thacker
+You see that specifically, right? I mean that twelve thousand dollar bounty was what, probably the salary of a lot of your friends for a year.
+
+[00:36:45.98] - Ariel Garcia
+Yeah, 100. Like, you know, making that salary for me, it's like, dude, this is life changing and, and providing that same opportunity to others, not only in Argentina, but Latin America or like India or like whatever, you know, like different countries that think about this like you're making literally the same exact money than someone from the US is making. You know, like you get the critical, you just, you make a 20k bounty or something. Someone in India can make the same bounty. Or like I can do it if I invest the time or have the knowledge.
+
+[00:37:15.11] - Joseph Thacker
+And the equipment required is so low compared to other industries too, right? I mean like if they can get a computer and some of them even start with a phone, right. I don't know if any of the Argentinian hackers have. I know so many Indian hackers that have just started hacking with their phone.
+
+[00:37:27.67] - Ariel Garcia
+It's insane. Like sometimes they, they literally watch some YouTube videos, they, they watch Hamza streams or something. They, they start doing recon or understand something and, and they, they get a bug and suddenly it's like, okay, that, that is life changing. And it, you know, again, as I was saying, it sounds cliche, but you know, when you face people in life, hacking events or different events around the world and they come to you and thank you for it, it's life changing. It's like I feel appreciated and I feel like what I'm doing, it's, you know, it's worth it. And literally I had people coming over to me and saying, dude, I love you. And I, I don't even know you did like I am this username, right? Oh, you're this season. Oh, amazing. And dude, thanks to you, I bought a house and I bought my parents a house and I bought a car. And you know, when they tell you that, it's like it means something for them. And maybe what I did, it was just like, you know, inviting them to a program or at the time making them a pen tester or providing a like demanding buy. You know, what, whatever. And, and that changed, you know, the life. So that, that is what keeps me going. Honestly, I, besides, I'm sheet hacker, right? And I got, I got to do what, you know, top hackers are making. But definitely, you know, that's kind of what keeps me going. It keeps me motivated and, and you know, it's hard and sometimes it's when you see all the hate on social media and you always get like 94, 90% negative stuff and 5% positive, you know, like you don't see all the positive things. So sometimes it's complicated to, you know, stay motivated or positive and try to keep doing the same things. But then when that single person comes to you and say something nice, it makes it work.
+
+[00:39:08.28] - Joseph Thacker
+So yeah, I mean, they're only so passionate and negative because it is life changing. Right. It's like the difference between the getting paid and not especially like you said, for, for some, for some hackers in certain countries, it's like it's actually life changing. And so even if they're in the wrong, like, they've got to fight for it tooth and nail because if they do get paid, you know, it could, it could literally buy, you know, their, their entire family food for the next six months or whatever. So.
+
+[00:39:30.11] - Ariel Garcia
+Yeah. And like the equipment, like think about this, like just to put a close on it, like maybe you're hacking from your phone, like you were saying, and maybe making that bounty allows you to buy a MacBook.
+
+[00:39:38.98] - Justin Gardner
+Sure.
+
+[00:39:39.30] - Ariel Garcia
+And that is your working tool for the next five years or something. You know, like it's life changing. Sometimes we don't realize that.
+
+[00:39:46.65] - Joseph Thacker
+Cool. Well, yeah, I mean, the main goal for this episode was to hear about you both. Both you guys, but. But also especially to hear a lot more about Bug Bounty Village. Why don't you tell us like in like two sentences, like kind of the, the origin story of Bug Bounty Village and then, you know, maybe some, some highlights about things that you are excited about this year. Did anything change relative to last year? You know, maybe who are some of your key speakers? So yeah, two sentence origin story. And then let's talk about this year.
+
+[00:40:13.05] - Harley Kimball
+Cool, I'll start. So, yeah, Bugbuni Village kind of came to be a thing that we didn't expect to happen. We submitted our application and we heard other people were trying to get a Bug Bounty Village for a couple years and we just submitted ours thinking, okay, we'll throw our names in the pool. And I guess they loved our application and they were like, yeah, let's do it. And so we had three months last year to pull it together and you know, the response was really, really positive. This year, some things are definitely different, but not a ton. I mean, it's going to be similar to last year. We have a lot of the same speakers. People like Haddix, Inti, Nahamsek, Reiner, Raider, some dude named Rhino Raider.
+
+[00:40:58.17] - Joseph Thacker
+Who's that guy?
+
+[00:41:00.53] - Justin Gardner
+Yeah, I'm excited.
+
+[00:41:02.28] - Harley Kimball
+We've got a lot of awesome speakers coming in and doing stuff. Um, we've also got some new things that are happening this year. But before I talk too much about that, Ari, did you want to talk anything more about the origin?
+
+[00:41:13.38] - Ariel Garcia
+Yeah, I mean, as Hari was saying, you know, like, I think it has always been, like, a passion project for me as well. Like, we didn't have a bug money village, to me, sounded stupid. You know, like, why are people going to Red Team Village to talk about bug money? I mean, I know it's related, but also, it's like, it's because they don't have space. It's because they don't have the space. You know, Like, I want to learn more about bug money. It's a career. It's like a. It's an industry. Like, why we don't have a space in the biggest conference of hacking, you know, and to me, it was like, we need it. We need to be there.
+
+[00:41:47.32] - Justin Gardner
+We need.
+
+[00:41:47.69] - Ariel Garcia
+We need a space. It was obvious, but at the same time as how you were saying, like, I didn't think we were going to get accepted. And. And also, it depends a lot on, you know, if your employer allows it, if you have the time to invest, if you have the money, or you can get the sponsors to run it, because it's so freaking expensive. And we were not prepared. 100% not prepared. I will be honest with you. I submitted the application form on the last day from a hotel room with, like. And by the way, thanks, Jessica, my manager, which is like, have you submitted anything?
+
+[00:42:26.63] - Joseph Thacker
+I think we could all say thanks, Jessica, for about 15 different things.
+
+[00:42:29.44] - Ariel Garcia
+Thank you, Jessica. Thank you, Jessica. And. And yeah, and she was like, damn, boom. And I submitted it, and of course, I put all our work in submission. It wasn't like, just like, you know, AI generated or something, and they. I guess they like it. And yeah, we were, you know, super happy. And also, like, immediately after, like, panicking a lot because she was like, okay, what the hell is defcon? And now we're organizing something there, and it's like, we don't know anything at all. And we kind of still feel that way sometimes. But. But, yeah, I. I have to say that, you know, the first year was. Was great. Was definitely overwhelming, but also, like, we were super grateful with the support and, you know, all the speakers, including you, Justine, that invested the time on the talks, but also the people that, you know, was there trying to. To. To be a part of it, you know, because it's, you can do a village. And you can also not have anyone coming in or saying, actually, the Red Team village is six times the size. I'm not going to this small space, you know, like.
+
+[00:43:32.84] - Joseph Thacker
+And how was the space?
+
+[00:43:35.07] - Ariel Garcia
+It's definitely small, dude. We. We probably like 10 times the space.
+
+[00:43:39.32] - Harley Kimball
+Yeah, I told them. I. After the con, I walked up to. To the village leads and I said, I said, if you give us 10x of space next year, we'll fill it. Like, give it to us. I'm covered. And this year we got, I think, what, 30% more space. So not very much.
+
+[00:43:58.44] - Joseph Thacker
+The podcast has grown a lot. The industry's grown a lot. It's going to be a long line. I think it is.
+
+[00:44:04.11] - Justin Gardner
+Last year, we were literally blocking the pathway, the whole house for a lot of the whole defcon, like, people were lined up. Dude.
+
+[00:44:13.36] - Harley Kimball
+I literally know people who spent three hours waiting in line just to get by the village, which sounds crazy, but when you really sit down and think about how many hours the, like, DEF CON as a whole is open, like, it's only like, what, eight hours a day? Ish. Right? Eight to ten hours a day. So to spend three hours is insane. That's. That's a decent portion of your experience.
+
+[00:44:35.61] - Justin Gardner
+Luckily, there was a good amount of stuff going on in the line as well, you know, like, you know, I know that me and some of the crew were kind of walking up and down the line talking about critical thinking stuff, giving out swag, you know, that sort of thing. So maybe we can do some. Some line entertainment again, because it's going.
+
+[00:44:51.73] - Joseph Thacker
+To need some line entertainment.
+
+[00:44:53.65] - Justin Gardner
+We're going to need it, man.
+
+[00:44:54.73] - Harley Kimball
+I think it's really cool because, like, like a lot of the Bug Bounty people that it's typically before Bug Bounty Village, all of us would be pretty, like, distributed, right? Like, we might be at Recon Village, we might be at Red Team Village, you know, and now I feel like we actually have a home and we can bring a lot of people into, like, the central place and exactly that. Like, even though there's a big line, you know, there's a lot of cool swag and different challenges too, we also have lined up and we can talk about some of that this year. But, you know, in addition to people like you coming in and just kind of hanging out in line or talking to people, we're going to also have challenge coins that we can give people to solve while they're waiting in line. We're going to have a CTF this year where people can actually try to compete so definitely happy to talk more about that.
+
+[00:45:40.23] - Justin Gardner
+Yeah. What's the deal with the ctf? Who's making it? How's it going to be run?
+
+[00:45:45.82] - Harley Kimball
+All right, so I'm actually really excited about this because I didn't really want a ctf. Ultimately what I wanted to see have us do was let's get some real programs in and let's do actual almost like a mini life hacking event type thing. And the logistics of that knowing firsthand from being on the hacker one side would be a nightmare to actually try to pull off for a number of reasons. Maybe one day we'll figure it out in the future, but in reality it wasn't going to happen this year. And so we were like, well, what else can we do to where it's still going to be a hands on hacking activity? And you see a lot of CTFs where it's like, here's a password hash, now crack it. Okay. You get a flag. Like cool. But not what we wanted. And so what we envisioned was like an intentionally vulnerable web application that you don't have instructions, you're not guided, you don't have a path. It's just like, here's this environment, go hack it, right? And maybe there's a program page that talks about what's in scope and what's allowed and whatever. And so we wanted it to feel like a real bug bounty situation where you're just going to this website and you find a bug and you write a report and then that report gets triaged and you get points based on your report. And so that was kind of like the vision. And so we started reaching out to a bunch of vendors to try to make this happen. And man, we probably talked to what like a dozen different people in like a week trying to, trying to make this happen. And then we finally came across these guys based out of Dubai, they're called CTF ae and they were just super passionate about the project. We hopped on a call and they were super excited about it. They've done really big CTFs for black hat in that region before and so they definitely have the experience to do something at the skill we need. So yeah, they've kind of taken the idea and they've expanded on it and ran with it. And so now we have this web application, but it's not just one, it's like multiple applications that have APIs and there's LLM components and it's like this whole system.
+
+[00:48:03.59] - Ariel Garcia
+I wanted to add that. You know, it's definitely kudos to them for being so passionate about it as well and trying to take it to the next step. We haven't seen some things and it looks great and again it's like, has an LLM and like different type of box is not going to be the typical oh, it's across scripting and you get a flag. You know, it's going to be a lot of things and we're also going to be having volunteers that are, some of those are triage from different platforms and they will be triaging your bugs. So it's definitely. We kind of scale it. If we do like a real triage scenario where you know, we'll have thousands of submissions and they will triage the whole thing, but at least we'll, you know, review the report and we'll see. Are you making a one liner, dude? You're not going to get points for that. You know, like you need to write a proper buckmoney report to actually, you know, get some extra points. So eventually what we expect is that the new people come to Balcony will have a learning experience of the whole thing. Right? Like you read the policy, read the policy, understand the scope, you actually hack the scope. You find the bug, you submit a report and someone triages it and you get a complete communication there. So that is to me it's great because it's, you know, again like for the new people, like super, super educational, right? They will learn the whole process and they will also hack, have fun. And then for, yeah, then for the experts like you guys, like you will have a nice challenge because you know, the, the challenges will be some will be easy, of course, no hanging fruit, but some will be like, you know, the one of those you want to quit and you know, break everything and you'll be stressed. So we expect to have, you know, a challenge for, for all the old experience levels.
+
+[00:49:44.17] - Justin Gardner
+So. That's awesome, man. Yeah, I love the idea of having a CTF that is that like represents the bug bounty process, right? A lot of the ambiguity of bug bounty, right, where you're like, you know, the thing about ctfs is oh, there's always a solution. But you're, you're emulating that a little bit here by giving them a full app with minimal instructions. Right. And they may be going down this path and it's actually there's not a bug there. But this seems like an accurate representation with the reports, with the where do I go? What do I do? Sort of having to overcome that paralysis to solve these ETFs.
+
+[00:50:19.67] - Ariel Garcia
+Yeah, 100%. Just to add to that These guys are building it. They first created the whole web app without the vulnerabilities and then they are adding specific one to. So it's not like, you know, everything's broken and you will just, you know, everything is destroyed by the star. It's like they actually create a whole app working functionally and then they are adding the bug. So this, you know, also will feel like harder. It's again like you don't know where to look. You will have to test all the features, all the functionalities, do all the, you know, like, like you doing back one. You create an account, you buy something, you know, you do something to actually have more scope, you know, see more API endpoints.
+
+[00:51:00.00] - Justin Gardner
+Dude. Heck yeah. Let's go. This is what I'm talking about.
+
+[00:51:03.76] - Joseph Thacker
+I have a question. Are you all going to deliver dupes?
+
+[00:51:07.59] - Ariel Garcia
+That's something I wanted to do, actually. I proposed that. I was thinking like, what if we create a dupe? So they also get frustrated from that and you know, like, we actually get the real experience. I think it might be a challenge for us to do that. But we're thinking that maybe, you know, we'll have specific challenges for in person people at defcon, because we kind of triage thousands of reports.
+
+[00:51:30.17] - Joseph Thacker
+Sure.
+
+[00:51:30.88] - Ariel Garcia
+In real time. So we'll gate it to in person people at defcon and maybe, you know, we can come with something happen and see if we can dupe some bugs. Maybe the first three flags are valiant, then the other ones are.
+
+[00:51:41.57] - Joseph Thacker
+Yeah, that's what I say. You could have a lower threshold for the dupe. Like since you have a count on the number of flags. Maybe it's like if you're the, if you're like if you're the top 10, it's not a dude. But if it's greater than 10, you get a big warning. It's like duplicate, you know, you were the 11th.
+
+[00:51:53.82] - Ariel Garcia
+Oh, you get some even less points because you, you, you were later to the party, you know, like really like impact money.
+
+[00:51:59.26] - Justin Gardner
+So yeah, we're super cool. Or, or what you could do is just everybody's first bug is a dupe, no matter what it is.
+
+[00:52:04.65] - Joseph Thacker
+That would be funny.
+
+[00:52:05.50] - Justin Gardner
+It's like everyone's got a dupe. The first one and then it starts like a two hour timer and it's like, okay, reopened triage, you know, like that sort of thing to give them that little like, you know, sort of feeling. I love it, dude. Frick. That's awesome.
+
+[00:52:19.73] - Harley Kimball
+And just to be clear, the CTF will be open to the Internet. It will be Something that anybody, even if you're not going to DEF con, you can still participate. We're just going to gate the triage experience to be in person attendees only. Just because we can't scale triage.
+
+[00:52:35.17] - Justin Gardner
+Yeah. Oh, absolutely. That makes sense. Guys, we'll put it up on the screen. Now, Richard, if you could put up the view of the DEFCON layout that they have there. Looks like we have a little bit more space this year. What kind of stuff do you guys have in mind for the space that's different from last year?
+
+[00:52:52.71] - Harley Kimball
+Yes, we made some key changes to. You'll notice there's a podium with the TVs on either side. We had that same type of setup last year inside the village, but last year we kind of set it up more classroom style, where you had tables and you could sit down with a laptop because of just how crazy the line was and how many people got frustrated for not being able to come in. And, you know, people were literally sitting on the floor. Like, we just decided, look, like ideally we would have space for tables so people can bring laptops, but we are going to value, you know, just letting.
+
+[00:53:27.01] - Justin Gardner
+More people in their laptops.
+
+[00:53:29.28] - Joseph Thacker
+Smart decision. Yeah, smart decision.
+
+[00:53:32.69] - Justin Gardner
+Yeah. So.
+
+[00:53:33.84] - Harley Kimball
+So we remove the table so we could fit more seats.
+
+[00:53:36.61] - Joseph Thacker
+So it's 30% more like floor space. But then also taking the tables out probably gave back another 30 or 40%, I would say, right?
+
+[00:53:43.84] - Harley Kimball
+100%. Yeah. Like, I think last year we had, I want to say 30 to 40 chairs, whereas this year I think that number is like 70. And so at least we're right in front of the podium, and so that. That'll be helpful. And then we also kind of are dividing the room in half. So we're going to have these dividers where, you know, you'll have the speaker doing whatever it is that they're doing. And then in the back half of the room is going to be more of like a quiet area where there's couches and ottomans that people can come in and sit on. And the idea there is we'll have the leaderboard for the CTF up on a TV back there. And so if they want to come in and sit down and hack inside the village and chat with friends, meet people, network and collab with, they can and hopefully not disrupt the speaker too much.
+
+[00:54:27.61] - Justin Gardner
+Yeah, I think that's a great idea. And I think also, just speaking back to the CTF versus real bug bounty thing, the way that these live hacking events started in the first place was people at DEFCON were just like, hey, I'm gonna go hack on this target. You wanna do it with me? You know, so like, I think there's this, this component of the, the whole beauty of bug bounty is its accessibility in a lot of ways, right? And so at the end of the day, if you guys have a space where people are just gonna sit and hack and we say, you know, here are the top, you know, 50 programs or whatever from each platform or whatever, pick, pick them and, and go after these public targets right together, then that could also be a really cool environment.
+
+[00:55:07.96] - Ariel Garcia
+Yeah, I think the future definitely looks like that. We definitely want to do something in that regard in the future. But it's also a huge challenge when the background village of DEFCON is platform agnostic, right? So in order to avoid having like preference or avoid having like a single platform there or like a sponsor platform that pays, you will need to make them all welcome and everyone should have space and organizing that. With all the platforms that want to participate, it's chaos. And also if triage doesn't triage on time, you need suddenly five different triage from different platforms. And it's like, I don't know how to scale it. I think it's the future, we're just not there yet. But definitely it's interesting.
+
+[00:55:56.57] - Justin Gardner
+I mean, I mean, absolutely. And I think, I mean, without the platform's permission, you can grab the top five, five from Hacker One, top five from, from Bug Crowd, top five from. Yes, we hack top five from Integrity or whatever, right? Throw them up on a board, say, hey, these are the top five programs, you know, by, by payouts. And you know, sure, they're not going to get paid out on the spot, so it's not going to feel like an LHC quite as much, which, which does affect the experience. But at the end of the day, if you're sitting there collabing and your buddy's like, oh, I pop something, like heck, I'm walking out of DEF CON with Cash positive. What the heck up with that then I think that would be really, really sick.
+
+[00:56:30.40] - Harley Kimball
+100%. And I mean, you know, I kind of feel like we are, we're creating that environment already, right? Where it's like, yeah, we're not broadcasting specific programs necessarily, but people 100% are making connections, going to their hotel room and popping Bounty. It's like, I've talked to many people who did that exact thing last year for sure.
+
+[00:56:52.09] - Justin Gardner
+I am looking at this doc and I am seeing a very cool badge. What's going on with this? How do we get Our hands on these bad boys.
+
+[00:56:59.94] - Harley Kimball
+Oh, man. All right, so these badges. We had badges last year. These are like last year's, except nothing like last year's and way better. And anyway, we partnered with a guy named Abhinav Hackerware. He does a lot of great work for a lot of villages and hackers. He was kind of like the genius that made this badge come to life. And it's got, like, this cool, like, blinky, matrixy type effect in the background where it, like, rains binary code. You can't see that here, really, on the still image, but we've got videos that we can share. And anyway, I'm just super thrilled for this badge. You'll notice there are a few buttons at the bottom if you have a keen eye. And we didn't have this last year, and so these buttons will do things. And I don't know how much we want to describe here, but we do plan on integrating various challenges into our badge. And so you'll see challenge coins from various platforms that may or may not resolve to a binary flag that punch into this badge and make the badge do different things. So it'll be really cool. I'll leave it at that. Ari, do you want to talk about it?
+
+[00:58:16.09] - Ariel Garcia
+Yeah. I feel like since this pro is going to be airing at end of July, we can share a little bit more. There will be days from defcon, but, yeah, the challenge coin thing is something like. At least with Hack on, we have been doing it for the last three years. I have been creating these easy, approachable challenges that are fun for someone that never solved, like, a crypto challenge before. And by crypto, we mean cryptography, not, you know, cryptocurrencies. And it's kind of fun. And you normally have, like, two sides of the coin, so you have, like, some hints and you can, you know, do some. Some cool stuff. Last year, we did it for Bag on the Village, and. And this year we, you know, we put that into sponsorship. So Hago is actually sponsoring the coins again. And we'll have this challenge that you've solved. You know, you can get these, you know, binary thing, and then you'll type it in the. In the batch. So ideally, you'll, you know, you'll have some lights, you will have a couple of challenges, and if you unlock everything, we'll be able to tell that you unlock everything. We'll see. Maybe we have some giveaways or some.
+
+[00:59:23.38] - Joseph Thacker
+How many badges are there?
+
+[00:59:25.86] - Harley Kimball
+Yeah. So we have 400 of these blue ones that we're giving away.
+
+[00:59:29.71] - Joseph Thacker
+Okay.
+
+[00:59:30.59] - Harley Kimball
+And that's shout out to Inspective for that. They were the sponsor who made that happen. And so thank you, Inspective, for. For making this possible.
+
+[00:59:39.28] - Joseph Thacker
+How do we get them?
+
+[00:59:40.73] - Harley Kimball
+Yeah, so to get them, they're going to be given away at random. You kind of have to earn them right place, right time. Also, if you're doing great things for the village, we'll recognize that. So if you come in and you're helping people or, you know, you're volunteering or whatever the case is, we'll definitely hook you up with a badge. Otherwise, you know, say, stay in the loop on our socials, be on the lookout for agenda. Last year, we were giving people who were like the first people in the village every day. We were giving them badges for, like the first, you know, 40 people that showed up or something like that. So, yeah, there'll be lots of opportunities to get your hands on one. I would say maybe follow, you know, all of the socials and look for announcements.
+
+[01:00:23.11] - Justin Gardner
+Heck yeah, dude. I'm going to be. I'm going to be looking for that.
+
+[01:00:25.67] - Harley Kimball
+I also have another announcement to the badges to share.
+
+[01:00:29.82] - Justin Gardner
+Oh, really?
+
+[01:00:30.63] - Harley Kimball
+Yes.
+
+[01:00:31.34] - Justin Gardner
+Okay. All right, well, hold on. We got another announcement about the badges. What's the announcement with the badges?
+
+[01:00:37.03] - Harley Kimball
+So I mentioned we'll have 400 of these blue ones, right? Oh, but we're going to have another variant and the other variant is actually one that if you want to make sure you get a badge, you can purchase one. And so we've got a green variant that is limited. We're only making 200 of those and those are actually available for pre orders right now. If you're watching this at the end of July.
+
+[01:01:00.38] - Justin Gardner
+Nice.
+
+[01:01:01.34] - Harley Kimball
+And so if you go to shop.bugbouney defcon.com, you'll be able to purchase yourself a green badge and you'll want to. Only we're not shipping them, so you'll need to purchase it and then pick it up inside the village during defcon. But yeah, we do expect these to sell out.
+
+[01:01:17.42] - Justin Gardner
+Oh, heck yeah. Heck yeah, they will. I love it. Green. The green ones for the green hat, right?
+
+[01:01:22.11] - Joseph Thacker
+Exactly.
+
+[01:01:24.76] - Ariel Garcia
+It's a custom edition. Yeah. We try to make it a little bit different, more exclusive, and also just for everyone listening to know, it's like you're literally helping the village to be run by purchasing a batch. We are going to take those, you know, those batches. Money to pay a lot of other things are like costing us a lot of money to run. So, you know, keep that in mind. If you like the batch Definitely get one. If you, if you like to help us. Definitely get one as well. But yeah, just remember you need to pick those up in that.
+
+[01:01:55.07] - Joseph Thacker
+That would be a cool booth for future years. Like, basically, like, contribute to the. Like, basically. What's it called? Like, fun, like, fund the Bug Bounty Village. So, like, when you're sitting at that table, if you find a bug sitting there, like, that money goes to the Bug Bounty Village. That would be really cool to do.
+
+[01:02:10.11] - Justin Gardner
+Yeah, guys, give us, give us a handle, you know, that we can add in as a collaborator on some of our reports and donate some. Some money to the, to the Bug Bounty Village.
+
+[01:02:19.00] - Joseph Thacker
+That would be really cool.
+
+[01:02:20.67] - Harley Kimball
+The handle is infinite logins.
+
+[01:02:26.59] - Joseph Thacker
+Richard, just beep that and change it to reso, if you don't mind.
+
+[01:02:29.11] - Justin Gardner
+Yeah. Oh, my gosh. All right, guys, well, thank you so much for all your hard work on the Bug Bounty Village. Super appreciate that. We'll pivot a little bit now to Harley's stuff. He's got a ton of stuff going on. So Harley, you. This is what I was saying before. Like, dude, you. You are producing so much crap right now. Like, I can't. I don't understand how you do all this stuff at once. Like, I'm like. And it's all high quality. Like the disclosed news newsletter. Dude, we've been working on the Critical Thinking newsletter for a long time. And when I saw the quality of that newsletter, I was like, dang, he's doing some work. And then now you're telling me you got an ebook and you're working on Bug Bounty Village. So how the frick are you doing this?
+
+[01:03:15.05] - Harley Kimball
+Honestly, dude, I've just been kind of obsessing lately. I think I'm getting really inspired by the capabilities of AI and what we're able to do now. I'm able to be way more productive than I ever have been before the newsletter thing. To be honest with you, I think in the past two years ago, I would have never been able to do it. But because AI is where it's at, I've been able to build automation that it does a lot of the work for me. Like, I'm literally scraping, you know, Twitter and YouTube and all these different things. If someone links to a blog, I'm scraping that. I'm summarizing things and I'm having it automatically rank, like, high quality content. And so. And then I vibe coded this, like, front end that's like, lets me easily see the feed of all the different.
+
+[01:04:00.36] - Justin Gardner
+I saw that in the doc, man. Richard put, put the behind the scenes one up on the, up on the screen. Right now he's got like content feed v2 with like this beautiful screenshot. I love what Vibe coding does for us, man. Like that we can so easily build these little like, backends and stuff that make our day to day data processing so much easier.
+
+[01:04:19.92] - Harley Kimball
+Yeah. And literally, like I only showed the feed screen, but like, this is like a whole like newsletter editorial app where you can approve content, reject it, move it to the prep section where you reorganize and you know, edit and then you click generate and it writes it in your voice using AI. Like, it just, you know, it also allows for the human in the loop component, which I do think is very valuable. Like, instead of spending, you know, 20 hours a week doing this all manually, I'm spending like two hours on the weekend and I'm still spending time and I'm still doing, you know, the human in the loop component to actually make sure the content is high quality. But it's, it's enabled me to do that where I couldn't have before.
+
+[01:04:59.40] - Ariel Garcia
+Yeah.
+
+[01:04:59.73] - Joseph Thacker
+When I saw one of your posts recently, I think that I was like, oh, I wonder what Sassy's using on the back end. Like, what alternative to Beehive or whatever else is he using? That's crazy. It was just Vibe coded.
+
+[01:05:10.07] - Justin Gardner
+That's sick, dude. That's absolutely sick. And then on top of that, we have disclosed online, which we've mentioned on the POD before, sort of aggregating hacker profiles across all the Buggani platforms. Tell me a little bit about your, about your vision for that and what your hopes are for where that'll go.
+
+[01:05:28.23] - Harley Kimball
+So for that, honestly, I just was bored on a weekend. I think it was like Memorial Day weekend or something. And I had an extra day and I was like, what do I want to build? And I had this idea of building the hacker directory and so I did that. And I don't know what really happened is I spent 24 hours kind of building a lot of it just for myself for fun. And then I saw somebody post online. It was actually the. Thanks for sharing the screen. Yeah, this is it. The other one. The hacked in.net is what it ended up becoming. But before he released that, he posted about it and that tweet was getting a lot of traction. And so I was like, oh, like actually I've been already doing this. And so that kind of like inspired me to just grind it out for the next couple days to actually push it and make it live. And so, yeah, that's what this is. And dude, it's just really cool to see like what you can.
+
+[01:06:19.26] - Justin Gardner
+It's pretty, man. It's a pretty website. I dig it. And you know, we talked, we covered it on the POD before. Is this going to be something that you're going to continue to work on, you think? Or is this sort of like a vibe coded project that for example, verifications takes a lot of work on the backend. Right. If you're going to send verification emails or something like that. Is that something you plan on integrating or.
+
+[01:06:44.01] - Harley Kimball
+Honestly, it was a side thing that I just kind of whipped up and people thought it was cool. I used it as like a legion for my newsletter because I was also releasing the newsletter around the same time.
+
+[01:06:52.53] - Joseph Thacker
+Oh hey, speaking of the newsletter, I know that we mentioned it a minute ago, but I have been getting so many subscribers to my email list for my blog post via yours. So thanks for that, dude.
+
+[01:07:02.90] - Harley Kimball
+Yeah, of course. Again, happy to build up people. Right? And you're building me up by giving me this platform. Like happy to return the favor. But yeah, the newsletter, by the way, you can find it@getdisclose.com would love if you would take a moment to subscribe. But that was really the intention. Once I built this, I was like, okay, it could be a cool lead funnel for that. It's not a startup, it's not a platform that I'm, you know, going to make money on or really investing any more time in other than what it's at today. Do I think that there's a million things we could do? For sure. I could even expand this to where, you know, we start advertising programs and you know, people start leaving reviews about programs or even reviews about hackers maybe that might be dangerous. But there's a lot you can. There's a lot we could do.
+
+[01:07:51.59] - Joseph Thacker
+We could finally organize the union. Done.
+
+[01:07:54.32] - Justin Gardner
+My gosh, dude.
+
+[01:07:57.09] - Harley Kimball
+But no, I mean, my focus is on my full time job. My focus is on Bug Bounty Village and then the disclose newsletter with any of my extra time.
+
+[01:08:07.80] - Justin Gardner
+Nice, man. Well, it is an amazing product. I really appreciate the way that you've used AI to optimize your workflow and still deliver a really high quality result. And I'll say newsletters are. There are some people that are really into newsletters. I don't really consume newsletters that much besides this one. And one of ways that I consume it is, is through your X posts that you do where you kind of take a, an X version of that newsletter and put it into the in text I think that's a really, really awesome thing you're doing there. So definitely would love to see you continue doing that.
+
+[01:08:46.10] - Harley Kimball
+It's good to know. Thank you.
+
+[01:08:47.63] - Justin Gardner
+Yeah. All right. Oh, dude. So, but so we going back to the disclose thing though. It got hacked a little bit though, right? Can you talk a little bit about that story? Because I thought that was hilarious.
+
+[01:08:59.15] - Harley Kimball
+Okay. Yeah. I actually tried to make things better and that's how I got hacked. So let me run through it. I've had code to the front end. The way that I always vibe code apps is I build the automation, separate the automation, and all that is actually run through N8N, which is a low code automation platform like make or Zapier. And so I do a lot of the automation through that populate a Supabase database and then build the front end using, like, Lovable or, you know, whatever other vibe coding tool you like to use. And when I was building this out, a lot of the vulnerabilities that I introduced actually were because of Supabase configurations. And so what I found after I built this, I originally was going to let people self register to create an account on the directory. I later decided to remove that and turn it into a lead funnel where you have to subscribe to the newsletter to get an account. But when I first created that, I didn't remove, like, I removed the front end of Supabase authentication, but I didn't actually remove it from like the Supabase config. And so people could hit the API directly and still self register an account and basically, you know, force them into the. Into the database. And so that was one bug that's less critical, but that was one bug that got. That got sorted out. The other bug that was way more critical was, I noticed, because I just kind of was poking at my own app a little bit, that in the response, you would leak all of the information about the tape. Like if you query a record in the table, you would see everything about that user, which is intentional. It's all public data. But there is one field that I didn't want to be exposed, which was email, because when you would self register originally you would provide an email. So I was like, okay, how do I fix this? And so I'm researching how to fix this in postgres and I came across views in postgres and so I was like, all right, I'm going to make a view that basically queries all the same stuff. It just excludes the email field. What I didn't know is that when you create a view in postgres, it doesn't respect RLS policies like tables do, and so it actually is configured with the permissions of the user who creates it, which is really stupid. But that means when I created this view, I essentially gave everybody unauthenticated admin access because my view was created as an admin user.
+
+[01:11:30.88] - Justin Gardner
+Oh, no.
+
+[01:11:31.84] - Joseph Thacker
+Fertile.
+
+[01:11:32.47] - Justin Gardner
+Oh, geez.
+
+[01:11:33.35] - Harley Kimball
+Yeah, so I had a researcher who, you know, decided to kind of pwn me and go through all my records in my database and change all of the profile images for everybody to his avatar and then change the bio of everybody. And, you know, it's like, yeah, I think you took it too far. You could have done better. But I was just happy that he worked with me to help me figure out what that was.
+
+[01:11:59.52] - Justin Gardner
+Were you able to undo it?
+
+[01:12:01.19] - Harley Kimball
+Yeah, it was pretty easy. It was just like, well, once I thought it was an RLS problem. And so, like, I'm spending a ton of time, low level security. I'm spending a ton of time, like, trying to solve, like, okay, why is this not working? I thought I had that restricted and it wasn't until later I figured out the Vue thing. But he actually inspired me to build Vitecode, another tool. It's like a Supabase security scanner that will, you know, grab all of the different tables out of the swagger that's exposed in Supabase and then query all those and test write records and all this stuff. And so I was able to kind of build that out. And honestly, I think there's a product opportunity to.
+
+[01:12:39.60] - Justin Gardner
+Where is it, Harley? Where is. Where's the tool?
+
+[01:12:42.64] - Harley Kimball
+It's private, man.
+
+[01:12:43.60] - Justin Gardner
+Give me the tool. Harley. We were just talking about that on the pod. We just like, what was it? A couple of weeks ago we mentioned Shell found a, you know, some weird quirk with suvabase, right, where you get less than greater than uuids, and then we're like, oh, we should create a scanner. And then.
+
+[01:13:00.15] - Harley Kimball
+Damn it. Yeah, I've already got the scanner. I actually saw that and I'm going to implement that into the scanner.
+
+[01:13:05.43] - Joseph Thacker
+Well, then you have to share it, right? Then it all of a sudden enters public domain and it's open source and you have to share it with us.
+
+[01:13:10.35] - Harley Kimball
+So, yeah, sure, I'll share it for 9.99amonth.
+
+[01:13:13.27] - Justin Gardner
+Oh, geez, here we go. He's got the bug. He's got the Legion bug. No, that's great though, man. And big fan of obviously sharing with the community, but also big fan of keeping the stuff that you. That you want to keep private. Private. That's the name of the game with Bug Bounty.
+
+[01:13:30.86] - Ariel Garcia
+So.
+
+[01:13:31.43] - Harley Kimball
+But yeah, it was cool because it, it allowed for this cool story. And so like I posted about it on Twitter and like it went crazy. And, you know, definitely use a clickbaity title of like, I vicoded this and got hacked. And a lot of people were just like retweeting it without reading it and making fun of it. But I actually tried to provide value in the thread and anyway, I thought it was a pretty cool story. I do think there's an opportunity. So many people are Vibe coding and shipping apps right now that they don't know what they're doing. I think if someone were to step in and try to release a product that's specifically for securing Vibe coded apps, I think that they could really.
+
+[01:14:06.15] - Joseph Thacker
+Can someone explain why this is not a feature for GitHub? Why do we not have automated GitHub coderview? I just don't understand. It's obviously not going to test the whole app. It probably wouldn't have worked for your view. I don't know if a view is like a state via code. If it's not, then it wouldn't have worked in that case. Right. Because it's like a platform as a service vulnerability or sass. It's actually in the db, not in the code itself. But yeah, we definitely need that.
+
+[01:14:30.56] - Harley Kimball
+Yeah, that's exactly right. And I think that that's the play, right, if someone built a tool that's specific to querying the database and securing that. Because I do think you're right. There's probably solutions out there that can secure the code, but it's like the misconfigurations in the database that I think are really leaking a lot of stuff.
+
+[01:14:48.30] - Justin Gardner
+Yeah, yeah, absolutely, man. Yeah. I'm glad you jumped on that opportunity though, with Supabase, because a lot of people are using that and setting that up. So it's good to see some technology going out around it that's very reactive. All right, guys, I think that's all we had in the doc. Make sure you check out lots of things. Listen closely here, guys. We got debtdisclosed.com subscribe to the Newsletter Great newsletter. Love it. We've got bugbountydefcon.com right? That's where you get your badges. That's where you learn about Bug bounty, defcon, where we're all going to be come this August. We got disclosed online. If you want to get that aggregating hacking profile and if you want to see some of Harley's AKA Infinite logins past YouTube videos, you can find that on his YouTube channel. It's just Infinite Logins, right Harley?
+
+[01:15:33.25] - Harley Kimball
+Yep. Exactly right.
+
+[01:15:34.44] - Justin Gardner
+Awesome. Well Harley, Ari, thank you guys so much for coming on the pod today. We will see you at DEFCON at Bugbuni Village.
+
+[01:15:42.32] - Harley Kimball
+Thank you so much for having us.
+
+[01:15:43.60] - Joseph Thacker
+Thanks guys.
+
+[01:15:44.64] - Ariel Garcia
+Thank you so much.
+
+[01:15:45.93] - Justin Gardner
+Peace. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end y'.
+
+[01:15:51.40] - Joseph Thacker
+All.
+
+[01:15:51.60] - Justin Gardner
+If you want more critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of the master classes, hack alongs, exclusive content and a full time hunters guild. If you're a full time hunter. It's a great time, trust me. I'll see you there.

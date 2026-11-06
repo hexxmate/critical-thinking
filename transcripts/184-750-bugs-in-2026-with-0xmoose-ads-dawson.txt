@@ -1,0 +1,936 @@
+Episode 184: 750+ Bugs in 2026 with 0xMoose (Ads Dawson)
+Source: https://www.criticalthinkingpodcast.io/750-bugs-in-2026-with-0xmoose-ads-dawson/
+======================================================================
+
+[00:00:00.73] - Joseph Thacker
+His hackbot, I think, is, um, like skillfully built with like a bunch of like smaller models or, or open source models.
+
+[00:00:08.31] - Justin Gardner
+What? Screw you, Rez0. Screw you.  Rez0's like, yeah, Justin, you know, the reason you don't feel it is because, uh, you're bad.
+
+[00:00:42.47] - Justin Gardner
+i'm not sure y'all know this, but 2 of the most respected hackers in the CTBB community, BusFactor and XSS Doctor, are now running monthly hackalongs on the CTBB Discord. Okay, you've got to check this out. ctb.show/discord. We find bugs almost every time we hack. It's crazy. And oftentimes it's not even the people running the hackathons, it's the community members that are hacking along with us. You definitely increase your chance of finding a bug by being on these hackathons. So check 'em out, ctvb.show/discord. Join Bus, XSS Doctor, and yours truly, and let's pop some bugs. All right, let's go back to the show. Sup hackers, before we jump into this episode, we're gonna do the This Week in Bug Bounty segment. items on the list. One, this past week, Yes We Hack released an article entitled How to Use Cloud Code for Bug Bounty. And you've heard time and time again here on the pod how to use Cloud Code with Kaido, which is what a lot of the hosts use. But if you're still using Burp, this might be the article for you because, uh, they break down how to get Burp Suite integrated into Cloud Code, and they show how it can solve some of the Burp Suite labs that they have. So if you're in the Burp environment, this is the article for you. We'll link it in the description. And this is a part of the LLM series that Yes We Hack is doing that has been hit after hit. So check out some of those other write-ups as well. The second item on the list is Vulnerability Vibes. Guys, if you are going to DEF CON this year, this is the party to get into. Okay, vulnerabilityvibes.com, sponsored by Adobe and Yes We Hack, another one of our sponsors. And Adobe gave a bunch of seats at this event, which are very exclusive, by the way, to the Critical Thinkers community. So thank you so much, Adobe, for doing that. I really appreciate that. We gave them out in the Discord. If you're not in the Discord, you, you got to get in the Discord. We have amazing opportunities like this thanks to our sponsors. So, um, definitely go and meet the Adobe team there if you can. They're going to be around and it's going to be an awesome event with a ratio of 3 hackers to 2 operators to 1 sponsor. So really awesome event and beautiful swag as well. Um, all right, I think that's it. Let's go to the show.
+
+[00:02:46.37] - Joseph Thacker
+All right. Well, you know, before we get started, I did want to ask you if you have ever seen this photo before, Ads?
+
+[00:02:54.97] - Justin Gardner
+Dude, what?
+
+[00:02:56.87] - Joseph Thacker
+Have you ever seen this before?
+
+[00:02:57.77] - Ads Dawson
+have not seen that photo.
+
+[00:02:58.77] - Joseph Thacker
+For the listeners only, it's a picture of Lionel Messi holding a baby in a bath. And most people will know exactly what this is, but this baby, his name, Adz, is Lamine Yamal. He is the star player for Spain. And these 2 players are the stars that will face off this Sunday at the World Cup.
+
+[00:03:16.72] - Justin Gardner
+No way.
+
+[00:03:19.66] - Joseph Thacker
+So maybe—
+
+[00:03:20.43] - Ads Dawson
+hilarious.
+
+[00:03:21.43] - Joseph Thacker
+Yes, dude, this is a basically, you know, I love this post because it basically breaks it down. It says, what are the odds that a baby, you know, basically parents would win a raffle that their kid would get a picture with Messi, then that baby would grow up to be a generational talent for a major country, then the baby would become the 3rd youngest player? So you can't do this later in life. You have to do it so young that Messi is still playing, and he's so good that he's still playing even at age 39. And then both their teams both somehow make it to the finals of the World Cup, and then they're able to play against each other. So basically this is like threading the needle for the most unlikely thing to ever happen. Yeah.
+
+[00:03:56.50] - Ads Dawson
+This is blowing my mind. I legit thought this was AI and I was like, this is some weird thing.
+
+[00:04:02.99] - Joseph Thacker
+Well, I did, I did repost an AI thing of it that's like really, really funny here. Everyone who's still watching, it's a picture of Messi staring at a baby, a baby Lamine Yamal AI generated in the background. And the, uh, World Cup trophy is sitting in the bathtub and Messi's thing says, we meet again.
+
+[00:04:20.98] - Justin Gardner
+What the heck?
+
+[00:04:21.62] - Ads Dawson
+There's another rubber duck as well. I've noticed there's a ducky in both. Yeah.
+
+[00:04:25.89] - Justin Gardner
+So, wow, dude, that's crazy, man. I, I can't imagine the, yeah, the chances are insane. And I guess this kid's gotta be really young, right?
+
+[00:04:34.87] - Joseph Thacker
+How old? He is. He's 19. He's 19 years old and he is the star player for Spain.
+
+[00:04:39.32] - Justin Gardner
+That's crazy.
+
+[00:04:40.54] - Ads Dawson
+Wow.
+
+[00:04:41.07] - Justin Gardner
+All right, well, let's, uh, let's— all right, Rezo, enough distraction with the soccer. Okay, uh, I will say I have been enjoying the World Cup. Like, say it again?
+
+[00:04:52.79] - Joseph Thacker
+The football.
+
+[00:04:54.31] - Justin Gardner
+Oh, dude, are you even American? Don't, don't call it football.
+
+[00:04:59.93] - Ads Dawson
+What are you doing?
+
+[00:05:01.06] - Justin Gardner
+Um, I have enjoyed it this year. I, I've never once watched a soccer match before in my entire life. before, uh, the—
+
+[00:05:07.80] - Joseph Thacker
+That's absurd, but keep going.
+
+[00:05:09.25] - Justin Gardner
+What was it? England? What was it? England and, uh, um, oh, it was a good game too. It was a good game, but Harry Kane didn't even score that game. Uh, it was all Bellingham. Uh, shoot, what was the game?
+
+[00:05:23.11] - Joseph Thacker
+It was England's quarterfinals. Who were they against?
+
+[00:05:24.70] - Justin Gardner
+Yeah, yeah, I forget who they were against, but it was a really— oh, Norway, right?
+
+[00:05:29.45] - Joseph Thacker
+Yeah, yeah, it was Norway.
+
+[00:05:30.81] - Justin Gardner
+Yeah, yeah. So it was, it was a crazy game. That was, that was an awesome Um, one to take a look at for my first one. But, uh, yeah, both of the games that night were really good. So, all right, let's get to— let's get to the meat. We have a 3rd voice with us here today. For those of you that are, uh, are listening, we have Ads Dawson, AKA Oxmoose. And holy crap, when we were prepping for this episode, man, um, I, you know, we were gonna try to hit some other content, but I'm not sure we're gonna get to that, Ads, because, uh, Uh, what you have put in the doc here is crazy. Um, so first, welcome to the show.
+
+[00:06:10.33] - Ads Dawson
+Uh, thank you.
+
+[00:06:11.31] - Justin Gardner
+And very glad to have you on here. I, man, okay, well, I first, I've gotta ask you, you know, do you have a bug that you can share with us at the beginning of this episode?
+
+[00:06:21.32] - Ads Dawson
+Uh, or should we—
+
+[00:06:22.76] - Justin Gardner
+Yes. Okay. All right. I was gonna jump right into the hackbots though, but hit us with the bug first.
+
+[00:06:26.45] - Ads Dawson
+I will do my, I will do my best. So thank you so much for having me. It's, uh, awesome. Uh, love you guys. Um, since As of the past few months, I've been trying to be a bit of a CSS injection bro because I'm listening to all Justin's stuff and I'm like, wow, this sounds so cool. So the bug I guess I'll talk about today is I had a CSS injection, which I kind of personally, I was just really proud of. Anyway, I had a log management platform—
+
+[00:06:57.66] - Joseph Thacker
+Mm-hmm.
+
+[00:06:58.51] - Ads Dawson
+That had a JSON renderer. They could render hyperlinks. Obviously, when you want JSON in the UI, you want to make it clickable. So it has a regex to match URIs.
+
+[00:07:12.98] - Joseph Thacker
+Mm-hmm.
+
+[00:07:13.93] - Ads Dawson
+If it looks like a URL, it goes through in HTML. But if it doesn't, it goes through in the text. So there was an endpoint where you could inject arbitrary JSON. And it routes it through to innerHTML.
+
+[00:07:32.39] - Justin Gardner
+Hmm.
+
+[00:07:32.66] - Ads Dawson
+Now normally, because of the CSP, I couldn't execute JavaScript. So what I did find is that it could— the script style— sorry, the style source was permissive enough to allow style blocks. So what I actually used afterwards, sorry, with the payload was I used font-face with a Unicode range. And basically like a callback. So when the victim's request— sorry, when the victim's browser navigates to the page, it carries the account name and the account email and a bunch of PII. And then— you see how stoked I am talking about it? And then it fires, like, just goes brrr in the callback, and you just get the entire PII in this insane amount of callbacks. And the first time I was trying webhook.site, and when I saw it max out, I was like, yes!
+
+[00:08:25.06] - Justin Gardner
+Yes! Isn't that the best when it's CSS too? Because you're like, man, I'm taking this thing, I am just bending it to my will.
+
+[00:08:33.58] - Ads Dawson
+So cool. I had no idea. So thank you, dude. Hopefully, trying to work my way up to a CSS injection bro.
+
+[00:08:42.07] - Joseph Thacker
+Yeah.
+
+[00:08:42.80] - Justin Gardner
+Well, I fully accept the title of CSS injection bro. Hopefully my boys that developed some of the other, some of the Font Face stuff, Gareth Hayes, all those people that have done all the CSS research. On the shoulders of giants, for sure. Dude, yeah, I freaking love CSS injection. And whenever you see it exfil, it's just a beautiful moment. Character by character.
+
+[00:09:11.26] - Joseph Thacker
+So, was this like almost like, you know, if it is this, you don't have to say this, but is it like an Elasticsearch-like app which allows you to render JSON objects that are coming in and stuff?
+
+[00:09:21.86] - Ads Dawson
+Yeah, exactly right. So you've got like a log management and it's like firing JSON in and then obviously all those hyperlinks are clickable. One thing I forgot to mention with FontFace is that you can load a URL from anywhere, which is the callback, which is like really cool. And then you use Unicode and you can extract one character at a time.
+
+[00:09:41.59] - Joseph Thacker
+Yeah, sweet.
+
+[00:09:42.39] - Ads Dawson
+But yeah, it looks and feels exactly like an Elasticsearch kind of graph.
+
+[00:09:45.87] - Joseph Thacker
+Okay, sweet.
+
+[00:09:47.14] - Justin Gardner
+Yeah. That's a really interesting thought too, is like, you know, you see all these like error logging platforms, you know, I wonder if there's places where that JSON is being rendered into like a— whether it's being parsed or whether that JSON is being rendered directly and whether there's some sort of syntax consistency for like nice interactable JSON that we could go after to make that a more generalized bug class?
+
+[00:10:17.21] - Joseph Thacker
+Well, there's so many of those. There's LangSmith, LangFuse, Fire something, almost all the AI apps that do observability, all of the AI observability apps all have a bunch of JSON rendering because obviously all the session logs and all the requests are often in JSON format. And so whenever you go into those observability apps to to check whether or not it's attaching the right tools and whether it's attaching the right prompts and all that, it's all rendered JSON. I bet there's a lot of apps out there this could be tested on.
+
+[00:10:48.35] - Ads Dawson
+Totally. Plus, it's like a watering hole as well, right? Because this is like a multi-tenant— sorry, it's a shared tenant between a bunch of SOC users or admin users. Theoretically, it's almost just like a blind watering hole at any point as well, which is kind of cool.
+
+[00:11:03.02] - Justin Gardner
+Wow. That's sick, man. That's sick. All right. Great bug.
+
+[00:11:06.42] - Ads Dawson
+Thank you.
+
+[00:11:07.38] - Justin Gardner
+Credibility validated. And man, credibility is about to just go through the freaking roof with this next section. So I'm gonna go ahead and just share my screen here, because I'm still a little flabbergasted by this, to be honest. This is, for those of you watching, you can see a graph of Moose's submission velocity here. And you can just see, like, he has been submitting bugs Practically every single day. And I mean, some days, 13, we're seeing 10, we're seeing 9, we're seeing— I'm just scrolling through 12, you know, massive amount of submission velocity. And if you look at your new— your write-up post, Signal Over Noise: AI Agents in the Operator Mode, which is the write-up that you did on your experiences with your hackbot, we are seeing a massive 728 vulnerabilities submitted in 2026, and we're only halfway through 2026. Dude, what the frick, man? That is insane.
+
+[00:12:13.82] - Joseph Thacker
+Yeah.
+
+[00:12:14.00] - Justin Gardner
+Thank you.
+
+[00:12:15.02] - Joseph Thacker
+How? And you have a full-time job. I, I'm a full-time hunter who's, who's had a leveraged attack bot and have like on the order of like between 200 and 250. I don't understand how you got in so many reports.
+
+[00:12:27.34] - Ads Dawson
+Yeah, it's difficult with a part-time job, but I generally love it so much. I have so much dopamine and so much enthusiasm for it that I guess I kind of become numb to any sleepless nights.
+
+[00:12:46.17] - Justin Gardner
+Yeah, fair. But let me ask you this, dude. You know, we've been talking on the pod recently about, okay, you know, let me preface this. We're not to this level. So maybe it feels crazy when you're submitting, you know, 10 bugs per day and you're like, okay, wow, this is insane. You know, I bet that would be a different dopamine hit, right? But how, like, I in general feel a little bit more disconnected from my bugs now, you know, especially when my hackbot finds them. You know, I think it's cool. I think it's awesome. But it doesn't feel like me, you know. So what you're saying is that this is, you know, filling you with dopamine and letting you get past the sleepless nights, right? So compared to before, when you were hacking, you know, before the AI inflection here, do you get similar levels of dopamine from finding these bugs?
+
+[00:13:38.73] - Ads Dawson
+That's a really good question. Definitely not. I take away a few things from it which I didn't, so I get to have trade-offs. But I definitely don't feel the fulfillment that I would have if I, like that CSS injection that I talked about.
+
+[00:13:57.40] - Justin Gardner
+Yeah.
+
+[00:13:57.82] - Ads Dawson
+However, there's a sense of this excitement around hackbots. Your own hackbot finding something really awesome is obviously, you're kind of distilling and self-improving. So there's that kind of takeaway. The other takeaway that I really like is, I guess, as well, being part-time, it allows me to try and stay, try and keep up as compared to doing the full-time, which is just, I guess, unique to me. But the other thing I really like, and I think I've heard Rezo kind of say the same thing, and Rezo put out a great blog post on this as well, is that Some of the stuff that AI finds, I am not the guy that can go in and dump an RCE and then CSS injection on the same thing.
+
+[00:14:44.85] - Justin Gardner
+Yeah.
+
+[00:14:45.26] - Ads Dawson
+So for me, it's almost like this great insight into a triage almost. So you're seeing, you're like, dude, wow. And then it's just like you see some kind of XSS bypass and you're just like, holy smoke, this is so cool. You're reading it like you would read a really good blog post. So I guess I kind of take that away, and I, I'm almost self-improving. So I'm like distilling, and it's doing it, and then I'm also learning off it at the same time, which I really like.
+
+[00:15:13.94] - Justin Gardner
+That's, that's very interesting. So you would say it's almost like the experience of that those triagers always say about like, man, I just love triaging Franz's reports or something like that, where you're like, oh my God, this is just such a beautiful thing, you know? And, and you kind of get to see that from your own hackbot.
+
+[00:15:31.04] - Ads Dawson
+Yeah, it's like, you're like, dude, nice. Good find.
+
+[00:15:35.00] - Justin Gardner
+Wow. Especially Especially
+
+[00:15:35.66] - Ads Dawson
+Especially Especially because hackbots are obviously, the initial primitive that I use, or one thing they're obviously really good at is code review. So when they're pulling stuff out and they're like, oh, I found innerHTML drops in here, but there's actually a regex which is missing here, and it connects all your dots, and you're just like, oh my God, it would've taken me 3 days of part-time hacking to even get close to that, and I probably would've missed it.
+
+[00:16:00.21] - Joseph Thacker
+Justin, I wonder if part of his satisfaction from it is from the fact that, and we will get into it soon, is like his hackbot, I think, is like skillfully built with like a bunch of like smaller models or open source models. What?
+
+[00:16:15.60] - Justin Gardner
+Screw you, Rezo. Rezo's like, yeah, Justin, you know, the reason you don't feel it is because you're bad.
+
+[00:16:22.50] - Joseph Thacker
+Well, what I'm saying is even me, like, I feel like I've like skillfully put mine together, but still at the end of the day, it's like, you know, mostly a prompt with a whole bunch of skills. And like my system keeps things running and it targets new targets and stuff. But in general, actually, I guess there is like the whole, you know, like the JS analysis and then going through everything and popping it off the queue. But I just think that when you're using the greatest, smartest model, you expect a lot of it already. Whereas I feel like Mm-hmm. Ads might get a little bit of satisfaction that I don't get running mine with like the smartest Claude and the smartest, uh, you know, Codex model because he's actually like leveraging these smaller, cheaper models or open source models.
+
+[00:17:01.94] - Justin Gardner
+Right.
+
+[00:17:02.11] - Joseph Thacker
+And still finding crazy bugs with it. So like maybe it's almost like, like there's some, some like gaming satisfaction of like taking, you know, mud and turning it into something beautiful and like into a piece of art, you know?
+
+[00:17:12.93] - Justin Gardner
+Yeah. Well, let's, let's double-click into that. Ads, what do you, what do you think about that? Do you think it's— it does feel like a little bit more of a personal masterpiece because, you know, and we're jumping ahead a little bit here, listeners, but if you read the article, you know, and, and one of the things we talked about, um, beforehand was that he's not actually using frontier models mostly for this. So, Ads, can you speak a little bit to that and whether that contributes to your satisfaction as well?
+
+[00:17:35.88] - Ads Dawson
+Yeah, definitely. I guess I'm blessed because part of my full-time job is offensive capabilities with AI. So naturally, I guess I'm kind of dogfooding, building this all whilst I'm going. But where I work, We hold our hats on strong capabilities with smaller models and open-source models. One experiment we did recently is we had an environment generation where we could produce potential zero-days. But the thing that was more impactful for me was getting an endday or something, like a recent 0-day which is not in training, but then get that with an open-source model. Like, that to me is so much more impactful than like Opus or Sol popping something that is like new and novel. That's all like really cool and it's really impactful, but I'm more concerned about the other thing.
+
+[00:18:33.98] - Justin Gardner
+Okay, I see. So that's, that's a personal— I mean, it's aligned with your work for sure, but it's also a personal piece of like, I would rather have this, you know, harness or whatever, or have guided these these less capable models in such a way that it produces an excellent result rather than necessarily finding something novel.
+
+[00:18:54.43] - Ads Dawson
+Yeah, I guess it kind of like— this might sound silly, but it kind of makes me feel like a better teacher or like I'm doing a better job because I'm like, hey, I made the slightly less—
+
+[00:19:07.33] - Joseph Thacker
+The B student. You got the B student to ace the test, right? Instead of getting the A student to ace the test.
+
+[00:19:13.14] - Justin Gardner
+Dude, Rezo, I like that, man.
+
+[00:19:15.09] - Joseph Thacker
+That's good. Got Got
+
+[00:19:15.68] - Justin Gardner
+Got Got the B student to ace the test. That's, that's a great point. Yeah. Yeah. Nice.
+
+[00:19:20.11] - Joseph Thacker
+Yeah. That's, that's how I feel whenever I'm walking you through bugs, Justin. I'm like, you know, can I get Justin to understand this?
+
+[00:19:25.42] - Justin Gardner
+You're, you're, you're—
+
+[00:19:27.20] - Joseph Thacker
+I'm the C student. I'm just joking. I'm just joking, listeners. I'm just joking.
+
+[00:19:30.44] - Justin Gardner
+I'm gonna bring out my parenty waggy finger now. Uh, so, okay.
+
+[00:19:35.20] - Joseph Thacker
+Justin's wagging his finger at me.
+
+[00:19:37.00] - Justin Gardner
+Okay. Well, dude. That's really cool. I cannot believe you are getting these results with just open-source models. One of the things I wanted to ask about this was, and maybe your work is helping with this, but what does running those at an effective level look like? Are you spending $1,000 a month on infrastructure to run all these models, or do you have your own personal server? Are you using VPS? Double-click.
+
+[00:20:06.25] - Joseph Thacker
+Is it OpenRouter? What is it?
+
+[00:20:08.65] - Ads Dawson
+Yeah. Yeah, so, I guess, the thing that we're building, we have an SDK which uses LightLM. So you can choose from any model, whether it's Frontier or open source or even local. I do not have a GPU rig. That's something that I'm very much looking into. I moved country recently, so getting hardware was not a good idea.
+
+[00:20:31.15] - Justin Gardner
+Welcome to the US.
+
+[00:20:32.26] - Ads Dawson
+Yeah, thanks, dude. It's so good to be here. So, I guess inference bills, this probably would've been a really good insight. I think I'd probably be spending over a month, maybe taking away my Claude Code subscription, which I might use for a side bit of hacking or escalating something, probably a couple of thousand bucks a month. But the return on investment for me is so much more worth it. Yeah.
+
+[00:21:01.58] - Justin Gardner
+Yeah.
+
+[00:21:02.05] - Joseph Thacker
+Um, yeah, but that's huge because I feel like, you know, everyone I know is kind of calculating this with subsidized token costs, right? Like everyone's basically using Claude and Codex subs. And so it's all subsidized token costs. The fact that you're showing like a good ROI paying token, like paying like actual real cost for tokens is huge. Like I think that's, you know, that leverage, like the fact that there is still that much slack in the system is like a really good sign.
+
+[00:21:26.01] - Justin Gardner
+Yeah. Yeah. As, as much as I hate to say it, Rezo, I think we are you and I are kind of digging ourselves into a hole of almost tech debt here is what it's like by using these subsidized tokens, right?
+
+[00:21:37.65] - Joseph Thacker
+Well, no, I think that you can just cut over eventually, right? It doesn't take that long using these top models to cut over. My HackBot system can use OpenRouter already, so I think just replacing that with the LiteLLM is pretty trivial. So I don't think that there's much of a risk on my end.
+
+[00:21:52.52] - Justin Gardner
+Well, I don't know. I mean, maybe you've upgraded your HackBot system since I Since I—
+
+[00:21:58.20] - Joseph Thacker
+I've rebuilt it from the ground. Yeah.
+
+[00:22:00.02] - Justin Gardner
+Oh, have you? Okay.
+
+[00:22:00.69] - Joseph Thacker
+All right.
+
+[00:22:01.00] - Justin Gardner
+Well, maybe we need to rediscuss. Okay. But that is cool. But I do think what Adze is saying as well is that, and what you were saying earlier, is inconsistent with that, which is the harnesses required for using a less competent model are what gives it its power.
+
+[00:22:19.20] - Joseph Thacker
+Yeah. Yeah, that's true.
+
+[00:22:20.71] - Justin Gardner
+Yeah. So you can't just cut over because you need to have learned all these hard-won lessons across time. of having used the B student models to, to get higher level of result, right?
+
+[00:22:31.99] - Joseph Thacker
+Maybe. But I think that basically the, the B students are becoming A students. Like, I was going to mention that to Ads. Like, what's impressive to me when I look at his returns are that he was having crazy high reports per day before GLM-5.2. Like, GLM-5.2 is like the 4th rated model overall. Like, it's basically as smart as Opus 4.6 and 4.7. So like, so he's not really playing with a B model when he's using GLM, right? But My understanding, which I do think we should get into, is that you have lots of little subagents and some of them are actually using tiny models like Quin 3.6 or whatever. So anyways, I do want to hear more about that. But I think what I'm saying, Justin, is I think we're not really digging ourselves into too much of a tech debt because these models are going to keep improving and we'll be able to replace it with something like GLM-5.2, which is, now that it's open source, is never going to go away and is as good as something like Opus 4.6, Opus 4.7.
+
+[00:23:20.89] - Justin Gardner
+All right, all right. Now that you and I have debated this a little bit, let's get the real answer from Adz. Adz, what do you think about all that, man? Do you think we're getting ourselves into tech debt here?
+
+[00:23:31.94] - Ads Dawson
+I lean on what Rezo said because I think a lot of it will be transferable. A lot of the work I've done, a lot of the work that we do where I work is that we're bumping the less capable models with strong capabilities and closing the gap between the open source and the frontier. Naturally, I gravitate towards what Reza was saying because I feel like ultimately we'll get to a point where if you think, even building a harness, you can use GLM and stuff now. The more capable the open source models are getting at hacking and coding, then theoretically you're actually improving your harness as well, if that makes sense.
+
+[00:24:16.00] - Justin Gardner
+sense. Yeah.
+
+[00:24:16.83] - Ads Dawson
+So I do kind of lean on that, I guess, as well, because obviously it's part of my full-time work. But personally, I would be preparing for the subsidized tokens to go away, just because I guess I'd probably just want to be a bit more prepared. But it's also really seductive because Claude Code is like one-line install, and it's like $200 a month, and you can pop So many bugs with it. So it's easy to like stay where you are, if that makes sense. Yeah.
+
+[00:24:50.75] - Justin Gardner
+Yeah. That's kind of what I'm struggling with right now is it's so, it's so easy. And, but you know, one of the things that I'm not doing is scaling properly. You know, I know that, um, you know, I know Rezo's working off multiple subscriptions. I am still working off of one subscription. I've, I've built, I've changed my system so that I'm capable of doing 2 subscriptions, but for some reason at this point, I have not actually like done it yet.
+
+[00:25:12.13] - Ads Dawson
+How do you not use that?
+
+[00:25:13.19] - Justin Gardner
+I know.
+
+[00:25:13.65] - Joseph Thacker
+How do you, how do you not max out like every day.
+
+[00:25:16.46] - Justin Gardner
+I know, dude. Yeah. But the thing is, I'm just running one agent and it's doing like a good job. I mean, I'm right. I mean, well, yeah, you know, but the thing is, I just, I'm, I'm so stretched thin in other areas right now. So it's just, you know, like I, next week I really, really hope to get that done. Um, but yeah, I think that one of the things that's difficult about, for me, about transitioning away from Claude code is that it does have a good agentic loop though. So I don't know, maybe that's something that I need to solve as well.
+
+[00:25:46.63] - Joseph Thacker
+Well, I mean, you can use stuff like Hermes or OpenCode or whatever if you want to use open source and you don't want to build the whole system that Ads has built. I will say the other reason here, and I think this is another interesting point about why I don't think we're digging ourselves in a hole, Justin, is the harnesses required for hacking and long-running tasks are similar to those in coding, and the model providers are incentivized to keep those harnesses improving. And we're already at the point where now, like, Codexes, just as a harness, like the desktop app, is like incredibly good at like using a browser and using the system and using proxies and all that. We just— even if you don't give it any skills or anything. And I think that I have seen, you know, like Expo a year and a half ago, like you had to use a bunch of like special and crazy harnesses, kind of like what Ads is building with Dreadnode, and in order to get decent results, like you could like literally find no bugs without a good harness and you could find like low and medium bugs with a harness, right? And just like lower hanging fruit. Now everyone can find medium hanging fruit with almost no harness, like literally just Claude Code or Codex, right?
+
+[00:26:52.35] - Justin Gardner
+Yeah.
+
+[00:26:52.51] - Joseph Thacker
+So the trajectory is less harness engineering required over time. And that's because the base and default harnesses are improving. And so I think that you'll continue to see that, right? Open source ones like Hermes will continue to get better and closed source ones like Claude Code and Codex will continue to get better. I do think there's always going to be like at least a small gap there between like people who are experts who are like, um, you know, designing these well, like Ads or, you know, like us or, you know, like Haddix, like, you know, people like that. But I think that that gap has like shrank over time. And my guess is that it'll keep shrinking. And that's, you know, the big reason why we're not in a hole.
+
+[00:27:32.43] - Ads Dawson
+Yeah, I really like that thought. Um, the thing I was actually going to mention as well, um, just in his I think that's one of the things that will probably— my forecast, I guess, for bug bounty in general is you see this trend, but everyone's different hackers. You guys are both very good at very different things or things that are similar. But if you didn't tell me what you were doing for a hack bot, Justin, I would've guessed what you just said because I feel like that's your style and your flow, and that works really well for you because the payouts can be huge on one bug.
+
+[00:28:06.69] - Justin Gardner
+Yeah.
+
+[00:28:08.34] - Ads Dawson
+Someone can be doing a full recon thing and maybe gaining a fifth of it, but then ripping 8 Quad Code subscriptions.
+
+[00:28:15.41] - Justin Gardner
+Right.
+
+[00:28:15.60] - Ads Dawson
+So I think based on your hacking style, there's one reason as well I would probably not do it, because I've spoken to people who do it and it just sounds horrendous. As in, I just don't, yeah. Plus I just moved anyway, so I don't have that many credit cards.
+
+[00:28:33.02] - Joseph Thacker
+But well, yeah, actually, actually, this is a great point, Justin. You're right. My current setup is way more leveraged in a way where if token substitution goes away, it's harder on my current system. Whereas your current system, what do you spend? Like, you're using one Claude sub. Even like worst case, if you had to pay token costs on that, it'd be $2,000 a month, right? And so you're massively outperforming per— like, you're, you're, you're basically bounties per sub. We could do like some math here where it's like your bounties per sub is like how overleveraged you are. And Obviously, ads is really underleveraged because— oh my gosh, my screen did the thumbs up sign. Anyways, yeah. I think that's an interesting way to look at it mathematically.
+
+[00:29:15.76] - Justin Gardner
+Yeah. I think that is interesting as well. I think I still should scale it because at the end of the day, what I'm doing is doing a little bit more like what you talked here in your blog post about ads, which is coming alongside the model, knocking down walls for it, Right. Giving it, you know, access to things that it doesn't have access to, giving it a little bit more guidance. And I think that's why I'm getting a lot out of, you know, one sub just running 24/7 is because of that guidance and intentionality. So can you talk about a little bit more about this whole concept of durable advantage is researcher-builder loop, which is one of the takeaways from your Substack and whether that agrees with what I just said there?
+
+[00:30:00.20] - Ads Dawson
+Yeah, totally. So I guess a long time ago, one thing evaluating models on a regular basis, it was like, I can't remember how long ago it was, maybe like a year ago. Models were kind of good at doing hacking or coding, but they were terrible logging in and clicking through a browser and trying to sign in or any kind of consent box or capture or anything, the stuff that, as a human, you take for granted. I mean, not capture, I still can't solve capture personally.
+
+[00:30:34.25] - Justin Gardner
+Sure.
+
+[00:30:36.00] - Ads Dawson
+But taking those things away, so you take that little modular block of that problem, and you tackle that straight away, and then you just keep doing that, and you keep going through all these layers. And I think of it almost like, if you think of the stack, or even TCP/IP model, once you've nailed all these individual layers, I feel like you're just like giving the model more capability to the point where it actually is almost like taking over your— taking over your machine, right?
+
+[00:31:02.84] - Justin Gardner
+Um, yeah, so we, we gotta, we gotta keep on enabling, we gotta keep on giving more generalized guidance, you know, and, and directing it, and then we keep building, building it up.
+
+[00:31:15.91] - Ads Dawson
+Yeah, like the, um, like the self-improving stuff as well, right? So like I try and distill everything that comes out and is really shiny to me and is really awesome. And I'm like, I need some kind of evaluation of that. Is this outside of training data or is this contextual? Is this something novel? And then you can distill that back into your skills and capabilities. So you're actually self-improving. So the next time you hack on something, then effectively you've got a net new gain on top of the original.
+
+[00:31:49.25] - Justin Gardner
+Yeah. So, so this kind of goes back to what we were talking about before with the orchestration piece, like building your own harness versus using like Claude code. Um, so I guess build— building— that is one of the advantages of building your own harness, I guess, is that you get to more intentionally build the stack that the AI is working with.
+
+[00:32:08.86] - Ads Dawson
+Yeah. Like we, um, uh, at my company we have a, we have an SDK, so we're like, We're very bullish on the way that we think it should work because we've just tried and tested these evaluations on these techniques and we're like, we need this so we can inject in this part of the agent execution loop because it allows us to do this. And then we keep just doing that, we keep getting to a point where we're eventually somewhat satisfied.
+
+[00:32:35.84] - Justin Gardner
+Okay. And this is the— I'm Googling this right now. This is the Dreadnought Strikes SDK, is that it?
+
+[00:32:42.32] - Ads Dawson
+It is not the Strikes SDK. We just have a platform, I guess.
+
+[00:32:51.50] - Justin Gardner
+I would like this.
+
+[00:32:54.79] - Ads Dawson
+Yeah, well, like I said, there's a TUI, obviously.
+
+[00:32:59.27] - Joseph Thacker
+It's a TUI, in case anybody didn't know what he means there.
+
+[00:33:03.22] - Ads Dawson
+Sorry, do you guys not call it a TUI?
+
+[00:33:05.07] - Justin Gardner
+It's a TUI.
+
+[00:33:06.82] - Joseph Thacker
+I've literally never heard that until you said it earlier.
+
+[00:33:09.54] - Ads Dawson
+Oh, man. I thought it was TUI. I still think it is. T-U-I.
+
+[00:33:14.34] - Justin Gardner
+Yeah.
+
+[00:33:14.75] - Ads Dawson
+Well, I tried to think about it. Listen, you stick it. Listen, you stick
+
+[00:33:15.71] - Joseph Thacker
+it. Listen, you stick it. Listen, you stick to your guns. It's better when people stick to their guns.
+
+[00:33:18.21] - Justin Gardner
+Yeah. I'm going to look into that. We'll find— is that a public SDK? Yeah?
+
+[00:33:25.13] - Ads Dawson
+So at the moment, I'm not sure of the exact plans. It was an open source SDK. We recently shipped product. I'm not entirely sure.
+
+[00:33:35.01] - Justin Gardner
+Okay. All right. Um, well, well, well, I'll, uh, poke around with that.
+
+[00:33:39.82] - Ads Dawson
+We'll see.
+
+[00:33:40.72] - Justin Gardner
+Um, but I did want to ask though, you said before about, um, you know, kind of giving high-level principles and stuff like that to, to the AI. I was wondering if you found it helpful to analyze your own hacking sessions, either you as an individual or the or the AI itself with a frontier model to try to extract some of those values and then reintegrate that back into the— I don't know, we're calling them B-student models, but the open-source models to increase their efficacy. Have you played with that at all?
+
+[00:34:22.84] - Ads Dawson
+Very good question. In terms of efficacy, I actually haven't, to be honest, but I do really like that idea. But I definitely have with, so using a judge, we have quite a lot of research on judges and things like that. So using a stronger model, which is like a judge. Also, my HackBot has a reflection tool of assessing confidence. So it'll be like, oh, I found HTML injection in this, and it'll kind of go through the CIA triad, and it'll get a reflection response and be like, this is just like a gadget, this is a lead, this is not like a report. At that point, then you can chain it with that context, and that entity which is reflecting is the stronger model. You've almost got someone like me coming up to Rezo and be like, Rezo, Rezo, I think I found this thing. And he's like, dude, just do that. And I'm like, oh my God, and it works. That is almost like the human analogy to it.
+
+[00:35:16.19] - Justin Gardner
+That's interesting. I like that. It's so funny that you choose Rezo for that. Because—
+
+[00:35:19.84] - Ads Dawson
+oh no, dude, that's what, that's what we did at the LHE recently. I was like, Justin, Justin, Justin, like deserialization.
+
+[00:35:26.28] - Joseph Thacker
+Yeah.
+
+[00:35:26.69] - Ads Dawson
+Um, and you were like—
+
+[00:35:28.07] - Justin Gardner
+It's just funny because Rezo, Rezo, I want to say it was, I want to say it was JD. And, you know, uh, the other day JD comes to me with a, with a thing that he found and I was like, JD, this is, uh, like, you know, I, I love JD and JD and I are close. So it's like, You know, it is what it is. But I was like, JD, this is not gonna work. Like, like, and then he's like, Rezo said you would say that, you know, but I think it will work.
+
+[00:35:57.01] - Joseph Thacker
+Exactly. And And
+
+[00:35:58.26] - Justin Gardner
+And And I just thought it was funny because Rezo was like, definitely told JD, he's like, don't show this to Justin.
+
+[00:36:02.26] - Joseph Thacker
+Don't show this to Justin, he's gonna tell you it sucks, dude.
+
+[00:36:05.82] - Ads Dawson
+Were you just like putting JD in front of Justin as like almost like a guard? He was like, yeah, go ask Justin.
+
+[00:36:12.13] - Joseph Thacker
+I said don't ask Justin.
+
+[00:36:14.23] - Ads Dawson
+I knew Oh my gosh.
+
+[00:36:17.11] - Justin Gardner
+So funny, man. Um, all right. Well, I did have another quote from the write-up that I thought was really, really good, and I wanted to get more information from you on it. It says, quote, the interesting work is moving into verifier design shape, harness shape, confidence thresholds, and feedback loops that reduce how often a human needs to sit in the bottleneck. The researcher still matters, but increasingly, as the person building the system, Uh, just that decides what survives, right? So it, you know, the role here is turning more into building the systems and using some of these, um, pieces that you put in here: verifier design, harness shape, confidence thresholds, feedback loops. Um, can you give us any, any, you know, insight into any of those 4, uh, and what has really moved the needle for you personally in your hackbot?
+
+[00:37:08.25] - Ads Dawson
+So I say this with a joke. So reporting, everyone's like, Kubez stopped its bug bounty program, reports are terrible. I'm not going to lie, and I'm going to be 100% transparent and clear. My reports are like 80% AI-generated.
+
+[00:37:25.36] - Justin Gardner
+Yeah.
+
+[00:37:26.15] - Ads Dawson
+Regardless if I found the bug and I give it the primitive and I give it an HTML capture and I'm like, look, I got XSS in here and this was my payload, My report's like 80%, and I've had numerous programs say, we love your report, which gives me a high level of confidence that it's doing a great job. But that's built and distilled off a skill and a thesis that I've used, and that has been pushed into that feedback loop. And for me, naturally, especially being part-time, I don't have a lot of time to do my reports, because I prefer to spend my time hacking, if anything. So that for me is, I guess, it's a really impactful one.
+
+[00:38:07.46] - Joseph Thacker
+Yeah.
+
+[00:38:08.01] - Ads Dawson
+And I think a lot of people maybe overlooked it because there was such a bad reputation around agents throwing emojis and stuff into reports. And that's like, you can do that programmatically or with a model so much easier, which I say as a joke because when we collaborate on that, I just do. So everyone listening, I know how much Justin is like, Justin's reports are very good and we collaborate on a bug and yeah, I probably wrote it 4 times because I just wanted to.
+
+[00:38:40.80] - Justin Gardner
+It was a good report, man. I guarantee you it was a good report.
+
+[00:38:43.44] - Joseph Thacker
+Thank you.
+
+[00:38:43.78] - Ads Dawson
+It was all Claude. I'm kidding.
+
+[00:38:45.13] - Joseph Thacker
+Yeah.
+
+[00:38:45.55] - Justin Gardner
+Well, I mean, I agree with you, man. My reports nowadays are also 80+% generated by AI, just a very refined skill. And actually, I wonder, This is not something I've implemented yet, but this is something that I'm thinking about implementing as we're talking about it, is really 90% of the time when I have it generate a report, it's pretty good, but it's too wordy still, even though in my skill I say, look, do not be wordy. Use simple words, minimum amount of text you can possibly use to convey the essential pieces. Then 90% of the time I go back into Claude and I say, Make it shorter. Mm-hmm.
+
+[00:39:26.53] - Ads Dawson
+Right.
+
+[00:39:26.71] - Justin Gardner
+Yeah. So I'm wondering whether it'd be interesting actually to implement a verifier or like a judge of after the report output, right? So, you know, tell, tell the AI, you know, build in that, that piece to your system, right? Either agentically or, or in some sort of other way. And, uh, and have it, you know, show the report back to the other model and then have the other model provide a critique and say, no, no, no, this could be shorter. This could be shorter. This is an extraneous detail. That sort of thing.
+
+[00:39:52.53] - Joseph Thacker
+Yeah, this is because, this is because of RLHF. Did you know back in the day, Justin, they like, um, did a bunch of like studies on like humans? And if humans are asked to rate like, is this response better or this response better? And, or, and everyone listening, I'm holding up my hands like, is response A better, response B better? And the only difference between response A and B is that one is longer. Humans like almost always pick the other one. And I think it's because our, in our, our minds, it's instant. It's immediately like, oh, that one has more data, has more information. More is better. You know, it's kind of like the hedonistic mindset. And so I think that because of that RLHF—
+
+[00:40:25.32] - Justin Gardner
+Say it again. Did, did you say that they pick the shorter one because it has more data?
+
+[00:40:30.32] - Joseph Thacker
+No, they always pick the longer one.
+
+[00:40:32.09] - Justin Gardner
+Oh, they always pick the longer one.
+
+[00:40:33.86] - Joseph Thacker
+And so for a long time, that's why models are always too wordy. And like, you almost couldn't get top models until like a year ago to just say like, hey, what's up? They would always give you some big old, you know, list of like 4 paragraphs when you said hi. And it's because in general, especially now with agentic harnesses, you want it to be longer running. And it was hard for them to train for both short responses when it needs to be short and long responses when it needs to be long. So anyways, you're kind of pushing against what these models are trained to do, and that's why it's hard to get it to go short for you.
+
+[00:41:01.86] - Justin Gardner
+I see.
+
+[00:41:03.34] - Ads Dawson
+That's a really good point. One thing to mention, I definitely think that's something we can easily set up. So just imagine you've got a skill and the model writes a report, and then you've got a judge, which is just maybe like a hook or something. And then you've just basically got like a rubric, and the judge is just literally taking one input, and it's taking the rubric, and it's like, does it match this format? Does it match Justin's standards? Like, is it less than 500 characters, let's say? Like, if not, then that reflection goes in, it goes back into the loop, and it redoes it, and you get like another report.
+
+[00:41:35.88] - Joseph Thacker
+Yeah, Justin, I thought you were going to say you were going to take diffs of that 20% you changed across a bunch of your previous reports, because you have the original, the initial reports on disk somewhere, and you also have a HackerOne MCP or HackerOne API key, you could just tell your model, hey, go compare all the changes I always make and just incorporate that into my system writer or my prompt writer.
+
+[00:41:54.23] - Ads Dawson
+That's such a good idea. I really love that. The one thing I will mention with that modular flexibility, I know you guys have anchor programs. I don't know if you report differently to different programs because some companies really like if you put the vulnerable code and you're like, hey, this is where you're doing the wrong thing. Whereas some companies obviously just don't care about that. So you could then just create a rubric based on each anchor program. So this program likes this thing and this program likes the other thing, and then you can almost tailor it to that. And it gives you a great way so you're shelling reports, but you're actually maximizing your payouts on each.
+
+[00:42:34.09] - Justin Gardner
+Yeah, I actually have a different skill for Google VRP because they have more stringent standards for their bounty multiplier for their report quality. So, uh, definitely I have that. One of the other things that I've told my AI before is like, this is how Justin does POCs. You know, if it is possible to have it be an HTML page that you can put it there that runs some JavaScript, does some magic, blah, blah, blah. Even if it's like an IDOR, right?
+
+[00:43:00.92] - Joseph Thacker
+Mm-hmm.
+
+[00:43:01.23] - Justin Gardner
+Even if it's like an IDOR, but there's, you know, there's a way for you to do it, you know, in the browser, then that's the way that you, that, that's the way that you should do it.
+
+[00:43:07.94] - Ads Dawson
+it, right?
+
+[00:43:08.46] - Justin Gardner
+Mm-hmm. Um, but if it does need to be a Python script, well, you know, it's gonna be a Python script and we're gonna curl, curl it and then pipe it to Python 3, right?
+
+[00:43:17.46] - Ads Dawson
+Mm-hmm.
+
+[00:43:17.92] - Justin Gardner
+And there will be interactive, you know, um, prompts, you know, okay, here, now I need this ID, go get it from here.
+
+[00:43:25.03] - Ads Dawson
+Mm-hmm.
+
+[00:43:25.55] - Justin Gardner
+And then paste it in. Okay, paste it in. Now, now there will be, you know, would you like to configure a proxy so that you can see the, the requests as they come through? Yes. You know, yes. Okay, well then put it in.
+
+[00:43:35.44] - Ads Dawson
+Right?
+
+[00:43:35.78] - Joseph Thacker
+Mm-hmm.
+
+[00:43:36.07] - Justin Gardner
+And I've got all these pieces sort of modularized into my skill. So now, and it just shoots it up to my POC server directly, right? So now whenever it, it does the report and whenever it does the POC, it boom, hosted on my POC server. You know, it's in, you know, an obfuscated directory. It's got this like, you know, Python file. And then boom, you know, they, they pipe it to, to, you know, Python or whatever. And, they see the beautiful interactive POC that walks them through it, and then they can look in their browser or in their proxy and see all the requests, boom, boom, boom, right?
+
+[00:44:09.98] - Ads Dawson
+Mm-hmm.
+
+[00:44:10.67] - Justin Gardner
+So, and it also builds in negatives, which I really like. You know, that was its idea, you know, but like, hey, look that I can't do this, but I can do this. And that's where the problem lies, right? It just makes it really easy for the triager to see, oh, well, if I can't do this, but I can do this with the same token, then Clearly that's a problem, right?
+
+[00:44:29.69] - Joseph Thacker
+Dude, that's huge. Does Does
+
+[00:44:30.19] - Justin Gardner
+Does Does that make sense?
+
+[00:44:30.88] - Joseph Thacker
+Yeah, I'm gonna incorporate the whole HTML page. That's really cool. And then like host it on, on your site at some UUID so they can get to it and see it. Um, or password protected POC page and then put the password in your report. That's cool. But hey, speaking of report quality, I have like the sickest segue. Mr. Ads Dawson was both featured, shouted out, and, you know, had a project built upon to improve report quality from Meta.
+
+[00:44:53.69] - Justin Gardner
+What? Thanks, dude.
+
+[00:44:55.84] - Joseph Thacker
+Yeah, no, I mean, honestly, this is like the most perfect segue you can get. Basically, Ads, I'll just let you tell it. The Meta bug bounty program had Ads at an event and they took one of his projects and incorporated it in their entire workflow. And you can actually get more money on your bounties by simply using this tool. So tell us about Ads.
+
+[00:45:14.34] - Ads Dawson
+Thank you very much. That's very kind. So yeah, there's a Meta great bounty program. Can you Can you
+
+[00:45:21.38] - Joseph Thacker
+Can you Can you share, Justin?
+
+[00:45:22.46] - Justin Gardner
+Yeah, I'm sharing it right now.
+
+[00:45:23.01] - Ads Dawson
+Oh, sorry. Yeah. I was lucky enough to get invited to one of their events and just got chatting with the team. Anyway, I learned about this thing called FBDL, which is Facebook Developer Language, I think the acronym is for. Think of it as Terraform for Meta.
+
+[00:45:39.28] - Justin Gardner
+Facebook Bug Description Language?
+
+[00:45:41.59] - Ads Dawson
+Yeah, there you go. Close. Yeah. So you can use this to provision accounts, provision groups. So think of it as Terraform for Meta or Facebook or anything. you realize how painful it is creating 8 accounts on Meta when you've got facial verification and stuff. So this is a really nice programmatic way of just being able to create seed data naturally. Yeah, dude, it's so cool. The concept of why they actually did this was so impactful. Google needs this. Yeah, Google. I haven't hacked on Google, but this is so good for those companies that just want to allow researchers to create data easily. But yeah, they have an FBDL. At the time, there wasn't any token-based authentication, so you just write raw scripts and then provision it in the Meta portal. Basically, I just created an MCP, and then I worked with the Meta team and we added authentication and some API endpoints. So you can actually now just say to Claude, hey, create me like 5 Facebook accounts or something and it'll like return it with the UUIDs. So the idea is those guys were awesome. They published a blog about it and I, uh, I can't remember exactly what the, what the bonus is, but you get a bonus if you use FBDL like in your reports because they're trying to like—
+
+[00:46:58.67] - Joseph Thacker
+They can repro it so much easier. It's basically, they could probably just chuck this straight into their QA system. And so it just happens like on every build.
+
+[00:47:05.50] - Justin Gardner
+Dude.
+
+[00:47:06.40] - Ads Dawson
+Yeah. 20% bonus and Meta pay really well. Um, the team are great.
+
+[00:47:10.84] - Justin Gardner
+So yeah, 20% bonus up to $500. So $500, uh, you know, max there, but that is still very, I mean, I would use this for free because it helps, you know? Right.
+
+[00:47:22.07] - Joseph Thacker
+You know, and also honestly, not just reporting, but testing. Like, could you imagine just using this to actually test a lot more efficiently and faster? Like spin up accounts, spin this down, give it these perms, do this thing. Sorry, I talked over you, Justin. Go ahead.
+
+[00:47:33.07] - Justin Gardner
+No, no, no. It's, it's the perfect thing. You know, like, like one of the main you know, cards on the table, one of the main things that I do for my AI at this point is it's like, yo, I need an order. Can you please give me an order? You know? So I like go in there and I'll make an order and do the thing, right? And if there's something like this where it just knocks down that barrier for the AI, holy moly, it makes it so much easier to, you know, build out all of these endpoints that, you know, typically, I mean, it's no mystery. A lot of the flow for all of this this AI-assisted testing is enumerate every API endpoint and then test every single endpoint. Just test every single one. And in order to do that, you need objects in the actual app. And so this completely destroys a lot of the friction there that would need to pull in a researcher, just like you were saying, Ads, which is our job nowadays. is to figure out a way to remove ourselves from the loop even more and enable the AI to do its own thing and find these bugs autonomously.
+
+[00:48:38.01] - Ads Dawson
+Yeah. I threw a Claude and Codex skill in there as well. So they're also amped up on how to use it.
+
+[00:48:45.48] - Joseph Thacker
+Wow.
+
+[00:48:46.19] - Ads Dawson
+Yeah, super impactful. I wish there was something universal where almost all programs could do this. The amount of times you get a tenant and you're like, oh my God, this is going to take me like a week to set up, which actually hilariously were all on a live event, which actually that was the case. Like, how good would have this been if you could just like— they were another big enterprise which could probably do the similar thing.
+
+[00:49:09.80] - Justin Gardner
+Yeah.
+
+[00:49:10.30] - Joseph Thacker
+Wow, dude.
+
+[00:49:11.11] - Justin Gardner
+Wow. Very nice. And I will say as well, like, as soon as Google started giving really nice bonuses for like fully automated POCs and stuff like that, it made me take the deep dive on how to do this well in the GCP environment specifically. And it wasn't that bad. And after I got it working and I understood a little bit more how to use their command line tool and stuff like that, it really helped because I could hand it to the AI and say, look, here's an authenticated command line tool for this, spin up these objects you need, and then You know, build a script to do all of it together. So, uh, I think this is an area where if you're trying to go deep on one of these, um, targets that has the capability to do automated spin up, spin down, you know, that sort of thing, very high leverage area to double-click into and make sure your AI has, has access. Um, very sick, man. Very sick. Okay.
+
+[00:50:08.03] - Joseph Thacker
+Thanks.
+
+[00:50:08.76] - Justin Gardner
+Um, I'm gonna go back to this write-up still though, cuz we've, we've got, we've got more to cover here. So, man, look at this. So between 2025 and 2026, you had your noise and severity ceiling drop from 32% to 24%. Like, this is the amount of stuff that is noise. So your bot has become more efficient at finding valid vulnerabilities. These, even as you've scaled even more. Do you have a— I know I'm asking you to distill it all down, but do you have a couple key points that you think were inflection points for that noise reduction that you implemented? I'm going to let you chew on that for a second. One of the Expo blog posts that they had was like, these are some of the 3 things we've implemented that saw a blip in our graph. This is where the bugs per day went from this to this, and then this to this, right? And I loved that. I thought that was amazing. So I was wondering if there's anything that stands out to you specifically about that drop in noise.
+
+[00:51:27.55] - Ads Dawson
+Yeah. So one thing I will say with a caveat is if you look at my HackerOne, this was just on HackerOne. But if you look at my— I haven't— to set the record, I have not done the same one elsewhere. But I only really started hacking on HackerOne since October last year, which actually started from a live event. A lot of the bugs that I was doing around then were AI— sorry, not AI-generated, they were AI-specific bugs.
+
+[00:51:57.28] - Justin Gardner
+Hmm.
+
+[00:51:58.63] - Ads Dawson
+Which I've actually stopped hacking on AI as much in A side note. But so that, just to think about the data, it's a lot different now. Honestly, right now I'm ripping 95% traditional web outputs.
+
+[00:52:15.53] - Justin Gardner
+Yeah.
+
+[00:52:16.34] - Ads Dawson
+Because the return on investment, it's not worth me setting up some really complex chain for data exfil or something on an AI agent. One thing that I think has really helped with that though is the modularity and flexibility of skills. I can't remember the exact date when they were introduced, but I think that skills were probably around that transition.
+
+[00:52:37.01] - Joseph Thacker
+Mm-hmm.
+
+[00:52:37.40] - Ads Dawson
+You can throw something contextual or bypass, or you could potentially put a zero-day in a skill. So the ability of just being able to attach them, throw them in, I'd say those at scale has definitely helped. And the open-source tools, I can't say for certain, but I think that the first open-source agent browser was Agent Browser from Vercel's SDK, and that that was so impactful. So it's definitely as the tools have become more capable and definitely from the skills, I would say.
+
+[00:53:13.69] - Justin Gardner
+So that's interesting. Are you using skills en masse? Do you have 100 skills in your harness?
+
+[00:53:25.07] - Ads Dawson
+I don't have 100. I'd probably say I'm close to 65-ish? With With
+
+[00:53:33.90] - Joseph Thacker
+With With some of those being contextual. Yeah, I'm like 75. Are Are
+
+[00:53:37.03] - Justin Gardner
+Are Are you really?
+
+[00:53:38.28] - Ads Dawson
+Yeah. Dude, one thing, blind SQL injection I got a week ago, I was just like, why is it really struggling with sqlmap? And then I asked, I got a reflection model. I was like, look at this trajectory, tell me where it struggles with sqlmap. And it's like, oh, sqlmap. I'm terrible with SQL injection, so the fact I got SQL injection bug, I was very happy. But it was like, oh, because sqlmap can't concatenate or something like that. And I was like, okay, would using straight Python be better? And he's like, yeah. It's like, okay, cool. Distill that into a skill. It's like, anytime you see blind SQL injection specifically, use this script. Here's an example one. And then, yeah, I've actually had one more blind SQL injection bug since then.
+
+[00:54:22.40] - Justin Gardner
+Wow, dude. That's sick. That's sick. Yeah. I got to do more review. I think I'll probably formally— yeah, maybe I'll formalize that a little bit with my, with my HackBot.
+
+[00:54:34.55] - Joseph Thacker
+Oh, I got to tell you this. This is a perfect time to mention this. I actually have done this twice now. So on the new HackBot build, I made it build each component like very, very modularly. And then I had it build like an HTML page where like I could basically like click through slides. And each, each slide was like a breakdown of that feature. And then I was able to comment and like tell it like, oh, I don't like the way this works, I don't like the way this works. And I basically reviewed every like high-level module. And then I did the exact same thing with skills, Justin. I had it, I had it create like a review page, a review tab. Actually, let me see if I can share it and we can just like not show it on the pod.
+
+[00:55:11.88] - Justin Gardner
+Oh my gosh.
+
+[00:55:13.17] - Joseph Thacker
+Check this, check this out real quick.
+
+[00:55:14.53] - Justin Gardner
+What a crazy timeline we live in, man, with all this stuff. You're like having it It creates slides for you about your own hacked bot.
+
+[00:55:21.90] - Joseph Thacker
+Dude, check this out. So this is a skill reviewer. So like you click through it, you can edit it or click approve or save or just move the skill to trash because I realize I have 96 skills right now on my disk. Yeah, yeah, Richard, don't put this in the podcast. But anyway, what you're screen sharing right now is not going in the podcast. That's right. But I mean, people can just imagine it. Basically, it's just HTML page where each skill is in a separate little— you just click into each skill and you can either edit the skill MD and you can approve that, or you can approve it currently, or you can move it to trash. So I wanted to be able to go through and delete all of the ones that like I don't use anymore or that are lower quality or that I think that the new models do better than me even with that skill. And so this is just like a really cool like way to review through and improve your system manually and remove all the friction.
+
+[00:56:07.46] - Justin Gardner
+Very nice.
+
+[00:56:07.73] - Ads Dawson
+Yes, that's, that's, dude, that's so cool because all you need is like a model which is looking at the trajectory of previous runs, and it's like, okay, this skill was called 5 times, this skill was called 1 time. And then eventually, once you get to a year of hacking, it's like, okay, this skill is really pointless now because it's just like, for whatever reason, it's not being called. Maybe you just don't hack that way. But dude, that's so cool. I love that.
+
+[00:56:31.88] - Justin Gardner
+Holy moly, man.
+
+[00:56:32.84] - Ads Dawson
+Yeah. One thing, this is definitely not a product pitch, but one thing we're working on heavily is optimization. So there is stuff There's a lot of open-source libraries like GEPA, which you can use for this exact kind of thing. And Rezo dropped the TESOL skill optimization probably like a month ago or something.
+
+[00:56:53.55] - Joseph Thacker
+Yeah, it completely changed everything for me. Most of my skills were not being called because I had the front matter broken.
+
+[00:57:02.76] - Ads Dawson
+Dude, that was clutch that you found that.
+
+[00:57:05.26] - Joseph Thacker
+Yeah, GEPA. It's G-E-P-A. We'll put it in the show notes.
+
+[00:57:08.92] - Ads Dawson
+Yeah, I apologize. JEPA is just like, is an open source library. It's just like, it's just an optimization library, but you can apply optimization in that way to so many different things.
+
+[00:57:21.46] - Joseph Thacker
+Yeah.
+
+[00:57:21.90] - Justin Gardner
+Wow. Very interesting. Yeah, I'll throw this up on the screen here.
+
+[00:57:25.13] - Joseph Thacker
+Basically anything you can hill climb, you want to hill climb.
+
+[00:57:29.67] - Justin Gardner
+What does that mean?
+
+[00:57:31.21] - Joseph Thacker
+Hill climb is like an algorithm that's used like in AI, like Even training models, right? You want to give it a task, change some things, see if it improves, give it a task, change some things, see if it improves. And you can basically create a loop and then just, you can tell your agent this like, hey, let's hill climb that. And it'll know exactly what you're talking about by setting up an eval and then trying stuff and then doing the thing over and over again. It's just really hard with cyber to do that because it costs a ton of tokens and it's often subjective because these models would go down rabbit holes. They not find it on run 1, but they would've found it 8 other times out of 10. And so hill climbing on cyber-specific stuff is quite hard, but you can find all these little niches where you can hill climb.
+
+[00:58:12.23] - Ads Dawson
+Theoretically, you were hill climbing the thing you told us earlier with Opus and Sol when you were trying to find a bug for a while. And effectively, you just— a really vibey way is just being like, hey, why didn't the model find this? And it's like, ah, haha. And it's like, that is effectively like a very simple version of it.
+
+[00:58:31.84] - Joseph Thacker
+Yeah. In fact, anytime, and I have this built into my prompt, I think we've mentioned it on the pod, anytime that something gets tried a whole lot and then eventually overcomes it, you should write that off as like an insight because there's something deep there about the model that it didn't get, or your harness that made it really hard to get an answer to something that it could have solved much easier. And so then you want to incorporate that back in at a meta level or at like a direct level. Like at a direct level, it's like, oh, every time I try to call curl in this weird way on this box, it always fails because it's installed in a weird directory or something, right? That's like a very specific one. But a meta one is like, oh, every time I try to find this type of vulnerability, I struggle in these ways. And now I can just put into my, you know, into my prompts to like not do it that way anymore or whatever.
+
+[00:59:16.32] - Justin Gardner
+Reza, I love your specific example.
+
+[00:59:19.90] - Joseph Thacker
+Whoops. Dude, the model struggles to like apply Python. What's the plan when I What's the plan when I
+
+[00:59:23.11] - Justin Gardner
+What's the plan when I What's the plan when I put curl in /etc/way, you know?
+
+[00:59:26.65] - Joseph Thacker
+Well, I mean, curl was like a really stupid example, but like oftentimes it's trying to call Python and it needs to like, you know, venv activate because the— Right. Yeah, whatever. And it goes through that same loop of doing it the wrong way every time you start a new task in Claude or Codex. But if you just have in your prompt, hey, anytime you struggle with something a few times and then get it right, add that to this like insights or takeaway. ways or whatever, it won't do it anymore.
+
+[00:59:48.69] - Justin Gardner
+Yeah, that's an interesting idea whether you should enable it to do that or whether you should have something that watches the transcripts of other ones, even if it's like a haiku or something like that.
+
+[00:59:59.92] - Joseph Thacker
+Actually, Ads, I have a question about this because I, I think that, that the idea of an observer is like a meta concept that could be applied lots of places, but it's not clear that it's better than just letting the core model do it. So like, for example, with my hackbot, with like finding leads, and gadgets and notes, I have thought very many times, man, I should just like not make the model do that and have an observer model that's reading everything. I think like a small, fast, better model that like, that like just takes all the notes. It's like a little note-taker over there on the side, you know, just like—
+
+[01:00:29.11] - Justin Gardner
+Mm-hmm.
+
+[01:00:30.13] - Joseph Thacker
+And so like, and so I don't know if that would be better or worse. My inclination is that it would be the same. And so I've just never changed it, but I'm always wondering that. And so Justin, same thing for what you're saying, like Maybe you have that same system write down insights for things that were hard that then worked well, but I just don't know if it'll improve or not. So I'm curious if in any of the harnesses you've ever used ads, you've had a silent observer or a side observer, and has it improved anything?
+
+[01:00:53.53] - Ads Dawson
+Yeah, thank you. Yeah, that's a really good question. So definitely, the assess confidence thing that I mentioned, basically my agents are exposed in assess confidence tools. So, the model is like, cool, I injected this in this parameter, it renders as this. I used HTML injection or something before. So, it calls the Assess Confidence tool, and it's like, use this tool when you believe you have a gadget, a lead, or a bug. And then that is effectively a reflection, where the reflector model is like, no, this is a gadget, or, this is a lead. But what you can then actually do is tailor it per program. So, every program has its own reflection log, if that makes sense. So the reflection model is like, no, an agent found that before and that's just a gadget. So you're almost feeding that back to the actual context of the program. Does that make sense? I don't know if I explained it.
+
+[01:01:50.76] - Joseph Thacker
+You almost have a secretary per program. Is that what you're kind of saying?
+
+[01:01:54.53] - Ads Dawson
+Yeah.
+
+[01:01:55.32] - Joseph Thacker
+Or like an assistant per program that the hacker agent can then reference or talk to?
+
+[01:02:01.44] - Ads Dawson
+Correct, yes. But that's on every single program, which is just basically like a big JSON, which again is just a big trajectory of tool calls where that reflection model has access to all those tool calls. So it's like, oh, I've seen 6 models think they found XSS in there, but actually realistically it's not. And then that helps with that overall feedback loop.
+
+[01:02:22.01] - Justin Gardner
+So does that model— I'm sorry if I'm misunderstanding this, but does that model passively look at what your current exploit agents are looking at and compare it with the history and then inject into that loop whenever it notices that it's going down a path that another model or another agent has previously gone down and inject the context from the other agent.
+
+[01:02:45.98] - Joseph Thacker
+Or is it just a phone call where the main agent just calls the assistant?
+
+[01:02:49.90] - Ads Dawson
+Yeah, it's a phone call, but the option is there if you wanted to inject that. I'm just not confident enough or spend enough time watching the thing do the thing that I'm confident that to kind of like turn on the tap of being like constant injection, because I'd be worried about it actually giving it like false positives.
+
+[01:03:08.50] - Joseph Thacker
+Yeah. Or Or
+
+[01:03:08.71] - Justin Gardner
+Or Or derailing or—
+
+[01:03:10.15] - Ads Dawson
+Yeah.
+
+[01:03:10.78] - Joseph Thacker
+So, yeah. So Justin, he just has his core agent being told, hey, if you think you found something, talk, talk with the assistant first before you go report it. And so then the assistant sees the other stuff and it's like, nope, we've been down that false path before. Go somewhere else.
+
+[01:03:21.23] - Justin Gardner
+You know? Yeah. That, that, but you know, yeah, it's, it's a double-edged sword though, because sometimes, you know, a different—
+
+[01:03:28.03] - Joseph Thacker
+5th time's the charm.
+
+[01:03:29.44] - Justin Gardner
+Yeah, sometimes 5th time's the charm. It really is, you know, like, but, but I mean, to be honest, I will say I've seen a higher correlation with new scope unlocks, new, you know, new feature assessment, you know, all of that than, than churning on the same thing. So, and, you know, maybe that's a, maybe that's a false correlation, right? Maybe it's just because like, oh, well, As soon as they find the new feature, well, the bug just sticks out, just like it does to us as hackers when we find a new feature, untouched scope. But I do think that, yeah, that sometimes churning on these things can be impactful. And that's where that hacker intuition, how do we convey that hacker intuition into the AI, right? Where it's like, no, this one needs— this one is vulnerable.
+
+[01:04:19.48] - Joseph Thacker
+Yeah.
+
+[01:04:19.80] - Justin Gardner
+I know it, and then you just keep churning.
+
+[01:04:22.67] - Ads Dawson
+Yeah, definitely. One thing as well, actually, to mention there is that wherever you're running this hackbot, if you're pulling JavaScript as well, or you're just pulling stuff off the frontend, then effectively you could almost have your reflector agent be like, okay, this is not XSS, but I did notice a diff in the JavaScript has changed, and this is the diff, and therefore, okay, so actually is this vulnerable now? you can almost keep that real-time context.
+
+[01:04:49.57] - Justin Gardner
+Yeah. That is a very interesting area that I—
+
+[01:04:53.40] - Ads Dawson
+Like you said, there's a new endpoint now. Is this actually now a legit thing?
+
+[01:04:59.46] - Justin Gardner
+Yeah. And I think that is one of the things that AI is crazy good at, in my opinion, having seen it do stuff, is like, okay, now you build a system that automatically runs, that triggers yourself, every time new code gets pushed, right? And it's like, and then you get the diff and you assess the diff, right? And I'm just like, that is something that I haven't built in. I've like pocked it a little bit, but I haven't actually like built it into my whole system yet. And especially when I pivot from target to target, that's one of the things I want to do is like, before we leave this target, let's take an aggregate of everything we know about this target. Let's build as much automation as we can. to tip us off to vuln patterns that we've seen and then run it on a cron job and then trigger you to go reinvestigate whenever something new pops up that matches your signal markers, right? That's going to be game-changing when we get that working. That did trigger another thought for me though, which I wanted to ask because you've got insane volume here and I'm wondering how you are distributing the load. Are you Are you pointing your hackbot at specific targets and then just drilling down super deep for 48 hours and then switching to a different target? Or do you have your hackbots working on 10, 20 different targets at a time?
+
+[01:06:18.25] - Ads Dawson
+So primarily one program. Because I like the takeaways and stuff that I said before. It gets a really cool bug and you're like, wow, okay, this is really impressive? Is there some kind of gold in here? Especially it's been part-time. I haven't set up the infrastructure to do that at scale. Typically, I'll go hard on a program for maybe a few days, and then I, like you guys as well, you feel like you have a level of confidence that you've found a majority of stuff. But there's also this thing about, let's say you've submitted 6 reports. It's like you get to this point, you're like, I've never hacked on this program. I want to know, am I just going to wait 2 years and not get any feedback? So there's almost this trade-off of, do you keep pushing or do you sit back and be like, okay, I'll see if my reports do get triaged or if I get a bit of a bad experience, then it's not worth my time of hacking more.
+
+[01:07:17.07] - Justin Gardner
+Yeah, that's a good path there. That makes me feel a little bit better that you're saying that though. Ads because I, I know that Joseph, you know, sprays across a ton of different programs and I've just had a lot of success with just, hey, I'm gonna let this run for, for 40 runs, you know, 40 cycles on one program and just let it build up some expertise and build up some notes and build up, like I have it self-improving as well where it's like building its own tools and building its own primitives specifically for this target. target. And then once it's got that, I think it really gets a little bit deeper and you get some of the more complex bugs, especially when that's paired with human operator interface. So especially with a volume like this, I think that's really impressive for one. And I'm wondering, do you know on average how often you spend Or how often you switch targets? Because that is an insane volume. So I imagine it's got to be every couple of days.
+
+[01:08:22.21] - Ads Dawson
+Probably every couple of days. So I got invited to HackerOne and— sorry, I joined, I actually started using HackerOne in October or something like that. And then because I got quite a lot of reputation very quickly, I started getting invited to quite a lot of programs. So it's like, oh, new scope, and it's like consuming. So almost at a point now, it's like I'm just like, I feel like I'm just being like force-fed. Yeah, programs in such a nice way. Um, so yeah, probably like a couple of days, and then like I said, that kind of comes off that like trade-off because you don't know what to expect from the program. A lot of times it's like great, but obviously—
+
+[01:08:56.89] - Joseph Thacker
+Dude, I do think those are the glory days. Justin, do you remember that when like you weren't getting so many invites that you had to ignore them, and every time you got a new invite you would just like pivot to it immediately in that moment? I feel like that is maybe one of the like shining eras of my bug bounty journey. It just felt so cool. Like even if I, cause I worked remote for like 6 or 7 years and I had time flexibility. So if I, anytime I got an invite, it was just like, accept, go, go, go, go, go. You know?
+
+[01:09:20.85] - Justin Gardner
+Yeah. Oh my gosh, dude. It was the best. Yeah. And I think that is a part of the beauty of bug bounty, man. Like HackerOne, Bugcrowd, YesWeHack, Intigriti, they've built an amazing product where it's like, you know, Wow, there's this ability for me to go do something that I, you know, I would probably do for free for fun if it wasn't illegal, you know?
+
+[01:09:40.85] - Joseph Thacker
+Yeah.
+
+[01:09:41.39] - Justin Gardner
+And, and not only that, but are we get— we're getting paid, we're getting, you know, new scopes tossed to us on a regular basis, we're getting the dopamine of like finding these bugs, getting the bounty, getting a new target, getting access to new scope. It's just like bam, bam, bam, bam, bam, and it's addicting as hell, which is why so many people do get addicted to it and burn out and, and, you know, have— it's, it's, it's really like, it's almost like, it really is almost like gambling. Like, it's one of these like drug-like activities that you can have, and it takes a lot of control to manage it, but the payoff is massive, you know.
+
+[01:10:17.14] - Ads Dawson
+So good. And I just get to talk about it with your friends is like, that's one thing I love about like live events is I see all my buddies and it's like Dude, dude, you're like, dude, but no, seriously, dude.
+
+[01:10:27.55] - Justin Gardner
+Oh my gosh, dude, it was so fun. We, we had such a good time. We, we competed in an event together, Ads and I, recently. And man, we had a blast. You know, I just, I pulled, you know, we, you were sitting there with me and, and some of the other guys that I brought to that event and we just locked right away and just found these crazy bugs. Ads, Ads was like, Ads like kindly, he was like, Justin, if you'd like to collaborate on a report, I have this. RCE right here.
+
+[01:10:54.19] - Joseph Thacker
+Would you, would you like to see some of my RCE, Justin? Yeah.
+
+[01:10:57.38] - Justin Gardner
+I'm like, uh, okay, what do you need me to do? He's like, uh, I need you to run YSO serial. And I'm like, okay. And then it's like, it worked. Yay. I'm like, that's— you just handed me an RCE. What are you doing?
+
+[01:11:09.15] - Ads Dawson
+Like, I, I like collaborating with my friends.
+
+[01:11:12.38] - Justin Gardner
+It's—
+
+[01:11:12.52] - Ads Dawson
+yeah, dude, it's good fulfillment for me.
+
+[01:11:14.26] - Justin Gardner
+That was great. It was so kind the way you approached it too. You're like, Justin, I know you've got many bugs that you're working on right right now, like so many bugs and it, you know, if you don't want to, it's fine, but also RCE. And I'm like, what?
+
+[01:11:26.19] - Ads Dawson
+It's like, what?
+
+[01:11:29.09] - Justin Gardner
+Say that again. So what a, what a great event. Um, what a fun time. All right, gentlemen, I'm having a blast at this episode, but I do have a hard stop. It is, uh, got some family stuff going on today. So, um, we are going to have to drop ads. This was a blast and I feel like I've got so much more to pick your brain on. Listeners, there, you know, I'm looking at the actual data here. Actually, in the report, it says 853+ submissions, you know, Ads has made with help of this hackbot. So reaching 6x of his total full year for 2025. So he is destroying the hackbot game right now.
+
+[01:12:12.72] - Joseph Thacker
+Yeah.
+
+[01:12:12.89] - Justin Gardner
+now. So this is mandatory reading. Okay? You must go and read every single word of Signal Over Noise: AI Agents in the Operator Mode.
+
+[01:12:23.35] - Joseph Thacker
+Justin just assigned you homework.
+
+[01:12:25.50] - Justin Gardner
+This is mandatory homework from Professor Justin. Okay? And we're going to bring Adz back on again in the future and pick his brain more about it because really seminal, excellent work here.
+
+[01:12:37.97] - Ads Dawson
+Thanks, dude.
+
+[01:12:38.72] - Justin Gardner
+Adz. So thank you so much, man.
+
+[01:12:40.18] - Ads Dawson
+Yeah. Thank you very much. Uh, awesome being here. You guys rock. Um, appreciate it.
+
+[01:12:45.15] - Justin Gardner
+Thanks, man. All right. I think that's it. That's the pod. Peace.
+
+[01:12:48.52] - Ads Dawson
+Peace.
+
+[01:12:50.02] - Justin Gardner
+Peace. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more Critical Thinking content, uh, or if you wanna support the show, head over to ctbv.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of the masterclass. hack-alongs, exclusive content, and a full-time Hunter's Guild if you're a full-time hunter. It's a great time, trust me. All right, I'll see you there.

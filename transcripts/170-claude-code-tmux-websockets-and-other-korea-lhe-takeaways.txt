@@ -1,0 +1,738 @@
+Episode 170: Claude Code + Tmux, Websockets, and Other Korea LHE Takeaways
+Source: https://www.criticalthinkingpodcast.io/episode-170-claude-code-tmux-websockets-and-other-korea-lhe-takeaways/
+======================================================================
+
+[00:00:00.82] - Justin Gardner
+We're just kind of playing this kind of cat and mouse game of like, does this do what Justin really wants it to do? Right. You know, or what kind of loopholes could they potentially see?
+
+[00:00:09.78] - Joseph Thacker
+So you're almost playing hot cold?
+
+[00:00:11.16] - Justin Gardner
+Yeah, exactly. Yeah, it's like exactly. Warmer, warmer, warmer. Marco Polo.
+
+[00:00:32.89] - Joseph Thacker
+Dude,   exhausted at the end of—
+
+[00:00:44.65] - Justin Gardner
+yeah, dude, I'm kind of jet-lagged as heck for this episode right now, but we owe the people something, you know?
+
+[00:00:49.47] - Joseph Thacker
+Yeah, we're walking back to our rooms, event's over, and we're like, oh, we haven't recorded yet.
+
+[00:00:54.60] - Justin Gardner
+Yeah, we went out for like, um, for like, what is that, Korean barbecue? Korean barbecue, man. Uh, I ate so much rice and beef. I was very happy, but Yeah, we owe the people an episode, so we're going to bring you guys some good insights. And I have to say, I'm coming off of almost a month of hardcore hacking. So the—
+
+[00:01:17.15] - Joseph Thacker
+Back-to-back events.
+
+[00:01:18.01] - Justin Gardner
+Yeah, back-to-back events. We had the HackerOne live hacking event, and now we're just finishing up the Google live hacking event. So I've definitely got a lot of motivation to pull from. For content for the episode.
+
+[00:01:32.21] - Joseph Thacker
+And you don't really go easy on any of these things.
+
+[00:01:35.07] - Justin Gardner
+Nah, dude, I took this, I took these seriously, man. It was really fun. So we've each got a couple points we want to hit. You want to start off or shall I?
+
+[00:01:43.78] - Joseph Thacker
+Sure. Yeah, I mean, I, at first, I think we were talking about this right before we started recording, but what surprised you? I mean, at this point, how many Google events have you been to?
+
+[00:01:52.31] - Justin Gardner
+4 or 5?
+
+[00:01:53.42] - Joseph Thacker
+Yeah.
+
+[00:01:53.73] - Justin Gardner
+Yeah. Yeah.
+
+[00:01:54.87] - Joseph Thacker
+And this was a pretty small one. I think they only invited like 15 people or something.
+
+[00:01:58.23] - Justin Gardner
+Yeah, 15 or 20.
+
+[00:01:59.12] - Joseph Thacker
+Yeah, so I was going to ask you like what stood out or felt different or surprising about this one?
+
+[00:02:04.81] - Justin Gardner
+I think there are just a lot better bugs at this event.
+
+[00:02:07.68] - Joseph Thacker
+There were so many high-quality bugs.
+
+[00:02:09.72] - Justin Gardner
+There were some really, really killer bugs. And yeah, lots of creativity from the researcher, lots of impact proved hardcore this event. I think we're starting to get a little bit of a grip in general us being researchers on how to do zero-click AI bugs. And I think that that is, like, it's getting to the point now where I'm like, okay, that's actually some really serious impact. Yeah. You know, like, so I think that's really nice to see. Whereas I feel like, you know, I've spent a lot of time over the past couple years wrangling, you know, unruly AI and like begging it to work, you know?
+
+[00:02:49.88] - Joseph Thacker
+Yeah, that's true.
+
+[00:02:50.71] - Justin Gardner
+And it's nice to see some actual like zero-click impact.
+
+[00:02:53.78] - Joseph Thacker
+And the POCs were extremely high quality.
+
+[00:02:55.62] - Justin Gardner
+Yeah.
+
+[00:02:56.12] - Joseph Thacker
+Which you almost have to do these days.
+
+[00:02:57.94] - Justin Gardner
+Yeah, yeah.
+
+[00:02:58.75] - Joseph Thacker
+And then they're not easy. Like it gets harder and harder to do high quality POCs with the more guardrails that companies are adding.
+
+[00:03:04.22] - Justin Gardner
+Yeah.
+
+[00:03:04.61] - Joseph Thacker
+And especially Google, they're pretty good at guardrails.
+
+[00:03:06.24] - Justin Gardner
+Freaking good at guardrails. Yeah. And, but yeah, you need your exploit to be more deterministic.
+
+[00:03:11.05] - Joseph Thacker
+Yep.
+
+[00:03:11.59] - Justin Gardner
+And you, so the prompt, you know, the prompting or even the social engineering context needs to be very strong. I know Buzz had a really, really awesome bug this event, you know, where he put a lot of effort into the social engineering context for one of his exfiltrations. And, you know, it just made a lot of sense. You know, it just, the AI is like, oh yeah, that does, that makes sense. I should comply with that. And, you know, he had a very, very consistent exploit, which is cool. Yeah, I think aside from that, you know, it's just, I'll say it time and time again, it is a game changer to be able to work with the Googlers to, build your exploits.
+
+[00:03:54.02] - Joseph Thacker
+Yeah.
+
+[00:03:54.34] - Justin Gardner
+You know, like, that is a very underrated thing, you know, in the live hacking meta world.
+
+[00:03:59.55] - Joseph Thacker
+Yeah, I had a question specifically about that. Yeah, I feel like you, you like said to me, what are you doing? Go grab a Googler and do a thing. Yeah. And so I sat there and I was just like, what would I even ask them about? And it was, it was, it was like kind of mind-blowing to me both then and just now when I was reflecting on it and writing questions down that you had mental clarity about enough things that you would've just sat there all day and continued to like go down these code paths. And I didn't have any like leads that were like that. Do you know what I mean?
+
+[00:04:27.17] - Justin Gardner
+I feel like you hack a little differently than that too though. I do, yeah. I think you go where the leads are rather than like looking at something and digging out the leads in a lot of ways. Yeah, that's fair, yeah, that's fair. But for me, I lock in on a piece of scope and I just like, dig at it.
+
+[00:04:46.25] - Joseph Thacker
+So even if you had no lead, you would just have them walk you through the code because you would see stuff in there that would trigger.
+
+[00:04:50.77] - Justin Gardner
+Yeah, I mean, typically I do do it from a lead-based perspective. And so yeah, it's fun working with them and just getting their insights on. They got the code open there and I'm like, okay, so does it do this? And they're like, not quite. And we're just playing this cat and mouse game of Does this do what Justin really wants it to do?
+
+[00:05:13.91] - Joseph Thacker
+Right.
+
+[00:05:14.12] - Justin Gardner
+You know, or what kind of loopholes could they potentially see?
+
+[00:05:17.38] - Joseph Thacker
+So you're almost playing hot cold.
+
+[00:05:18.94] - Justin Gardner
+Yeah, exactly. Yeah, it's like exactly. Warmer, warmer, warmer. Yeah, Marco Polo. Yeah. So it's a fun time. And I think particularly this event, I got a lot of impact out of that.
+
+[00:05:32.43] - Joseph Thacker
+Yeah.
+
+[00:05:32.61] - Justin Gardner
+You know, like just knowing how to work with them and then coming into the event each day with a list of questions being like, hey, these are the ones I need answers to.
+
+[00:05:43.75] - Joseph Thacker
+Yeah.
+
+[00:05:43.88] - Justin Gardner
+You know? And then just like sitting with them and asking questions about the code until I feel like I understand what's going on.
+
+[00:05:50.25] - Joseph Thacker
+Yeah.
+
+[00:05:50.91] - Justin Gardner
+You know? And I just think that's very Google-y as well, you know, that these guys can just be like, you know, in the massive, massive organization that is Google, I can say, hey, here's an error message, search off this. And they find the code in like, 20 seconds.
+
+[00:06:05.92] - Joseph Thacker
+And they also grok it.
+
+[00:06:07.13] - Justin Gardner
+Yeah.
+
+[00:06:07.51] - Joseph Thacker
+Like they'll also read through the functions really quickly and understand exactly what's happening.
+
+[00:06:10.43] - Justin Gardner
+Yeah, dude, it's super googly.
+
+[00:06:12.10] - Joseph Thacker
+That is.
+
+[00:06:13.56] - Justin Gardner
+So yeah, that was a blast. All right. My item that I wanna talk about was, holy crap, dude, I got a reverse shell. And this was an intended reverse shell. This was just a pivot reverse shell, this event. And I was like, oh man, I'm typing into this shell and I feel slow because I'm so used to using Cloud Code for more advanced multi-step processes nowadays. And I'm like, man, whenever I got a reverse shell and I was in the command line, I felt like I was like max speed in the past, right? And so I was like, man, I can't do this. I gotta get Cloud Code in this stupid shell. But it was like an nc reverse shell, right? And so I was thinking about it and I was thinking about it and I just realized I can just tell Claude, just look at this tmux pane, right? And I have tmux open always in my shell session. So I just told it, hey, write into this tmux pane. And dude, it was like it just freaking gave it full access to the shell.
+
+[00:07:25.32] - Joseph Thacker
+How does it do that though? I've always been curious about that. Does it basically just like pipe in like almost like—
+
+[00:07:30.02] - Justin Gardner
+It's almost like a skill. Like there is a tmux command line where you can say tmux send -keys or whatever.
+
+[00:07:37.31] - Joseph Thacker
+Got it.
+
+[00:07:37.62] - Justin Gardner
+And it will just send those keys directly into that. To that tmux pane. Yeah, into the pane. And it had no problem doing that at all. No escaping issues. I was trying to do weird stuff with like pipes and like socatting it into like a file and making it like an input/output thing. No, just open it, catch your shell in a tmux pane, and then just tell Cloud Code, use that tmux pane, and it's like the Cloud Code has complete control of their reverse shell.
+
+[00:08:04.69] - Joseph Thacker
+And this was like, both of these events were like the first ones where you used Cloud Code significantly.
+
+[00:08:09.18] - Justin Gardner
+Yeah, dude. It was game-changing. I felt like I got so much deeper so much faster, and I was actually explaining to you over lunch the other day, It's a little bit weird because you get a lot of depth, but I feel like it doesn't have enough time to like marinate with me a little bit, right? So like I understand things so much faster and I'm able to find very impactful bugs really quickly, but then I'll think about it like the next day and I'm like, man, how did that work? How did I do that?
+
+[00:08:36.95] - Joseph Thacker
+You have less comprehension of what you're actually doing.
+
+[00:08:38.94] - Justin Gardner
+Yeah, I'm just sitting there, I'm trying to remember like, you know, I swear that I, I know I reported something about that. Like normally it would be like branded in my brain.
+
+[00:08:48.87] - Joseph Thacker
+Yeah.
+
+[00:08:49.74] - Justin Gardner
+If I had just found a vulnerability, I was like, yeah, I know exactly how that works. But I was like, man, I was having a little bit of trouble remembering what happened because I didn't have my hands on it quite as much.
+
+[00:09:00.24] - Joseph Thacker
+And I think what triggered that is you were asking me about one of my bugs and I was struggling to remember.
+
+[00:09:03.22] - Justin Gardner
+Yeah, yeah, exactly.
+
+[00:09:03.69] - Joseph Thacker
+And I think it was the same thing, yeah.
+
+[00:09:05.29] - Justin Gardner
+It's a little tricky, man, because it's becoming a lot more like ideation, direction, and then watching it do it. Whereas I feel like personally, I'm a very kinesthetic learner where I'm like, I need to get my hands on something to learn.
+
+[00:09:19.87] - Joseph Thacker
+Yeah, tactile.
+
+[00:09:20.51] - Justin Gardner
+Yeah. And so yeah, I don't know what that's gonna be like for my long-term hacker growth, but it's kind of addicting, not gonna lie.
+
+[00:09:31.12] - Joseph Thacker
+Right, yeah, so one thing I was gonna mention was I feel like from this event, there were like those creative AI vulnerabilities almost were in like a new class of vulnerabilities that I'm now gonna look for going forward. And you know, we're not gonna talk specifics, But I feel like the types of exfiltration methods that we saw were unique in a way where, you know, some were almost binary and then some were almost like shorter than binary, but not full response. But they can have just as much impact as like what you would consider a full exfil in the past. And I think a lot of people aren't thinking about the different like ways in which you could exfiltrate data.
+
+[00:10:06.50] - Justin Gardner
+Yeah. Yeah. I think we saw, I guess what I had kind of perceived previously as exfiltration methods was I can get characters out.
+
+[00:10:16.29] - Joseph Thacker
+Yes, like full characters.
+
+[00:10:17.49] - Justin Gardner
+But I think it's a good point that there are a lot of people that were able to get either yes or no out or encode data in an almost sort of binary format. You've got yes, no. You've got one Boolean there. You've got the next bit there, the next bit, and then kind of encode things directly. And even though you're just getting a small bit of information out, that can be really impactful.
+
+[00:10:46.05] - Joseph Thacker
+Right.
+
+[00:10:46.22] - Justin Gardner
+You know? Yeah. Depending on what your AI has access to.
+
+[00:10:50.14] - Joseph Thacker
+Right.
+
+[00:10:50.72] - Justin Gardner
+And with Google, your AI has access to a lot of stuff.
+
+[00:10:53.21] - Joseph Thacker
+Your email. Yeah.
+
+[00:10:54.01] - Justin Gardner
+Yeah, exactly.
+
+[00:10:54.75] - Joseph Thacker
+Or all of your documents.
+
+[00:10:55.52] - Justin Gardner
+Exactly.
+
+[00:10:56.08] - Joseph Thacker
+Yeah, yeah.
+
+[00:10:56.50] - Justin Gardner
+So very impactful to be able to even do minor exfiltration. Yeah.
+
+[00:11:02.84] - Joseph Thacker
+And I think we won't talk specifics here, but I think there was like 2 or 3 examples where HTML injection resulted in much more impact than I would've expected.
+
+[00:11:12.30] - Justin Gardner
+Yeah, totally.
+
+[00:11:13.22] - Joseph Thacker
+From like multiple show and tells.
+
+[00:11:15.03] - Justin Gardner
+I agree. Yeah, that was surprising.
+
+[00:11:17.29] - Joseph Thacker
+And so definitely get creative with that if you have that from like an AI response basically.
+
+[00:11:23.37] - Justin Gardner
+Yeah. All right, let me ask you one of these broader questions. Like, did you have any takeaways from this event on hacking Google specifically? Like the niches that they have.
+
+[00:11:37.34] - Joseph Thacker
+Yeah, I think multiple people found great bugs by keeping up with features. Oh yeah, like totally. They, I mean, they're constantly shipping new AI features and they're constantly shipping connection points, basically pivot points or overlapping features where something comes out that affects two products or a feature in one product affects another one. And I know Kieran specifically found multiple bugs in those connection points. And then there are multiple places where Valentino found like, like a single bug that then applied to all of the products or all the features.
+
+[00:12:10.62] - Justin Gardner
+Yeah.
+
+[00:12:11.16] - Joseph Thacker
+And some of the kind of like things that are unreleased that we got access to scope-wise are also going to be that exact same way. So it's going to be like a cross-platform or like a cross-Gemini feature that I think can have way more impact than it would be in like a single location. Yeah.
+
+[00:12:27.39] - Justin Gardner
+But on the flip side of that, we've also seen a lot of Well, they fixed it here, but then it also, but it works over here. The same technique, right? Because so much development is happening so quickly.
+
+[00:12:38.87] - Joseph Thacker
+And a lot of regressions. I think Buzz had multiple regressions that were basically reports from the past. And when you're getting paid well for those, it's worth it.
+
+[00:12:46.15] - Justin Gardner
+Yeah, dude, it's worth it. It's worth it to set up some regression testing. Like just, you know, remind yourself, set a reminder, you know, have Clod Code code something up, you know, to do that regression testing. These are, you know, very well-paid bugs. Yeah.
+
+[00:12:59.75] - Joseph Thacker
+And I think because the nature of AI bugs are like delivery and then, um, either, you know, different types of impact, whether it's a rogue action or an exfiltration, like all any of those three can kind of regress and all of a sudden like re-enable a bug.
+
+[00:13:11.85] - Justin Gardner
+Mm-hmm.
+
+[00:13:12.46] - Joseph Thacker
+Uh, and that's true. And not just Google, but other platforms as well.
+
+[00:13:15.27] - Justin Gardner
+Yeah.
+
+[00:13:15.67] - Joseph Thacker
+Um, I know specifically, I'm pretty sure that, um, yeah, I guess I can't say the name of the company, but I, I'll just say it and then we can bleep it.
+
+[00:13:23.44] - Justin Gardner
+Yeah.
+
+[00:13:23.61] - Joseph Thacker
+I'm pretty sure that in— this has happened multiple times across their different AI chat features.
+
+[00:13:26.90] - Justin Gardner
+Yeah.
+
+[00:13:27.05] - Joseph Thacker
+Where all of a sudden an old exfil still like happens again. And it's because they're adding features, right? They're either adding like a new way to like render a preview or a new way to render a link or a new way to render an image. And in many chatbots, they don't even have sensitive data, so they don't worry about it at first. Then later on they add the ability to fetch data and now all of a sudden it becomes a vulnerability.
+
+[00:13:48.44] - Justin Gardner
+Yeah, yeah. There's lots of footguns here and at the pace that they're moving, they're just bound to happen.
+
+[00:13:55.34] - Joseph Thacker
+Yeah.
+
+[00:13:55.89] - Justin Gardner
+Yeah, so it's good to see. I will say I think that the Google AI VRP right now is like—
+
+[00:14:03.85] - Joseph Thacker
+A place to be.
+
+[00:14:04.47] - Justin Gardner
+It is paying out some serious money. You know, like even if you don't love AI hacking and you're just a green hat, like—
+
+[00:14:12.30] - Joseph Thacker
+Yeah, it's worth looking at.
+
+[00:14:14.16] - Justin Gardner
+Yeah, it's worth looking at.
+
+[00:14:15.52] - Joseph Thacker
+And in my experience, even though they're being a little slower to pay out because of I think all of the AI reports, they still are consistent with paying out. So you can easily build up pipeline and still get paid. Whereas it feels like a lot of other companies are just straight up of like trying not to pay or like—
+
+[00:14:28.36] - Justin Gardner
+Yeah, no, that's not what they're doing. Yeah. What Google's doing at least. I think I also got to chat with some of the members of the team and they're telling me like they gotta like do a talk someday on this period at Google from a program management perspective because so much is changing with the influx of reports.
+
+[00:14:48.17] - Joseph Thacker
+Yeah.
+
+[00:14:48.41] - Justin Gardner
+Both valid and invalid, you know? Yeah. It's really forced them to adapt in ways that they wouldn't have had to do.
+
+[00:14:54.82] - Joseph Thacker
+Yeah.
+
+[00:14:56.11] - Justin Gardner
+Prior.
+
+[00:14:56.66] - Joseph Thacker
+So yeah, and I think specifically, I think it's just real good practical advice for our audience. They said that you just need to be handwriting your reports unless you've really honed your AI report writer, that they have had valid reports basically come in that are written like slop and they end up having to close them. And then later on when another report comes in, they're like, have I seen something like that? And they go and look it up and it's like, oh, it was buried in the middle of this slop report that actually we couldn't even see the impact here because it was convoluted with a bunch of working as intended features. But the, you know, Claude in that moment doesn't understand that their API keys are gateways, right? Or their discovery docs are supposed to be public. And so it was like, they've had valid bugs basically smuggled into SLOP that then don't get accepted because the AI just conflated the report. When you're hacking on Google, understand the report you're submitting.
+
+[00:15:45.89] - Justin Gardner
+Yeah. Concise. And if you look at their quality standards, concise is one of the things that they are very big on. And AI is not good at that for these sort of things, right? So you really have to like, and I will say I have started using, I have honed my VRP reporting agent and it has really good output now. But still, even with me telling it to be concise like 15 times in the prompt, I still tell it, hey, cut this, cut this, cut this. you know, and really just get it down to bare bones technical impact-based boom, you know?
+
+[00:16:21.02] - Joseph Thacker
+You know what I did notice? I don't think you've mentioned this to me yet.
+
+[00:16:23.27] - Justin Gardner
+Yeah.
+
+[00:16:23.71] - Joseph Thacker
+In this event, it felt like every single person I knew was recording videos for every bug.
+
+[00:16:28.12] - Justin Gardner
+Yeah, dude, you have to do it. You have to do it nowadays.
+
+[00:16:30.30] - Joseph Thacker
+But I mean, a year ago you were like, I feel like it was like 10% of reports had videos. You were a person who often did videos.
+
+[00:16:36.00] - Justin Gardner
+Yeah.
+
+[00:16:36.26] - Joseph Thacker
+But most hackers weren't, and the triagers could figure it out or whatever. But I think now that they have less time, it's like even if they can't figure out how to fully replicate or something, if there's a good video, there, they might just pass it on to the program or the video will help them figure it out or immediately show the impact.
+
+[00:16:52.09] - Justin Gardner
+I think it's also not something you can AI forge. So like you can AI forge a POC pretty well and you can AI forge a report, but you can't AI forge a talking head on a video, you know, for me speaking right now.
+
+[00:17:03.07] - Joseph Thacker
+Yes, you explaining it as you're doing it.
+
+[00:17:04.89] - Justin Gardner
+Exactly. So just taking that extra, like getting yourself a low friction setup for recording those videos and then just pounding out, you know, 2-minute POC video, you know, when you're already in the, you know, I do it right when I discover the bug. Like even though, even if I don't write the report that moment, right when I discover the bug, I pop right into a POC video, record it, save it off, and then go back and write off of that POC video.
+
+[00:17:30.70] - Joseph Thacker
+I've actually been doing it before I even know there's a bug, if I think there's a high chance of a bug, because I don't want to have to do it again.
+
+[00:17:36.15] - Justin Gardner
+Especially in the non-deterministic AI world.
+
+[00:17:38.88] - Joseph Thacker
+Exactly. No, so I'll just hit record, I'll try it, If it doesn't work, I hit stop and delete.
+
+[00:17:43.07] - Justin Gardner
+Yeah.
+
+[00:17:43.33] - Joseph Thacker
+And then I just go again with a different one. And that way the first time I pop it, I have a video.
+
+[00:17:47.36] - Justin Gardner
+I think there's a good bug bounty product in there of like, just like grab the last like 10 minutes of screencap and just like be able to cut it. I'm sure it's out there. Yeah. Yeah, we should try to hack that together or track that down.
+
+[00:18:00.34] - Joseph Thacker
+I will say what I have done sometimes when I do that and I wasn't talking over it because I'm like in my office or my kids are around or whatever. And I'm just doing that to make sure I get it on film. I'll then record an audio after and just like splice it on top. Oh really? Yeah.
+
+[00:18:10.29] - Justin Gardner
+That's cool. I haven't done that before. Yeah. Yeah. Yeah. Yeah. All right, let's see what else we got on the list here.
+
+[00:18:18.66] - Joseph Thacker
+I wanted to talk about this idea of human tokens. So Network Chuck said in a text message.
+
+[00:18:27.00] - Justin Gardner
+Dude, I'm looking at your list here. Do you have anything that's not AI related on here?
+
+[00:18:33.00] - Joseph Thacker
+Listen, this is an AI event, Justin.
+
+[00:18:35.13] - Justin Gardner
+Okay, all right, hit me.
+
+[00:18:36.70] - Joseph Thacker
+Actually, no.
+
+[00:18:37.26] - Justin Gardner
+I'll bring the—
+
+[00:18:38.06] - Joseph Thacker
+I'm coming back in a minute because I want to talk about technical.
+
+[00:18:40.23] - Justin Gardner
+I brought up Cloud Code plus Tmux. It's fine.
+
+[00:18:42.80] - Joseph Thacker
+No, no, no, no. I'm jumping away from AI to talk about something technical and we'll come back. All right. One cool thing, and I think this is just something neat to look for in Google, but in other companies too, is actions that are being taken by SDKs or by APIs or by MCP servers, they often will need to be associated with a grant, like some OAuth grant. And I had two bugs in OAuth grants on this where basically the AI or the MCP server or whatever, were taking actions that were not allowed, that were like an, a scope expansion of the OAuth grant that you gave it. I don't think many people are looking at that.
+
+[00:19:21.16] - Justin Gardner
+Interesting.
+
+[00:19:21.45] - Joseph Thacker
+Because it's like you just click through and then like you're using the, then you're just using the app later. You're not like thinking back to what you actually gave it permission to do.
+
+[00:19:28.34] - Justin Gardner
+So these SDKs or these MCP servers or APIs or whatever that people are hooking into the AI products that they're developing.
+
+[00:19:36.00] - Joseph Thacker
+Yeah. You do some OAuth flow or some grant where like you do the checkboxes.
+
+[00:19:38.70] - Justin Gardner
+Yeah.
+
+[00:19:39.04] - Joseph Thacker
+It can have access to this and this. But then if it has access to more than that.
+
+[00:19:42.57] - Justin Gardner
+It's weird 'cause if they're doing the OAuth grant, then you would assume that they're using the resulting token. But I guess that resulting token is just not being validated at whatever API they're—
+
+[00:19:53.54] - Joseph Thacker
+I think sometimes that token is just basically used to like give you permission into the feature and then the AI has some sort of different permission.
+
+[00:20:01.26] - Justin Gardner
+Weird, weird. Okay. Gotcha. Well, that did make me think though, SDKs, I've been meaning to talk about this on the pod for a while. I saw somebody, I won't name who, at a live hacking event maybe 4 years ago just absolutely destroy one of the hardest scopes by finding a bunch of bugs in their SDKs. And a lot of them were just straight up traversals.
+
+[00:20:27.28] - Joseph Thacker
+Yeah. What's funny about that is I feel like back then it's like, oh, I don't want to do code review during a live hacking event.
+
+[00:20:32.51] - Justin Gardner
+Yeah.
+
+[00:20:32.86] - Joseph Thacker
+And no one would do it. Now I feel like it's like, oh, I'll just give Cloud Code this code, right?
+
+[00:20:36.49] - Justin Gardner
+Exactly. Yeah.
+
+[00:20:36.89] - Joseph Thacker
+So it's actually easier than it ever has been before too.
+
+[00:20:38.96] - Justin Gardner
+Yeah. Yeah. And, and so, you know, a lot of these were just, I mean, you could definitely feed, feed it to Cloud Code. Some of the things that I, I prime it with as well are like, hey, look for areas where there's, there are path traversals off of user input. Mm-hmm. Right. Um, because I think that one, is that yours?
+
+[00:20:57.85] - Joseph Thacker
+Yeah.
+
+[00:20:58.09] - Justin Gardner
+Yeah. Okay. Uh, because I think one of the things, uh, with that is that a lot of times these SDKs are just wrappers around the REST API, right? So you're passing in maybe the query or the function parameter for the SDK is like user ID or something. That user ID's inevitably landing in a path in a REST API call. And if no sanitization is occurring, can you make getUser turn into getOrganization or Delete reaction turned into delete organization.
+
+[00:21:32.85] - Joseph Thacker
+Delete employee org.
+
+[00:21:33.40] - Justin Gardner
+Exactly, right? That's tremendously impactful.
+
+[00:21:35.50] - Joseph Thacker
+Yeah.
+
+[00:21:37.52] - Justin Gardner
+So as I was kind of sort of reflecting on that, I realized like, man, we are very privileged to go to these live hack events because not only do I get to see everybody's cool bugs, but I also get to sort of develop a playbook for how to approach various scopes. and I think that gives me a lot more confidence as a hacker.
+
+[00:21:57.33] - Joseph Thacker
+It does.
+
+[00:21:57.90] - Justin Gardner
+Yeah.
+
+[00:21:58.61] - Joseph Thacker
+Yeah. Because yeah, you one, hone it yourself by trying it during the event. Two, you see what other people were doing by talking to them. And then you get to see what the highest possible outcome is when you see show and tell.
+
+[00:22:08.56] - Justin Gardner
+Exactly.
+
+[00:22:09.13] - Joseph Thacker
+Right.
+
+[00:22:09.43] - Justin Gardner
+Yeah. It's freaking beautiful, man. Yeah. All right.
+
+[00:22:11.69] - Joseph Thacker
+I wanna mention this human tokens thing.
+
+[00:22:13.03] - Justin Gardner
+Okay.
+
+[00:22:13.51] - Joseph Thacker
+So, so Network Chuck mentioned in like a group chat recently, that like he said something like, don't waste your human tokens on it. And I thought that was one, just a clever phrase, right? Because like, you know, applying kind of AI lingo to like our life or like our, our, it's the ways that we think about things. But then I personally was talking with another hacker at the event and I felt like he hadn't advocated on his behalf very well. So I kind of took human tokens and like turned it into like brain tokens and mouth tokens, you know, like where brain tokens, like you're like using your own effort to hack on things. And then the mouth tokens, what I meant in that moment was basically like he wasn't advocating for himself. And I think that this is actually something that I run into a lot. I think that it's either in your nature or your experience through live hacking events has made you good at it. And I think I'm B-tier at it, right? But I think that there are a lot of hackers I know, both some in the live hacking event circuit and some that are not, that don't do a very good job of spending their, you know, mouth tokens on advocating for themselves. And I think it's hard because there's like 3 layers to it. One is like how to know when to push back, like how to know whether your bug is worthy of actually fighting for, because I think you can lose a lot of respect fighting for bugs that aren't valid.
+
+[00:23:25.99] - Justin Gardner
+Yeah, oh, for sure.
+
+[00:23:27.50] - Joseph Thacker
+And then I think like on the other hand, a lot of people have great bugs, but they either didn't articulate it well or they got a bad triager and then they just kind of let it go to the wayside and they don't fight for themselves.
+
+[00:23:36.75] - Justin Gardner
+That last one, that pisses me off.
+
+[00:23:39.14] - Joseph Thacker
+Right.
+
+[00:23:39.79] - Justin Gardner
+Like as somebody who does like to advocate, you know, if I see, you know, a valid bug go down the drain, you know, I'm like, or even just get, You know, paid is a lower medium, it's a higher crit.
+
+[00:23:49.97] - Joseph Thacker
+Yeah.
+
+[00:23:51.99] - Justin Gardner
+Hold me back, man. Hold me back.
+
+[00:23:53.73] - Joseph Thacker
+Yeah. And so I think my advice or what I was suggesting that the audience is like, kind of know the difference there. And when you actually have a ground, like solid footing to stand on, like actually stand up for yourself in a kind of respectful way. But then the other thing is like, who do you push back against and how do you do it? Like, what do you say? You know what I mean? And I think that like people can fall apart at any step in that process, like not knowing what to stand up for, like what to push back on. And like, if I do reach out, who do I reach out to? Right? It's like sometimes mediation requests never get answered, but like even in the live hacking scene, it's like, you know what, you actually do maybe have more access to people than you realize. I know you know that, but I feel like there are some people, like even, you know, the person I'm talking about, you know, from the event.
+
+[00:24:32.80] - Justin Gardner
+Yeah, I know who you're talking about.
+
+[00:24:33.86] - Joseph Thacker
+He like didn't go to the people and it's like, you're at an event with the people, just go to the people and say the thing.
+
+[00:24:38.52] - Justin Gardner
+That's so bad, yeah.
+
+[00:24:39.26] - Joseph Thacker
+Right. And then like when you go to them, like how do you approach this? And I think there are strategies in each of those.
+
+[00:24:48.08] - Justin Gardner
+Yeah, I think just one of the things I've had success with that is just going up to them and saying, hey, you're gonna triage this bug eventually. Do you want me to just show you how to do it real quick? And just like, and just walk them through it. But also, you mentioned this with collabing with the Googlers as well, having a hit list, right? If you're gonna meet with somebody, be like, "All right, look, we need to cover this report, this report, this report, this report." You've got 'em in a list. You're gonna know exactly what you wanna say. You know what the key elevator pitch of this bug is, right? And you boom, boom, boom, boom, right? 'Cause they're busy right now. This is a live hacking event. [Speaker] [Speaker]
+
+[00:25:26.05] - Joseph Thacker
+[Speaker] [Speaker] Yeah, and you can even summarize it at the end of each of those points. Like, "Okay, good, so we think this one's a high." And you say those things. [Speaker] I do. [Speaker] A lot of times whenever I hear other people talking to them, they don't say that action statement at the end.
+
+[00:25:36.32] - Justin Gardner
+Yeah.
+
+[00:25:36.58] - Joseph Thacker
+All right. So we agree this is a high.
+
+[00:25:37.80] - Justin Gardner
+Yeah.
+
+[00:25:38.11] - Joseph Thacker
+You know what I mean?
+
+[00:25:38.51] - Justin Gardner
+Yeah.
+
+[00:25:38.92] - Joseph Thacker
+And that's what you, that's what you need. You need like, what's the commitment?
+
+[00:25:41.26] - Justin Gardner
+You need to lock it in.
+
+[00:25:41.90] - Joseph Thacker
+Right.
+
+[00:25:42.14] - Justin Gardner
+Yeah.
+
+[00:25:42.29] - Joseph Thacker
+Lock it in.
+
+[00:25:42.88] - Justin Gardner
+And then, and then notate that for them. So how, then DM them. Yeah. You know, the—
+
+[00:25:48.05] - Joseph Thacker
+Or if you're feeling really bold, comment on their port.
+
+[00:25:49.57] - Justin Gardner
+Yeah.
+
+[00:25:49.75] - Joseph Thacker
+Say this guy said this is a high.
+
+[00:25:51.19] - Justin Gardner
+Exactly. Exactly. And, and I always do that. Do you really? I do. For sure. 100% of the time. Because it's like, that's the official track record. I, you know, notate, notating that meeting with that person.
+
+[00:26:01.50] - Joseph Thacker
+Yeah.
+
+[00:26:01.76] - Justin Gardner
+You know, and that, that tells them, you know, oh, where, where to pick off.
+
+[00:26:04.98] - Joseph Thacker
+I think you're 1 in 50. That does that though.
+
+[00:26:06.88] - Justin Gardner
+Yeah, it is pretty rare. It is pretty rare. That is one of the things I've done from the beginning though. That one was I think more of a nature than a nurture thing, to be honest.
+
+[00:26:14.15] - Joseph Thacker
+Yeah.
+
+[00:26:15.95] - Justin Gardner
+But all right, let's jump into some other technical stuff here.
+
+[00:26:19.31] - Joseph Thacker
+Sure.
+
+[00:26:19.96] - Justin Gardner
+One of the things, no surprise here, but one of the things that makes hacking Google difficult is they use Protobuf all over the place. And a lot of times it's ProtoJSON, which is more friendly than actual Protobuf.
+
+[00:26:33.33] - Joseph Thacker
+Yeah.
+
+[00:26:34.38] - Justin Gardner
+But there were a couple situations in this event where I was looking at actual, you know, binary protobuf. And it's a pain in the ass, dude. It is super difficult to work with. So I was kind of researching a good solution for that. And the best one that I came upon, and I do really like, is this command line utility called Protoscope, which allows you to just define, you know, numbers and then values. So, okay, field number 2, colon, curly brackets, string, and now it's a string, right? You know, okay, field 4, it's a sub-object. So curly brackets, and now we're doing 3 colon integer 6, you know? And you kind of need the keys or you need to brute force, you need to, you know, have some way to know what you're encoding here. Or, you know, take an ex— this is what we often do is take an existing Protobuf and decode it and then tweak it and then re-encode it, right? So Protoscope can take valid binary Protobuf, decode it, and put it in this text-readable format for humans. Then you tweak it a little bit, re-encode it, and then you get your valid Protobuf.
+
+[00:27:45.19] - Joseph Thacker
+Does it open in Vim or something?
+
+[00:27:47.15] - Justin Gardner
+No, it's like a standard in, standard out sort of situation. So you cat data into it or whatever, and then you got your file and you pipe it back in and it converts it back into a binary blob or whatever. And then typically I base64 encode it. What I've been doing is base64 encoding it and then dropping it into Kaido and then just selecting it and adding a base64 decode workflow. And then that just ensures that there's no like stray bytes and stuff like that that you're not seeing and it just keeps it nice and clean.
+
+[00:28:19.23] - Joseph Thacker
+Yeah. Could you have just used like curl with a proxy forward?
+
+[00:28:22.74] - Justin Gardner
+I'm sure I could have. Yeah. But I like to like have it inside of Replay so I can, you know, use some of my other features as well. So Protoscope is the name of that tool and it is very helpful. I think I'm thinking of making a wrapper for it in Kaido. Yeah, yeah. Yeah, I think that'd be good.
+
+[00:28:40.09] - Joseph Thacker
+Sweet, dude. I don't think that I have anything else. Did you wanna mention?
+
+[00:28:44.18] - Justin Gardner
+Yeah, okay, I've got one more that I'll hit before the end of this. So like I mentioned, you know, we did the Google event, but before that I was going super ham on the live hacking event with HackerOne. I don't know if the target's public, so I'm not gonna mention it. But yeah, that was a very fun time and it was a lot of WebSockets. And that was something that I had not played around with a lot before. And you guys know I'm a big Kaido fan, but Kaido did not have really good WebSocket support in time for this event. Now I'm told that they are shipping new WebSocket repeater equivalent, right? In Kaido very soon. And I did help them design that interface a little bit. Oh, nice. And it is quite good. That being said, what we did have to do here was upstream, you know, Burp to do the replay back and forth.
+
+[00:29:45.27] - Joseph Thacker
+Okay.
+
+[00:29:46.61] - Justin Gardner
+But man, it's a fun attack surface, man. Yeah. It feels nice to do something that isn't straight HTTP. Mm-hmm. And I think it is less, understood and less assessed.
+
+[00:29:56.88] - Joseph Thacker
+Yeah, actually I think it was Kieran Moncke, like a year ago, was like probing into some WebSocket stuff and he found so many weird behaviors. Like I don't think that he ended up popping anything on it, but like when he was talking about it, I was like, dude.
+
+[00:30:09.81] - Justin Gardner
+Oh yeah, dude, he's got some good research on that. We should, Kieran, I know you listen to this, you need to go finish that research, dude. I know that you have the docs, you know, laying around. That was freaking good research.
+
+[00:30:19.72] - Joseph Thacker
+Yeah.
+
+[00:30:20.20] - Justin Gardner
+Yeah. Do that and put it on the CTBB research lab. Perfect. Okay, last bit. Another thing that I looked at recently quite a bit actually at both, spanning both live hacking events, was webhook architecture and the way that these various apps sort of duct tape things together. It's hard to get right. By nature of webhooks, there are public endpoints that are processing them.
+
+[00:30:48.00] - Joseph Thacker
+Right.
+
+[00:30:48.63] - Justin Gardner
+That's the whole point is to like introduce third-party integration.
+
+[00:30:51.42] - Joseph Thacker
+Yeah.
+
+[00:30:53.39] - Justin Gardner
+So there's a lot, you know, one, that's interesting scope. Where does that data go? How is it authenticated? Is that authentication done correctly? And yeah, just, I think that it is underused scope as well because it is something that a lot of people shy away from. Particularly cryptographic validation, right? Like, are these JWTs being processed properly? Like, is there a signature here? Okay, well, I hate my life. I'm never gonna try to hack this even though I just need to take the fricking JSON blob and SHA-256 hash it, you know? Yeah.
+
+[00:31:33.67] - Joseph Thacker
+Any bit of friction.
+
+[00:31:35.65] - Justin Gardner
+Yeah, it's friction. But the thing is, you know, cloud just deletes it, man. It really does.
+
+[00:31:40.95] - Joseph Thacker
+Deletes the friction.
+
+[00:31:41.67] - Justin Gardner
+Yeah, it deletes it. It totally deletes the friction. So, you know, you can just say, hey, you know, SHA this, you know, and it does it beautifully, you know? So even if it's a tamper signature even, right? Like that's a boundary a lot of people don't wanna cross.
+
+[00:31:58.57] - Joseph Thacker
+Sure. Like if you change the request at all, you have to like re-sign it all again.
+
+[00:32:02.04] - Justin Gardner
+Yeah, and then like just basic things like, you know, hash extensions, you know, bit flipping and stuff. You know, a lot of people kind of move, away from anything like that. But it's very interesting scope, I think.
+
+[00:32:14.66] - Joseph Thacker
+Yeah. And it resulted in some sick bugs today.
+
+[00:32:17.58] - Justin Gardner
+It did. It did. Not gonna lie. It did. So, all right, man. It is getting late. You wanna call it a wrap on that?
+
+[00:32:23.69] - Joseph Thacker
+It's getting very late. Yes.
+
+[00:32:24.57] - Justin Gardner
+All right. Sweet.
+
+[00:32:26.77] - Joseph Thacker
+GG.
+
+[00:32:27.11] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more Critical Thinking content or if you wanna support the show, head over to ctg.tv/criticalthinking. Www.hacktv.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild if you're a full-time hunter. It's a great time, trust me. All right, I'll see you there.

@@ -1,0 +1,844 @@
+Episode 64: .NET Remoting, CDN Attack Surface, and Recon vs Main App
+Source: https://www.criticalthinkingpodcast.io/episode-64-net-remoting-cdn-attack-surface-and-recon-vs-main-app/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:01.524)
+Dude, why is there a link in this dock of a mobile device server rack? Why did you put this in here? What is this?
+
+Joel Margolis (teknogeek) (00:10.798)
+Okay, so you asked me yesterday, you're like, hey, do you have any interesting links? Like do you use Twitter bookmarks? And I was like, I do use Twitter bookmarks, but I don't think I have anything useful in there. And I opened it up and the last thing I'd bookmarked was this post that I saw of, and I just found it really interesting. So I think the original thread was sort of like going through the evolution of like how sort of this phone automation stuff has developed over the last decade or whatever.
+
+Justin Gardner (@rhynorater) (00:25.684)
+This is nuts, dude.
+
+Joel Margolis (teknogeek) (00:40.35)
+And it used to be that you'd have like a real person sitting in front of like a sheet of plywood with 15 Samsung, cheap Samsung phones on it or whatever. And they would just like tap all, all the buttons on like 30 different screens. And, uh, you know, that, that was just how it worked.
+
+Justin Gardner (@rhynorater) (00:54.164)
+Dude, talk about the most boring job ever. Like, you just get a message and you're like, all right, like this post on like 50 different devices and then you just go around and tap, tap, tap, tap, tap. It's crazy.
+
+Joel Margolis (teknogeek) (01:05.246)
+Exactly. Exactly. So, but the, the one that I liked was this, I think it's like the latest generation or whatever, but like, I'd never seen anything like this. They take real phones and they disassemble them and they unscrew the main board from inside the device. And then they hook it up to some special PCB that they developed. And they ha they did this like 20 times and they mount them inside of a server case so that there's like 15 of these boards just like sitting on their edge.
+
+just like mounted next to each other, all plugged into this one giant board. And then you take like a single USB cable from this box and you plug it into your computer and you run this software and you just have like a display of like, you know, the 30 screens from every single phone that's mounted inside the server box. And you just click once and it clicks everywhere.
+
+Justin Gardner (@rhynorater) (01:36.852)
+No way.
+
+Justin Gardner (@rhynorater) (01:54.068)
+It looks like a virtualized, it looks like, yeah, I love how it clones it to all of them, but it looks like, you know, they're just doing Android virtualization, but it's like actual physical devices.
+
+Joel Margolis (teknogeek) (02:05.63)
+Yeah, it's super, super interesting, but I guess this is how they're doing it nowadays with all the big like bots botnet type of things and whatever. And yeah, yeah. And I was, I was saying like back in my day, so before I'd gotten to bug money and stuff, I used to write bots and the way that I did this was I just had like a stack of iPhones that I'd bought on eBay that I jail broke. We're just like sitting on the floor and that's how I used to do it. That's exactly right. Yes. I'd like that.
+
+Justin Gardner (@rhynorater) (02:13.492)
+for like click farming or whatever.
+
+Justin Gardner (@rhynorater) (02:26.36)
+Oh my gosh, dude.
+
+You were the guy with the giant piece of plywood pressing the buttons, huh? Oh my gosh. That's hilarious, dude. I bet that was a pretty relevant hacking experience, though, building bots for things, let's just say.
+
+Joel Margolis (teknogeek) (02:35.59)
+Yeah. Yeah.
+
+Joel Margolis (teknogeek) (02:43.678)
+Yeah, I like it's very, very similar skill set to bug bounty. Just like different implementation is like how I like to see it. So I think that there's a lot of exactly it's like that same sort of mindset. Like I would say security is a mindset where like hacking is a mindset where you just have to reframe how you think about like the same sort of problems. Um, and I think that's a great example of it where like bodying and security are like,
+
+Justin Gardner (@rhynorater) (02:48.66)
+Yeah, still got to reverse engineer stuff.
+
+Justin Gardner (@rhynorater) (02:58.196)
+Mm.
+
+Justin Gardner (@rhynorater) (03:01.874)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (03:08.638)
+Almost identical is just how you decide to use the information that you have, whether you choose to exploit it for malicious purposes or whether you choose to report it to the program and let them secure it.
+
+Justin Gardner (@rhynorater) (03:15.636)
+Hmm. Yep. There's a huge overlap of the community too. So many really talented botters or anti -botters have gone into security afterwards. This is an interesting pipeline.
+
+Joel Margolis (teknogeek) (03:26.718)
+Yeah, for sure, for sure.
+
+Justin Gardner (@rhynorater) (03:27.86)
+And vice versa as well. I've seen people go from security and hacking into the anti -bot space and be like, wow, this is so hard. You know? So.
+
+Joel Margolis (teknogeek) (03:35.134)
+Yeah, exactly. Every once in a while I get nerd sniped into that area again.
+
+Justin Gardner (@rhynorater) (03:41.556)
+Yeah, that's probably one of the more, I don't know, I imagine that's one of the more sort of back and forth industries that you've got because like security is a little bit back and forth. Like sometimes you'll actively be like, oh, this person's literally trying to hack my website right now or like my computer right now. But like those are kind of rare. But with botting stuff, I mean, it's like, are they gonna?
+
+bought this drop or not, you know, like, and the answer is always going to be pretty much yes, you know? So they're always going to be trying to figure out how to get around it. And it's got to be, it's probably one of the more tangible cat and mouse games you can find in IT.
+
+Joel Margolis (teknogeek) (04:13.022)
+Yeah.
+
+Joel Margolis (teknogeek) (04:20.638)
+For sure, it's a really big cat and mouse game. That was the biggest thing that sort of pulled me away from it, was just like it was very grindy in that sense, where it's you versus the security team. And in my opinion, the security team always has an advantage because from the attacker's perspective, they have to reverse engineer how all these different checks work. From the security team's perspective, they can implement like 10 checks and turn on one of them and then let it sit and then.
+
+Justin Gardner (@rhynorater) (04:27.604)
+Yeah.
+
+Joel Margolis (teknogeek) (04:48.126)
+the hacker figures out, okay, this is how I bypass one of them. And then the security team turns on a second one. And then now the...
+
+Justin Gardner (@rhynorater) (04:54.068)
+Is the anti -botting thing under the security team normally? Do you know? Is that like its own division or is it like a?
+
+Joel Margolis (teknogeek) (05:03.806)
+Yeah, I mean, usually it's either under security or like trust and safety type stuff, because they're usually like sort of hand in hand with like anti -fraud, anti -botting, that type of, yeah.
+
+Justin Gardner (@rhynorater) (05:16.18)
+Gotcha. Interesting. Well, this is the last time I'm letting you put a link in the doc, Joel. I just opened this up and it's just like a server rack full of mobile phones. The most Joel thing I could possibly think of. Yeah. That's great, man. All right, dude. Major life lesson here for any of those listening and for you and for me. When Shubz tweets something, you listen to the tweet. I'm a simple man. When Shubz tweets, I listen.
+
+Joel Margolis (teknogeek) (05:23.946)
+Yeah, wait till you see what I booked for next month.
+
+Justin Gardner (@rhynorater) (05:45.94)
+You know, and Shubz tweeted out earlier this week about, as he said, let me just read what he said. I can't believe so many people are sleeping on this research. Here's the link. And when he says something like that, you got to not sleep on that because that's serious. And lo and behold, I took the deep dive. I've read it and he is correct. We were fast asleep on this whole, or at least I was, I was fast asleep on this .NET remoting.
+
+Joel Margolis (teknogeek) (06:11.142)
+Yeah.
+
+Justin Gardner (@rhynorater) (06:15.22)
+research that just came out from code, what is it, code white?
+
+Joel Margolis (teknogeek) (06:18.846)
+Code white, yeah. Yeah, so it's interesting because most of the time when the Asset Note team or Shubs is tweeting about something, it's some zero day that they've either reverse engineered or found and they have like a big blog post. This was different. This was just like a blog post. And not only that, it was like a month old. It wasn't like, oh, this came out three days ago. Like when he says sleeping, like this had come, this had been out for maybe over a month at that point or just about a month. So.
+
+Justin Gardner (@rhynorater) (06:28.66)
+Yeah.
+
+Justin Gardner (@rhynorater) (06:43.892)
+Yeah. Thanks, Shubs. Next time, tweet it out. Tweet that out right away as soon as it comes out. Just be like, hey, this is amazing. Everyone should look at this. But, yeah.
+
+Joel Margolis (teknogeek) (06:50.846)
+You
+
+Joel Margolis (teknogeek) (06:55.806)
+Yeah, yeah, it's super, super interesting. And what's cool is it's not even the first one in this sort of like series. Like Code White had done another blog post two years ago in 2022 about this same sort of technology from sort of a different perspective. And it's called .NET Remoting. So I know that you actually were working. Yeah, yeah. So tell me a little bit about that, because I think we have something special for the listeners too.
+
+Justin Gardner (@rhynorater) (07:03.474)
+Mm.
+
+Justin Gardner (@rhynorater) (07:15.764)
+Dude, I popped something with it last night.
+
+Yeah, so.
+
+Yeah, yeah, so there's a lot of cool things, cool takeaways from this one. I'm gonna give a high level overview of what this sort of concept is here. And then we'll kind of go into the new research that just came out. So .NET remoting is essentially, if you guys are familiar with Java, RMI, remote method invocation, it's very similar to that. But essentially it allows you to call functions and expose objects. Let me be more clear.
+
+to your code on a different server and it runs that code on that server rather than in your local code base. And so you can register these various classes to be able to be triggered remotely and then you have the ability to call those classes over TCP, IPC, or HTTP. And so there's a couple resources. We'll create a section in the show notes on...
+
+the best resources I could find on this that got me up to speed on it enough to pop an RCE last night, or multiple RCEs last night. And essentially, you have those three ways of exploiting it. But the problem was, previously, before this research came out, in order to exploit this over HTTP, which is the one that has the least security controls on it and the one that...
+
+Justin Gardner (@rhynorater) (08:49.364)
+is most likely to be exposed due to HTTP services often being exposed. You needed to know this arbitrary string in the URL that gets generated when these objects get created. And if you know this arbitrary string, then you can access that interface and get it to run, instantiate these objects and run code. Yeah. So the problem then is how do we get this URL? And that is what...
+
+this amazing research that Shubz highlighted and Marcus Wolf Tang, I hope I pronounced that correctly, was writing about when he released this leaking object references to exploit HTTP .net remoting article back on February 27th. And essentially what this does is it takes advantage of some error stack trace.
+
+dump that happens when you cause an error in this flow. And that stack trace, if the conditions are correct, will leak this URL that you need, this super important URL. And so there's a couple ways that he did that. And of course, he's building on the back of some research by the IIS goat, Mr. Sush himself, and some research that he posted.
+
+Man, when did Sarooj post this research? I want to say this was 2019, I think. Yeah. Yeah. Yeah. And essentially there is a trusted, and you know, when I say this, it just feels so good to say it, man. There is a trusted object that you can overwrite in the HTTP request by setting a header, right? So what Sarooj found was that you can set the underscore underscore request verb header.
+
+Joel Margolis (teknogeek) (10:19.998)
+2019, yeah, March of 2019.
+
+Justin Gardner (@rhynorater) (10:42.93)
+when you're sending an HTTP request, and that will override the request verb that is in, that is the trusted request verb object in the HTTP request object inside of the IS stuff being processed, in the .NET processing of the HTTP requests. And what that does is that creates a mismatch between, okay, you send a GET request and then you set the header so it thinks it's a POST request, and then that causes some error which will, in certain situations,
+
+Joel Margolis (teknogeek) (10:52.702)
+So interesting.
+
+Justin Gardner (@rhynorater) (11:12.98)
+dump that URL, that object reference URL that will leak that super special URL that you need access to, to actually do this .NET remoting thing. And then from there, he provides the team over at Code White, provides this awesome GitHub repo. I don't know, did I put it in the doc? Okay, let me go find it right now. I'll put it in the doc. But they have this awesome GitHub repo that just makes it super simple to go and exploit this.
+
+Joel Margolis (teknogeek) (11:33.438)
+You did not know.
+
+Justin Gardner (@rhynorater) (11:42.996)
+And it's in this like little note at the end of the, yeah, it's literally the last line of the article. It says, we also released this GitHub repo, HTTP remoting object ref leak with additional resources such as a vulnerable web app and some example exploit payloads and a script for automated object ref leaking and payload delivery.
+
+Joel Margolis (teknogeek) (11:48.51)
+Yeah, it's it.
+
+Joel Margolis (teknogeek) (12:06.842)
+And there's just a Python script in here. It's literally less than a hundred lines. And it's just like, yeah, this is awesome.
+
+Justin Gardner (@rhynorater) (12:06.996)
+Dude.
+
+Justin Gardner (@rhynorater) (12:11.048)
+Isn't, yeah. Dude, I love that. And I just love, I just, I messaged Marcus on Twitter and I said, dude, thank you for being so thorough with this write up and then also delivering, you know, like a beautiful exploit to GitHub. And thank you also for putting it at the very end of this article so that I, most people will skip it if they get intimidated by this article and then only I will find it.
+
+and then I will use it to pop bugs. Because that's what happened last night. Because I hit Nogli up, I was like, all right, I understand this research, scan for this, scan for that. And he ran a scan across his whole empire of subdomains or whatever. And we got a couple hits and we popped some RCEs. So.
+
+Joel Margolis (teknogeek) (12:55.038)
+That's so awesome. That's so awesome. And what's cool is, so at the very end, initially this actually didn't have a CVE. This was just like some research that was just published in a blog back in February. And a week ago, a little under a week ago, Microsoft reassessed it and they published a CVE for it. And it was addressed in the January, let's see, the CVE was addressed by updates in January, 2024, but the CVE was omitted from the security updates. So,
+
+I am wondering if that maybe is how Shubz picked up on this, because this was on March 22nd when the CVE was released by Microsoft and maybe the team over there is just keeping a close eye on new Microsoft CVEs or something like that. But.
+
+Justin Gardner (@rhynorater) (13:35.796)
+could be, but Shubs is also, yeah, I feel like Shubs is also like a shark with this stuff. So like anytime anything IIS or .NET related, you know, comes up, he's like, shoo! You know, it's like a piranha in the water, you know, to those sort of things. Sorry to represent you that way, Shubs, but it's like, I mean, he just, he knows all the things about IIS related stuff and .NET related stuff, so any of that Windows HTTP stack.
+
+So I wouldn't be surprised if he was on top of this as soon as it came out.
+
+Joel Margolis (teknogeek) (14:08.67)
+Yeah, I do love how much like sort of, it's not necessarily new research, right? Like it is, but it isn't like the core research itself is, but a lot of the stuff that is based on like the blog from Sarooj, for example, that blog is now five years old from the NCC group one from Sarooj and talking about this same sort of technology that even their previous blog post from Code White was two years old. So it's really interesting. I mean, we talked about this over and over again that.
+
+Justin Gardner (@rhynorater) (14:15.028)
+Mm. Mm.
+
+Justin Gardner (@rhynorater) (14:24.21)
+Yeah.
+
+Joel Margolis (teknogeek) (14:38.974)
+just because something is a couple years old research wise doesn't mean that it's out of date or irrelevant or not applicable and taking the time to read through those research even if it's you know five years old you see something five years old and you're like oh well this probably want to apply today it probably does actually and you should read through it.
+
+Justin Gardner (@rhynorater) (14:44.724)
+Mm.
+
+Justin Gardner (@rhynorater) (14:56.692)
+Yeah, absolutely. And I always loved when people continue to build on their past research because, you know, the Code White team at this point, after having done this in, what did you say, two years ago, so 2022, you know, they have a knowledge set on this topic that is, you know, very exclusive to them and maybe a couple other people in the world, you know. And so they are carrying the burden of like, all right, if there's going to be innovation in this area, it should probably be...
+
+me, you know, and they continue to build upon that research and build upon that research until they find a way like this to leak these object references and get access to that secret URL. Very cool. I really like it.
+
+Joel Margolis (teknogeek) (15:40.766)
+Yeah, super, super cool. Awesome. Should we go to the next link? Okay, so this is a fun one. This doesn't happen almost ever. There was a Dom Purify bug. This is always juicy, because I woke up a couple days ago, and somebody in one of our mutual group chats had posted, it was like, babe, wake up, the new Dom Purify.
+
+Justin Gardner (@rhynorater) (15:46.708)
+Yeah, yeah hit me with it man.
+
+Justin Gardner (@rhynorater) (15:53.318)
+Uh huh. Ooh, dude.
+
+Justin Gardner (@rhynorater) (16:04.532)
+Just dropped.
+
+Joel Margolis (teknogeek) (16:06.526)
+bypass just dropped and I was like, whoa, that's crazy. And there's a really, really cool blog from, what's their name? I literally just had it open. Slauncer, is that open? Yeah, Slauncer, both on Twitter and their blog Slauncer underscore and their blog is blog .slauncer .info. So essentially this is a bit of a niche bypass. The main thing,
+
+Justin Gardner (@rhynorater) (16:19.188)
+That's
+
+Joel Margolis (teknogeek) (16:34.558)
+here is that it has to do with passing in element object into the DOM Purify sanitize function. So you can both pass in a string that is just like HTML and it will sanitize that, or you can pass in an actual object reference. Like if you do like document .createElement, you can pass that actual variable into DOM Purify sanitize and it'll do the same thing. And one of the interesting things that he notices that when it basically back parses or
+
+forward parses, whatever, converts it into a string or from a string into the actual element nodes. It checks the types of the elements and does certain processing on every single one. And it has the capability to sanitize and parse XML as well as HTML. And there are some core key differences between XML and HTML when it's getting parsed and when it's getting rendered by the browser individually. And so what this researcher found is that,
+
+If you pass in these special XML tags, you know how XML has like the open arrow question mark and it does like open arrow question mark and sets the, you know, what version it is and all these, you know, it's.
+
+Justin Gardner (@rhynorater) (17:45.332)
+So there's a couple weird tags in XML, right? There's like the, what is it, the ones we use for XXE all the time, the C data ones. And then there's also, these are like, these are processing instruction tags, right?
+
+Joel Margolis (teknogeek) (18:01.63)
+Right, yeah, so they're referred to specifically as processing instructions. And you can basically think of them as sort of like metadata that really just tells the processor how it's, you know, processor instructions, right? It tells it how it should be processed rather than, you know, directly just sort of inferring a lot of that stuff. And so DOM Purify has to handle this. And the way that it does handle this is by essentially replacing those tags with HTML comment tags. And so...
+
+Justin Gardner (@rhynorater) (18:05.46)
+Hmm.
+
+Joel Margolis (teknogeek) (18:30.462)
+You have a little bit of a confusion here where it's going from XML to HTML in the rendering, in the sanitization process, where it's sort of passively just say, oh, this should be treated as HTML. But as we've mentioned, there are core differences between how XML and HTML are both interpreted and rendered by the browser. So when you put this stuff inside of like an SVG tag, for example, you can do all sorts of really fun things. And the TLDR is that if you open with these processing instructions,
+
+and then you just leave an empty closing arrow, closing bracket in there or whatever, it doesn't properly sanitize it. And so it allows you to escape that into an HTML context and you can insert image elements that trigger on error and all that kind of stuff just directly within the SVG. Actually, sorry, not within the SVG, outside of the SVG. Let's break out of the SVG.
+
+Justin Gardner (@rhynorater) (19:16.838)
+Nice.
+
+Justin Gardner (@rhynorater) (19:24.244)
+gets pushed out of the SVG. Huh.
+
+Joel Margolis (teknogeek) (19:26.43)
+Yeah, super, super interesting. And I think part of the root cause, at least in the beginning, was the fact that when it filters through the element nodes that you feed into the sanitize function, it has selectors for specific types. Like, should it allow comments? Should it allow elements? Should it allow processing instructions? And processing instructions was not enabled by default. And so what...
+
+Justin Gardner (@rhynorater) (19:46.356)
+Mm. Mm.
+
+Joel Margolis (teknogeek) (19:53.982)
+it caused it to have this behavior where it wasn't handling it correctly. It was handling it in a very specific way, as if it was like HTML. And so that was the initial fix. And then I think that there was actually a bypass. Just based on how DOMFurify is configurable, you can have these different checks that look for different tag names and stuff. And again, you can bypass it using a similar sort of, you use a custom tag name.
+
+and you do the same sort of attack where you close it early and you can get it to pull this custom data out of the elements and again trigger an XSS.
+
+Justin Gardner (@rhynorater) (20:30.964)
+Ah, using a custom tag name instead of the processing instructions for, okay, gotcha.
+
+Joel Margolis (teknogeek) (20:35.166)
+Yeah, yeah, it uses this. Yeah, it has this like special custom element handling configuration thing. And one thing I will note is I think I think they actually mentioned this as well. This isn't super common, like the configuration and the use case here, but it is still a bypass and it's still really, really interesting data. And I think you actually mentioned that we won't name them, but somebody that you know, and I know, managed to actually find some bypasses.
+
+Justin Gardner (@rhynorater) (20:49.042)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (20:57.3)
+Yeah, dude, I did get permission. So Uriota, Uriotak, I guess is his handle, but Uriota is his name. He saw this and he's, you know, just the brain just starts spinning and spinning and spinning. So he actually found some bypasses to this as well. So this is, you know, one, a bypass, then another bypass and a fix. And then Uriota also has some.
+
+some bypasses. So this processing instructions thing seems to have been the core of a lot of really tricky functionality as far as HTML parsing goes and HTML sanitization goes. So I bet in other libraries there's also similar problems if they're also including HTML or XML with the HTML when they're trying to do the sanitization. So.
+
+Definitely some cool takeaways there. And the processing instruction thing, I wasn't familiar with this. I didn't think until I realized that, sorry, the processing instruction that you see at the beginning of every single XML blob, you know, like if you're gonna do an xxc, it's just like, you know, angle bracket, question mark, XML, yeah, and it like defines that this is like an XML document and you can define like the, like UTF -8 or whatever. Yeah, yeah.
+
+Joel Margolis (teknogeek) (22:09.054)
+Yeah. Yeah. Arrow question mark XML. Yeah.
+
+Joel Margolis (teknogeek) (22:18.718)
+Yeah, encoding and stuff, yeah.
+
+Justin Gardner (@rhynorater) (22:20.98)
+And so you see it almost all the time. I just hadn't really been like, oh, what is that yet? So I'm glad for people like Slawnsir that think, oh, what is that? And go research it and find cool stuff like this, because this is definitely a really sweet bypass.
+
+Joel Margolis (teknogeek) (22:35.134)
+Yeah, exactly. And, and maybe something for the listener. It, I do wonder how this works for other things like PHP. I think it's a great example, which also does a similar thing where it has those sort of like processing, not really processing instructions, but like that prefix type of stuff. And perhaps other similar instances of this behavior may also be vulnerable to bad implementations or, um, you know, like weird, tricky situations like this, where you can feed double tags and get it to parse parse weird.
+
+Justin Gardner (@rhynorater) (23:03.988)
+Yeah, for sure dude. I'm looking forward to seeing Ryota's write up. He's gonna release it within the next couple weeks, so I'm excited for that bad boy.
+
+Joel Margolis (teknogeek) (23:10.462)
+Awesome, awesome. Yeah, I love it. It's awesome. I mean the cure 53 team that in the blog, it says that they fixed it like same day. I mean like almost immediately. So super cool. I know I think we know at least one person over on that team who's doing really cool stuff. So shout out to the cure 53 team. Shout out to Dom Purifies. Super awesome. You know, even even when they make a little mistake there, they address it very elegantly and quickly. So it's awesome to see.
+
+Justin Gardner (@rhynorater) (23:18.068)
+Yeah, always.
+
+Justin Gardner (@rhynorater) (23:25.396)
+Oh yeah. Yeah.
+
+Justin Gardner (@rhynorater) (23:30.388)
+Yeah.
+
+Justin Gardner (@rhynorater) (23:35.924)
+Yeah.
+
+Yeah, as much as I love the Dom Purify team, man, it hurts me on a weekly basis to see their tool properly implemented in so many places. It's like, no, it's Dom Purify, give up. You know, so.
+
+Joel Margolis (teknogeek) (23:46.238)
+if if if if
+
+It is everybody, every bug hunter's dream to get like a Dom Purify bypass.
+
+Justin Gardner (@rhynorater) (23:56.5)
+It is dude, it is. That's on the like, what are the bug hunter bingo chart or whatever. Like, all right, let me, Dom Purify Bypass, RCE, you know, zero day that I can spray across. Exactly. Well, and also, so speaking of laughs, we'll just jump down a little bit to the second to last item on the list here. So I was poking around on a target the other day and I...
+
+Joel Margolis (teknogeek) (24:02.142)
+Exactly.
+
+Ffff -
+
+back of my waft bypass.
+
+Justin Gardner (@rhynorater) (24:22.792)
+I don't know why I've seen this endpoint like 50 bajillion times, but the whole Cloudflare slash CDN dash CGI thing kind of stood out to me because it's like, okay, essentially what's happening here is you've got Cloudflare in front, it's a WAF and then that WAF needs to have some client side resources so that it can do things like enforce a CAPTCHA or something like that. Excuse me. And,
+
+And so what it does is it injects this endpoint slash CDN dash CGI on all of the websites it protects. And then it hosts its own custom stuff there like JS files and that sort of thing. Logging endpoints and that sort of thing. So I was looking at this, I'm like, wow, this is super weird. And I feel like if we can hack this, then we can hack like every website, you know, because every website that has Cloudflare has this on in front of it.
+
+And so I started researching it and there's like a documentation endpoint, documentation endpoint, man. Such hacker terminology there, dude. A documentation page on what this endpoint is. And essentially it lists five uses for this endpoint. It says, okay, you can hit slash cdn cgi slash trace, which one is super cool because it like kicks back information about your request and.
+
+Joel Margolis (teknogeek) (25:28.09)
+documentation.
+
+Justin Gardner (@rhynorater) (25:47.028)
+It's in text plain content type, but that could be helpful for something, for sure. So there's that. There's JavaScript detection. That's the bot product thing that prevents botting. There's image transformations, which I was like, okay, okay, now we're talking here. So there's ways that you can do, like...
+
+Joel Margolis (teknogeek) (26:07.55)
+Okay.
+
+Justin Gardner (@rhynorater) (26:12.972)
+transforming of images and converting of images. And I went in here and it's like supported input formats, SVG. Supported output formats, SVG. And I was like, hmm, that's interesting. So I went in there and I was like poking around at it for a long time. And I was like, man, I wonder if there's any, you know, any bugs here, any ways to bypass. And I was actually thinking like, okay, SVG, XML, like we just talked about the DOM Purify bypass. Let me see if I can like try some cool stuff with that. So I was like writing that out.
+
+wasn't working. And of course, who do I turn to? The master of CloudFlare, Mr. Ryota himself that we just talked about. And Ryota's like, oh yeah, I assessed that like, you know, months ago. There's a super duper tight freaking CSP on it. I was like, shoot. So I went there and I looked and lo and behold, it's like default source none.
+
+Which is like like what are you gonna be able to do that? And and so the SVG endpoint might be a little bit of a dead end But there's also a bunch of other things here and there have been bugs found here before by the the port swagger team back in 2017 and then also by our boy Masato Kinugawa Found a like global CSP bypass on any website that uses cloudflare back in 2017 and I just haven't I
+
+I researched around and I haven't seen a bunch of research on this specific endpoint since like, you know, 2017 -ish time. So I feel like it's time to look at this again because I feel like there could be some CSP bypasses here. And at least, if not CSP bypasses, at least some cool gadgets that could be used to hack some stuff in some pretty neat circumstances. We just got to enumerate every single file that is, or every single endpoint that's under that slash cdn CGI place.
+
+Joel Margolis (teknogeek) (28:06.814)
+Yeah, for sure. Um, it's cool to see this tweet all the way back from August, 2017. This is, I think even before I started bug bounty, cause I started in August of 2017 at like a live hacking event. So, uh, this, this is probably like a couple of weeks before I even started doing bug bounty, but it's really cool to see, um, just the sort of, you know, just like,
+
+Justin Gardner (@rhynorater) (28:15.796)
+Yeah.
+
+Justin Gardner (@rhynorater) (28:20.052)
+Yeah.
+
+Justin Gardner (@rhynorater) (28:29.012)
+Are you talking about the one from Masato? Yeah.
+
+Joel Margolis (teknogeek) (28:31.166)
+Yeah, yeah, yeah. This tweet just being like, Hey, by the way, here's like a cloud flare CSP bypass that I found like the weird behavior. Um, and it, it reminds me a lot of this other link, um, from malloc, uh, on Twitter that was talking about these XSS that, that, um, that he found where this CDN, uh, of, of the, of the target of the, of the program, um, is like CDN dot example .com.
+
+Justin Gardner (@rhynorater) (28:45.3)
+Hmm. Hmm.
+
+Justin Gardner (@rhynorater) (28:55.956)
+Mm -mm.
+
+Joel Margolis (teknogeek) (29:01.118)
+And that's explicitly out of scope. But while they were looking at in scope targets, they noticed that there was a lot of endpoints that would use a slash version of it, where they would go, you know, example .com slash CDN, um, slash file .js or whatever. And because of that, uh, by popping something on the CDN, by finding an available file that they could upload and, and essentially control, they were able to use that same path scheme to pull their
+
+Justin Gardner (@rhynorater) (29:14.418)
+Mmm.
+
+Joel Margolis (teknogeek) (29:31.248)
+attacker controlled file from the CDN directly and get Nexus on all these different domains. That just reminds me so much of this CDN CGI endpoint because it's very, very similar. I wonder if it might even have been.
+
+Justin Gardner (@rhynorater) (29:42.996)
+Dude, it's sketchy shit, dude. It's real sketchy, man. And it makes you think, okay, especially in this, I've seen this scenario a bunch of times where it's like, okay, they're reverse proxying to their CDN and they're saying it's out of scope, but actually we can just upload any file that we've uploaded to the CDN, we can just access on any given host. I've seen that plenty of times before. So that's a great general principle. But also this concept of reverse proxying to CDNs in the Cloudflare scenario.
+
+in this scenario that Malik is talking about, it's sketchy, man. It's sketchy because CDNs, they're supposed to host content, you know? And if that content can be affected by other users, you're just letting people upload arbitrary content to be hosted potentially on any other website that uses that same CDN if there's a reverse proxy.
+
+Joel Margolis (teknogeek) (30:33.662)
+Yeah, for sure. And I think it's really interesting. I mean, like, just that behavior in general, like the path routing to, like, subdomains and stuff is super weird. Like, that screams reverse proxy problems, secondary context problems, all sorts of weird things. So, you know, it's one of those things to keep an eye out for. Like, definitely, probably more than XSS, you could find a lot more juicy stuff there.
+
+Justin Gardner (@rhynorater) (30:41.748)
+Mm. Mm.
+
+Yeah. Yeah.
+
+Justin Gardner (@rhynorater) (30:58.566)
+That's a great point. Another thing that I've kind of seen with this format is like, what'll happen is sometimes these CDNs need to be, are like signed URL protected or whatever, right? And you need to get a signed URL for anything. But when you're accessing it via like a certain path on a website, it's just using like whatever God token or whatever that gives it access to that S3 bucket or whatever that backend is. And one, if you can cause some sort of error and get it to leak that.
+
+Joel Margolis (teknogeek) (31:18.749)
+Yeah.
+
+Justin Gardner (@rhynorater) (31:28.304)
+token, then that's big bucks. But two, if you can just do a path traversal, if you can get the reverse proxy to normalize and hit a path traversal, it's a little bit tricky with S3 because S3 doesn't do traversals. But if you can figure out a way to get that to work and you can hit any endpoint without having to have a side URL or auth associated with it, then a lot of times there's a lot of sensitive information you can leak as well.
+
+Joel Margolis (teknogeek) (31:55.934)
+Yeah, for sure. I love that token leaking thing. Cause we've seen that many times at live hacking events where it's not even like a crazy complex bug. It's, it's, it's almost like a stack trace. It's like, you know, like the least suspecting thing that you would, you would think to become like a super critical bug, but all it takes is that, you know, it's that one token or that one overprivileged method of access and an accidental error trace. And, and it's GG.
+
+Justin Gardner (@rhynorater) (32:07.476)
+It is, dude. It's crazy.
+
+Justin Gardner (@rhynorater) (32:24.372)
+Yeah, dude, I'll never forget this one time, like, there was an endpoint that a couple people found that was allowing you to do some traversing and that sort of thing. And on a backend host, and you could access files you weren't supposed to be able to access. And it was like, it was like very impactful. It was definitely, you know, a higher crit already. And then Nogli comes along and he just, I don't know, being the big brain boy he is, he like sticks a collaborator, you know, domain in there.
+
+in a spot that doesn't make any sense to put it in. And somehow he gets a hit on that domain instead of on the actual backend host. And then that hit, that SSRF hit, you couldn't do full read or anything. But that SSRF hit had the auth token for that back server attached to it. You use that auth token, log into that backend server, and you can just dump everything.
+
+Joel Margolis (teknogeek) (33:14.142)
+Ha!
+
+Justin Gardner (@rhynorater) (33:18.846)
+which is so much more impactful because you didn't need to know the URL, you know, the path of the thing that we were trying to leak on the backend.
+
+Joel Margolis (teknogeek) (33:19.484)
+Wow.
+
+Joel Margolis (teknogeek) (33:24.126)
+It's so interesting. Another place where I see this type of pattern a lot is mobile apps, actually, where a lot of times for mobile app authentication, right, typically it's not cookies, it's like an auth token or something like that, like a header, and they forget to add an auth check. And so they just add it, like they have it added at sort of a middleware level across the entire request HTTP client that they're using. And it'll just...
+
+Justin Gardner (@rhynorater) (33:28.628)
+Oh really? Huh.
+
+Justin Gardner (@rhynorater) (33:48.274)
+Mmm.
+
+Joel Margolis (teknogeek) (33:49.374)
+add it to every single, cause they assume, oh, this is just going to all our trusted hosts. But if you can find a way to control the hosts or, you know, make it redirect or something like that. Well, we've talked about redirects a little bit, but depending on how it's, how it's implemented. Yeah, pain. That one still hurts a little bit.
+
+Justin Gardner (@rhynorater) (33:59.54)
+We have.
+
+Justin Gardner (@rhynorater) (34:03.348)
+Yeah, no, all good, man. All good.
+
+Joel Margolis (teknogeek) (34:09.182)
+But but a lot of the times it'll get added automatically and all you have to do is be able to control the host and You get a full account takeover because that off That off token or that off cookie or whatever is getting set on every single request and all you have to do is be able to Control where that request is going and it's GG
+
+Justin Gardner (@rhynorater) (34:24.594)
+Oh.
+
+Justin Gardner (@rhynorater) (34:28.948)
+Yeah, no, that's big. It's almost like client -side path traversal for the client -side of the mobile apps, right? Yeah. We have, we have. So, it just, I don't know, man, I hate to, because it's helpful to categorize all these different things, you know, like client -side path traversal and like, you know, SRF and bloody blah. But at the end of the day, it's like, look, if you could make something hit your server.
+
+Joel Margolis (teknogeek) (34:33.628)
+Yeah, in a sense, yeah.
+
+Yep. Yeah, exactly. Which we've also seen before.
+
+Justin Gardner (@rhynorater) (34:57.044)
+And you know, be aware of the context in which that can happen. You know, like that can happen in the browser. It can happen, you know, in the victim's browser. It can happen in the, you know, the mobile app or the server. And then just read everything, you know, about that request that you can possibly read. And look at all the hints. Look at all the little tokens. Look at all the cookies that are getting passed along because there's a decent chance that something could be really sensitive there. Yeah. So, all right.
+
+Joel Margolis (teknogeek) (35:13.31)
+for sure.
+
+Joel Margolis (teknogeek) (35:23.902)
+Yeah, yeah, absolutely. Absolutely. I want you I want you to talk about exercise doctor because there was some really awesome collaboration that happened in the critical thinkers channel on the discord and and it led to a blog post and a couple other things. So why don't you talk about that?
+
+Justin Gardner (@rhynorater) (35:27.23)
+Let's see, where do we got?
+
+Okay. Yeah. There was, there was, yeah.
+
+Justin Gardner (@rhynorater) (35:40.754)
+Yeah, so XSS Doctor was such a valued member of the critical thinking community, was chatting in the critical thinkers chat on the Discord, and he was talking about, he's like, oh guys, I found this really cool way to reverse JavaScript obfuscation. And I was like, dude, you gotta write this up. This is helpful for somebody. This is exactly what we talk about on the pod all the time, which is like, look, even if it isn't a crazy vuln, if you spend some time and you figured something out,
+
+then, and you're so inclined, you know, I'm not gonna tell everybody to write up everything, but like, and you're so inclined, write that up. It has a lot of value to share things like that because, you know, people can build on the back of that, just like we saw with the .NET remoting thing, how, you know, the Code White team built on the back of Seroosh, and then they built on their own stuff, and it just, it keeps on building and building and building, and the more we can sort of help foster that environment, it's really good. So I said, um,
+
+Listen JD, you gotta write this up. So he wrote it up and he's got it posted on Medium. We'll link it down in the description. But essentially what he did was he released a script and sort of explained what was going on with a very common JS obfuscation scheme. And essentially what it is is they, those jerks, take all the strings, everything helpful from a JavaScript file and they just stick it in one massive array, right?
+
+Joel Margolis (teknogeek) (37:00.688)
+Mm -hmm
+
+Justin Gardner (@rhynorater) (37:08.468)
+And then they say to themselves, okay, how can I make this shit as complicated as possible? And so they make this decryption function that's like, okay, we're gonna take in a hex value, not a decimal value, a hex value, just to be a little shit. And then we're gonna do a certain amount of shifts and pushes to rotate the order of this array this many times. And then we're gonna do some math.
+
+and then we're gonna like, you know, spit out a value from this array and that's the thing you're looking for, you know, in this sort of obfuscation scheme. And so essentially JD very painstakingly stepped through all of that, explained how all this works and how common of a JS obfuscation scheme this is, a sort of format this is, and he includes a script on how to unobfuscate.
+
+scripts that use this method. And he showed me the results of the before and after of the script, and man does it increase readability in these sort of super obfuscated situations. So I think this is really helpful for anybody who's dealing with highly obfuscated JS.
+
+Joel Margolis (teknogeek) (38:23.518)
+Yeah. And I love, I love this sort of the basic simple knowledge sharing aspect that you talked about. I mean, like we do that. I mean, that's half of what this podcast is just like us talking about like random little things and tips and tricks and stuff that we've come across and learned throughout the years of doing bug bounty and having, you know, other people just sort of write those things down and share it is so valuable because the same people who are listening to this podcast also want to consume that data, right? They want those little tips and tricks that they can put in there.
+
+Justin Gardner (@rhynorater) (38:49.78)
+Mm -hmm. Mm -hmm.
+
+Joel Margolis (teknogeek) (38:52.19)
+in their notebook or put in the back of their head and then when they encounter something like that, they can say, oh, I have a thing for that, let me go, I don't need to waste my time figuring out how this works, let me just read that XSS doctor blog post really quick and do the same thing and make this easier and cut to the chase. The other thing is I see this all the time, again, in mobile apps. Mobile apps do all the time of string obfuscation and,
+
+Justin Gardner (@rhynorater) (39:09.748)
+Yeah.
+
+Joel Margolis (teknogeek) (39:19.326)
+I imagine you could probably do a similar thing in JavaScript. What I like to do in Android is I just use Frida and I hook and I call the function directly and I just pass in the obfuscated string that I have in the source code. And I'll just take the decoded or decrypted output or whatever and I'll just replace it in the source so that I can know what it is. The other thing I'll sometimes do is I'll hook it and I'll either replace the function with like a wrapper or something like that.
+
+Justin Gardner (@rhynorater) (39:26.708)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (39:32.18)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (39:41.556)
+Hmm.
+
+Joel Margolis (teknogeek) (39:47.966)
+and I'll just log all the inputs and outputs and say, oh, this obfuscated input equals this de -obfuscated output. And then either I can do a match and replace throughout my entire source and I can replace all the instances of it. Or if I come across something encrypted, instead of having to run that function manually, I can just control F for it in the output of my console or whatever and I can see what it decrypts to automatically.
+
+Justin Gardner (@rhynorater) (39:49.716)
+Ah, that's a good idea.
+
+Justin Gardner (@rhynorater) (40:08.788)
+Yeah, the wrapper's a good idea. And he mentioned something in there too. It's like, okay, so this function is called, you know, a3c or whatever, right? And sometimes they call it a3c directly, but sometimes they'll do like, let CD equal a3c, and then they'll call CD or something like that. And it's like, come on, could you just like, could you not? Could you please not do that? Yeah.
+
+Joel Margolis (teknogeek) (40:23.646)
+Yeah.
+
+Joel Margolis (teknogeek) (40:31.038)
+Yeah, exactly. So that's the one thing about the wrapper, right? The wrapper, if you wrap that underlying function, then regardless of how it gets called, then it's still going to log it. So that's pretty nice. But yeah, obfuscation is always just it's one of those security through obscurity things that I never really agree with because. Like, what is it doing? It's making it more difficult to understand what's going on from an outside perspective, but there's no actual like security implications there, right? Like you're not.
+
+Justin Gardner (@rhynorater) (40:40.564)
+Yeah.
+
+Justin Gardner (@rhynorater) (40:46.708)
+Mm.
+
+Justin Gardner (@rhynorater) (41:00.148)
+Yeah.
+
+Joel Margolis (teknogeek) (41:00.542)
+making it from a backend site. Like if you're trying to prevent somebody from abusing your APIs, then prevent them from abusing your APIs from the API side, right? Add server -side checks, add additional verification methods, all sorts of stuff that make it more difficult to abuse the APIs. Don't just make it more difficult to read, but maybe that's my naive security researcher approach.
+
+Justin Gardner (@rhynorater) (41:21.972)
+No, no, no, I mean like, look, dude, I want to agree with you and don't get me wrong, in a report many times I have dissed security by obscurity and be like, you can't rely on security by obscurity, you know, like very passionately arguing for security or against security by obscurity. But recently I'm realizing like, listen, so much of this industry, you know, at its core is just about not being the easiest target to pop, right?
+
+You know, like, like, and I think most of the people that are running by bounty programs are already kind of beyond that point. I'd imagine, you know, where it's like, they're not the easiest, you know, one to get into or whatever, but.
+
+Just riddle me this, Joel. Riddle me this, Joel. If you're hacking a target and you put one wrong parameter and it returns a 404, how does that make you feel?
+
+That makes you feel terrible, doesn't it? When there's no error page, it's just a 404. There's no 500 error, there's no 400, there's no like 403. Am I not authorized? Who knows, it's just a 404. Ah dude, I hate that shit, man. And so it's like, anything you can do like that, you know, JS obfuscation, 404 error pages and stuff like that, rather than actual 500s or whatever.
+
+Joel Margolis (teknogeek) (42:24.708)
+I mean, it's certainly not a good feeling.
+
+Joel Margolis (teknogeek) (42:34.942)
+Yeah. How about wild card subdomains?
+
+Justin Gardner (@rhynorater) (42:50.036)
+or 403s even, right? When you do a 403, you're letting the attacker know, hey, you're not authorized to do this. And that gives them information, where you could just say, don't know. And so.
+
+Joel Margolis (teknogeek) (43:04.318)
+Do you think that there's a remedy for this from like to make it easier for security researchers though? Cause like on one hand, like from it, for attackers, like yeah, it's dangerous to not have those things in place when someone's coming from a malicious intent perspective. But then if you have sort of that best intent perspective and you want to make it easier for researchers, like what do you, is there, do you have any tips, any ideas?
+
+Justin Gardner (@rhynorater) (43:28.852)
+Yeah, I like how you said best intent, not good intent. Normally the phrase is like good intent security research, but we have the best intent. But yeah, so I think pretty much the only solution to that from this perspective is like having a private VIP program, if you're a public program. Because if you're a public program, you can't release to everyone like, hey, just add this header and it'll like turn all the 404s into 500s or whatever, right?
+
+Joel Margolis (teknogeek) (43:37.15)
+Yeah. Yeah. Yeah.
+
+Joel Margolis (teknogeek) (43:52.638)
+Hey, yeah, that's crazy. I am a security researcher, that's right.
+
+Justin Gardner (@rhynorater) (43:56.724)
+Because then, you know, the hackers are just gonna be like, thank you very much, you know? Yes, that's right. I have lost my way. But yeah, if you run a private VIP program with the people that are gonna be adding the most value to your program with vetted, you know, people on it, you know, hacker one, background checked or whatever, and have a track record of being, you know, best intense security researchers, then...
+
+Joel Margolis (teknogeek) (44:25.726)
+Not just good, but the best.
+
+Justin Gardner (@rhynorater) (44:26.964)
+the best intent. Yeah, no, good faith. Good faith security researchers. That's the term. Best faith security researchers. I'm gonna put that in my Twitter bio now. Best faith security researcher. That's the best. Yeah, so anyway, then you can release.
+
+Joel Margolis (teknogeek) (44:33.214)
+Oh, best faith.
+
+Joel Margolis (teknogeek) (44:44.99)
+I'm not even good. I'm just the best
+
+Justin Gardner (@rhynorater) (44:54.132)
+some sort of header or something that's gonna undo all that and you can release unobfuscated JS files and stuff like that. So I don't know, man, it's a little bit of a trade -off. Obviously all of that takes time and effort away from actually securing the product as well, right? Because at the end of the day, it's not that hard to sort of intuit how some of this functionality is gonna be working. If there's like an ID parameter and the ID parameter equals...
+
+you know, somebody's ID, then you put in somebody else's ID. If it's not a 403, it's a 200, then you have to return a 200. You know, at the end of the day, you're still gonna run into issues like that. So, whether it's worth it or not, I'm not sure, but it definitely pisses me off. So, I imagine it'd piss off other hackers too.
+
+Joel Margolis (teknogeek) (45:36.798)
+Yeah, me too. Absolutely. Okay, we have two more tweets and I wanted to save Naffy's for the end to discuss that. So let's go over Renny Pock's cool little technique here. I think this is just one of those little gadgets for proving impact. I think that's just a nice little one to put in your backpack.
+
+Justin Gardner (@rhynorater) (45:49.524)
+Yeah, yeah.
+
+Justin Gardner (@rhynorater) (45:57.972)
+Yeah, I wanted to ask you about this, Joel, because so Renupack tweeted, to make your XSS less conspicuous, you can hide your payload by updating URL path with a valid URL. And I think this is just something a lot of people don't know you can do. So if you run history .pushState, and then as a third parameter, provide a path, it will stay on the same page that you're on. You know, like you will remain in control of the DOM, but the path will be updated. The path in the URL bar will be updated to whatever you provide it.
+
+And that's just pretty weird.
+
+Joel Margolis (teknogeek) (46:28.254)
+Yeah, for sure. And you see this, you see this actually on a lot of websites without probably even realizing it. Basically anything that's changing your URL without a full page load or a redirect is doing this. I think YouTube does this a lot.
+
+Justin Gardner (@rhynorater) (46:32.436)
+Yeah. Mm -hmm.
+
+Justin Gardner (@rhynorater) (46:44.564)
+This is how all the single page applications work.
+
+Joel Margolis (teknogeek) (46:46.846)
+Yeah, all the single page applications are using, you know, push, local strict push or whatever, whatever the function is. Yeah, yeah, that's what it is.
+
+Justin Gardner (@rhynorater) (46:52.1)
+History .push state. Yeah. Yeah it and so and so I don't know I wanted to talk to you about this like One I think a great tweet really helpful brings brings light to something that a lot of people might not be aware of being possible but also like I feel like there's a whole set of like
+
+attacker like practices like this that you can implement into your POCs that just bring more impact and what I've realized lately is like when you model a full attack path and you make it extremely clear That hits harder with the team. I have a bug that recently got paid 150 % of what it normally would get paid because we found a bug similar to this many times and You know, we submit it they always pay the same amount for it every time but this time I was like, alright, let me take this a little bit further I'm gonna explain how I would distribute this payload. I
+
+Given the functionality on the website, I'm gonna explain how I would exploit this once the user clicks on the link or whatever, and how I would worm it, essentially. So I described that and it got paid 150 % what it normally gets paid. And so I think there's this whole concept of making your attacks have more visual impact.
+
+Joel Margolis (teknogeek) (48:00.51)
+Mm. Mm.
+
+Justin Gardner (@rhynorater) (48:10.664)
+that I think is a little bit underestimated and I might have been, and I do pretty good POCs. That's something that I consider to be one of my strong points, but I think you can even take it even further and describe the whole attack path and how you would exploit this at a scale. And I think that will really increase impact.
+
+Joel Margolis (teknogeek) (48:30.11)
+Yeah, for sure. I mean, I think it really depends on the program, right? So some programs are really good about saying, like, we know what impact is, like, we can tell that from this point, here's what the ultimate impact would be of your vulnerability, we're gonna pay it out as such. However, I would say that's not the norm. Most programs probably aren't gonna do that. Most programs are gonna say, here's the impact you demonstrated, we're gonna pay you as such.
+
+Justin Gardner (@rhynorater) (48:42.292)
+Mm.
+
+Joel Margolis (teknogeek) (48:57.918)
+You know, if you have an XSS, but you don't show that you can steal cookies and do an ATO, they're going to pay it as an XSS, not an ATO, right? Because I mean, for a lot of reasons, right? Like it's not in their, it's not really in their best interest to escalate a vulnerability for you. Like even further, like they probably know that that that issue is there. But you know, from the research researchers' perspective, you want to sort of demonstrate the highest impact you can. So that is.
+
+Justin Gardner (@rhynorater) (49:05.65)
+Mm -hmm. Mm -hmm.
+
+Joel Margolis (teknogeek) (49:27.71)
+Also sort of that benefit of hacking on one program is that you develop those gadgets and those impact scenarios yourself where you can say, Oh, anytime I have an access, I can create an ATO. Like they have this systemic problem or whatever it is. And you can demonstrate that, that impact. Um, in other cases, it might not, you know, be worth it, right? Like for the time and effort or whatever it takes to, to escalate that vulnerability further, like versus just like having, you know, if you know the program and you know that they're going to handle it well, spending an extra
+
+Justin Gardner (@rhynorater) (49:39.38)
+Mm. Mm.
+
+Joel Margolis (teknogeek) (49:56.83)
+four hours or something to try and escalate your XSS to some further bug may not be worth the effort, right? Is the juice worth the squeeze is the phrase that I always like. And so I think it kind of depends program by program, but you should always try and, if you have the ability to put a higher impact scenario, I mean, imagine, right? Like if you have an XSS and you have an ATO, why would you only report the XSS, right? You're always gonna report the higher impact scenarios. So if you have those easy opportunities,
+
+Justin Gardner (@rhynorater) (49:59.06)
+Oh yeah, yeah.
+
+Justin Gardner (@rhynorater) (50:06.932)
+Right, right.
+
+Justin Gardner (@rhynorater) (50:20.116)
+Yeah.
+
+It feels good too, man.
+
+Joel Margolis (teknogeek) (50:25.406)
+Yeah, yeah, if you have those easy opportunities, like chase them down, hedge your time and stuff so that you're not spending too much time on something that's not worth it, but escalate your bugs as best as you can. And then when you feel like you're there, go ahead and submit it. And that's always my recommendation.
+
+Justin Gardner (@rhynorater) (50:40.308)
+Yeah. I hate to say it, man, but this is something Nogli does well, which just ekes me a little bit. Freaking ekes me a little bit, man, because whenever we collab, he's like, Justin, why aren't you writing a good report? You need to write a better report for them to like...
+
+Joel Margolis (teknogeek) (50:46.91)
+Oh yeah, 100%.
+
+Joel Margolis (teknogeek) (50:57.342)
+Yeah, his titles his title is like pre -auth full RCE access to source code and and it's like an XSS
+
+Justin Gardner (@rhynorater) (51:01.14)
+Yeah, like in you know, like and he does take it a little over the top sometime but he tells a good story, you know, and he and he and he outlines the attack path. So I think what Renapack did here was like he provided another way for you to make it seem more like an actual attack. And you know, if you look in your in your URL bar and there's like, you know, script, bloody, bloody, blah, you know, then it might not be the most.
+
+convincing attack. But if you update that using history .pushState, then it can make something look very benign. And people could not even realize they're on a certain page. So it's definitely a good technique. And there's other things as well, like closing your conspicuous windows after you do Csurf with them and not just leaving it open on the company's successfully updated object page or whatever.
+
+Joel Margolis (teknogeek) (51:57.726)
+Yeah.
+
+Justin Gardner (@rhynorater) (51:59.576)
+That sort of thing. And I think just like I said before, it just feels good to give a fully polished POC. And I think for those of you that haven't fully, fully fleshed out like a banger of a POC before, you should give it a shot because it feels amazing to submit that report and see your work sort of manifest before you.
+
+Joel Margolis (teknogeek) (52:21.15)
+Yeah. And also from the program side, it's, it's really nice when you can just like click one link and see the full impact there, right? Like when a researcher says step one, click this link step two ATO, like that's awesome. Right. And so like both the satisfaction for you, as well as the program of like, there's no question in anybody's mind what the impact is here, what the bug is here. Like it is very, very clear that this is a vulnerability.
+
+Justin Gardner (@rhynorater) (52:34.996)
+Yeah, yeah.
+
+Joel Margolis (teknogeek) (52:49.886)
+and that it's exploitable and that it has impact. And that's just gonna make your triage process faster. It's gonna make the payout process faster. It's gonna make your experience communicating with the program team faster and easier and better. Like everything's just better. So if you have a banger POC, do it. Like do it, make it as good as you can and always put out the best POC you can. Cause like the flip side, the converse is you create a POC that's like lackluster and there's like 10, 15 steps.
+
+Justin Gardner (@rhynorater) (53:05.012)
+Hmm. Do it.
+
+Justin Gardner (@rhynorater) (53:16.786)
+Hmm.
+
+Joel Margolis (teknogeek) (53:18.462)
+You're going to be going back and forth with triage, trying to get them to reproduce it. You're going to be going back and forth with the program, trying to get them to understand the impact and how it works. Like it make everybody's life easier, your own included, and put a, put a great POC together. That's my recommendation.
+
+Justin Gardner (@rhynorater) (53:20.242)
+Yeah.
+
+Justin Gardner (@rhynorater) (53:32.852)
+Yeah, for sure dude. So where do we want to go with the naffy's tweet? You want to launch that one off or should I launch that one off?
+
+Joel Margolis (teknogeek) (53:41.054)
+Sure, sure, sure. Well, I'll read it and then I know you had a question about it. So, Nafi made a tweet, this was a week ago, and he said, I think the idea of keeping it simple is especially true for web testing. Long before you start trying to implement complex techniques, you need to get down the basics of one, what are the assets? Recon, subdomains, IP ranges. Two, what can I see on those assets? Brute forcing, are they APIs? How are they reached? Is it brute forcible?
+
+et cetera. When Nafi first started hacking, Yahoo's all that he used to do, he would run nmap and dir search for days and find random master directories that were old legacy apps and hack on those apps. And he said that there's nothing wrong with the complexity, but I have largely remained immune to the movements of application security. This is the most significant thing I think I've added to my methodology for the last years is checking for secondary context reversals. If you're doing just those two things well with any kind of volume or repetition, repetition, you should be finding things. I know that I still do and I'm largely doing the same thing.
+
+So, go ahead, go ahead.
+
+Justin Gardner (@rhynorater) (54:41.94)
+Yeah dude, so like, this is not where I thought he was going with this tweet, right? If you read it in the beginning, he says, and this is where the tweet cuts off, right? He says, long before you start trying to implement complex techniques, you need to get down the basics of, and then the tweet cuts, right? And it goes to like the next tweet. I was like, okay, all right Naffy, like you tell him, and then I clicked into that tweet and he's like, recon. And I'm like, okay, you know, okay, I see that. And I know that Naffy's a really like recon heavy dude, and he does, and.
+
+man is he like one of the most talented recon guys out there. Like he really just, I saw him, I worked with him a little bit on a live hacking event once on an older company specifically and on an older company and he's just like really, really coming up with good stuff. And I think recon is important, understanding what assets there are to attack but I think before you do all that, you need to get down the basics of hacking.
+
+You know, you need to get down the basics of like, okay, once I find these assets, what am I going to do with them? And like, how do I find an access control thing? And like, yeah, I think there's very clearly multiple types of hackers, even more so than I used to think so. And the results are really excellent for both. You know, like you get the J. Haddix and the Naffy type.
+
+where they're really just like going heavy on the recon, going heavy on the scanning, going heavy on the brute forcing the directories and that sort of thing, finding all the APIs. I like how Naffy called out APIs here. Are there APIs? How are they reached? How are they accessible? That's a good call out. But there's those kind of people and then there's the people that are.
+
+you know, working on the business logic of the applications and I just feel like working on the business logic of the applications is a better place to start. What do you think about that?
+
+Joel Margolis (teknogeek) (56:40.798)
+Yeah, for sure. So what I liked about this, like I read this and I pulled sort of different, different conclusions that Naffy did from, from his own tweet. Right. So Naffy was like, Oh, you should do like do recon. Like you figure out the assets, like are they brute forcible and stuff? Like, yeah, like kind of, but that's like, that's the recon approach. Right. And I think if you're Naffy and you hunt like Naffy, that is the right place to approach it. That is the right, that is the right way. And I also think Naffy's,
+
+Justin Gardner (@rhynorater) (57:02.1)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (57:10.302)
+oversimplifying his own process by saying, you know, like, oh, is this brute forcible? Are there patterns like that takes decades of context and experience that Naffy has that makes it really, really easy for him to do that. And he does that really well because of that. So when he looks at an API and he goes, oh, there's like a weird pattern here, like that clicks for him immediately. That's not going to click for everybody immediately. Um, when you see sort of these routing things that just is from years and years and years of him.
+
+Justin Gardner (@rhynorater) (57:23.508)
+Mm. Mm.
+
+Joel Margolis (teknogeek) (57:36.894)
+looking at different APIs, especially legacy ones, right? The stuff that he's really good at hacking on and identifying those common patterns and being able to exploit them really efficiently. What I like about his tweet is the keep it simple aspect, right? And I think a lot of time, myself included, when I'm approaching a target, I way over complicate my hacking methodology. Like I'm trying way outside the box techniques. I'm trying all these crazy...
+
+Justin Gardner (@rhynorater) (57:41.268)
+Mmm.
+
+Justin Gardner (@rhynorater) (57:47.154)
+Mmm, yeah.
+
+Joel Margolis (teknogeek) (58:05.886)
+edge case like, oh, maybe this is possible. Maybe this is possible. Let me try this crazy thing. That is fine sometimes. And a lot of times that will end up being a bug, but it's a lot more sort of like shot in the dark than it needs to be. And I like that concept of keeping it simple and identifying what you're dealing with. Like what are the assets? Same thing, but more like web application. Like, so what are the parameters?
+
+What are the technologies? Is it JSON? Is it XML? Is it web -based? The APIs thing still applies, right? Are there APIs? Great question. Can you brute force it? Is there a WAF? How does it handle when you give it an array instead of a string? Like all these types of different things, understanding the different pieces. And we've talked about this, like as you go deep on a target, you build out sort of a mental mesh or map of what the...
+
+Justin Gardner (@rhynorater) (58:34.996)
+That's a great point.
+
+Joel Margolis (teknogeek) (59:01.342)
+what the target is, how it works, the different pieces that connect to each other and what things talk to what and how data travels from one part of the application to another part of the application. And I think that is potentially more useful than doing sort of that. Like the recon approach is almost completely separate, but different, right? It's the same, but different where yes, you're understanding the basics from like a architecture level versus you're understanding the basics from an application level.
+
+Justin Gardner (@rhynorater) (59:16.308)
+Mm.
+
+Joel Margolis (teknogeek) (59:29.502)
+And I think keeping it simple and just understanding the fundamentals of what you're hacking on is good regardless of how you're doing it, whether that's figuring out how the routing is working from a DNS level or figuring out how the routing is working from a path level.
+
+Justin Gardner (@rhynorater) (59:35.762)
+Yeah.
+
+Justin Gardner (@rhynorater) (59:41.972)
+You know, this is a deep one, dude. You know, because there's a couple things here. Like you mentioned, there's this whole concept of recon within the main app, too. You know, understanding where the APIs are in the main app, you know, how data flows, how the JS looks. There's internal recon as well. App internal recon. That I think is very important in applying those same principles of what Naffy does here as a recon hacker.
+
+as a wide scale recon hacker to hacking inside an application, those concepts are very applicable. Where are the paths? What parameters are they taking, just like you said? I really like that, that's really good. The other thing that's kinda struck me as I'm talking about this is like,
+
+Justin Gardner (@rhynorater) (01:00:33.716)
+Maybe I'm playing it safe. Maybe the reason why I like hacking the main app is because there's always functionality there. There's always impact there. And that's for certain. Whereas with Recon, it kind of feels like a big question mark to me. You know, it's like, am I gonna find an asset? Okay, is that asset gonna have anything that I can touch on it, you know, like without off?
+
+Or can I figure out a way to off into it? You know, okay, is there any functionality on this weird host in the middle of nowhere? You know, can I guess the parameters? Can I guess the path? You know, just there's so many question marks for me, but You do see people like naffy and shubs pop these in in Corbin for that matter pop these these crazy crits Because they find some back -end admin host that has no off and those kind of crits are not crits to be perfectly honest that I run across
+
+ever because I'm not doing that. And so, I don't know man, I'm gonna put some more thought into that from a hacker perspective because it kind of reminds me like, it kind of reminds me of the whole, salary man is not the word in English, that's the Japanese word, but it's like, the traditionally employed, the W2 employee versus the entrepreneur, right? It's like,
+
+Joel Margolis (teknogeek) (01:01:33.822)
+Yeah. Yeah.
+
+Justin Gardner (@rhynorater) (01:02:00.82)
+There's so many questions, there's so much uncertainty, there's so much struggle that goes into the entrepreneur life, versus this really stable, really consistent, always gonna have your bills paid money that comes from a W -2. But for me, the trade -off has been great. I've loved it. I've been able to push that uncertainty and really enjoy being an entrepreneur or a self -employed. So maybe, and it kind of,
+
+Do you see the parallel that I'm trying to make there between like...
+
+Joel Margolis (teknogeek) (01:02:31.294)
+Yeah, yeah, I totally see the parallel. I think like for recon, the interesting thing about recon is yeah, the interesting thing about recon is it's not like one almost every recon bug I found has been.
+
+basically entirely separated from the main app in terms of like, not always impact, but like what it's actually, what I'm finding there. Like a lot of the times when I'm doing recon, it is some random system that does some random weird functionality that shouldn't exist or shouldn't be exposed. And I'm not really understanding like the core API or the core.
+
+web app that maybe is using that service somewhere along the way or whatever, like I'm just seeing, oh, this is a weird service. I can exploit it in this way. Here's a vulnerability. And that's very different from like, hey, on your main web app, there's an XSS that leads to account takeover, right? That's very specific, like application level, user level type functionality vulnerabilities versus almost configuration vulnerabilities. So they're, they're very like different buckets, but they,
+
+Justin Gardner (@rhynorater) (01:03:29.692)
+Mm -hmm. Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:03:38.674)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (01:03:43.582)
+apply to each other very similarly, where it's the same thing of like, you wanna understand what you're looking at and you want to be able to identify like, oh, this is a weird target. Like, why does this domain return a blank page instead of a 404 or something like that? And digging into that and identifying where to go from a blank page, for a lot of people can be a lot more difficult than just logging into the web app and clicking all the buttons and finding some endpoint within the JS or some functionality within the client side that...
+
+Justin Gardner (@rhynorater) (01:03:58.036)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (01:04:13.022)
+is vulnerable. So I think it's just a very different skill set. And it's like when you go to the gym and you do legs versus arms, like it's just a different muscle group. And you know, you can be super jacked on your arms and stuff. And then you got little twig legs. And yeah, yeah, I built a home gym recently and I'm struggling.
+
+Justin Gardner (@rhynorater) (01:04:29.812)
+You're speaking from experience there Joel? No.
+
+Nice man, no, it's good to see you going after that. Yeah man, I tend to agree. I think it's just different muscle groups, but it's definitely food for thought of like, I wonder if I am being intimidated out of the Recon game because of the levels of uncertainty. But at the end of the day, there's uncertainty with the main app too of like, is there gonna be anything to find there? But at least the functionality is there, right? And that's what I kind of like. They guarantee that the functionality will be there, that there's gonna be something for me to work with. Whereas, you know, in Recon,
+
+there's no guarantees about whether there'll be something to work with or not. So.
+
+Joel Margolis (teknogeek) (01:05:11.134)
+Yep. And even with recon, it's not all the same. Like there's, there's like the recon that Nagli does and like Mochan does. And then there's the recon that like Naffy does or Jhattix does where like for Jhattix and Naffy that recon is to find new assets for Nagli and Mochan that recon is to exploit vulnerabilities, like ready vulnerabilities, right? And they have like nuclei templates and stuff like that that are like
+
+Justin Gardner (@rhynorater) (01:05:20.852)
+Mm.
+
+Justin Gardner (@rhynorater) (01:05:32.532)
+Mm. Mm. Mm.
+
+Yeah.
+
+Joel Margolis (teknogeek) (01:05:40.094)
+looking for specific things to pop on these hosts. Whereas I think when Naffy finds a host that looks interesting, he like dives in on it and like goes everywhere just trying to find some sort of entry point or some sort of thing. He's not looking for like, is this running Spring Boot and can I, can I, you know, execute this specific CVE, right? It's, it's, it's a bit of a different process, um, even within just like the recon sphere. So, um, but going deep as a whole, like go deep for sure.
+
+Justin Gardner (@rhynorater) (01:05:53.78)
+Uh -huh.
+
+Yeah, yeah. Right.
+
+Justin Gardner (@rhynorater) (01:06:05.374)
+It is, it is. Yeah, there's definitely different institutions. Yeah.
+
+Joel Margolis (teknogeek) (01:06:09.31)
+Keep it simple, go deep, and understand what you're looking at.
+
+Justin Gardner (@rhynorater) (01:06:10.932)
+That's a great way to end it, man.
+
+We'll cut it there. Peace.
+
+Joel Margolis (teknogeek) (01:06:18.846)
+Awesome. See you later.

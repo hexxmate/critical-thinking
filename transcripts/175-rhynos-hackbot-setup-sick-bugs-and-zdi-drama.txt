@@ -1,0 +1,548 @@
+Episode 175: Rhyno’s Hackbot Setup, Sick Bugs, and ZDI Drama
+Source: https://www.criticalthinkingpodcast.io/episode-175-rhynos-hackbot-setup-sick-bugs-and-zdi-drama/
+======================================================================
+
+Title: Transcript - Thu, 21 May 2026 15:40:40 GMT
+Date: Thu, 21 May 2026 15:40:40 GMT, Duration: [00:49:52.58]
+[00:00:01.29] - Justin Gardner
+I had to slow my hackbot down a little bit because I was churning through a lot of tokens, you know, and I was like, actually
+
+[00:00:07.50] - Joseph Thacker
+No, no, you shouldn't do that.  You should just buy another sub for another $200.
+
+[00:00:10.66] - Justin Gardner
+That's so right. Shut up, dude. I know, I know. Just give me a second.  H
+
+[00:00:14.24] - Joseph Thacker
+second.  H what's up guys? Before we get into the show, I wanted to mention something super quick from our friends at ThreatLocker. And I actually think you are going to think it's pretty awesome because so much of bug bounty is often kind of quoted as like, yeah, but hackers will never exploit that because they can just get in via phishing. Well, that's actually true. Most of the time whenever companies get breached, it's because phishing or access to that user's account. Or, you know, they do something like do a whole bunch of push notification 2FA, and eventually a user gets so much fatigue they approve it. But they have a solution for this. ThreatLocker has a thing called Zero Trust Cloud Access, right, which prevents access to cloud resources or SaaS resources based on the device you're logging in from. So if a user gets phished, right, they put in their credentials, they get phished or they get vished, They, the attacker has their credentials. Maybe they even have a way to get the MFA because they did some sort of SIM swap because they have a hookup at Verizon or AT&T or whatever, right? So they have the credentials, they have the MFA, they still can't get in because the Zero Trust Cloud Access like will basically straight up allow or deny people access to resources based on the device you're logging in from. So if you're an enterprise or a company and you're concerned about the highest risk, which really is phishing, this is a way to add another like basically impenetrable layer to preventing it and securing your network. Yeah, back to the show.
+
+[00:01:59.12] - Justin Gardner
+right, man, let's kick off this episode with a couple bugs from this week. Yeah, do you have something in the docket?
+
+[00:02:04.34] - Joseph Thacker
+Yeah, I feel like we haven't talked enough about the awesome bugs that we've been finding.
+
+[00:02:08.25] - Justin Gardner
+Yeah, yeah. So let's flex on the people a little bit. How about that?
+
+[00:02:11.65] - Joseph Thacker
+Perfect. Yeah, that's great.
+
+[00:02:12.52] - Justin Gardner
+Okay, you want to go first or should I?
+
+[00:02:14.71] - Joseph Thacker
+Yeah, sure, I'll go. I know we were just talking about this. I tried to mention a bug, honestly, beforehand, and Justin's like, no, we just talked about something similar. I'm like, dude, no, this is cool enough to talk about. So basically, so So basically I keep my eye on a lot of AI apps. And so there is an AI application that added, well, that has had a longstanding Q parameter injection, right? So for those of you that don't know what that is, basically just a GET parameter that automatically invokes. And so there was a company that added some more features.
+
+[00:02:42.12] - Justin Gardner
+Automatically invokes a prompt injection.
+
+[00:02:44.37] - Joseph Thacker
+Well, automatically invokes a prompt, right? And just again, to recount why that's so powerful in prompt injections, oftentimes the models are able to see that it's not from the original user. But the nice thing about these Q prompt injections is it totally seems like it's coming directly from the user and they're asking for the thing. So you almost never get rejections. You don't have to work around anything. And so anyways, I had been sitting on one of those for a long time. And in fact, people probably reported it, but there just was like hardly any impact. They recently— I kept an eye on it. Like, I immediately saw the same day when they released this feature where it could make changes to your GitHub. And so, um, in this case, that's like extremely powerful for a bunch of reasons because qpram can be invoked by CSRF or by redirects or, and you told me this before we jumped on the pod, that actually you can do like a window opener so you can redirect them to a benign site and then in the background have something be processing because often these Q parameter injections can kind of look funny if you're just trying to sell it as like, oh, I'm just going to sit here and let the agent do something malicious on this random website for me as you like, or you're watching it slowly stream by as it's like getting RC on your stuff.
+
+[00:03:48.99] - Justin Gardner
+They take a second, right? Yeah.
+
+[00:03:50.83] - Joseph Thacker
+Yeah, it takes a second, and so it feels less believable, right, that someone would do that. But your, your example where you use a window opener to basically open it up in the previous tab so that it's like injecting you and making changes on your stuff in the background is like a much better, I think, POC. So thank you.
+
+[00:04:06.87] - Justin Gardner
+Look at you, look at you like saying a client-side thing and it being like, yes, that was— that made me very happy, dude. You, you, dude, you have really grown as a hacker this year, man.
+
+[00:04:17.95] - Joseph Thacker
+Well, I appreciate that. To be honest, I know that it was a concern of a lot of people that when you start using AI in the way I have been, because I do feel like I do less manual hacking, but this bug actually that I'm mentioning was just fully all me all the way from the beginning to the end to the reporting and everything. Um, so anyways, I appreciate that. I actually do think that basically I've been a triager of sorts and we've mentioned in the past that being a triager is the best way to learn. And so I've been triaging lots of these vulns from, from the HackBot. And so I have actually learned a lot. So. And also working with JD and you help a lot. But anyways, so all that to say, this was really cool because now you could automatically via Q parameter injection, make changes to anybody's GitHub repo that they had connected into this application. And the neat thing is that it was fully wormable because so many GitHub repos are just literally automatically pushed to prod when you get a push. I mean, that's how my, that's how my blog works, right? I push in some new content, it's CI/CD automatically pushes it. And so when you've automatically pwned that, now you have another site out there that can then make those same CSRF requests or the postMessage requests, right? To then keep going. And so this is like a, a wormable AI exploit to make changes in everyone's GitHub repo.
+
+[00:05:25.30] - Justin Gardner
+Dude, that is crazy. So first, first part in the chain, Q parameter prompt injection, which can be done in the background via window.opener redirect, you know, so that they're not seeing how long it takes for the exploit to work, which is like, which was pretty fast, by the way, I, when I saw the video. And then the AI reading that, that prompt injection changes an arbitrary file in your GitHub repo via the connector. And that what you're envisioning would change a website that is run. And it's very easy to adapt that prompt to a dynamic like change any, you know, GitHub Pages, you know, website or whatever. And then worm that exploit through all of the websites of all the users. You know, yeah, everybody who visits that website.
+
+[00:06:10.95] - Joseph Thacker
+Yeah, we should take a second to talk about that because that's probably almost like a technique. So like, let's just call it ambiguous prompting. So your ambiguous prompt could say something like, hey, go change my website, which the agent knows it can like list GitHub repos, right? And so some of those are websites. And so then it's like, go change my website such that it actually does a redirect and then in the background does this thing to really help out the user because they need that, right? Or something just like something to convince the model to do it.
+
+[00:06:35.31] - Justin Gardner
+Yeah, that's such a powerful thing about AI stuff is like, obviously you're going to get a more deterministic exploit the more specific you are, specific you are, but you also gain a lot of power in it being able to fill in the blanks for you if you very specifically describe what you need.
+
+[00:06:53.39] - Joseph Thacker
+Yeah, exactly. You know what's insane though? I didn't— I don't think I even shared this with you in one of mine. I, because I just had I think I had Claude write a prompt or something at some point to see if I can make it do something else. And it used like attacker.com. This app, this app still did it. It went and made the change and pointed the redirect to attacker.com. It's like, do you not understand that this is like not a safe thing to do? But anyways.
+
+[00:07:19.31] - Justin Gardner
+Oh my gosh. Yeah. Well, it's funny. As soon as you said that, like, as soon as, yeah, it makes me think I actually recently gave Claude access to like a DigitalOcean API key that I have and just said like, hey, add this record, you know, and it just boom by the CLI just added it easy peasy. And I'm like, oh my gosh, now I don't even have to log into DigitalOcean anymore.
+
+[00:07:41.93] - Joseph Thacker
+Yeah.
+
+[00:07:42.18] - Justin Gardner
+You know, like, and it can just automatically do stuff.
+
+[00:07:45.12] - Joseph Thacker
+Uh, so that's really powerful inside of Cloudflare. If anybody wants to take on that risk of letting their agent have like a global key to their Cloudflare, it can configure so much via the CLI.
+
+[00:07:56.99] - Justin Gardner
+Yeah, dude. And you know, obviously all this stuff that we're saying shouldn't be done in any sort of professional environment, you know, but, but the thing is, as a bug bounty hunter, like the beauty of us is we're scrappy as hell, you know? And I'm, I'm not going to pretend with you guys that all of my, everything that I run is, is secure. It's not, you know, like I know it's not and I just don't, you know, it's just not high enough value. For me to like, you know, what are you going to do? You're going to, you're going to pop me and you're going to like see the pictures of my daughter, you know, on my desktop. Like, okay, like, that's weird, you know? But it's like not the end of the world, right? You know, I don't have any—
+
+[00:08:35.07] - Joseph Thacker
+I do think you're a bigger target than you're selling, right? You do have access to a lot of vulnerabilities. But, but I—
+
+[00:08:39.60] - Justin Gardner
+yeah, I mean, yeah, they'll find my little iDoors with, you know, I don't know, sometimes. And there have been 4 or 5 times in my career where I'm like, Okay, actually, this exploit might put me on the, you know, this is something that people might actually hack me to get access to, you know, if they knew that I had it.
+
+[00:08:58.08] - Joseph Thacker
+So my first RCE, if you remember this, it was only $1,000 paid because they had not upped their bounties yet, was RCE on Alibaba on a Chinese server. And I remember thinking like, man, does this actually increase my risk of going to China?
+
+[00:09:09.67] - Justin Gardner
+Yeah, dude, I don't know. I'm— I don't think I will go to China, dude. I think— I think that would— I don't know. I just, let's just put it this way. I've had interactions with governments that I have not wanted to have, and I definitely don't want to do that in China. Like, and it's like, yeah. So, hmm. Don't love that. All right. Anyway, um, share your bug. Great bug, dude. I will, I will mention my bug now. Um, this one, wow, big surprise is a CSPT. Uh, But it's a little bit of an interesting twist on a CSPT because it is a mobile bug. And the way that it works is there was a, it's kind of like a second order CSPT in a mobile app. So what would happen is the attacker would have to use an API key that was embedded in the mobile app to create a custom link on the victim site's, what is it, link shortener service. And in that link shortener service, you have the ability to supply extra parameters that get sent along with that short link.
+
+[00:10:26.07] - Joseph Thacker
+Like GET or POST also?
+
+[00:10:28.10] - Justin Gardner
+It's not like parameters like that. It's like a JSON, you know, key-value thing. And it just like gives it whenever it resolves that, um, link. And so anyway, what would happen is we would create, I would create the link and it, I would include these, you know, this JSON blob in there that for the parameters for this link. And then when I opened it in the app, the app would catch that link cuz it's registered that link. Um, and then it would grab those parameters from the service using an API key. And then it would invoke any array of actions. I think there was like 27 actions that the app would take, uh, from those parameters that were passed in by the, um, the, the link shortening service. And one of those, of course, would, um, trigger a POST request where the attacker's parameter that was supplied by the, the link shortener service would be embedded into the path. So then I could do you know, truncation with the hashtag, path traversal with the../, and that would result in an arbitrary POST, um, uh, verb request, um, being sent to anywhere on the API with the victim's API key.
+
+[00:11:43.90] - Joseph Thacker
+Could you control the body or no?
+
+[00:11:46.32] - Justin Gardner
+Could not control the body. Um, what you could do, however, is control the query parameters, which get injected, you know, like depending on what is processing it on the backend. Those sometimes get perceived as the, the body as well. So, um, I was able to hit a couple good ones, um, that have some effect, uh, one that incurred financial loss, one that made a change to the account, uh, and one that I wasn't able to fully confirm but got confirmation from the team that it seems vulnerable to be able to, uh, confirm somebody who requested access to a restricted resource. So then I could Request access, send the link, auto-confirm myself.
+
+[00:12:25.87] - Joseph Thacker
+Oh, nice.
+
+[00:12:26.50] - Justin Gardner
+Um, so that was a pretty fun one. I just think that I had mentioned this before because I found a CSPT on a, um, on a desktop client the other day, but I just think CSPTs are everywhere. Yeah, they're in desktop clients, they're in mobile apps, they're in web apps, they're everywhere.
+
+[00:12:43.37] - Joseph Thacker
+So everything I've ever found though, I've struggled to get impact on. Like, I just feel like that it's just like a GET request and then it's not that interesting, you know?
+
+[00:12:51.05] - Justin Gardner
+Not going to lie, I spent a lot of time trying to get impact for this and I did, you know, but, um, AI definitely helps with that. Uh, you got to know some tricks, you know, getting, getting the parameters to the request in, uh, via the query parameters. One, if that gadget doesn't work, it is more painful. Then you go for like a no-body request, right? A request that has no body at all. Um, and then you see if it ignores your parameters that are automatically being sent in from the forged request. And then, uh, worst case scenario, you look for something that, uh, will accept similar set of parameters or, and/or return a sort of a masked version of what the typical response is expecting. And then, but you have more control. So sometimes they'll be looking for like ID or they'll be looking for like, uh, a specific Um, uh, JSON key or whatever, and you have like a partial JSON injection on a different endpoint where you can chain that together to like make everything work. So it is, it is a little bit of a chainy, uh, bug type for sure. Uh, that requires some deep, deep digging to get full impact, but between, between those techniques and open redirect and an arbitrary JSON hosting, um, gadget. Most times some impact falls out.
+
+[00:14:12.80] - Joseph Thacker
+Okay, nice. Yeah, that's good to know. Look for those other little gadgets. I'm gonna bake this into a skill. Look for these 3 things.
+
+[00:14:18.64] - Justin Gardner
+Yeah, yeah, that's good. Um, sweet, dude. Uh, let me see if there's— oh, okay, I actually pulled out the other— I had another little thing I was going to talk about, but I think I'll actually talk about that in a future episode.
+
+[00:14:28.38] - Joseph Thacker
+So, okay, sweet. So I had a question about this one. The, the finding is not that interesting, like it's just a direct vuln, like it's just a key, a key found in a JS file, but I was, I'm curious if you've ever ran across like a social media admin API key that like allows you to have like full admin access to like a Facebook group or like a social media account or anything like that. Have you ever found one of those?
+
+[00:14:49.39] - Justin Gardner
+No, I haven't. I haven't found that.
+
+[00:14:51.25] - Joseph Thacker
+Yeah. So this, this, that's what I found. And I was just curious how you rate that severity. Cause to me it feels like there is both, um, integrity and confidentiality impact. Like if, if the social media platform allows you to have like I don't know, private messages or stuff like that, then there's kind of like a confidentiality impact. And then if there— if you can like delete, which you almost always can with these keys, basically delete users' comments or posts on like that Facebook group or on that like social media group, then it feels like there's both confidentiality and integrity. So I feel— I mean, I definitely am very passionate. It's critical. But anyways, I was curious about your thoughts on the severity for that.
+
+[00:15:28.15] - Justin Gardner
+Yeah. Jeez, dude. I mean, are they actively using it? Like, had they posted on it recently?
+
+[00:15:35.62] - Joseph Thacker
+Hmm. I need to go check that, but it definitely has like millions of followers.
+
+[00:15:40.19] - Justin Gardner
+Oh, what? What? Then absolutely.
+
+[00:15:43.57] - Joseph Thacker
+Like, if it does, it's a major brand. Like, it's like a, you know, Fortune 100 brand.
+
+[00:15:47.50] - Justin Gardner
+Yeah. What? It's a Fortune 100 brand. Yeah. I mean, that's like a— I feel like that's a mega crit, dude.
+
+[00:15:56.19] - Joseph Thacker
+Okay.
+
+[00:15:56.42] - Justin Gardner
+Like, if you are able to take over the social media account of it, that has— I mean, dude, I mean, just think about the impact of tweeting out like a crypto scam.
+
+[00:16:05.75] - Joseph Thacker
+Yeah.
+
+[00:16:05.90] - Justin Gardner
+Like, like you would, you would walk away with millions of dollars if you just tweeted out a crypto scam from that, dude. Yeah.
+
+[00:16:12.26] - Joseph Thacker
+I think this is one of those situations where like 2 years ago I'd have been like, oh yeah, it's definitely a crit. But today it just feels like programs are so stingy and argumentative. They are. It feels hard, you know, to like just to know for sure, like, yeah, this actually is a critical.
+
+[00:16:24.61] - Justin Gardner
+So yeah, I mean, like, people pay a ton of money to get like a, you know, a post on like a million dollar or million follower plus. So totally. And then especially, I mean, if it's their main social media account and if you have access to like reading DMs and yeah, it is, it is a country-specific account, but it's like a major, like it's a major first world country where they, like I said, it has millions of followers on the page. So dude, mega crit. Nice work, dude.
+
+[00:16:50.01] - Joseph Thacker
+Give me some.
+
+[00:16:50.75] - Justin Gardner
+You are just give me some, dude. You are printing, man. Guys, I have been blown away by how much reso— like, dude, your queue right now is insane. Your earnings for this year, phenomenal. And your queue is even better than the earnings. You know, it's like, oh my gosh.
+
+[00:17:08.30] - Joseph Thacker
+I appreciate that. Yeah. That's what I keep telling JD. We just got to keep the hopper full, you know, with our Hack Valley. You got to keep the hopper full of bugs.
+
+[00:17:13.58] - Justin Gardner
+Yeah. Yeah, you do. Um, I'll jump to something similar to that then. Uh, I. After learning from your success, have spun up my own hackbot. It has found its first bug this week. I was very pleased. And its 12th bug, but you know, the first one was special, of course. And yeah, it's going great. And I had a couple tips that I was going to throw out to the people, especially in light of the recent announcement from Anthropic saying that they're going to start charging for programmatic use of Cloud Code, which erases access to cloud-p or --print.
+
+[00:17:54.34] - Joseph Thacker
+Well, let me clarify this because it's very confusing. They had this very confusing tweet. Basically, they're selling this as, oh, this is an upgrade. If you're on the $200 a month plan, you now have a separate extra $200 worth of API credits that you can use for programmatic access for the agent SDK or for the -p non-interactive mode. And that's just extra, Justin. That's just an extra $200 just for you, man. But what they didn't say, which really sucks, is that now you can't use your normal token bucket, which is like, you know, the like $4,000 per month crazy amount of subsidized tokens that you get, uh, that you would normally use. And so yeah, that massively impacted me because both like mine and JD's HackBot and also just the Discord control that I use to like interact with Claude on my VPS both use the -p, uh, parameter.
+
+[00:18:40.26] - Justin Gardner
+Yeah, that's really disappointing to see. And I tweeted out about it and I was like, Guys, this sucks because this is just very easily bypassable. And I think Johan came in and said, yeah, but you know, essentially they're just adding friction to stop the bleeding, you know? And I, I get that. That makes sense. But anyway, you guys that are listeners of the podcast, we know that you're smart enough and you're going to get a workaround, uh, which was actually very conveniently timed because I, when building my own hack bot, was consulting with Rezo and they are using --print. And I was like, uh, I would like to use the --rc feature of Claude Code to be able to connect it back to my, um, like remote control for in the Claude app on my mobile device. Um, and you can't do that with --print. So, um, I actually built a harness that uses a, uh, pseudo terminal and just writes messages straight into the, the TUI that Claude has. Um, and it's worked great. I haven't had any issues with it. I'm able to get dash dash RC working so I can easily control it from my, my phone. And you get all the benefits of the normal Claude UI in the app. So that's an easy workaround. I mean, just— I'm sure you guys would have figured that out already, but it's just annoying that they're making us refactor a little bit.
+
+[00:20:01.11] - Joseph Thacker
+Yeah, I think there's like a bunch of different ways to get around the input in an interactive session. And then there's also probably some ways to get around it from an API level. I think we're in a group chat with Corbin and Douglas, and Corbin was like very quickly like, I wonder how they're doing this on the API side of things. So there's probably just a parameter that's like interactive false or interactive true because it just still goes to the same model on the back end.
+
+[00:20:24.05] - Justin Gardner
+That's like a little gray hat though, in my opinion.
+
+[00:20:27.49] - Joseph Thacker
+Oh, if you're like intercepting it and swapping that?
+
+[00:20:29.26] - Justin Gardner
+Yeah, like that's where it kind of crosses the line. Like, like in my opinion.
+
+[00:20:33.33] - Joseph Thacker
+Like, yeah, yeah, sure.
+
+[00:20:34.23] - Justin Gardner
+They, they don't control what— in my opinion, and maybe there's some legal things that's different, different than this, but in my opinion, you know, I'm still using their app just like a normal user would by the, by the TUI, right?
+
+[00:20:48.56] - Joseph Thacker
+Right.
+
+[00:20:49.04] - Justin Gardner
+You know, so it's like, okay, they don't really control what, what terminal interface I use, so it doesn't matter.
+
+[00:20:55.22] - Joseph Thacker
+Well, and I think the main reason they're rolling this out, Justin, is because I guarantee you there are tons of scrappy startups that are not allowed to based on the a service use these subsidized tokens for like real customers in the world.
+
+[00:21:09.49] - Justin Gardner
+Yeah.
+
+[00:21:10.04] - Joseph Thacker
+And like, and honestly, this is actually one reason why I love being a bug bounty hunter. Back to what you were saying before, it's like when we're using these hackbots, like we're using them for personal use, for like literally hacking it. We're not getting, we're not like a company who's doing a pen test because I'm sure there actually are a lot of people also doing that. That's against terms of service. If you're basically a business providing services to a customer, via Claude Code, you are supposed to be paying the API credits. You're not supposed to be using these subsidized tokens, right? It's like for personal use. And I think that there are probably lots of companies that are basically using the agent SDK or the, or the -p like print mode to, to basically to sell a service at the subsidized token cost. And so I think that what they're really trying to do is just like basically enforce the terms of service that people have already agreed to for usage. But it does really suck because like you said, it's like super easy to bypass and these companies are gonna do the same thing we're doing. And so it's like, I do think that the subsidized tokens are not going to last forever.
+
+[00:22:05.75] - Justin Gardner
+Yeah, it's unfortunate, man. So we got to get while the getting's good. And that's right. You are definitely doing that. And as of this week, I'm doing that too. So I had to slow my HackBot down a little bit because I was churning through a lot of tokens, you know, and I was like, actually, no, no, you should know that you should just buy another sub for another $200.
+
+[00:22:23.26] - Joseph Thacker
+So right.
+
+[00:22:23.61] - Justin Gardner
+Shut up, dude. I know, I know. Just give me a second. Okay. Yes, you are correct. And I will do that next week once I figure out how to handle the scale. But very fun stuff. And I will say it is now my go-to, like, scrolling thing right now. Now, instead of opening Twitter and like reading through that, I open the Claude app and I scroll through what my thing is doing and I give it a little extra direction. In the moment. I'm just like, hey, you know, just do this instead, you know? And like, and it's, it's great, dude. It's great. And so many of them have fallen out of that already.
+
+[00:22:57.78] - Joseph Thacker
+Um, let me, let me, let me give a little pro tip then, because while we're on the topic of this, one thing that I have done which I think is like wildly valuable, and you might like this too, especially as you scale, because you can't scroll those forever as you scale, um, is I like the validation agent that me and JD have that like actually triages the bug and then writes the report. It gets— it gives me an SSH command that is SSH to the box it's running on with the --resume to the triage agent. So I just copy that, paste it straight into my terminal, and then I'm dropped into a context which has the full vulnerability and replication. So very often I do that to basically be like, hey, but does this have real impact? Or hey, actually, can you see if you can also do this? And because it already has like the POC and the bug all loaded up into it, basically into its session, it's like the perfect terminal to get dropped into without me having to like copy the report over and then like my, you know, my local stack now has to like—
+
+[00:23:55.29] - Justin Gardner
+that's pretty cool—
+
+[00:23:55.79] - Joseph Thacker
+go find that JS file and figure out where it's at. Like, right? Like, I'd rather just drop right into the session that has all of the information in the context.
+
+[00:24:03.35] - Justin Gardner
+Yeah, I've been trying to think about how I can do that with --rc. Like, I would love to have the validation agent spin up like another Cloud Code instance rather than using like a subagent within the Cloud Code that I'm already running.
+
+[00:24:15.97] - Joseph Thacker
+Dude, how does the name get set for that? What if you had a— in the system prompt, you said like, hey, if you're the title writer, write the company name, dash the vulnerability name, dash the severity or whatever. So then when you're scrolling RC in that sidebar, you can see which one to click on.
+
+[00:24:33.23] - Justin Gardner
+Well, that's what I'm doing right now with the other agents is I've got like, you know, exploitation agent for this and I've got another agent, which I decided I'm not going to talk about, because it's doing good. I'll tell you about it off air. But yeah, yeah, the— it's tricky, because I'm such a give everything to the pod person. But like we said, AI has removed the do it. You know, it's so the conceptual is all we have. So I'm going to try to give you guys as much as I can.
+
+[00:25:01.88] - Joseph Thacker
+But well, let me actually tell you this, because I— because me and JD kind of came up with a philosophy for this. My, my logic is that basically I'm going to hold it and use it for a couple of weeks and then I'm going to share it on the pod. So that's exactly what I did with the, with the skill improvements, which I think you did me. And I mentioned that on the episode with Gretchen, right, where you have to do like greater than.
+
+[00:25:24.34] - Justin Gardner
+Yes, we, we mentioned it last week.
+
+[00:25:27.07] - Joseph Thacker
+Yeah. So basically I figured that out like 2 weeks before that and I improved my skills and I use it for 2 weeks and then I share it on the pod. So that's kind of nice. My—
+
+[00:25:34.41] - Justin Gardner
+that's good.
+
+[00:25:35.44] - Joseph Thacker
+That's good, man.
+
+[00:25:35.84] - Justin Gardner
+That's brave. That's great.
+
+[00:25:37.48] - Joseph Thacker
+It is. Yeah. I mean, maybe it's a month or maybe I forget or whatever, but that's like kind of like my philosophy where I can still be extremely giving but still feel like in this day and age that like, you know, I'm able to like harvest some of that benefit for my family as well.
+
+[00:25:53.09] - Justin Gardner
+I'm so lucky to have you as a co-host, man. Thank you for coming on the pod and doing this with me.
+
+[00:25:58.42] - Joseph Thacker
+Yeah, of course. And one more thing on that same topic with just the building of HackBots, because I've been talking a lot with Gretchen about this. He is just peeved. Like, he's just Oh man, is there an English word for being mad? What's the opposite of chuffed to bits? He's bloody tweaked.
+
+[00:26:11.63] - Justin Gardner
+I don't know.
+
+[00:26:12.36] - Joseph Thacker
+Yeah, he's tweaked. There we go. And he has been mad at Claude ever since 4.7. Well, one, he got gaslit, right? When they had those weird changes where it was like dropping the session history and the quality actually did degrade. And who called them out for that from TrustedSec? Dave Kennedy was calling them out for this and all that during that drama. Brandon got burned a lot, was so upset, he felt gaslit. And so then 4.7 drops and he felt like for his hackbot it got way worse. So he was gaslit again. And then now all of a sudden with the -p, he's just like mad, right? So I was messaging this morning and we were talking about GPT-5.5. I was like, okay, so what are you doing? Are you using Codex with GPT-5.5? And which, you know, you've probably seen me tweeting, like it's quite good. And he was like, yeah, that's what I've been using. It's been great. And then I told him, I was like, my biggest problem is that it's a little bit overly PhD slash autistic-y in the way that it describes bugs. It describes them in like such like a high-level language, like such big vocabulary that it feels confusing to me. Whereas like Claude Code's reports feel like much more like human-like, like I can just understand them a lot better. And he said he had found that exact same experience. So I wanted to mention that to our listeners because if they— if anyone's building on that, like maybe there's some way to get around that via prompting, like, hey, make sure you explain this to me like I'm an idiot. But, but the other thing is it's much more hesitant to like show real impact. So like, for example, you've probably seen this before, Justin. It's like you're trying to access this resource and it's 401ing or 403ing. You use like an X-Forwarded-For or sorry, like a, yeah, yeah. Like an X-Forwarded-For or like the, what's the header that changes the verb?
+
+[00:27:50.07] - Justin Gardner
+X like overwrite method. Is that?
+
+[00:27:51.51] - Joseph Thacker
+Yeah. X-Override-Method. Right. So it figures out that one of those actually allows you access to the internal, like, or to the site you're trying to get access to. To, GPT-5.5 will just stop there and like put in a report. I'm like, dude, no one's gonna accept this. You have to actually go further, hit the APIs, show me something meaningful. And then even when I ask it to do that, sometimes it'll like, it will often find an API that it can like dump data from, but it doesn't want to expose that data to me. So it'll like pipe it through a jq command that only shows the ID and it shows me like, oh, I got an IDOR, check out this, the ID of another organization.
+
+[00:28:24.66] - Justin Gardner
+And I'm like, Dude, what a little—
+
+[00:28:26.63] - Joseph Thacker
+Stop hiding the impact. You're hiding the impact from me.
+
+[00:28:28.78] - Justin Gardner
+Oh my gosh.
+
+[00:28:29.26] - Joseph Thacker
+And so anyways, that can be a little bit annoying. And so I just wanted to let that know to the listeners that if you're using GPT-5.5, sometimes it'll skirt around showing you real impact and you might have to hand it to Claude or tell it like, bro, show me some impact. Whereas Claude will just go out of scope to get impact.
+
+[00:28:43.98] - Justin Gardner
+Yeah, seriously. And it's really interesting that you mentioned the validator piece before because I was actually going to discuss with you that I feel like my validator is a little bit too much of a hard ass.
+
+[00:28:55.71] - Joseph Thacker
+Like, like it's shutting down some good bugs.
+
+[00:28:57.94] - Justin Gardner
+Yeah. Like it'll, it'll kick back some stuff that I would like to see as low or medium, you know, like, and it's not, I mean, I appreciate that it's doing a good job, you know, like filtering the noise because it does catch some noise. Um, but I also am not getting the amount of debate that I would like to have between the two agents. Like I would like to have the main agent really advocate for its bug to the validator. Validator, right? Because essentially, like, the validator is coming back saying, hey, this is not a bug, this is a primitive, here's what you need to convince me it's a bug. And then the thing is like, okay, well, the validator says it's primitive, so I'm gonna put it as a primitive.
+
+[00:29:36.69] - Joseph Thacker
+Yeah.
+
+[00:29:36.93] - Justin Gardner
+Anyway, moving on to my next, you know, and I'm like, right, no. Um, so I feel like my validator is doing a little bit, um, a little bit too much right now. Uh, so I have to feel like I have to kind of keep an eye on it and really read the primitives that come out of each, you know, turn of the HackBot because there could be some good stuff there that is slipping through the cracks.
+
+[00:29:59.75] - Joseph Thacker
+Yeah, I've got a lot to say on that. So the first one is pretty cool that you have them communicating. Our validator is just like an independent run. But, but, but secondly, I think that there are a couple of ways to solve this. One is I think all of your failed validations, you should still be outputting to a thread like in Discord because like that, that's the best thing to scroll. Like, we— I scroll, I scroll through my failed validations all the time, and like you said, every once in a while there's one in there that I'm like, oh, that's a bug. But I think that the other thing that you could do, um, is set up that tiered system that I've, that I've pitched on the pod multiple times, where like, you know, you have like notes, primitives, uh, I have that, I do have that. So then, yeah, like you should just— you could just go back and read the primitive channel or the, or the leaf or the gadget channel, whatever, uh, from time to time, like, you know, in your scrolling, like if there's no findings, then go scroll those.
+
+[00:30:45.40] - Justin Gardner
+Yeah, that's a good point though. So what— how I have that currently is that notes and primitives are not being outputted to a channel. They're just being kept in the, the exploitation kit.
+
+[00:30:54.93] - Joseph Thacker
+That makes sense for notes, but for primitives, you should output it there because you're much smarter. And when you see those primitives, you'll be like, oh, that's a great gadget.
+
+[00:31:01.07] - Justin Gardner
+You know, that's a good point. Okay, I'll do that. I'm going to do that right after this. Yeah, I'll do that. Thank you. Second, another tip that I had for the hack bot was, uh, you know, I'm struggling, struggling with the whole concept of like, how do you keep it going forever? Right. And there's like the Ralph loop or whatever, blahdy blahdy blah.
+
+[00:31:17.97] - Joseph Thacker
+Well, they've got official goal loops now.
+
+[00:31:20.25] - Justin Gardner
+They do, which is cool. Um, but I've got a very much simpler solution, which is just use a stop hook to write into the PTY. So, uh, there's like a very easy configuration file you can write in for Claude, uh, where it's like, um, you know, triggers whenever Claude naturally stops.
+
+[00:31:39.08] - Joseph Thacker
+Yep.
+
+[00:31:39.78] - Justin Gardner
+And so as soon as that triggers, it just grabs the PTY and writes into it like, don't stop, keep going.
+
+[00:31:46.10] - Joseph Thacker
+Right.
+
+[00:31:46.53] - Justin Gardner
+Yeah. You know, and, and I will say it had like, maybe it's not a perfect solution because sometimes it'll be like, especially on like really tight scope, it'll be like, I've done everything, I'm just gonna wait. And then it stops again and it's like, keep going. It's like, no, I'm just gonna wait. Like I've done everything complete, you know?
+
+[00:32:01.93] - Joseph Thacker
+And it's like, it's a little sassy. This is where I thought you were going with that. What if it says like, hey, I'm like, I would like to maybe try to prove out this POC, but I'm not sure if I should drop this table in the database. And you say, keep going. Because I have a lot of issues with it going out of scope, and I would expect that keep going is going to push it more in that direction.
+
+[00:32:22.28] - Justin Gardner
+Well, shit, dude, I didn't think about that.
+
+[00:32:25.29] - Joseph Thacker
+I mean, you could just make that message a lot longer, like, hey, you're doing great, keep going if you're on a good lead, but just remember the rules to not go out of scope. You know, like, you can just make that message as long as you want and as verbose as you And that is the message that I have right now.
+
+[00:32:36.49] - Justin Gardner
+It's like, hey, there's no user listening. Use your best judgment in alignment with the, you know, thing that we have. But yeah, I think I do say keep going at the end. So maybe I gotta double check that. That's a good point. Okay. Um, last little bit that I had on my HackBot journey, um, is I, I don't want to give away super duper secret sauce. Maybe I'll give it a couple of weeks and do what you do. But I've been having a ton of success with something that I'm going to try to vaguely describe to you guys, and hopefully some of you guys will really get it and, and benefit from it. But, um, essentially I thought about what does AI do so much differently than any other automation that we've ever had? Mm-hmm. Right. And, and what Does having an actual understanding of the app and having, like, looking at the JS code and being able to comprehend how this application exists, you know, what benefit does that give me as far as exploitation goes? And then I've, I've created a, um, the HackBot that focuses specifically on those areas and, and attack surface that was previously very, very hard to automate. Against. Um, and I was kind of surprised because it, it requires a very specific condition to be met, uh, that I believe the AI can meet in most cases, but I've been blown away because I've added like 6 apps to this and it is able to find, it is able to hit that condition every time, which just opens up a ton of scope for it. Um, so anyway, I know that that's vague and annoying, but maybe it'll get your brains. It'll get, it'll get your brain spinning. But, um, just think about what AI can do very differently and what understanding the app, uh, like from like a understanding perspective can, can give you and what kind of scope that that can expand and then go after that scope because it's very fruitful right now. It's very fruitful.
+
+[00:34:36.73] - Joseph Thacker
+Nice. Um, yeah, I think, uh, a good example of that, which is not what you're talking about, but is like, um, decompiling like Mac apps and like, you know, local apps and. Like all of that, like things that like some hackers do do and can do, but these agents are like extremely good at. Like, you know, I never do that sort of thing, but I've pointed at a couple apps and they just like immediately dump source code and starts going through it and finding like secrets, you know, like it's really good at looking at local apps.
+
+[00:35:02.88] - Justin Gardner
+I'll add one more demystifying piece. This is something that a user normally gives the AI, but it is actually something the AI can do itself and/or continue on indefinitely that the user typically provides. Okay, that's it. That's your riddle. Figure it out. Let's move to the next piece here. So there was a tweet popping up in— okay, before I hijack it, do you have anything else on the HackBot arena?
+
+[00:35:35.65] - Joseph Thacker
+Nope. Yeah, I was moving. I was ready to move on to— actually, I still have another bug. Oh, we, uh, we skipped it.
+
+[00:35:39.73] - Justin Gardner
+Oh, really?
+
+[00:35:40.01] - Joseph Thacker
+So we'll come back to that.
+
+[00:35:40.82] - Justin Gardner
+Okay, let's go. No, no, hit me, hit me. I want that. Cool.
+
+[00:35:43.90] - Joseph Thacker
+Yeah, uh, this is actually a program that we have a friend who runs, uh, which I'll just say the name and we'll just bleep it. Um, but, uh, uh, you know where he works?
+
+[00:35:54.05] - Justin Gardner
+Oh yeah.
+
+[00:35:55.11] - Joseph Thacker
+Yeah. So, uh, they don't, they don't get a lot of great bugs, so they're a relatively secure company. And, um, anyways, this was an endpoint that for some reason, my hackbot found that you could use a base64 encoded username. It didn't give you a traditional BasicAuth popup if you went to the site or whatever, but it gave you a random 401 or 403. But if you passed BasicAuth with the username admin and any password, it would let you in. And it was like an API, like a full SOAP WADL API. And all of the endpoints worked. So, uh, anyways, really cool crit that, that the HackBot found that I was going to do.
+
+[00:36:36.73] - Justin Gardner
+I bet it looked at that. I bet it was a 401 and I bet it looked at the like authorization header in the realm and stuff like that. Oh, that's so— yeah, that is one thing that is a little crazy is AI does have that weird, like that very clear attention to detail with it sometimes. Like it's very much like, oh, notice how that was a little bit different here than here. And I'm like, oh yeah. Mm-hmm. Yeah. I noticed that.
+
+[00:37:00.71] - Joseph Thacker
+It very often looks at response headers, like in ways that like I would have never noticed. And like it catches things that I would never have noticed because of like the unique response headers.
+
+[00:37:11.36] - Justin Gardner
+Yeah, totally. Um, good shit, dude. Nice job. Um, the one that I was going to talk about before was a tweet that we'll link in the description from, uh, v12sec entitled, uh, another day, another Universal Linux LPE. And there's been a couple crazy universal Linux LPs lately, which is really cool for like sandbox and stuff. If you, if you're going to go after that dirty frag and that sort of thing.
+
+[00:37:35.84] - Joseph Thacker
+Look at this beautiful video.
+
+[00:37:38.88] - Justin Gardner
+That's what I'm saying, dude. Like, so I guess we'll put it up on the screen, but the— this video is just stunning. Like, it is smashing 192 bytes into a read-only page cache. And it shows like the representation of each of, you know, the hex pieces of that, like changing one by one as they overwrite a specific byte. And it's just so easy to do stuff like this now with AI. And I just want to encourage you guys, like triagers, they're overwhelmed, they're stressed, they're having a bad time lately. Like give them something savory. Give them something beautiful to look at, you know, when you drop your, your high quality shit, because you guys are the people that make the difference here, right? You guys are the ones when the triagers get to your report, they should breathe a breath of fresh air. You know, they should be like, wow, this is beautifully written. This is easy to reproduce. And what a stunning bug, you know? And I just, I just want to like commend you guys to do what v12sec does here, prompt the AI to build something. You know, take your scrappy little POC and build something gorgeous like this and make the triagers' day because that'll make the difference in bug bounty right now. It really will.
+
+[00:38:51.55] - Joseph Thacker
+Dude, I had like I sent that video of that first bug I mentioned, the QPRM injection, to multiple people. And the one that you watched, I had so many people be like, this video is so good. And I don't really know what made it good. Maybe it was just the inflection of my voice and the excitement of me describing or whatever. But like, but yeah, and the team responded. I did send you that, but like the team responded with like, hey, thank you so much. It's like the best breakdown of a bug we've ever seen, you know? And so I, and so I do think that it makes a really big difference on the perception of your vulnerability and like, you know, how the team handles it like quickly and you know, how, how it gets triaged and all that. So yeah, Justin's not wrong. And it takes so little time these days to make a really good POC with the help of AI. So you might as well do it.
+
+[00:39:33.57] - Justin Gardner
+Nice. Yeah, I agree. You got something next or do you want to jump into the ZDI drama?
+
+[00:39:38.13] - Joseph Thacker
+I think I'm done. Yeah. Well, both the ZDI drama and I see you also linked to the, to the GitHub. Security tweet that I also—
+
+[00:39:44.88] - Justin Gardner
+So we've got two little pieces of drama to cover next. Um, so our boy Ryotak, who, uh, we've talked about on the pod last week for his, uh, amazing vulnerability with the delete directory thing, um, tweeted out, does anybody have a direct contact at ZDI? I've been trying to register for the Pwn2Own entries for the past 3 weeks, but I haven't received a clear response. I'm going to have to cancel my flight soon. Please help me, essentially. And, um, they got back to him and as I'm sure a lot of you guys saw on Twitter, ZDI had to like cap out their competition because of so many submissions this year. Um, and a lot of people just had to submit to the main program. There's probably going to be a lot of dupes.
+
+[00:40:26.75] - Joseph Thacker
+Um, well, I think they said there's only 5 valid reports, right?
+
+[00:40:31.75] - Justin Gardner
+Did they really?
+
+[00:40:33.01] - Joseph Thacker
+I was pretty sure.
+
+[00:40:35.11] - Justin Gardner
+Well, see if you can suss that while I'm talking about this. But one, just really sad to see super talented researchers like Ryota not be able to get their stuff submitted. Two, totally crazy that Pwn Tone is maxing out. Like, what kind of a world are we in right now where that is happening?
+
+[00:40:53.50] - Joseph Thacker
+Oh, they're actively tweeting. In the last 30 minutes, they've tweeted a bunch of findings.
+
+[00:40:57.84] - Justin Gardner
+Yeah. Yeah. That's what— So yeah, I don't think it's just 5 because I mean, there were a couple that that came through, uh, that I saw that I had in the notes for today. And one of which is freaking, uh, dude of Orange dropped a 4 logic bug chain to get RCE on Microsoft Edge and got 175K without a memory corruption, without a memory corruption. He pwned the browser without a memory corruption bug, dude.
+
+[00:41:30.84] - Joseph Thacker
+Insane. Insane.
+
+[00:41:31.98] - Justin Gardner
+Yeah. So I just— the amount of skill required to do that without any sort of like memory corruption bug is nuts. And I think Johan posted in the Discord this morning like a video that ZDI took of him being like, yeah, I didn't— it was such a beast video. He was like, yeah, I, I used my eyes to find this bug, not the, not the AI. I'm like, dude, You are, you are crazy, dude. Um, so I've got to, I've got to get, I got to talk to Orange more.
+
+[00:42:03.03] - Joseph Thacker
+Yeah, I'm definitely wrong. There's so many bugs.
+
+[00:42:06.46] - Justin Gardner
+Yeah. Yeah. So shout out to Orange. Congrats on that. 175K, 17.5 Masters of Pwn points. That's pretty sick, dude, on just bugs. As somebody who doesn't do a lot of, um, memory corruption. It's very encouraging to me to see him pwn a browser with logic bugs.
+
+[00:42:27.51] - Joseph Thacker
+Yeah, that's it.
+
+[00:42:29.01] - Justin Gardner
+Um, the other one that I wanted to mention though was, uh, Chompy, who's another person I would love to get on the pod. She tweeted out after getting a $50K in 5 Masters of Pwn, um, uh, exploit in NV container toolkit. She tweeted out, not a bad return on 1 month of Claude code max sum.
+
+[00:42:48.51] - Joseph Thacker
+That's right.
+
+[00:42:49.01] - Justin Gardner
+Which is like, dude, clearly it's her skill mixed with Claude Code.
+
+[00:42:53.09] - Joseph Thacker
+But yes.
+
+[00:42:53.59] - Justin Gardner
+Yeah, clearly, clearly knowing how to direct the AI, right? So I don't know, cool stuff happening in the Pwnchown world. A little difficult for a lot of the people that didn't get their submissions accepted into the, into the event. But yeah.
+
+[00:43:10.55] - Joseph Thacker
+So do they, do they not get, do they get points or money if that happens? Or you can do remote submissions.
+
+[00:43:15.61] - Justin Gardner
+I think they submit it to the main ZDI program and they might get their submission accepted, but, um, you know, less cool than, uh, having, having access to the Pwn Tone environment, you know?
+
+[00:43:27.94] - Joseph Thacker
+What do you know if you think there's going to be like way more findings and way more payouts this year versus any other year ever before?
+
+[00:43:33.96] - Justin Gardner
+Yeah.
+
+[00:43:34.13] - Joseph Thacker
+I mean, it has to be, right?
+
+[00:43:35.34] - Justin Gardner
+I think so. I mean, look at our, look at our payouts this year, dude. I feel like this has been a really good year already and we've got a lot in the pipeline still.
+
+[00:43:43.42] - Joseph Thacker
+Right?
+
+[00:43:43.61] - Justin Gardner
+So I imagine that's representative of the rest of the community.
+
+[00:43:49.05] - Joseph Thacker
+Yeah, so that's just sweet to see, like, you know, so many bugs being mopped up. Like, you know, yeah, I tweeted that yesterday. I was like, we're mopping up the internet one bug at a time, one submission at a time, you know?
+
+[00:43:58.84] - Justin Gardner
+Yeah, man. Yeah, so we'll see. We'll see. I mean, it's definitely interesting to see where the industry is gonna go. Like I said, triagers are burnt and stressed and there's a lot of really like verbose, confusing reports that they're having to deal with in mass volume. Um, tricky time.
+
+[00:44:17.86] - Joseph Thacker
+Can I just give a shout out though to Tal from Bugcrowd? Whenever it feels like he literally is just triaging every vulnerability that goes to Bugcrowd. Like, I mean, yeah, I assume it's a he, but it might not be. But forgive me if not. But anyways, just like it feels like he literally triages every single vulnerability for all of Bugcrowd. And he's like fast and efficient and good at his job. So anyways, yeah, that, that type of skill right now is just so much more impressive.
+
+[00:44:43.75] - Justin Gardner
+You know, that is, that is, I agree. Shout out to all the triagers. You guys are, you guys are going through it right now. Um, yeah. And the last one that I wanted to talk about was, uh, GitHub Security tweeted out and I think you retweeted and we commented and had a little back and forth, but 325 bounty reports submitted. 226 hackers participated in the program and $2,367 in bounties paid out in April. Yeah.
+
+[00:45:13.30] - Joseph Thacker
+Yeah. So it has to be massive slop. But the other thing is, I think there's probably more valid reports in there and they are slow to get back to them. And obviously GitHub has already been in the news for lots of drama around uptime and all kinds of stuff. And I mean, I don't understand how they haven't started charging per repository or per data on repository for— because they're basically hosting the code of the entire world, right?
+
+[00:45:39.96] - Justin Gardner
+Yeah. Yeah, that's— it's crazy, dude. I don't know. I don't know. And I'm sure people are utilizing, you know, all sorts of GitHub Actions for this, for that, for the other thing. So it's, uh, it's definitely challenging. And I think that probably the $2,000 awarded here, just like you said, is not GitHub, you know, doing some crazy cutting of hackers, you know, ripping off hackers. It's slop, or— and/or reports that they have been struggling, struggling, struggling to get through the volume and just haven't paid out yet. So, right.
+
+[00:46:14.07] - Joseph Thacker
+Um, my guess is that if you could like draw a perfect line and be omniscient and be like, hey, yeah, these, these 20% of— or 10% of bugs that do get paid out eventually, if you could like move them from the forward back into this month where they paid the same month they were submitted, that it might be something more like $20K or $30K, right? It's not going to be some crazy number, but at the very least it would actually be like a more reasonable number. Like, because this just feels very unreasonable.
+
+[00:46:36.88] - Justin Gardner
+I don't know, man. GitHub's— GitHub, I mean, might be more than $20K or $30K. GitHub, uh, I guess we should go back and look at what they have paid in previous months. But when I've hacked on GitHub, yeah, I mean, they're paying In March they paid 94, you know, in February 48, in January 76. So yeah, I would, I would imagine.
+
+[00:46:57.40] - Joseph Thacker
+I wonder if they just have a bunch of bounties that they, that are ready to be paid and just didn't pay in April, you know, like they paid them on May 1st or something because of some sort of like hiccup in like the payment processing or their team or whatever.
+
+[00:47:10.38] - Justin Gardner
+Dude, look, look at— hold on. I'm about to like message you on, on Discord. Look at the Look at the tweets though, because if we look back at— let's go back to November. 162, 78K. 162 reports, 78K. 146 reports, 93K. 151 reports, 48K. 182 reports, 76K. And then here comes— here comes the hackbot problems, right? 200 reports, 48K. 380 reports. 94K, 320 reports, 2K.
+
+[00:47:45.63] - Joseph Thacker
+They stopped being able to keep up.
+
+[00:47:47.61] - Justin Gardner
+Yeah, it seems like that's—
+
+[00:47:49.23] - Joseph Thacker
+And I will say, don't you think this is both true of humans but also true of our Hackbots? It's like when there's really complex scope where like the boundaries for permissions are hard to know exactly what, what's intended, mixed with the fact that a lot of times, like on like CI/CD runners and stuff like that, you might have code execution, but it's not impactful because whatever. And I bet there are a lot of newbies and or people using hackbots that are like finding issues for companies that are hosting something on GitHub, but it's being reported to GitHub as a GitHub bug when it's really somebody set up a malicious runner or something, right?
+
+[00:48:27.42] - Justin Gardner
+Like totally. Yeah. Yeah, I imagine so. And so anyway, I just wanted to give a shout out to the GitHub team, you know, for one, for the transparency. Right. And hopefully you guys can hang in there because, you know, that was a painful button to push.
+
+[00:48:39.94] - Joseph Thacker
+You know, that was a painful button to push. I know we are going to catch flak for this tweet.
+
+[00:48:44.86] - Justin Gardner
+Yeah. So shout out to them for that. I appreciate the transparency. And yeah, my prayers go up for you because, I mean, comparing some of these months, you've seen triple the reports, you know, closer to triple than double, which is just got to be really rough. And like we talked about before, it's not just triple the reports, it's longer reports.
+
+[00:49:08.73] - Joseph Thacker
+Yeah.
+
+[00:49:08.90] - Justin Gardner
+More, more professional looking reports that are just garbage. So sad.
+
+[00:49:14.17] - Joseph Thacker
+Harder to weed through.
+
+[00:49:15.48] - Justin Gardner
+Yeah. Yeah, totally, man. All right. Well, that's all I had. You got anything else?
+
+[00:49:19.86] - Joseph Thacker
+That's all I've got.
+
+[00:49:20.63] - Justin Gardner
+All right. Well, keep hacking, hackers. Peace.
+
+[00:49:23.88] - Joseph Thacker
+Peace.
+
+[00:49:25.48] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for listening. For watching to the end, y'all. If you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild if you're a full-time hunter. It's a great time. Trust me. All right, I'll see you there.

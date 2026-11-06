@@ -1,0 +1,504 @@
+Episode 118: Hacking Happy Hour: 0days on Tap and SQLi Shots
+Source: https://www.criticalthinkingpodcast.io/episode-118-hacking-happy-hour-0days-on-tap-and-sqli-shots/
+======================================================================
+
+[00:00:00.00] - Justin
+I threatened them in the chat. I was like, listen, guys, if you steal these bugs and you dupe the original reporter, I will find you. I have connection. All right. Sup, hackers? So this week we are launching a new segment on Critical Thinking , Bug bounty podcast called this Week in Bug Bounty. For this segment, we've partnered with all four major platforms. HackerOne BugCrowd , yes, we Hack integrity, they've all sponsored the show. So thank you so much for that. In order to bring this segment to you now, I want to make something very clear because one of the things we've talked about on the show before is that we will not show partiality towards one individual platform. Okay? And we've made it very clear to the platforms that we are maintaining that artistic integrity there. We. We will not allow our voice to be influenced one way or the other. What we will allow is the platforms to sponsor the show and to disseminate content that is, and this is important, one useful to the hacker, or two, celebrating a hacker and bringing more positivity to the industry, which is something that I feel like we lack in bug bounty because it is a very competitive world. So, um, I'm trying to kind of go through some of the things that we have on the list for this week and talk through them and we'll kind of tweak the segment. We'll see how you guys like it, and definitely open to your feedback on Discord. Okay, so first thing up on this segment, which is crazy because it's the first week we've launched, it is we have a hacker that passed $1 million. That's P4FG. They gave permission for us to celebrate that. So shout out to P4FG. Amazing hacker. I've worked with him plenty of times. He's an active member in the Critical Thinking community. So thank you so much for being an Active Member P4FG. And congratulations on passing $1,000,000 on HackerOne. That is sick. And in the same week, there was a report disclosed on the HackerOne hacktivity that was a 25k crit that somebody found by hitting/reports/reportid JSON. And. And it was literally just leaking two factor authentication codes, email addresses, everything on disclosed reports. And the report is super fascinating. We'll link it down in the description. And so I'm going to make a little bit of an exception and double click into this report a little bit in this segment. But this one, the reason it happened, and this was reported in under 90 minutes of this being pushed abroad, by the way, it was because Ruby was updated in the HackerOne system and pushed to prod. And there's a difference in ways that they parse JSON objects, specifically hashes inside Ruby with that version change, and that's why it leaked all the data. So really crazy that a version update caused that change. And I just want to give a shout out to this hacker avinash and the HackerOne team for paying a 25k crit and getting that resolved super quickly. There was reported in under 90 minutes. That's nuts. Okay, so that's it for HackerOne. Let's move to BugCrowd . So, okay, BugCrowd actually released a really awesome blog post the other day called Hacking Crypto Part one. And for a second I thought it was talking about cryptocurrency, but it's not. It's talking about cryptography. And I think that there are a lot. There's not a lot of valuable resources out there on how to hack crypto. So I wanted to give a shout out to this article by Nerdwell. It's actually really in depth and covers a lot of the things you might want to go after if you're going to hack cryptography. I've used several of these attacks to find vulnerabilities within the past year, so definitely check that one out. All right. Oh, okay. So while we're talking about articles, yes, we hack also had another one, which is amazing. It's the payload obfuscation article by yes, we hack. And it was crazy, the content in this one, because I was like, okay, I'll read through this. And I found a new in this article, there was a new way that I did not know about on how to specify Unicode code points in JavaScript. So I did not know that you could do backslash u and then curly bracket, the hex code and then curly bracket. Right. I thought you had to do backslash u00 and then the hex the code point. But apparently you can also specify it with a curly bracket, which blew my mind. So definitely a good thing to read. There is yes, we hacked article on how to obfuse payloads. And then last but not least, we have integrity on the list. They wanted us to shout out this week that the Yahoo Bug Bounty program is exclusively on integrity since 2025, and the bounties are pretty sick. We've got mediums ranging up to 3k, highs up to 10k and crits up to 15k. Definitely a program you want to check out when you're hacking on integrity. All right, that's it. For this week in Bug Bounty segment. Once again, I just want to remind you the goal of this segment is to bring high value information. So something that is useful to you, the hacker from the platforms, and also something that and or something that celebrates a hacker success on one of these platforms. So let me know what you think about the new segment. Let me know if you think it needs tweaks. We're open to your feedback. All right, back to the show. All right, so we got a little behind today because we were chatting about the Google Live hacking event we're currently in right now. So we've only got what, like what, 20 minutes before you got to bounce and then we'll have to do a cut.  Y
+
+[00:05:34.13] - Joseph
+cut.  Y we'll do a cut.
+
+[00:05:35.79] - Justin
+Okay. All right, well, let's see how many stories we can get through. We do have a lot of news to get through. And then I've just got some, just pretty fun, random, technical, mostly client side oriented content that I want to talk through. Yeah, so let's, let's try to get through at least one or two of these news stories real quick though.
+
+[00:05:53.11] - Joseph
+Sweet.
+
+[00:05:54.83] - Justin
+All right, first one up on the list is. Okay, so, dude, I feel like sometimes this is just that the Asset Note podcast, you know, like I feel like, I feel like we talk about Searchlight Cyber now, but the Asset new team a lot on the pod. And then there's also this other guy, zh Z Hero or Zero, I guess that's been coming up a lot recently too. So definitely going to talk about his stuff. But. But first one on the list is this new release from Searchlight Cyber covering Zero's research on the next JS Auth bypass that came out. It looks like this was about a week ago as of recording. And essentially the TLDR of this one was there's a problem with middleware redirects that that occurred in Next JS that will allow you to just bypass Auth. And the original write up is super good. And there were some public checks that I think were released by. Was it like Project Discovery, like the Nuclei team, maybe?
+
+[00:06:56.12] - Joseph
+Yeah, yeah, I think so.
+
+[00:06:57.51] - Justin
+And they were a little bit. They covered it a bit. But there was some. The Asset Note team, you know, when they're creating their checks for their product, they always go back and do their due diligence. It reversed the vulnerability and this time they came up with a better detection flow for this specific vulnerability. Let me share my screen really quick. That was this header right here. X NextJS Data 1 I think for any of you guys out There that are doing mass scanning. I think it's very tempting for you to just take the nuclei template that, you know, whoever uploaded and kind of scanned around with this. But I know that there are some hackers out there that have actually went, read this blog post and integrated this blog post's data into their scanning software and found a bunch of vulnerabilities that people missed because of this. So definitely take a look. But the TLDR of it was that there is this header called X next JS data one that you can send through that will return a specific other header Next JS redirect. When the redirect is happening at the middleware layer, which is a precondition of the vulnerability, the original vulnerability by zero. So you can use this as an indicator of whether there is a middleware redirect occurring somewhere in this flow and then pass in this sort of advanced polyglot that the Asset Node team designed to bypass auth on that specific redirect. So definitely cool to see the research that they did here and that they were able to improve the pse.
+
+[00:08:36.61] - Joseph
+Yeah. And they actually said here that sometimes that X middle R redirect header can get swallowed. Yeah. So, yeah, some of the, like they explicitly say, leading to publicly disclosed checks missing many instances of this vulnerability. And I actually, I don't know if you saw that, but I saw some tweets going around that were claiming that this was not really a big deal because there wasn't that many exposed or. Sorry, when people ran checks, there wasn't that many. Any vulnerable instances out on the web. And I think that one, the lack of comprehensiveness in those initial checks and the fact that sometimes that response header would get swallowed by some middleware or some, you know, probably from nginx or whatever, you know, some stuff you hosted internally. Yeah, exactly. Then there's probably. That's probably a large reason why there was some confusion around how widespread the impact was here.
+
+[00:09:23.80] - Justin
+Yeah, yeah, I think it's a big. I think it's a big thing. And so I would definitely recommend updating your checks to use this new asset note, sort of fingerprint for this and see if we can really flesh out all the vulnerabilities in the bug bounty context. So once again, awesome work by the Asset Node team. I love it when people find, when an impactful vulnerability hits the scene and then people go back, reverse it and improve it. I think that there's a lot of times where we're like, oh, wow, that was a great find, great work, nice. And then you just kind of move along where improvements could be made. So shout out to the Asset Node team on doing that for all of these major research pieces that they're integrating into their product. Yeah.
+
+[00:10:09.64] - Joseph
+And I think there's probably lots of other vulnerabilities that basically people could do this on. Like, obviously, asset. No. Can't go back and do due diligence on every single vulnerability that drops. There's probably a lot of tangential vulnerabilities that aren't found with a very similar kind of slight changes.
+
+[00:10:26.33] - Justin
+A hundred percent. Okay, before we go into the next. The next thing, dude, can you see this? Can you see this sick sweatshirt that I'm wearing right now? This is the NahamSec  merch sweatshirt that I'm wearing right now, dude. And I ordered one of these. Cause I was like, oh, I love that red.
+
+[00:10:41.48] - Joseph
+Right?
+
+[00:10:41.83] - Justin
+Like that. That's like, you know, that's your color. Yeah, that's a great red. And my daughter's always telling me that I need to, like, wear more bright colors than all my, like, black hacker T shirts.
+
+[00:10:50.39] - Joseph
+Yes.
+
+[00:10:50.79] - Justin
+And so I got this. And dude, the quality is so good. Look how, like, you know, you ever look at a hood and they've got like these very thick and a little bit wide hoodie strings?
+
+[00:11:01.44] - Joseph
+Oh, yeah.
+
+[00:11:01.84] - Justin
+That's how you know it's going to be a good hoodie, you know?
+
+[00:11:03.82] - Joseph
+Yeah. That's a very clear indicator of quality.
+
+[00:11:06.96] - Justin
+Yeah. Ben. Ben is a homie. Not. Not. Not affiliated. You know, I'm going to drop this down in the. In the description, you know, where you guys can get these. This is. Ben did not pay for this endorsement. I just am shouting out equality.
+
+[00:11:20.90] - Joseph
+I was genuinely curious with how well you sold it. I was like, did Ben get him to say that?
+
+[00:11:24.60] - Justin
+No, no, dude, this is like, Ben would not do that, man. Ben is. I think the merch store is like, just a fun thing for him, you know, but this is, like, quality stuff. So I feel like people got to go snag one of these. What we got next?
+
+[00:11:37.21] - Joseph
+Well, it's a. It's a kind of a nice segue. They used a really sweet polyglot in that. And I tweeted about what I called a polyglot. And so what? I want to get your take. Because I feel like one person replied to it and was like, this is all just English. This is not a polyglot. But. But yeah, I tweeted about LLMs TXT being a sweet honeypot, you know, I think that, you know, for the listeners.
+
+[00:12:01.59] - Justin
+What is LLM txt yeah, so you.
+
+[00:12:03.28] - Joseph
+And I know this, but a lot of other people might not. Basically prompt injection still is not solved and so that's going to result in tons of AI vulnerabilities for the foreseeable future. But the one of the difficult things, and I know that, well actually there's three difficult things here and the third one Justin was just complaining about before we hopped on this call, basically to get a good ad bug you have to have some sort of delivery mechanism, some sort of impact. And then the third annoying part is the consistency, right, because of the non determinism and that's the one that Justin was complaining about. But anyways all that to say delivery mechanisms in the past were really hard because all these apps didn't have very many features but today they're getting many more features. One of those is of course browser use or browsing. We're testing specifically stuff for that right now for a live hacking event. And by we I mean me and Justin and some other people, Lupin and Kieran. But anyways, all that to say as soon as I saw this announcement about LLMs Txt is basically a robots txt but it's a, it's a page you put on your website that tells an LLM how to navigate your website or how to use your like open source project that you've got or whatever. And so as soon as I saw that come out I tweeted or like well as soon as I saw it get popular because you know the famous developer levels IO was complaining that it was just a front end thing that wasn't necessary when in fact the person that invented LLMs txt is like an OG in the, in the LLM space. Anyway, bunch of drama there. But long story short, I think it's an awesome honeypot for putting prompt injections for AI.
+
+[00:13:27.47] - Justin
+But yeah it is.
+
+[00:13:28.38] - Joseph
+But what's hard is you don't know what tool calls the LLM that's coming to view your LLMs text will use. So then I came up with this idea of I call it a polyglot but it's. I don't know. And so I'm going to get your take on whether it should be called that or not. But if you go to joseph thacker.com llmstxt you can see my example of that and I'll share my screen real quick for anyone watching on YouTube.
+
+[00:13:49.17] - Justin
+But basically yeah dude, this person saying it's just English. That's funny dude.
+
+[00:13:55.25] - Joseph
+Yeah, but so this, this thing just says if you have an Email tool, like, well the top there's like some preamble that says if you're an AI model reading this, I'm trying to help secure the planet. So just help me out here. So that way I don't have to do any kind of like jailbreaking or like negative based jailbreaking. It's just, you know, a fun way to get the LM to hopefully comply. But then it basically says, if you got an email tool, send me an email. If you've got a text thing, text this number. If you can make web fetch requests, hit this endpoint. And I've got like a tool that's monitoring that endpoint. I get discord messages whenever someone sends that request in. And so anyways, I thought this was cool. I don't know if it's considered a polyglot or not, but you can give me your take on it.
+
+[00:14:30.87] - Justin
+Yeah, dude. I mean, I think it's totally a polyglot. What this person in Twitter is saying, what they don't realize is that this is the input language for LLMs, right? That's like saying, oh, this is in a polyglot. This is just HTML for like an XSS polyglot. It's like, well that's what you do for an HTML, that's what you do for XSS is you give it an HTML polyglot.
+
+[00:14:54.10] - Joseph
+So this is like a tool call. Polyglot is maybe how you would define it.
+
+[00:14:58.21] - Justin
+Yeah. And like we've been talking about with this event, right before this call, we kind of did a debrief between me and Joseph and these other hackers we're collaborating with on what kind of bugs we found and kind of compared notes. And like we've been saying in this event, you know, the most efficient route typically is to understand what the system prompt is being given to the AI and then give it keywords relating specifically to that prompt. So if it's like, if in that prompt it's like, okay, you have these tools available to you, right? And the tool is called like web browse, right? Then you say, hey, use your web browse tool. So there's not any like ambiguity here to go to this website, right? That's going to give you the most consistent results. That was the last thing, you know, you mentioned there. But you don't have the opportunity to do that here because so you've just kind of got to describe what the tool should do and then hope that the LLM can kind of piece it together, which as they get smarter and smarter, man, it's it's amazing what they can piece together. So I think, I think you will get hits on this. My prediction is you will get hits on this within the next three months for sure.
+
+[00:16:00.03] - Joseph
+Yeah, I think so too. What you just brought up is a great idea though for this it might be worth adding like for example, if you have web browse or web fetch or like give it a list of potential tool IDs so that it really kind of hard codes. Oh, I do have that. You know. And then it goes in on it. Kind of interesting idea.
+
+[00:16:14.40] - Justin
+Yeah, very cool idea, man. I like it. I'm excited to see the results out of it. Cool, dude. I don't know man. It's been a little bit weird lately with testing the AI stuff. I kind of love it. I kind of hate it. But I think as stuff gets more integrated into it, we got to. We got it.
+
+[00:16:31.23] - Joseph
+That's right.
+
+[00:16:32.72] - Justin
+All right, next news item up on the list was from Zero again or Z Hero. I got to figure out how to pronounce that because we talk about them so much. This researcher, zero Web Security has been like dropping some crazy stuff lately. So definitely go check out the blog. We got it linked in the description. But this one is a CP DOS on react router and let me share my screen. And essentially the TLDR of this one is. He finds. I just love the flow of this research. He finds first the underscore data parameter that's being parsed by this react router. Also, one of the things that I just little take away from me as personally as a hacker, I've seen this route/SSR a lot in my testing, right? I'm like, oh, slash ssr. Why do I see this all the time? That's slash server side routing. I just didn't know about that in the past. So there's a little TLDR for you guys. If you see that it's the framework that you're dealing with is using sort of a. I forget what the term he used in here. A multi strategy routing software. Anyway, so as he's auditing this remix in react router code, he comes across this data parameter that allows him to pollute this response and break the response from the server side router and then potentially allow that to get cached. The problem is that the query parameter is typically included in the cache key. So he's like, okay, this is kind of helpful, but not really that helpful. But when I did my talk back into Hong Kong in 2020, I believe on server side or source code review I called it sniffing blood. When you see sketchy shit in the source code of an app, you've got to be like, I smell something here, there's something, I got to find it. That's what he did here. He found this data piece and he's like, okay, there's some weird typing stuff going on here, or expectation for a specific flow here. He digs a little deeper. He eventually figures out that there's some other pieces that you can use. Because the code is by default parsing the X forwarded host header, then integrating that actually into the URL directly. That X forwarded host header is split on the colon for trying to identify the port and that port is then attached to the new URL that they're defining for this specific request. But what he found is that not only can you specify the port, but you can just put a slash in there and then prepend to the actual path of this request, which causes it to break and also allows you to access redirect paths by using this header. And this became a lot better vulnerability then, because you can then combine it with the data. You get that data parameter out of the query, right out of the query parameter there, which is normally a part of the cache key, and into a request header which is normally not a part of the cache key. And then you can DOS specific endpoints using that header, get it cached, and then it turns into a very impactful CP DOS that was, according to the researcher, able to be found across several very large bug bounty programs. So once again, awesome research. I love the chain of thought here and I think cpdos is one of the easiest targets for you to go after if you're going to try to do a source code review to like o day across a large attack surface.
+
+[00:20:13.41] - Joseph
+Yeah, I also think that these write ups, um, just the fact that they take so like a lot of time to do like nice screenshots with arrows and stuff, it makes it so, so consumable. Like you know, you could be a complete noob and just read through this blog post and fully understand each step.
+
+[00:20:27.35] - Justin
+Yeah, and you should, and you should, everybody should. Because I think the more and more we train that like, sense of like something sketchy is happening here and the more reps you get of like ah yes, a vulnerability, ah yes, vulnerability. Ah yes, a vulnerability. It will become easier and easier and easier for your brain to identify them in the future and then it'll get to the point where you're not even thinking about it, you're just reading code and you're like vulnerability, you know, like it's. It's great.
+
+[00:20:53.95] - Joseph
+Before we pivot to the next story, I was going to mention to you that I, like, just while we were recording a second ago, I saw you struggle to think of the word for spidey sense or, you know, your bug bounty sniffer or your, you know, whatever you want to call it. And we might need to lean on the audience here because I don't know if you'll be able to think of something, but I feel like we need a specific word for that because I find myself waffling on that same concept just to know what to call it. Right. Because it still feels ambiguous. I don't have a concrete term. I always come to. And I think it'd be fun if it was Critical Thinking themed like critical something, but critical.
+
+[00:21:24.81] - Justin
+Critical sniffer.
+
+[00:21:25.92] - Joseph
+My critical sense.
+
+[00:21:27.14] - Justin
+The critical sense. I don't, I don't know. I don't know.
+
+[00:21:29.99] - Joseph
+It feels a little long. Maybe it needs to be like crit sense or something. That's okay. Maybe that's what you want, right? You want the critical bug. You want the big impact.
+
+[00:21:38.95] - Justin
+You know, I'd like, I'd like for it to have Critical Thinking , you know, related into it. Maybe, maybe thinking would be, would be easier to integrate. But I think that, you know, it needs to be a little bit more of a broad term because it's not always a critical that you're sniffing. Right. If I see, you know, HTML injection, I'm like, right, you know, but, but I'm, I'm. Yeah, I'm not necessarily sniffing at critical at that point.
+
+[00:22:03.19] - Joseph
+So, yeah, that's.
+
+[00:22:03.98] - Justin
+I don't know, we'll see what the community comes up with. But dude, I don't know. I don't know about the community though, because the other day we were in that. I was in that bug isolation hour with the community, which, by the way.
+
+[00:22:15.80] - Joseph
+Listen, as somebody who's definitely not an outsider, I mean, I'm the co host at this point, but I feel like, I don't know that we have done a good enough job of advertising that with Critical Thinking . So for the listeners, Justin literally took leads from critical thinkers and then went to execute on them and Pop2Bugs live while people were paying attention and watching. So it's a really cool thing that you could get access to if you sign up. But anyway, so what happened?
+
+[00:22:38.39] - Justin
+Yeah, yeah, it was great. And it was really. Well, you know, I wasn't sure how I was going to go, by the way, because it's like we're bringing live bugs, you know, and live leads for bugs in there and I guess we'll see the results, but we haven't, I haven't heard about dupes yet so I'm hopefully I threatened them in the chat. I was like, listen guys, if you steal these bugs and you dupe the original reporter, I will find you. I have connections.
+
+[00:23:03.74] - Joseph
+We could probably find out what happened there. Oh yeah, not, not that we would get staff to tell us anything they shouldn't, but staff would probably be willing to be like, yeah, it was reported 30 seconds beforehand by potentially somebody similar.
+
+[00:23:16.20] - Justin
+Yeah, they're gonna dupe it, they're gonna leak the report ID and if it's like 30 seconds before, I will find you.
+
+[00:23:21.57] - Joseph
+Yes, I will.
+
+[00:23:22.34] - Justin
+Absolutely. Anyway, so anyway, I, I, we, it was, it was a fun time, you know, nobody duped, it was lots of fun community, you know, exploited some bugs. Together we built out this crazy like four or five step chain to turn self XSS into an account takeover. That's amazing. Great work. Shout out to. Big dab on that. But yeah, but what was funny in that though, bringing it back around was that I said somewhere in there we need to, we need to snuggle in this HTML and the community. Like dude, I swear as soon as I saw it, man, as soon as I saw it, like as soon as I said it, I looked at the chat and there was two people typing and then all of a sudden like 15 people started typing. I'm like, shit.
+
+[00:24:06.76] - Joseph
+Do you think? Because it kind of follows on you saying getting intimate with the application.
+
+[00:24:10.78] - Justin
+And that's what they were saying, you know, like, yeah, so getting intimate with the application, you know, Vuln  Snuggling. I don't know.
+
+[00:24:18.10] - Joseph
+Anyway, Freud would have a heyday with your brain and bugs.
+
+[00:24:22.45] - Justin
+Yeah, seriously. Geez. All right, cool.
+
+[00:24:25.64] - Joseph
+It was me, I think.
+
+[00:24:26.76] - Justin
+Yeah, go ahead.
+
+[00:24:27.54] - Joseph
+So we're coming straight back to, you know, our friends at Asset Note and now at what we call, what is it, Searchlight Cyber.
+
+[00:24:36.88] - Justin
+Yeah, that's right.
+
+[00:24:37.83] - Joseph
+Um, and like you said, we do often just cover a lot of their content. I, I did want to make this comment. I thought about making it earlier but the reason why that we cover their content so much is because we love technical write ups, we love vulnerability so much.
+
+[00:24:49.79] - Justin
+Extremely good.
+
+[00:24:50.59] - Joseph
+Yeah, always doing really high quality write ups for vulnerability. So yeah, so they released something on April 2, which is yesterday that is called Loose Types Sync Ships Pre auth SQL Injection in Halo itsm. Obviously IT support management software is extremely, extremely high risk because you know, anytime Any kind of IT software often has really strong power. Right. Like it's just like it's a high access. Sorry is the way I was trying to think about it because it's going to have access to host or command execution or it's only admins that are in there. Right. It's got, it's normally keys to the kingdom if you can take over something like this or if you have a severe vulnerability. So thought it was a cool thing to hack on but the things that I wanted to point out in this write up and I can share my screen here.
+
+[00:25:37.93] - Justin
+Yeah, go for it.
+
+[00:25:39.04] - Joseph
+For the people who are watching online was I feel like there's a couple good tips for source code review and obviously they're some of the best at it. But. Yes. So the things that they mentioned that I wanted to point out were one, the fact that they were able to kind of pinpoint so they found a bunch of loose types that could have caused vulnerabilities. They were like near misses. But the vulnerability, they call them close calls. Yeah but when they found the actual vulnerability it was because there was one pre auth injection point and the way they were able to tell that was because there was not a decorator for. Yeah, here we go. It's important to note that this controller has no decorators to enforce authentication. So when you're looking at this type of code. Is this Java? It looks like Java to me.
+
+[00:26:27.92] - Justin
+No, it's what is the CS file C?
+
+[00:26:31.50] - Joseph
+Oh yeah, sorry, yeah, this is NET or C. Yeah. So when you're looking at Net and I'm sure this is true for some other similar languages they will often integrate auth with decorators on classes. So I thought that was a really cool tip that if you're doing source code review and you're looking for vulnerabilities like that. Definitely then look for endpoints, especially routes and state changing actions and stuff that don't have that decorator on them. And then from that they were able to take it down and see that there was a, you know, string concatenation into a SQL statement that was loosely typed and apparently if it is strongly typed then it's not generally vulnerable. So.
+
+[00:27:13.66] - Justin
+Yeah, yeah, it's interesting there because it's like, you know, I think the close calls section, just reading the first line of it says as we mentioned earlier, there are a lot of close calls that were previously prevented because of strongly typed objects. So the example they gave there was that these specific like IDs that'll be like type ID or whatever they're set specifically to int type.
+
+[00:27:35.08] - Joseph
+Right.
+
+[00:27:35.40] - Justin
+So whenever you pass them in, you know those are strongly typed and they're not going to be vulnerable to SQL injection even if they are concatenated directly within SQL statement. But there they found the one situation in this whole code base, which I thought that was hilarious at the end, that they grep through the whole code base and couldn't find any other instance of it.
+
+[00:27:54.29] - Joseph
+Right.
+
+[00:27:54.90] - Justin
+Where they actually concatenated something that came directly from the query parameter. Because right there it says from body and it's essentially that key value store the string to whatever string typically that comes in via a parameter. I think that that's a great needle in a haystack find there.
+
+[00:28:19.95] - Joseph
+Yeah. And it's always really impressive to me the way they're able to then take that function, reverse it out, understand exactly what parameters, so you can scroll down here and see the actual payload. So it was on post API notify, and then this was what they needed. And then the tech ID was what contained the SQL injection. And I just thought it was hilarious that they also put in the chat log asset node are the pioneers of attack search advancement. It's like, yeah, you are. And also, I just love the confidence there. It's like you're definitely the kings of it and you're willing to state it here in your blog post.
+
+[00:28:47.33] - Justin
+They so are, man. And I've worked with Shubs and the team a couple times on live hacking event stuff. And it's hilarious how he finds Shubs in particular. And I don't know if it was Dylan or Adam or whoever else was on the team working on this one, but Shubs in particular is so good at finding the needle in the haystack. The last SQL injection to RCE bug that I did with him was the only one in the whole code base because we literally went back and audited every single SQL statement and this one was the only one that was vulnerable.
+
+[00:29:17.41] - Joseph
+His crit sense is high, right?
+
+[00:29:19.07] - Justin
+He did. The crit sense is high with this. The crit force.
+
+[00:29:22.59] - Joseph
+Okay.
+
+[00:29:23.13] - Justin
+The force is strong with this one.
+
+[00:29:26.18] - Joseph
+I don't know.
+
+[00:29:27.00] - Justin
+All right, let us know what you think in the Discord community, you guys, about what we should name that we.
+
+[00:29:32.35] - Joseph
+Can bounce back to your list.
+
+[00:29:33.72] - Justin
+Yeah. All right, let's, let's, let's bounce back to that. All right, next one up here. And I'm just going to do a quick little shout out to this one because I'm probably going to grill Space Raccoon on this when he comes on the pod here in a week or two. But there was a write up by Space Raccoon called pwning millions of smart weighing machines with API and hardware hacking. And I just thought this was a really good example of what we were talking about with Sharon in the episode where we talked about hacking IoT devices and his methodology for that, which is the communication between the device, the IoT device and the server is where the juice is at, right? It is 100% where the juice is at. So this write up was a great example of how Space Raccoon ended up getting a shell subbed out the certificate so that he could amend in the middle of the device and the server, figured out how all that worked, found an SQL injection in the cloud along the way and was able to use that to pop into all of these devices and take over every device in that smart scale environment. So really great read. The only other takeaway, like I said, I'm going to grill Spacer Kune on it when he comes on. But I like that you call it.
+
+[00:30:45.86] - Joseph
+A smart scale because that's definitely what I would call it. It's funny, he calls it a smart weighing machine.
+
+[00:30:49.83] - Justin
+Weighing machine.
+
+[00:30:50.98] - Joseph
+You see it?
+
+[00:30:51.66] - Justin
+That's like, oh, you're right, pony.
+
+[00:30:53.77] - Joseph
+Millions of smart weighing machines.
+
+[00:30:57.36] - Justin
+Dude, I wonder if that's like a Singapore English thing. Yeah, it's not a scale, it's a weighing machine.
+
+[00:31:02.60] - Joseph
+Also, I feel like he missed a lot of meme potential on this one. Like he could have titled it like figuring out what everyone on the planet weighs or figuring out what a million people weigh, you know, Or I don't.
+
+[00:31:11.55] - Justin
+Know, find what your ex girlfriend weighs now.
+
+[00:31:13.75] - Joseph
+Right, Exactly. Yeah. There's so many funny things. Yeah.
+
+[00:31:16.65] - Justin
+Oh my gosh, that'd be so gnarly. Yeah. So anyway, good stuff. The only other really quick and dirty takeaway that I wanted to add from this one was he was going up against a WAF on the SQL injection and you know, one equals one or whatever gets caught by the WAFs two equals two, you know, those sort of like Boolean truth things often get caught by the waf. And he said the way that he bypassed in this one was actually by using version which I did not know evaluates to true.
+
+[00:31:48.17] - Joseph
+Yeah, how does that even know?
+
+[00:31:50.96] - Justin
+He just kind of says it offhand in the write up. What did he say here? Always evaluates your true and can be used instead of the more obvious one equals one. So pretty cool. Little 1 byte 11 sentence takeaway There for the listener.
+
+[00:32:08.32] - Joseph
+Yeah, I'm curious just like what it is like, obviously at version, I think returns version. So I wonder if AT version is just saying, like, does this variable exist? And because that version always exists, it's saying it's true. Right. That's what I was curious about.
+
+[00:32:19.32] - Justin
+That makes sense. It probably returns like a positive integer and that integer evaluates true, you know, when cast or whatever. So makes sense. All right, cool. You've got some more items here on the news list. And then I'll go into some of these, like, random client side technical stuff that I think is fascinating.
+
+[00:32:37.07] - Joseph
+Sweet. Yeah. The one thing. Excuse me. The one thing I wanted to mention, I've mentioned it to two or three personal friends. Like I've mentioned it to Haddock's and Daniel Mesler, but I just think that MCP Security. Oh, I may have even mentioned it last week, is going to be huge. And so specifically I wanted to call out this tweet by Colin. He is, I think he's the founder and CEO of Clerk. And so Clerk Auth is also getting into payment. So they're going to like eventually be a competitor with Stripe, but they want to be like Auth provider and payment provider all like rolled into one. So it's a pretty cool little product. They didn't pay me to advertise that, but I just think it's kind of neat. But his tweet here, I'll try not to leak my X messages. I feel like I do that every time I share my screen when I'm sharing an ex post. But he basically is saying, who needs to display the consent screen when the MCP server delegates to third party Auth? So I'm going to scroll down. You should just read this tweet. But basically with MCP, it's expected that you implement OAuth 2.1 with PK KCE on the server side. Like, so MCP server should implement that when it's required. Obviously you can have MCP servers that don't transmit anything sensitive, but usually they will, right? Because it's going to be like access to your account or access to your notes or access to your database, right? You're going to be chatting with something that's yours. And so they need to implement OAuth. And so this is just so complicated. There's no way this doesn't get screwed up all the time. And I mean, MCP is still so new. I think this would be amazing place for hackers to start looking for vulnerabilities because I think companies will have MCP servers in the, you know, next three to six months. But I also think that it's just an amazing area of research to like potentially build a product. Right? Like if you can basically productize this or if you can help people audit it, both those things would be really huge. I actually what I would love, and I might even produce this myself, but I would love to see an MCP security guide for end users that's like, hey, here's how you vet whether or not the MCP server you're about to use is secure. And then I would also love to see on the other side, like, hey, here's how you securely deploy an MCP server. So anyways, I'm not going to walk through all this, but you know, he's. He's basically saying this is the design for OAuth Flow with MCP and it's OAuth but even more complicated because now you're going from the browser to the MCP client to the server, back to the client, all the way to the third party. I mean, it's just ridiculous.
+
+[00:34:51.05] - Justin
+Yeah, yeah, this gets super complex. And that is definitely one of the areas. You know, we've kind of been. AI hacking stuff has been a little bit fuzzy up into this point. It's like, does it work? Does it not work? Yeah, we can trigger a tool and it does something. But I think when these servers start to get implemented more frequently, we're going to see a little bit more server side issues relating to how they're exposing these tools to the client. So definitely an area to double click in on as those are gaining adoption and they are gaining adoption pretty quickly. So I think that's pretty cool.
+
+[00:35:25.26] - Joseph
+And then the only like really short thing that I, that I wanted to drop really quickly before we switch to the more technical section and kind of get off the news, is that there is a, you probably have seen it alternative to Cursor and Windsurf called Klein C L I N E. Oh really?
+
+[00:35:41.25] - Justin
+I thought there was going to be a different one that you were, that you were saying. I saw one that popped in my feed this morning, but they're everywhere now. Okay, what's Klein?
+
+[00:35:47.63] - Joseph
+Yeah, so Klein is just like a VS code extension. So they decided, hey, we're not going to fork VS code. Which I kind of like that idea. I mean, obviously we chose to build on Kaido with Shift and choose to build a brand new app.
+
+[00:35:57.57] - Justin
+Right.
+
+[00:35:57.86] - Joseph
+And so I can kind of respect that decision. I think it's probably made them have a lot lower adoption rate. But also it's like how annoying that If VS code, which is obviously being maintained like extremely well, add some really cool new feature that like Cursor won't get it unless they port it right. And Windsurf has to get it by porting it. And so it's like now we're porting around all these like changes and anyways, I hate that idea. I like that client's built into VS code. I haven't actually used it, but the thing I was going to tell you was I've always thought we needed to abstract out memory because it would be so useful to like have like your own little like one memory is useful but like you, I'm sure I bounce between ChatGPT and Claude and Gemini and whatever. I would love to have memory that's like across all of those, but only for the stuff I care about and really want. And I think it'd be even cooler to have memory for like each team. Like let's say that Critical Thinking had our own memory that. Yeah. And so anyways, that's what this is. It's memory bank and it gives client memory persistent anytime. I think it's an MCP server. Yeah, but like they realized that locally that was fine. But when they want to integrate with their team, they could plug it into a notion MCP server. So basically the team notion, like the team has a notion like you can set up a notion account or whatever for your for your team and then you can install this MCP server on all of your devs workstations and then they can all share the same code base or the same documentation for the code base. So it's like a really nice way that like if I go update the code or the documentation for our code or for our libraries now all of our MCP servers have access to that same data and they can all work together. So that's pretty cool.
+
+[00:37:25.26] - Justin
+That's sick. No, that's really cool. I think that that is, is a really great idea of having a centralized memory bank. And I think that would be awesome for hackers too. Right? Like if you just dump all of.
+
+[00:37:35.84] - Joseph
+These articles with like you and your friends some gadgets.
+
+[00:37:38.38] - Justin
+Oh my gosh, that'd be perfect. Yeah, we should, we should think about how we could implement that because I was just like right before we got into this episode, I recorded that this week in Bug Bounty segment and yes, we hack just released a article that is already linked down in the description but on Payload Obfuscation and I was like, oh, you know what's like pretty sick about this? This write up is that this is a perfect thing to just hand to an LLM and be like, obfuscate these payloads.
+
+[00:38:04.65] - Joseph
+Yeah, obfuscate these payloads in 10 different ways and then I'll try. Yeah.
+
+[00:38:08.80] - Justin
+I think adding a knowledge base, what I was going to say with that was like adding a knowledge, having a centralized knowledge base of like here's a payload obfuscation write up and that sort of thing. Really, really sick. I like that a lot.
+
+[00:38:20.05] - Joseph
+Yeah, I feel like the security knowledge, which you and I know this because we tested White Rabbit NEO for it. But like, and, but even top models, even though they have some good cybersecurity knowledge that I feel, it feels like it's not deeply trained into their, into their brain in a way where like if you say, give me some ways to potentially do this thing, it like comes out. But I think if it was in that stored memory bank and I'm thinking of examples that like we often will pin in the critical thinkers chat, like whenever I figured out that payload for multi part form csrf, it's like kind of tricky to do. Like a lot of people have tried it and everyone can kind of eventually figure it out. It takes like a, you know, an hour or something like work together with the LLM or to like code it by hand. But it's like kind of annoying to do, but dropping that into those notes, then when you're working with it later the LLM will know that. And I think it's especially true for a lot of the front end stuff you're like about to mention today. Like all these little, really little like quirky, weird gadgets that nobody can keep stored in their memory, like you know, most of them. And so the CT researchers, but like most other bug biting hunters don't. And when they're trying to pop something, it'd be so cool if they could chat with like a little, you know, memory empowered, like front end bug memory powered agent. You know, it's almost like a custom GPT in a sense. But it's just nice because whatever MCP client you're using, it can have access to that same memory bank.
+
+[00:39:32.61] - Justin
+I think that's, I think that's a great idea, dude. Yeah, definitely something we got to think about integrating. All right, so do we cover all the news? Am I good to get into?
+
+[00:39:41.69] - Joseph
+We're done. Yes, sir.
+
+[00:39:42.78] - Justin
+Let's do it. So here's what I got for you guys this week. I got one, two, three, at least three, maybe four little. Just tidbits of client side front end information that I think are just super cool. Okay. One of the, one of the ones that we needed recently for a chain was credentialless iframes. So there's the scenario that my buddy was working on the other day where, and I'm pretty sure I mentioned this on the podcast before, but I went back and I couldn't find it anywhere. So it definitely needs to end up in the hacker notes this time so we can search for it. But there's this flag you can put on iframes called credentialless. And what that will do is it will put that iframe in a different sort of isolated cookie environment. So let's say you've got a reflected XSS that it only fires if the user is not sending some of the very common same site none cookies that are set on that website. Right?
+
+[00:40:40.30] - Joseph
+Yeah.
+
+[00:40:40.61] - Justin
+So obviously if the person has never visited that website before, then these cookies will not be set. But why would you want to attack that user and get XSS then if they've never been on the website before? The whole concept of that is like, oh, they're an active user of the website, you pop an xss, you take over their account. Right, Right. So it's kind of tricky to get an environment where samesite non cookies are not sent sometimes. And the credentialless iframe does exactly that. So as long as you can embed it, and even maybe if you, even if you can't embed it, you can do a window open from within a credentialless iframe to navigate to a site where there will not be any of those cookies set. And then you can traverse back via window references, window opener, window parent or whatever, and attack the actual website via those same origin frame references. So if you've got a very, very niche scenario where you need to not send a same site none cookie in order to trigger a vulnerability, credentialless iframes, that's the solution to that problem.
+
+[00:41:35.90] - Joseph
+So this is kind of confusing and I think it's kind of neat that something they built to be more secure actually unlocks a small gadget.
+
+[00:41:42.59] - Justin
+It does, dude. It does. Isn't that great?
+
+[00:41:44.46] - Joseph
+That's cool.
+
+[00:41:45.30] - Justin
+Yeah. All right, that's. Number one, this is going to be, this, this, this little segment is going to be quick. Number two, this is a shout out to Matan Baron Haku from the Critical Research Lab. This was one of the ones that they were kind of talking about in our, in our meetings. But do you want to pull this.
+
+[00:42:01.57] - Joseph
+Up your poc fort yeah, sure, yeah.
+
+[00:42:03.98] - Justin
+I'll pull it up. I've got a little like website that I just kind of do live code previews on, you know, whenever I'm kind of testing code. So. Yeah, I can share that because I.
+
+[00:42:13.80] - Joseph
+Have a question about it specifically.
+
+[00:42:15.23] - Justin
+Yeah, sure, sure. So here's the code right here for those of you that are listening. This is a tag with a target equal to abc and then there's an iframe with the name abc. Right? And when you click that link, it will open the link's content into that iframe. So here's what we're thinking, guys. Let's say you've got a scenario in a user controlled content website where you can control the target attribute of an A tag, right? And then there's an I.
+
+[00:42:46.84] - Joseph
+Why would the app have that?
+
+[00:42:48.59] - Justin
+It's very common. Like you know, if you are submitting user controlled content, you know, like what you see is what you get editors or whatever, you can link out to like other stuff and it will create like an actual link.
+
+[00:42:58.90] - Joseph
+Right.
+
+[00:42:59.57] - Justin
+Sometimes inside those the target attribute is whitelisted. So you can do that. Or maybe they're just doing like a block list for the attributes or whatever. They're not doing like a allow list and you're able to specify the target attribute or whatever.
+
+[00:43:14.63] - Joseph
+Yeah.
+
+[00:43:15.23] - Justin
+What you can then do is when the user clicks that link, it will open up your specified href, Your link into that iframe that is on that page. Then what that will do is give you a very advantaged position inside that application. Let's say that iframe is responsible for communicating with its parent about communicating with a specific API or something. Now you're in that iframe and maybe that page is trusting that iframe implicitly via window reference for post messages or something of the like. Now you know, you execute that attack. So it's a gadget. It's a gadget along the way. But it definitely should be something that you can think about when you are dealing with. Like what you see is what you get editors or like any sort of markdown rendering. See if you can inject into the target tag or attribute. And if you can, then you can use that to hijack iframes.
+
+[00:44:12.30] - Joseph
+So is that pretty common where there is an iframe on the page that it implicitly trusts because you can't control anything about that iframe in general, very common.
+
+[00:44:24.44] - Justin
+Okay.
+
+[00:44:24.73] - Joseph
+Yeah, I thought it was. Okay. Sweet.
+
+[00:44:26.61] - Justin
+Yeah.
+
+[00:44:27.34] - Joseph
+So there's a look at that and figure out what the name is for that iframe, and then you would set your target to that name specifically. And then. Yeah, yeah, nice.
+
+[00:44:37.63] - Justin
+I would say it's one of the more common ways to do post message assessment. Right? Like, yeah, like you typically will do. You'll typically do an origin check. So you'll use the event origin attribute to say, okay, where did this post message come from? But they'll often also use event source, which is the frame reference to the window that sent the iframe or sent the post message. And if they're using event source, then this could be your golden ticket to bypass it.
+
+[00:45:10.03] - Joseph
+When you click that, it goes straight to that link at the top.
+
+[00:45:13.05] - Justin
+It does, yeah. The iframe gets hijacked. So this could be an invisible iframe, you know, and nested in the page used for backend communication or whatever. And now you've hijacked that, that's all. So it can DOS part of the page, it can, you know, give you advantage, position, all those sort of things.
+
+[00:45:27.50] - Joseph
+Cool.
+
+[00:45:28.26] - Justin
+Yeah. All right. And then last one, dude, this was, this was crazy because we had such. And I think I tweeted about this, but we had such a beautiful experience, man. In the Critical Thinking discord, like a week or so ago, we had somebody just come into the main chat, this isn't even like our paid subscriber to your chat, and then just be like, hey, I've got this bug that I need to exploit. I've got a character limits on it. It's kind of tricky. How can I exploit this? The whole community came together and just spent like 30 minutes like, what if we try this? What if we try this? What if we try this? Like me, a couple other people were like, you know, what do we got here? Demo, you know, all of these people are trying to figure out what we could do. And finally I popped it, but it required a click. And so we were like, ah, how can we make it not require a click? And then my boy Jorian comes out of nowhere and drops a really, really interesting nuance that allowed us to pop the bug and that is that. And this is what we have here on the screen for any of you watching on YouTube. Is that the string URL all caps? If you run that in your console in your browser, that is going to reference to the URL class or function, excuse me, in JavaScript, that will be like a reference to that whole thing. That's not what we want. If you reference the string URL from inside of an onload event handler, then that URL is actually document URL, which is sort of like window location href. The situation we were dealing with was we could only use JavaScript's primitives that were capitalized because it was capitalizing stuff. We ended up, in the end, we ended up using function constructor with a capital F because it's capitalized in the beginning. We used the URL property to smuggle the data in to the function constructor, which is essentially eval, and then called it. Is the example a beautiful solution? Yeah, I linked it in the description there actually we'll put the link to the discord conversation in the, in the description as well. And I did a write or I did sort of like a walkthrough video on that whole bug because it was so cool and it was happened in public on the, on the Critical Thinking discord and I put that in announcements for any of you guys that want to see like the actual payload and the vulnerability that was being exploited so very, very.
+
+[00:48:08.32] - Joseph
+Was there anything here that you learned that you didn't know through that exploration of this?
+
+[00:48:11.61] - Justin
+Yeah, this URL thing was whack. Okay. I did not know that the URL function or like the, the, the string. I don't even know what to call it. Like the text you are all capitalized was something different in a normal execution context than inside of an onload event handler. I just think that's super whack.
+
+[00:48:32.67] - Joseph
+Yeah, that is weird.
+
+[00:48:33.71] - Justin
+And I, I've seen that before and I thought about this whenever I was, I was doing this and then I typed URL and I'm like, oh, that's a function. Like why, why did I think that that contained like window location href. Like data? Um, and I couldn't figure it out, but then Jorian had it in, had it in his head that it's different inside of an on. On event handler. So very cool.
+
+[00:48:54.09] - Joseph
+Power of the human brain.
+
+[00:48:55.46] - Justin
+Yeah, man. Pretty sick. All right, I think that is.
+
+[00:48:58.84] - Joseph
+You said that was all. But you got two more bullets at the bottom. You scroll down.
+
+[00:49:02.03] - Justin
+Yeah, I, I, I, I see them. Are you going to call me out on that? Yeah, I was going to save those. Okay, all right, fine. All right.
+
+[00:49:09.71] - Joseph
+No, no, we can, it's up to you.
+
+[00:49:11.25] - Justin
+No, you're good, you're good. All right, so, so let me, let me, let me do this. Two more things. I will include these because we got time today, right?
+
+[00:49:19.53] - Joseph
+And we've had two short episodes. The last two episodes, I think. Yeah, Last week was solo for me and it went a little short, but yeah, for anyone who listened hasn't listened to it. It's the first of a three part miniseries on hacking AI and in prepping for that I actually thought of some, I feel like some pretty neat ways to go about AI recon for hacking. So anyways, go back and listen to that. The week before that, Justin was covering for me because my life was crazy. And so that was also kind of a short episode. So we can go a little long.
+
+[00:49:45.46] - Justin
+Yeah, yeah, that's true. We have earned the right to go a little long this episode. Okay, so we'll cover this one. Next one then was just another post in the Critical Thinking Discord by Johann Carlson, which anytime Johan Carlson posts anything, you should be paying attention. And we were talking about prototype pollution in the Discord and he shared this graphic that I'm wondering if I can like, can I share my screen with this because it's in Discord. I'd kind of like to just not share the discord. Oh, I can't.
+
+[00:50:15.50] - Joseph
+You just take a screenshot. Oh, you got it.
+
+[00:50:17.11] - Justin
+Yeah, hold on. I'm just going to share it like this. So essentially this was a, a tweet he said somewhere and I couldn't find the original, original tweet. So I'm sure someone will drop it in the Critical Thinking Discord after we, after we air this episode. But essentially it was talking about three different types of prototype pollution. There's hidden property abuse, there's prototype poisoning, and then there's prototype pollution. Okay. And I just thought this was a really helpful framework for thinking about prototype pollution as a, as a bug class. So in the first example it's object equals and then, you know, curly bracket tostring null. Right. And that is essentially just nulling out the tostring property inside of that specific object. Right?
+
+[00:51:00.01] - Joseph
+Yeah.
+
+[00:51:01.07] - Justin
+And then there's prototype poisoning, which is, you know, object equals object, curly brackets, proto. And then defining the tostring for that to be null, which is modifying that proto instance and setting the string to be null, then that's prototype poisoning. And then there's the final level, which is the awesome one, which is prototype pollution, which is capital O object prototype. So that's actually referencing the object prototype itself. So this will be applied to every object that's made in the future equals null. And then you instantiate a new object. And now that tostring is null. So there's different levels to prototype pollution that I hadn't really realized. And I think this graphic displays them pretty beautifully.
+
+[00:51:52.76] - Joseph
+Yeah. Is there any kind of. Obviously a lot of people look for prototype Pollution. I wonder if there are. What are kind of the parameters for when something might be vulnerable to prototype poisoning but not prototype pollution. Is it based on where you have control of the request? Maybe?
+
+[00:52:08.11] - Justin
+Yeah, it's all about how these keys are being merged into the main object. Oftentimes in prototype pollution, what you're looking for is object key 1, key 2 equals user controlled value, and key 1 and key 2 need to be user controlled as well. I think that it really just depends on the specific application layer code. But I think it will be helpful for exploiting these vulnerabilities if you understand if you're dealing with hidden property abuse, prototype poisoning or prototype pollution.
+
+[00:52:40.34] - Joseph
+Right. Probably lots of people have thought they had prototype pollution when they really had one of the former. And so then they weren't able to exploit it or they weren't able to structure it correctly and they gave up on it. And so maybe they need to return to that to kind of figure out what they missed there.
+
+[00:52:52.21] - Justin
+Yeah, exactly. Okay, so that one's that one. I would like to double click a little bit more on that. And the reason I was going to kind of save it was I think that I need to do a little bit more research on it before I can do it full justice. So I'll kind of circle back around to that on a later week, but it's a good idea to put it on the listener's radar for now. All right, last one that I got, Joseph, here is I just put it like I just put in the notes here. Lack of hard coded user confirmation for sensitive agent action. And that is how I phrased a report that I submitted recently in the AI world. And I'm wondering whether, you know, and I can ask you about this because you've had more experience in the AI world as far as vulnerability assessments go. Is, is this like already a well established bug type? Because I feel like this is, you know, if we were to do like an OASP top 10 for AI, I think this would be on it, you know, is like there is an agentic interface that has the ability to take actions and one of those actions is get user confirmation, right? And then in the prompt, the system prompt, it's saying, hey, before you do delete user account action, make sure that you run action, get user consent, right? And it's trusting the AI to do what you told it to do there, rather than integrating the user consent flow into the delete user account action. So that the AI just calls delete user account and it automatically as from like a Hard coded perspective gets user consent. Does that make sense?
+
+[00:54:30.67] - Joseph
+Yep. Sorry, I don't know if I was on mute. Yeah, so this is 1000% a big issue because it, you're in like the constant. Like it's the strongest tension point I've seen between security and convenience. Like, and it's not just convenience. It's like people want fully agentic employees, fully agentic flows, like they want fully automated processes and AI can give that to us. But because of the nature of security and the nature of prompt injection being unsolved, now if you do run it in an unsupervised way, which the LLM, I'm not a massive fan of the LLM OAS Top 10, but there is one on there called excessive agency and I think that's probably what this would fall under. I, I would have to do some thinking about whether I think that your bug class is kind of like a subtype of that or if it's, or if they're fully like overlapped. Right. Like if it's always that same thing. Yeah, but I, but I do agree with you. It's a, it's a very common vulnerability type. But it is also. And you know, like I personally still lean on the secure side. Like if I'm running cursor, I don't run it in YOLO mode. I'm sure you don't either. You don't want to break your laptop. Right, Right. Because. And so for those of you that are listening that don't know what YOLO mode is, basically, basically anytime it's doing like a file read or a file write, or if it's running like a command on the terminal, like on the command line, it will confirm with you. You have to approve it. But that can be annoying if it's going to run a bunch of things like sometimes it'll like list files, then move a file, then rename a file and you're like clicking approve, approve, approve. And so I think that that convenience trade off, a lot of people are going to take it and they're going to just run it in YOLO mode or they're going to run, you know, chat GPT operator or whatever. You know, the thing we're hacking on for Google, like they're going to run it and just trust it and it can take sensitive actions without user confirmation. And right now computer or operator in ChatGPT. And also a similar concept exists for the Google one they have this built in notion of like just telling the AI to like ask for confirmation if it's sensitive. And that's just not gonna cut it, man.
+
+[00:56:22.59] - Justin
+It's not gonna work, man.
+
+[00:56:23.92] - Joseph
+Right.
+
+[00:56:24.19] - Justin
+It's always gonna make it exploitable, you know, via prompt injection. And I think that as we are dealing with these sort of this sort of fuzzy tech, this LLM sort of environment where it's not deterministic, I think that this is a valid finding Personal. I think so of like you, you need to address this from an architectural level before you screw yourself by adding an action in trying to, you know, get. Force the thing to get consent via an optional consent action itself.
+
+[00:56:58.19] - Joseph
+So there is one strong level of security that most people have probably seen in ChatGPT and Claude, especially for Claude, specifically for the desktop client, when it's calling MCP servers, it always asks for your permission to connect on that first run. But I think there's either an option to say like trust the rest of this, like, like trust the rest of this conversation or to say like, only trust this once. And I'm sure that 99% of people hit trust for this conversation. But then, but then if it encounters any kind of problem payload while going like in the future, like in the rest of that conversation while it's hit some other external data source or whatever, then all of a sudden it becomes vulnerable again. And so yeah, it's, it's like just really hard to even know how to handle this because like you're saying like, I think it should be a valid bug, but I think a lot of companies and AI engineers are going to be like, well how can I even protect against this? It ruins our product if they have to Click Approve every 30 seconds, you.
+
+[00:57:47.78] - Justin
+Know, so it's that, that eternal trade off of like business use case versus security. So it'll be interesting to see where the industry lies.
+
+[00:57:56.34] - Joseph
+Yeah.
+
+[00:57:57.00] - Justin
+All right, man. Is that a wrap?
+
+[00:57:58.36] - Joseph
+That's a wrap. Thanks dude.
+
+[00:57:59.55] - Justin
+That's the pod Peace, y'all. And that's a wrap on this episode of Critical Thinking . Thanks so much for watching to the end y'all. If you want more Critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of the master classes, hack alongs exclusive content and a full time hunters guild if you're a full time hunter. It's a great time, trust me. I'll see you there.

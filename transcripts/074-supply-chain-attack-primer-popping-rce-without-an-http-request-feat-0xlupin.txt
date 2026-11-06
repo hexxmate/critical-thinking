@@ -1,0 +1,1574 @@
+Episode 74: Supply Chain Attack Primer - Popping RCE Without an HTTP Request (feat 0xLupin)
+Source: https://www.criticalthinkingpodcast.io/critical-thinking-bug-bounty-podcast/episode-74-supply-chain-attack-primer-popping-rce-without-an-http-request-feat-0xlupin/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:00.353)
+Every time every time before I start a podcast I just I start you know by jumping I just get some get some jumps out right before we go so Maybe I need to do it on on camera Alright Lupin welcome back to the pod man. You're a second time guest. We also had you here on episode 37 That one was live from Japan, which was pretty freaking cool and I am
+
+Lupin (00:08.75)
+It's hilarious to see it.
+
+Lupin (00:22.894)
+Yeah, now we're alive for friends, so that's also great.
+
+Justin Gardner (@rhynorater) (00:27.649)
+There we go, it's another location. But yeah, man, excited to have you back on and I think it's very timely with all the stuff you've been releasing lately. Just as, right before we were recording this episode, you just released a blog post outlining a vulnerability in NPM, which was crazy and we'll talk about that. But the focus of today's episode is going to be on...
+
+Lupin (00:39.693)
+Yeah.
+
+Justin Gardner (@rhynorater) (00:55.201)
+Supply chain attacks and dependency confusion, which you are an expert on. So maybe we could just go ahead and start off with, give me a little bit about how you got into that space and tell me about Depi, the amazing tool you've made to secure supply chain stuff.
+
+Lupin (01:12.399)
+Yeah, definitely. So how I get into that space, I think like everybody else, it's when Alex Burson released his book post on dependency confusion. And this was amazing at the time, I think.
+
+Justin Gardner (@rhynorater) (01:21.217)
+Mm -hmm.
+
+Lupin (01:27.15)
+I really love this vulnerability because it was distracting, right? It was another way of seeing scopes and we removed the domain component of a scope and we are more talking about packages, supply chains and all those buzzwords that no one really understands and I wanted to understand them.
+
+Justin Gardner (@rhynorater) (01:30.401)
+Mm -mm.
+
+Lupin (01:47.502)
+So in 2021, I started creating this small bash script, 50 lines of bash, and I was pulling JavaScript and then exfiltrating all the packages from the JavaScript and trying to see if we could take over in the public registry. So the goal of dependency confusion is that you have two ways of putting a package. You have the private artifactory and the public registry, right?
+
+And so what Pearson thought was, what if I just put the same package, like the same name, but just an higher version on the public registry, which one the artifactory will pick? And that's where the entire mess started.
+
+Justin Gardner (@rhynorater) (02:27.105)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (02:35.489)
+Yeah. And now, you know, supply chain stuff has become a whole, I mean, it was really an underserved attack surface, I think, you know, prior to that whole blog post. And I was rereading that blog post in, in preparation for this podcast and it has 20 ,000 claps on medium. And I'm like, Whoa, not 20 ,000 views, not 20, 20 ,000 people that have a freaking medium account, you know, clapping. and I was like, wow, okay, this was a really big thing. And I,
+
+Lupin (02:51.167)
+Yeah.
+
+Lupin (02:59.244)
+Yeah.
+
+Justin Gardner (@rhynorater) (03:05.249)
+I was working with him on the original vulnerability that occurred that sort of spurred this whole thought. And so I was cited in the paper and I remember when it came out and it got really big, a whole bunch of people that I knew from college were reaching out to me and just like, wait a second, are you that Justin Garter? And I'm like, yeah. And I was really impressed by the reach of it. But now I'm starting to understand, supply chain is a whole massive attack surface.
+
+And there's lots of different attacks that can go along in supply chain stuff, not just dependency confusion.
+
+Lupin (03:40.588)
+Something that's really funny every time I talk with you with Sublight Chain is that I show you all those researchers and then I see your name in the research and like every time, but every time like I think we were talking about the Travis research from Head Over Flow. Yeah, and I was talking to you about that. You're like, you know that I'm on the paper and I was like, you're that Justin, okay.
+
+Justin Gardner (@rhynorater) (03:48.993)
+Hahaha!
+
+Justin Gardner (@rhynorater) (03:56.609)
+Mm -hmm. Yeah, Travis CI, yeah.
+
+Justin Gardner (@rhynorater) (04:03.969)
+man. Yeah, man. You know, it's I think that's just two really good examples of being at the right place at the right time and knowing the right people because you know, the Travis CI stuff, that was a really interesting period in my in my bug bounty development and, you know, the work with Ed Overflow and Corbin Leo and or Lorbin CEO, as I like to call him. And, you know, that whole that whole era was really
+
+was really fun. And then the, you know, I just kind of got pulled into that by that crew. And then the same thing happened, you know, with, with, with Alex, I was like, okay, let's hack on this, this, you know, PayPal target for a live hack event. And I just shared some code to Alex and he's like, wait a second. What if I totally hijacked that code? And I'm like, Whoa. but, but, but I think, I think there's before we get into like all of the technical details of, supply chain attacks and dependency confusion and that sort of thing.
+
+I think there's some groundwork we need to set here because most of the time when bug bounty hunters are hacking, we're focusing on the web scope. And this is really not, in some ways it's tangential to the web scope, but this is really before all of this in the software development life cycle. So could you give us an overview, and we do have a little graphic here we'll put up at the screen.
+
+you know, for those people watching on YouTube about sort of the flow of supply chain. But could you talk a little bit about how applications are built and how they're deployed and what kind of attack surface we have within that environment?
+
+Lupin (05:46.154)
+So the graph that you are mentioning is coming from the Salsa standard that is being constructed with the OpenSSF foundation, primarily founded by Google and by the Linux foundation. So those are really interesting people to work with. And so basically on the graph, you see that there is like three main attack threats or attack surface. There is the source, the build, and the package. So let's say that the source is
+
+Justin Gardner (@rhynorater) (05:48.097)
+Mm -hmm.
+
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (05:55.393)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (06:02.369)
+Mm -hmm. Yeah. Yeah.
+
+Lupin (06:16.061)
+is everything related to the art factories and the registries, right? So for instance, your JFrog is your art factory and your registry will be NPM, PIP, everything where you can set up a public package, right? Then you have the build attack surface. It's everything where you are pulling from a source and then you are building your artifacts. So basically all your codes, your dependencies at the moment where you are the step before deploying it, right?
+
+Justin Gardner (@rhynorater) (06:29.153)
+Hmm.
+
+Justin Gardner (@rhynorater) (06:37.953)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (06:44.129)
+Mm -hmm.
+
+Lupin (06:45.162)
+And then there is the package that you produce. So once everything is built, you are publishing the package again, and the package can come back as a dependency for another build. So that's basically how the SASA standard is defining the attack surface of the entire Sorbite chain.
+
+Justin Gardner (@rhynorater) (07:01.697)
+Okay, so let me repeat this back to make sure I've got it. We've got the devs, they're writing the code, they're in their VS code doing their magic, right? And then they're committing that into a GitHub repo, right? Which is also, I imagine, a part of the source piece. And you've also got that source stored in an internal environment when we're talking about these bigger tech companies are stored.
+
+It can be in the local version of GitHub. It can be in a GitHub enterprise organization or whatever. It could be on the actual GitHub cloud in just a private organization. And then you've also got these sort of artifactory, well, okay, let me ask you this. Can you define artifactory and registry for us? Because I kind of get those two terms mixed up in my head a little bit sometimes.
+
+Lupin (07:52.522)
+Yeah, so for me, a Nazi factory is where you are going to publish all your private artifacts or private dependencies. And it's where you are basically pulling all the packages for your internal organization. So, a Nazi factory can be JFrog, Google has their own Nazi factory called...
+
+Justin Gardner (@rhynorater) (07:56.385)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (08:01.153)
+Okay.
+
+Justin Gardner (@rhynorater) (08:07.777)
+Okay.
+
+Lupin (08:14.922)
+Google Artifacts Registry. There is a code artifact for AWS. Basically, it's often pulled from cloud providers or there is like JFrog there on providers, right? So those packages are here to instrument and help create a standard across your organization for where you are pulling the packages. And then there is the registries. So basically, an artifactory will pull all the packages from the public registries if it does
+
+exists on the internal artifactory.
+
+It's like a hub. Data Factory is like a hub for all the different registries. And it creates some kind of bottleneck for when you want to pull dependencies. And that's where it becomes interesting because once you have a centralized piece of your supply chain, you can really log, monitor, and deploy application more easily for your developers.
+
+Justin Gardner (@rhynorater) (09:16.961)
+Okay, okay, so we've got the the artifactory that's sort of like your local version of the registry That's all for your private packages and artifacts that are Internal to your organization like maybe your helper tools or some of the other stuff That are that are often used within your organization. Maybe you're like UI components that sort of thing Could go in there and then and then you've got the registry which is like public packages that are being reused by lots of different organizations and are being shared
+
+Lupin (09:44.233)
+Exactly.
+
+Justin Gardner (@rhynorater) (09:45.281)
+across the whole sort of software development industry. Okay, and all of that's a part of source. And then we go into the build area, and then from there we're building our packages, bundling everything together, and then we've got the package. So that's where our continuous integration stuff comes in. That's like Travis CI. That's, you know, what is the...
+
+Lupin (10:11.849)
+CircuCI, GitLab Action, GitLab Pipelines. Yeah.
+
+Justin Gardner (@rhynorater) (10:14.483)
+GitHub actions, yeah, exactly. So that's all that. Lots of attack vectors there as we know. We'll cover those later. And then finally we've got the package that gets produced and that package can be reused by other components and that sort of brings us back around to the beginning of the lifestyle or life cycle again or at least over to the build step where those packages are being used in other artifacts and being sort of nested like that. Is that accurate?
+
+Lupin (10:42.514)
+Yeah, exactly. And this attack surface is one of the most interesting because we've seen in the past few months is a lot of vulnerability in the CI builds. Public repositories have been here for years, audited many, many times. From one day to another, you manage to pull out all the credentials because there is cache on GitHub.
+
+Justin Gardner (@rhynorater) (10:54.689)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (11:06.977)
+Mm.
+
+Lupin (11:09.386)
+somehow You can do something like that and it's crazy. It's it's crazy and Basically this attack surface why it's interesting because you can run remote code execution as a service So here you have a bit more privileges and also depending on who can run pipelines You are going to be exposed to different kind of vulnerabilities for instance There is a lot of configuration where every time you do a pull request to control
+
+Justin Gardner (@rhynorater) (11:13.409)
+Yeah.
+
+Justin Gardner (@rhynorater) (11:23.073)
+Mm -mm.
+
+Lupin (11:39.339)
+to a code base, there is pipelines to check your code. And so there is a remote code execution as a service here, which is super interesting already.
+
+Justin Gardner (@rhynorater) (11:46.209)
+Mm, built into it, mm.
+
+Yeah, and the testing infrastructure, I think, for all of these as well can be sort of built in as well. So that's another piece of this that there could be vulnerabilities introduced into. And then, so then taking this the full step, you know, after you do your build and you're in your continuous deployment, continuous integration flow, that's when that code is actually hitting prod. And it's getting pushed out into the web apps that we...
+
+Lupin (12:13.833)
+Yeah, yeah, exactly.
+
+Justin Gardner (@rhynorater) (12:19.105)
+Normally think about as we're hacking these these targets Okay, and and so what we want to try to attack here is any piece of that flow and As a part of the prep for this episode. We've kind of gone through here. Let me see one two, three four five six seven roughly seven Sort of ways that you can attack this whole flow that we had and I'm sure we'll come up with more as we start talking
+
+Lupin (12:22.857)
+Yeah, exactly.
+
+Lupin (12:45.385)
+Definitely. I think this podcast will be brainstorming more than anything.
+
+Justin Gardner (@rhynorater) (12:50.209)
+Yeah, yeah. Well, as it always ends up to be, you know, whenever we chat live and so I'm looking forward to that. So the first thing that I kind of want to talk about where we can sort of attack in this, in this flow is getting us our scope. What, what kind of things can we attack in this flow and how do we identify the entities that we can attack? And, and for me, I think that looked a lot like identifying these packages and in repos.
+
+Lupin (12:53.608)
+Yeah.
+
+Justin Gardner (@rhynorater) (13:19.233)
+So what are the most, I mean obviously we can look at it in organizations, GitHub repo, but I imagine there's more ways to enumerate scope for that. Can you give us a couple of those?
+
+Lupin (13:28.263)
+There is so many ways. We have all the traditional wasteable packages. I call that artifactories file. I don't know if it's the literal term for that, but I call it that. It's everything like package .json, jmfile, yarn .log, requirements .txt. You can find it on all the open -source repositories of your target. But here, all the packages tend to be
+
+Justin Gardner (@rhynorater) (13:38.337)
+Mm -hmm.
+
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (13:45.857)
+Mm -hmm.
+
+Lupin (13:58.169)
+public in general. You can find some private packages because there is developers sometimes pushing their internal source code and it's always really funny. We're going to talk a bit more about those kind of techniques and how to find those internal source code exposed. But there is this traditional way you put...
+
+Justin Gardner (@rhynorater) (14:10.353)
+yeah.
+
+Lupin (14:17.415)
+like open source, right? And then you can go try to do some fuzzing on your target. So there is a lot of people exposing their web route, and this is where a package .json lives in general. And so you can enumerate them and try to fuzz them, get them back, and start your dependency analysis from here. That's interesting, but the most interesting techniques is when a package .json file ends up in the
+
+Justin Gardner (@rhynorater) (14:18.657)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (14:31.297)
+Mmm. Mmm.
+
+Lupin (14:47.321)
+the front end directly. And that's something that we talked a lot with the people that are doing JS whistle. And they actually implemented a detection for that inside JS whistle.
+
+Justin Gardner (@rhynorater) (14:56.225)
+Mm -mm.
+
+Justin Gardner (@rhynorater) (15:03.105)
+Wow, cool.
+
+Lupin (15:04.166)
+Yeah, where basically there is in the JavaScript, somehow some libraries are just taking the package .json file and uploading that in the frontend as a string or as an object. And so you can just basically go in the JavaScript and pull all the strings in an AST way and then just see the package .json.
+
+Justin Gardner (@rhynorater) (15:28.065)
+No way.
+
+Lupin (15:29.414)
+It's so funny. And so that you can do on minified JavaScript actually, so you don't need the .map file. But if you want to go a little bit further, you can pull the .map file of the JavaScript. So basically everything that will help you to reconstruct the source code. And there is two ways of checking packages here. There is the sources, like a .map file is a JSON file. So there is the source key and there is the source code, right. And so the source code,
+
+Justin Gardner (@rhynorater) (15:35.745)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (15:55.169)
+Right, right.
+
+Mm -hmm.
+
+Lupin (15:59.32)
+source key, you can see all the names of the packages. So you just pull node modules and you will see some names and also webpack, for instance, and you'll see then some dependencies. And so here you already have all the dependencies that are shipped in the front end and that you can also start analysis on.
+
+Justin Gardner (@rhynorater) (16:18.849)
+Wow, okay, so we've got, obviously we're gonna be looking at the open source repos on GitHub or on GitLab or whatever, and we're gonna be assessing those thoroughly. But also, any web app that is out there, so many of these web apps are using webpack and that sort of structure nowadays. And so also inside of those, the package .json file might be included. And,
+
+it could just be living in the web root as well. So we always want to hit those end points. And I've seen that time and time again, that's one of the things that I think is on my quick hits list for directory brute forcing is like making sure that package, checking that package .json file. And there's like a lock, I think package -lock .json file as well that we can hit there. One thing that I wanted to add here that I think would also be a helpful piece is this whole concept of.
+
+dumping the git history, and this was such an amazing, I remember the moment that I learned about this technique, and this technique was solidified in my head. I was at a live hacking event in London with Tom Nom Nom, and he found just a absolute mega -crit on the target, because he downloaded all the open source repositories, and he ran this tool that he built called git dump on it, and you can find it in his, I believe it's in his actual, in his .files repo.
+
+Lupin (17:19.909)
+Okay.
+
+Lupin (17:28.932)
+Okay?
+
+Lupin (17:36.772)
+Okay.
+
+Justin Gardner (@rhynorater) (17:41.857)
+But essentially what it does is it takes a repository and it uses git, git is version history, to go through and dump every file that's ever existed into this massive TXT file for that GitHub repo. And so one of the things that I thought would be pretty cool here is if they were using certain packages in the past or looking at the changes to those package .json file over time,
+
+Lupin (17:54.789)
+Okay?
+
+Justin Gardner (@rhynorater) (18:11.073)
+And then maybe grabbing some of those packages that they're no longer using, but were using in the past, might give you an in into some of the dev machines or machines that haven't been fully updated to the latest version of that open source repository. It might be able to give you access to those if they're still pulling from that same package .json file.
+
+Lupin (18:17.476)
+Okay.
+
+Lupin (18:32.326)
+Yeah.
+
+I think it's a super interesting idea because we had some of our clients that asked us, hey, on your analysis, we are going to talk about the tool later, but it's really interesting just to say that some people are maintaining a repository with different versions at the same time. They are just branching all those versions. And so, looking at one repository on always the latest version, of course you will find some stuff. But when you know that some repositories are maintained,
+
+Justin Gardner (@rhynorater) (18:35.329)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (18:41.857)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (18:51.713)
+Mmm.
+
+Lupin (19:03.096)
+across like many different versions from 1 .x to 4 .x. Here you can see all the different teams and developers doing like working on some different stuff and so they asked us like to scan like every commit ever on all the different branches because they know that from one version to another then it's not the same libraries.
+
+Justin Gardner (@rhynorater) (19:08.257)
+Mmm. Yeah.
+
+Justin Gardner (@rhynorater) (19:28.129)
+That's a great point, you know, and they've got to go back and say there's a bug found in an earlier, you know, still supported version. And if somebody's relying on that, they've got to go back and patch that version and rebuild it and reship it, right? And so, you know, if you're able to inject into that point whenever they need to redo that again, re -push it, re -release that version, then there's going to be a problem.
+
+Lupin (19:35.653)
+Exactly.
+
+Exactly.
+
+Lupin (19:50.789)
+Something interesting is that a lot of registries do not allow you to delete a version. You can have up to 24 hours to delete it, but once it's live, it's live. It means that if you find a dependency issue or a supply chain issue, you need to rebuild the package and update the version, so the minor version, and you will just update it. But...
+
+Justin Gardner (@rhynorater) (19:57.601)
+Lupin (20:14.501)
+If someone outcoded the version to say, I just want this specific version, they will still be valuable. And there is a bug that we are going to talk about it later here, where there is this exact same problem.
+
+Justin Gardner (@rhynorater) (20:21.857)
+Mm.
+
+Yes we are.
+
+Hmm. Yeah, no, that's, that's really pivotal. And it really speaks to the depth and breadth of this supply chain problem because, there, there are so many people that are like, all right, listen, I don't want to deal with dependency hell. You know, I don't want to deal with like all of this garbage that, that, you know, I got to reinstall this version and then this version becomes, you know, incompatible with that version. I don't want to deal with all that. So I just lock my.
+
+my script or my program or whatever to the specific version so it always functions exactly how I anticipate that it will. But the problem with that is that dependencies can change over time as well, and some of the pieces that have, that that version might have been built upon could introduce vulnerabilities. Or another place we're thinking about going with this, or we're definitely gonna go with this chat as well, is what happens when static resources get deleted.
+
+out of these packages and what kind of havoc that can bring. So definitely want to go there. We'll definitely get there. But I do want to take a second and talk about Deppi. So you mentioned scanning across all of these different versions of the packages. Can you talk a little bit about how you've architected Deppi? Because I keep on wanting to ask you about tools for this because I'm like, am I going to go do this manually? But then I'm like, wait.
+
+Lupin (21:47.398)
+Yeah.
+
+Justin Gardner (@rhynorater) (21:49.665)
+He is the author of the tool for this, so.
+
+Lupin (21:52.71)
+Yeah, I need to tell you a bit more about the story of Deppi because I think this really understands more about the architecture. So basically, as I said, in 2021, I did this small bash script and I was collaborating a lot with Snorlax at the time and we were always targeting the same company and our goal was to find every kind of vulnerabilities on that company, like every bug type we wanted it, right? So that was a fun game. Yeah.
+
+Justin Gardner (@rhynorater) (21:55.393)
+Mm -hmm. Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (22:17.737)
+Hmm. That's a great goal. Let's just pause for a second and appreciate that goal. All right, go ahead, go ahead, go ahead. Yeah.
+
+Lupin (22:23.686)
+Yeah, no, that was a fun game. And so we were on the dependency confusion route. I did this bash script that was just pulling JavaScript file, checking the packages. And on the first run of my 59 bash script, we managed to find the dependency confusion, reclaim the package, and at the time there wasn't any banning of the packages. And so it lived for one week and then we got hit and we managed to have a remote code execution trigger. So that was like the first...
+
+Justin Gardner (@rhynorater) (22:43.681)
+Mm -hmm.
+
+Lupin (22:53.593)
+ever hit of Deppie which was really fun at the time it wasn't called Deppie it was just called like hey dependency confusion .sh script
+
+Justin Gardner (@rhynorater) (23:01.877)
+Ronnie's little script. That's great.
+
+Lupin (23:06.342)
+Yeah, exactly. And my brother is a backend developer and one day after months of using that kind of script, I went to him and I was like, hey, do you want to help me build the script but better? Because at one point, I'm not a software developer. And he told me no.
+
+Justin Gardner (@rhynorater) (23:28.033)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (23:31.553)
+Classic. Classic.
+
+Lupin (23:32.295)
+He told me, no, I don't care. And I'm like, let's just do a proof concept really quickly. And then I came back with some bounties and I just paypal'd him some bounties. And he was like, now we're talking, what the heck is happening? You know, he's not like in the security field. So it was interesting to see like developers versus security. And so I tricked him into building the EP.
+
+Justin Gardner (@rhynorater) (23:45.249)
+Okay, okay, alright.
+
+Justin Gardner (@rhynorater) (23:59.777)
+my gosh, that's great.
+
+Lupin (24:01.574)
+Yeah, at the time it was like a small project and then we moved into a company and we don't really understand how that happened, but it still did. And yeah, I think it was more like the technical challenge of a lot of stuff that we were doing, but yeah, Bunti's really helped too in the argument.
+
+Justin Gardner (@rhynorater) (24:09.409)
+Yeah.
+
+I can just see you with like wads of cash just come here, come here, write the code. You can do it in LA.
+
+Justin Gardner (@rhynorater) (24:20.609)
+Mmm.
+
+Justin Gardner (@rhynorater) (24:24.641)
+Yeah, at least to get his attention, right? Yeah.
+
+Lupin (24:27.206)
+Yeah, exactly. But yeah, we worked a lot and we had so many different architectures at the time. We weren't even saving packages in our database because we wanted it to be the most lightweight possible. We had this...
+
+script architecture in mind, but then it moves to a full backend and now to an entire ecosystem architecture with many microservices to optimize everything. So...
+
+Yeah, we have a lot of different modules and our methodology is simple. We have like a crazy idea and we are like, we need to confirm this idea. So we are going to build a module that we go in development mode, research mode of DEPI and just spread this theory across all the scopes that we have, right? And here we are going to collect all the information of all the odd and agnostic results that we have, like stuff that are
+
+aren't in the scope of our hypothesis, right? We do an hypothesis, we will find that and everything that is not inside the scope, we are going to dig it. And that's where we find a lot of zero days and new dependency confusion and more than dependency confusion, supply chain issues. So that's how we built it through. Yeah.
+
+Justin Gardner (@rhynorater) (25:35.169)
+Hmm.
+
+Justin Gardner (@rhynorater) (25:41.761)
+Mmm.
+
+Justin Gardner (@rhynorater) (25:50.881)
+Wow, that's an amazing structure, man. I love that.
+
+Lupin (25:56.036)
+Yeah, definitely. And that's how we had it in mind. Deppie is really a tool to help for research. Like the first thing it was built for was for research. And then it became a tool for companies to just...
+
+tick the modules that they are interested in and scan them internally. So basically we are going to pull all the artifactories file, all the build files, and then we are going to scan for any supply chain issues in depth, really.
+
+Justin Gardner (@rhynorater) (26:30.849)
+Okay, gotcha. And just before, I know we're gonna get inundated with comments if I don't say this. Deppi is not an open source tool. It is a software as a service and it is enterprise focused. And so there's no way where you can go download this tool right now. This is a startup that Ronnie's running. So I'm just gonna put that out there. That being said, you have a ton of experience architecting and developing.
+
+Lupin (26:39.268)
+Yeah.
+
+Justin Gardner (@rhynorater) (27:00.417)
+this tool for detecting supply chain attacks. And I'm curious where the 80 -20 is in this arena. I'm curious where, what are the 20 % of things of the whole that we can do as bug bounty hunters to...
+
+to get 80 % of the results, 80 % of the bugs. Where's most of that meat living in this environment and how can we code our own scripts surrounding this? Essentially what I'm asking is give away your secret sauce. But you knew that before you came onto the pod. You knew that. So yeah.
+
+Lupin (27:34.764)
+Yeah, I knew, I knew.
+
+One thing that is really interesting is that supply chain detection makes more sense to do it internally inside the companies. And that's why we built this tool to be a startup company focused, right? Because it makes more sense to scan from the inside and to have the entire list of dependencies and from here start our research, right? Now that being said, there is a lot of exposure.
+
+Justin Gardner (@rhynorater) (27:48.641)
+Mmm.
+
+Lupin (28:10.629)
+of dependencies and that the supply chain scope is interesting because it's not...
+
+like traditional web app scope. Like it's not tied to a domain. And that's something that is really bothering a lot in the bug bounty when you find vulnerabilities that are not tied to a domain, but supply chain is not tied to a domain. And so one package that can exist at the scope on an autoscope domain can still be impacting an in scope domain because there is this entire supply chain build. So once that you manage to detect,
+
+Justin Gardner (@rhynorater) (28:28.481)
+Mm. Mm.
+
+Justin Gardner (@rhynorater) (28:40.225)
+Yeah.
+
+Lupin (28:47.652)
+Any dependency there is so many stuff that you can look for as we said you have the sources you have the CI CD build that you want to try to exploit and then there is What's happening in the package, but also how the package is being pulled? So all those areas is where I guess the 20 % hides
+
+Justin Gardner (@rhynorater) (29:04.929)
+Hmm.
+
+Mm.
+
+Justin Gardner (@rhynorater) (29:12.577)
+Okay, okay. We're gonna need to build that. We're gonna need to cut that down a little bit. But I guess it makes more sense for us to go through the list of what kind of attacks there are possible first and then sort of come back to that 80 -20 question. So you be, like, continue noodling. I'm letting my Southern vocabulary come out here. Keep thinking on that while we're...
+
+Lupin (29:18.148)
+Yeah.
+
+Justin Gardner (@rhynorater) (29:38.497)
+while we're going through these, which ones give you the most bang for your buck, and then we'll talk about that again after we've gone through the whole list. So first one, obviously we've already discussed this a little bit, but it's dependency confusion, and essentially my TLDR of this one is there are ways to make organizations download the incorrect package from a registry, right? That's the kind of way I see it, and that could be because of...
+
+there being a confusion between the version and the name, or being able to claim a package that has been, I guess, abandoned or something like that, or maybe one that doesn't even exist, and it's trying to download it and it's failing. And so that's the one where we sort of think about that was really popular with Alex Pearson. And the whole concept of that is pulling a package down from,
+
+from a registry. Now I had a couple questions surrounding this one.
+
+Obviously there's this whole confusion of like, will it pull from the local artifactory or will it pull from the registry? Right? And the best way to do that, I imagine would be to just try it. But in order for you to try it, you have to get these payloads hosted on the registry. So you've got to go to NPM or whatever. You've got to sign up for a package. You've got to put some package out there. And here's the kicker. That package has to contain some code that will somehow let you know that it's being downloaded and run. Okay. And recently.
+
+Lupin (31:07.492)
+Exactly.
+
+Justin Gardner (@rhynorater) (31:10.081)
+if I recall correctly from our conversations, these various registries have been making that very difficult. Could you talk a little bit about how we can host these packages nowadays in such a way that we can test responsibly and also test effectually to be able to figure out whether this code is being run or not?
+
+Lupin (31:28.996)
+Yeah, definitely. We've done a lot of research on that because the way that we are building Deppi is that we are actually finding vulnerabilities on bug bunties and everything that is being paid will be implemented inside Deppi. Everything that is not being paid is not implemented, right? Yeah, exactly. And that's...
+
+Justin Gardner (@rhynorater) (31:41.345)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (31:47.457)
+Nice. Wow, very high signal.
+
+Lupin (31:53.315)
+We want to reduce false positives and BS vulnerability. But we had a lot of pushback from programs because...
+
+Justin Gardner (@rhynorater) (31:56.929)
+Mm -hmm, yeah.
+
+Lupin (32:04.675)
+we couldn't host a backdoor and not only because registries are banning you, but also because there is a lot of legal and ethical problems with it. Because legally, you don't know if your target is an employee of the backbunty program that you are hacking. And so if someone like call you and like, hey, you have backdoored my PC and I don't know you, what's happening?
+
+Justin Gardner (@rhynorater) (32:24.737)
+Right, right.
+
+Lupin (32:33.411)
+it's going to be really problematic. So we had a lot of pushback from our traders and programs just telling us, hey, break the law and then we'll see. And I'm like, I can't, like in France, I can't. I know in other countries you can, in France, I can't. So we did a lot of research on how you can host packages publicly. And...
+
+Justin Gardner (@rhynorater) (32:33.537)
+Mm.
+
+Justin Gardner (@rhynorater) (32:41.953)
+Mm -hmm.
+
+Hahaha.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (32:54.177)
+I'm seeing like right now, you know how TruffleSec does their very dramatized videos that are just super engaging? I just see, but I can't do that here in France and now it cuts to you on a plane flying over to out of Turkey or something like that. man, it's so good, so good. Okay, so yeah, France has some rules surrounding that and I think even in the US, I think there's a little bit more of a...
+
+Lupin (33:03.075)
+You
+
+Lupin (33:09.283)
+Ha!
+
+Lupin (33:14.051)
+I love their videos. Yeah.
+
+Justin Gardner (@rhynorater) (33:23.777)
+you know, we've got sort of a blanket, which is like, if you're performing ethical security research, then, you know, there's sort of a caveat there, and that's not really strictly defined, so that makes a lot of people uncomfortable, but over the past couple years, I've seen a lot of people push the boundaries of what I wouldn't go for and not sort of experience any consequences, so I am starting to think that the US is a little bit more liberal with this, so.
+
+Lupin (33:48.195)
+Yeah. But yeah, we are trying to do the right thing and also because we are not just, you know, bug bounty hunters, we are also a company and so we need to stay ethical and do things correctly. And so we did a lot of research and we managed to find a technique in order to host a backdoor on the public registries without scanners.
+
+Justin Gardner (@rhynorater) (33:53.153)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (34:00.545)
+Right, right.
+
+Justin Gardner (@rhynorater) (34:10.497)
+Mm -hmm.
+
+Lupin (34:14.307)
+or people that are not from the organization to download the package. How we did that is actually really easy. We created our own registry and we published a package, a normal package. And then on the public registry, one of the dependencies is the URL of our registry.
+
+Justin Gardner (@rhynorater) (34:19.425)
+Mmm.
+
+Justin Gardner (@rhynorater) (34:40.257)
+okay, all right, all right.
+
+Lupin (34:43.01)
+And so what we do is that we send like dummy packages, like...
+
+stuff just to check. And we say in our backend, those packages, if they are being pulled, this is a scanner. So we can serve them a benign package, but if it's not a scanner that is at our blacklist, we can just swap the package on the fly. And so they download a malicious version where we exfiltrate content. And that's how we did it. We basically have
+
+Justin Gardner (@rhynorater) (35:10.945)
+Mmm.
+
+Lupin (35:18.916)
+like this URL that is a normal regular to have another registry and then we check on the registry if this is a scanner or if it is not and so we are swapping on the fly when you download the package.
+
+Justin Gardner (@rhynorater) (35:34.017)
+Very cool, very cool. Okay, so, but that requires a lot of infrastructure I'd imagine to set up your own registry, have all that in place. So, all right, well, there are some barriers to entry there for that one. If you were a bug bounty hunter, you know, going after this, didn't have all of this set up in place, any tips or tricks for them is pretty much at this point, they've kind of nailed it down to the point where it's like, okay, well, if you're not doing this whole...
+
+Lupin (35:39.938)
+Yeah.
+
+Justin Gardner (@rhynorater) (36:00.673)
+Independent registry with the hot swapping of the packages thing then you're kind of in trouble
+
+Lupin (36:05.346)
+Yeah, we are in trouble because it has become a cat and mouse game. Why? Because registries do not have any ways to discriminate if you are a Magus Arctur or a Bug Hunter. And so they don't care about your bounty. They don't care about you succeeding your attack and helping people. They just don't want any backdoor inside the registry, which is totally normal.
+
+Justin Gardner (@rhynorater) (36:09.697)
+Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (36:19.329)
+Yeah, yeah. What else is new?
+
+Justin Gardner (@rhynorater) (36:29.505)
+Yeah, that makes sense.
+
+Lupin (36:31.649)
+And so, yeah, this is a cat and mouse game and you need to do this kind of hot swap. But...
+
+us because we wanted to do the ethical thing, we went a bit further and now we are actually asking companies to provide their IP ranges and so we can just do an allow list and we are sure that no one that is not from this allow list will run our backdoor. And that's how we managed to stay ethical while still managing to exploit dependency confusion properly.
+
+Justin Gardner (@rhynorater) (36:59.137)
+Mmm.
+
+Justin Gardner (@rhynorater) (37:08.961)
+Wow, man, I don't know that I would have gone to that length. That's pretty thorough, but I guess, I mean, you gotta have all of your bases covered when you're a startup. So, you know, that makes a lot of sense, and it seems like you guys have, I mean, just thinking about it from a technical perspective, you've taken it really seriously, and taken it about as far as you possibly can, you know, to ensure that no other parties are being affected. And it's also not like...
+
+Lupin (37:13.121)
+Yeah.
+
+Justin Gardner (@rhynorater) (37:34.497)
+It's also not like you're dropping malware on the target as soon as they download it. So I think even just maybe exfiltrating the path and the host name and some stuff like that, it's not even that malicious for a normal user. But on top of that, you have built in all these protections. So I think that's a really responsible way of going after it. I'm a little sad to say though that the...
+
+Lupin (37:38.559)
+Exactly, yeah.
+
+Lupin (37:44.671)
+Exactly.
+
+Lupin (37:56.895)
+I know, I... Yeah.
+
+Justin Gardner (@rhynorater) (38:01.921)
+there's not a really an easy way to address this from a Bug Bounty Hunter's perspective.
+
+Lupin (38:05.695)
+I've seen a research from a company called Supply Shark where what they did is that they did something really similar with a GitHub repo and where basically for the first week there will be a lot of scanners and then they swap
+
+in the GitHub repo after the first week. So you need to wait for a week where you don't know if you are going to actually maybe do a denial of service on your target because we are swapping packages. So maybe there is some pipelines that will just crash and you will have no way to know that. But at the same time, we will avoid the scanners and you can make a backdoor leave on the public registry. I...
+
+Justin Gardner (@rhynorater) (38:25.857)
+Mmm.
+
+Lupin (38:51.039)
+I do not prefer this technique. I think outswapping is better for all the ethical implications that we have behind. But if really someone wants to park dependency confusion really easily, doing that trick with the GitHub from SuperShark, we'll do the trick. Yeah, definitely.
+
+Justin Gardner (@rhynorater) (39:05.601)
+Mm -mm, that's a good caveat, maybe a good workaround for that. Good to know. And so now, I guess, when you're actually doing your exfiltration, when you've hot -swapped your package in, now you're running your quote -unquote malicious, very, very benign malicious code, how are you exfiltrating? Are you doing it over HTTP, or are you doing it over DNS, like the original dependency confusion post -out?
+
+Lupin (39:21.182)
+Yeah.
+
+Lupin (39:31.774)
+Yeah, for now we are doing over HTTP, but it can be done through DNS without any problem. And I think it's better to do it through DNS because there will be a lot of egress and firewalls that will block you from exfiltrating through HTTP. But the truth is, if you manage to pull our registry, you can also ping it back. So I don't, that's why we didn't.
+
+Justin Gardner (@rhynorater) (39:35.201)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (39:46.081)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (39:58.721)
+Sure, sure.
+
+Lupin (40:01.681)
+do the DNS path because once you pull from the public registry, that's it. But this is interesting when the artifactory is actually pulling your package and so the artifactory has the right to go through the internet but not your machine. Yeah.
+
+Justin Gardner (@rhynorater) (40:04.545)
+Mmm.
+
+Justin Gardner (@rhynorater) (40:10.945)
+What is... Question here. Yeah.
+
+Justin Gardner (@rhynorater) (40:22.077)
+your end level machine, okay, that makes sense. So it's also sort of like a, okay, you've got this artifactory server that's reaching out and then dropping it back down to the user. So it's sort of like that same, one of the things I like about DNS as an exfiltration method is like the whole recursive nature of it, right? Like, I'll just send out my payload and that's gonna get bumped from one DNS server to another DNS server to another DNS server to another DNS server and then it's gonna land on my machine and it allows you to exfiltrate out of really,
+
+you know, wonky scenarios, but you do at least have one layer of that with these sort of artifactory -based things because you've got that artifactory in between you and the end user. And the artifactory, of course, is gonna have much more liberal egress rules. So that's cool. I'm wondering if there's any room for a combination of the both where it's like, okay, we can do a sort of benign DNS callback just to say like, this popped, and then also, you know, have the registry run.
+
+Lupin (41:05.918)
+Yeah. And.
+
+Lupin (41:17.566)
+No, I think so.
+
+Lupin (41:21.79)
+Yeah, I think definitely there is a lot of exfiltration techniques that are possible. I don't think that in a backbunty situation or even us as a company, we need those because...
+
+Justin Gardner (@rhynorater) (41:30.977)
+Mm -hmm. Yeah.
+
+Lupin (41:35.743)
+If you manage to pull one package, like the chances are really slim that you went through an artifactory that has the rights, but your computer do not have the right. So it's possible. There are a lot of companies are setting up like that, but I haven't have that issue that often. But also, that's true.
+
+Justin Gardner (@rhynorater) (41:56.577)
+Yeah, but also you wouldn't see that issue if you did have it though. So...
+
+Lupin (42:01.567)
+There is some truth here, but again on the ethical thing If you actually try to DNS there is a lot of as you said DNS servers that can see what you are exfiltrating and and and so I do it over HTTPS Just to have this kind of layer encryption because you know, I'm paranoid
+
+Justin Gardner (@rhynorater) (42:03.393)
+Yeah.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (42:11.457)
+Mmm. Yeah, that's true.
+
+Justin Gardner (@rhynorater) (42:17.761)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (42:24.097)
+Nah, nah, I couldn't tell. That's great, man, that's awesome. You're really checking all your boxes and dotting all your I's and crossing your T's there, so I think that's really good. So that's the basic sort of dependency confusion stuff, and I'm sure that there's a lot of nuance to that in various systems, you know, for nuances for pip, for NPM and that sort of thing, but let's talk about a more, a broader range.
+
+or a bigger concept when it comes to supply chain, which is maintainer attacks. And the whole concept behind this, for those not familiar with it, is that each one of these repositories that we're trusting, these packages that we're trusting with our code flow, are maintained by a bunch of unpaid, open source maintainers that just love the community and do it because of that. But because they're not getting paid, because it's not actually their responsibility or any skin off their back,
+
+sometimes they may stop maintaining the package. And there's a lot of ways that you can compromise the maintainer account and thus compromise the code. So could you talk about a couple of those techniques that could result in a package compromise?
+
+Lupin (43:36.67)
+It's really funny because one of the first techniques that I've seen about this was right after dependency confusion occurred, or a bit before, I don't remember, but I've seen it right after. It was Matthew Bryant from Snap Inc. Yeah.
+
+Justin Gardner (@rhynorater) (43:50.529)
+Classic, classic dude.
+
+Lupin (43:52.125)
+that did the research on how he managed to take over one of Angular dependencies through an attack that was really funny. Yeah, what it did is that the open source community and developers really like to have custom domains. It's really cool to have, I don't know, your justingardner .com or renumerator .com domain. Really?
+
+Justin Gardner (@rhynorater) (44:00.161)
+my gosh.
+
+Justin Gardner (@rhynorater) (44:09.793)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (44:16.577)
+Somebody's squatting on justingardner .com, I don't own that, man. And they're not even using it the last time I checked, so whatever. Not salty about that. Maybe someday if I'm super loaded, I'll be like, hey man, I'll slide you a 20 for that. But yeah, but no, devs definitely love fancy domains. And they swap on pretty often with new TLDs coming out and stuff like that too.
+
+Lupin (44:23.261)
+Have you tried to send them an email and buy it back?
+
+Lupin (44:30.621)
+I love it. Yeah. Yeah, and the...
+
+Yeah, exactly. And so a lot of those domains are used for their main emails. But a lot of people forget to renew domains.
+
+And but what's interesting places on NPM is that even if your domain do not exist you can still log in Just if you don't if you have MFA you can't log in but if you have your 2FA They are not really going to check your your domain anymore. And so a lot of maintainers in the open source community Do not own their domain anymore, but still using the email as a way to log in but
+
+Justin Gardner (@rhynorater) (45:19.329)
+my gosh dude. Ugh.
+
+Lupin (45:22.046)
+When I say lot, it's a lot. And there is a research paper that came in, I think I'm going to drop the link so you can put it in the description, about the weak links of supply chain. And they said that domain takeover is a huge weak link, and they did a lot of statistics on that. And it was appealing to see that. And so the idea behind the attack is that your domain can be taken over, so you buy
+
+Justin Gardner (@rhynorater) (45:28.833)
+Mm -hmm. Yeah, we'll find it.
+
+Justin Gardner (@rhynorater) (45:42.433)
+Mm -hmm.
+
+Lupin (45:52.)
+it back and you do a forgot password and you can log in again.
+
+Justin Gardner (@rhynorater) (45:58.305)
+Classic, man, classic route, the forgot password. And man, I'm surprised that more of these registries aren't enforcing 2FA, because I feel like that's just a no -brainer. Like if you're the maintainer of a package that has like, you know, X thousand installs or weekly installs or whatever, it should absolutely be mandatory for 2FA to be enabled.
+
+Lupin (46:23.998)
+Yeah.
+
+Yeah, actually NPM and PyPE are starting to do that more and more. I know that GitHub is also doing that, but there is a lot of maintainers that are just setting up to MFA by default. So we are on the same problem all over again. But yeah, it's a really interesting attack surface. And there is like a question when you use that on BackBounty, like who is the owner of that?
+
+Justin Gardner (@rhynorater) (46:53.697)
+Mm -hmm.
+
+Lupin (46:54.704)
+And that question of ownership of the supply chain, we might have need to talk about that earlier, but no one talks about that. Like who owns the software supply chains? Are the...
+
+Justin Gardner (@rhynorater) (47:00.961)
+No, no, no, we got time. Let's go.
+
+Justin Gardner (@rhynorater) (47:07.265)
+Yeah, yeah.
+
+Lupin (47:13.373)
+to the company using their packages, the developers using the packages as end users, or are the maintainers responsible of that? And if there is an issue, who is at fault? Everyone, no one? And that's the problem, because we are pointing figures at one another on that subject, and no one really knows who owns the supply chain.
+
+Justin Gardner (@rhynorater) (47:35.361)
+Yeah, dude, that's a huge problem because also like, wow, yeah, if I have the ability to attack an asset that's in scope in a bug bounty program, a lot of programs have these like, and anything else you can prove that we own clauses or whatever, right? Am I authorized to attack that or am I not authorized to attack that because it's not, even though they're running this code, is it their code? No, it's the maintainer's code, but also.
+
+Is it though? You know, it's like, that's super tricky.
+
+Lupin (48:07.933)
+Yeah, and even in case of a cyber attack, it's really easy for a company to say, no, that...
+
+Justin Gardner (@rhynorater) (48:11.849)
+Mm -hmm.
+
+Lupin (48:13.245)
+It's not our fault. It's the maintainer that is underpaid in a third world country that is at fault. And you're like, what the heck? It's still inside your code base. You needed to secure yourself about that. And that's like really interesting because European regulation, you know, European regulations love that. They put an answer to that and they said, if you are targeted in the sub -action attack, you are responsible because you were the one that pulled the code and
+
+Justin Gardner (@rhynorater) (48:17.185)
+Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (48:22.561)
+Yeah.
+
+Justin Gardner (@rhynorater) (48:29.729)
+Mm -hmm. Love it.
+
+Lupin (48:43.199)
+put that in your code base. Yeah!
+
+Justin Gardner (@rhynorater) (48:45.345)
+I'm clapping right now for the people that are not on YouTube. No, that's excellent. And man, I do, you know, I'm American. I'm from America and I love America. But man, Europe really does have some, has been doing a great job sort of leading the way on some of these things. And there's a lot of things that Europe messes up with their regulations. But when it comes to making people take security seriously, it seems like they are on the right path, which is really cool.
+
+Lupin (49:12.604)
+I'm going to give some kudos to America because they were the first, I think, that had SBOMs, so Software Bill of Materials, including dependencies, listing, mandatory for every companies and critical services. So having an SBOM is already like a cool step to see, to have observability on a sub -I chain. But it's not enough when you know how much
+
+Justin Gardner (@rhynorater) (49:14.72)
+Mm.
+
+Justin Gardner (@rhynorater) (49:20.801)
+Mm. Mm.
+
+Justin Gardner (@rhynorater) (49:30.209)
+Yeah.
+
+Lupin (49:42.558)
+much attack surface there is.
+
+Justin Gardner (@rhynorater) (49:44.033)
+Yeah, no, absolutely. And I think when you build that, you know, SBOM, Software Bill of Materials, yeah, it opens your eyes to how many packages you're actually relying on as well, which is really cool. I did wanna add one thing here. I did Google it really quick, because as the words were coming out of my mouth, NPM should enforce 2FA for, like, it, it
+
+Lupin (49:58.748)
+Like.
+
+Lupin (50:08.38)
+Yeah, they did it, yeah.
+
+Justin Gardner (@rhynorater) (50:09.921)
+They did it actually in 20, in 2022 actually. So it's been a little while, but it's only for packages with more than 1 million weekly downloads or over 500 dependents is what this initial and maybe they've changed it since then, but this initial post from two years ago shows that it's that. And that's kind of a high bar.
+
+Lupin (50:20.444)
+Really?
+
+Lupin (50:32.252)
+I thought that it was for everyone, actually.
+
+Justin Gardner (@rhynorater) (50:35.105)
+Okay, well maybe they've changed it since then, but I'm glad to see at least they made some change.
+
+Lupin (50:43.165)
+I know that MFA is mandatory but maybe 2FA with an authenticator app or everything is for more than 1 million. Maybe. But still really interesting. The... Okay. Yeah.
+
+Justin Gardner (@rhynorater) (50:53.185)
+Maybe. Yeah. All right. Well, I won't get to. Unfortunately, Joel's off today. So I might I normally I would just say, Joel, I wonder about bloody blah. Like and then he would just be instantly nerd sniped. And then I would he would just research it and then interject five minutes later with the nuanced answer. But unfortunately, he's not here today. He's off this week. So we'll we'll leave that to the listeners to see to educate me in the YouTube comments, which will no doubt occur. So, OK.
+
+Lupin (51:04.092)
+Hahaha!
+
+Lupin (51:13.82)
+Okay.
+
+Justin Gardner (@rhynorater) (51:23.009)
+All right, great. So that covers maintainer attacks. There's lapsed domains, but there's also lots of other things. yeah, go ahead.
+
+Lupin (51:26.172)
+One note that I wanted to add on maintainers is that, for my autos, a big size company...
+
+In France, we call that Next 40 companies, so the big, big startups. They have, in average, between 200 ,000 to 400 ,000 packages internally. And I'm not talking just about like first dev packages, but like with the entire chain, so like the entire dev, right?
+
+Justin Gardner (@rhynorater) (51:40.321)
+Mm -hmm. Mm -hmm.
+
+Lupin (51:58.076)
+Those 400 ,000 packages has a direct impact on the supply chain. But now each package is maintained between one, two to three person. So you can easily have more than one million people being able to affect your code base. And those numbers are insane because something that I said to a lot of people, I go in the streets, I can trust 100 people. How do you trust one million of them?
+
+Justin Gardner (@rhynorater) (52:25.825)
+one million maintainers, dude. That is absolutely crazy. wow, dude, man, just hearing about the vastness of this, it gets a little overwhelming for me, you know, thank goodness I'm not in corporate security because like, if I were a blue teamer, I just like, and even as, even as like a SaaS business owner, it's like, man, this is such a,
+
+Lupin (52:39.676)
+Yeah.
+
+Justin Gardner (@rhynorater) (52:50.497)
+it's really something you have to allocate for cost -wise too because the amount of resources that it takes and I'm sure Depi will help with this once it hits the mainstream as well but the amount of resources it takes to thoroughly vet and secure that whole flow and knowing that just one slip -up can result in compromise of a build machine which is the thing that has your secrets that has all of this, I mean it's just, it's not great dude. That's terrifying.
+
+Lupin (53:17.627)
+Yeah. And something that like, also I've had a lot of pushback with companies when we're reporting supply chain issues, they're like, but there's a low probability of exploitation, but the risk is always remote code execution. So how do you assess that kind of stuff? Like when you know that the risk is highly low, but when like the...
+
+Justin Gardner (@rhynorater) (53:23.713)
+Mm.
+
+Justin Gardner (@rhynorater) (53:35.713)
+Mmm.
+
+Justin Gardner (@rhynorater) (53:40.065)
+Why is the risk low? I feel like the risk is not low.
+
+Lupin (53:41.147)
+No, the probability of exploitation is highly low, but the impact is super high.
+
+Justin Gardner (@rhynorater) (53:47.617)
+But how do they even factor, I mean, what do you mean the probability of exploitation? Like, are we saying like this is too complicated for attackers to figure out because we know that that's not the case.
+
+Lupin (53:56.763)
+More like the probability of a developer actually pulling the package because sometimes the artifactory is really well set up. But imagine a developer forgetting to put their .npmrc file and forgets to go through the artifactory. As a company, you can't, if you have 2 ,000 developers, for instance, how do you know that they are configured properly on their machine? You can't. But...
+
+Justin Gardner (@rhynorater) (54:05.217)
+Mm -hmm.
+
+Lupin (54:22.299)
+Also at the same time, they should be configured properly. So it's true that there is a low probability that one developer may slip up, but when they do, the impact is always huge.
+
+Justin Gardner (@rhynorater) (54:25.665)
+Hmm.
+
+Justin Gardner (@rhynorater) (54:31.041)
+Mm.
+
+Justin Gardner (@rhynorater) (54:35.585)
+Hmm, yeah, no, that's terrifying. And actually it makes me think, you know, I think it would be a really cool piece of like marketing material for you to release that would be really helpful for the community to do like a cheat sheet for companies on like how to secure your supply chain. Like go claim these packages, like do you have this in your artifactory? Go claim this just in case somebody, you know, slips up or something like that. Because I imagine there's a lot of...
+
+Lupin (55:00.476)
+Definitely.
+
+Justin Gardner (@rhynorater) (55:03.905)
+sort of defense in depth techniques that you could do that would prohibit some of these attacks from happening. Because my response, if I'm playing from the program side on to what you just said is like, okay, well, how do I fix that? How do I fix a developer slipping up? Developers always gonna slip up. It's just like phishing, right? Well, the way you fix that is you, one, make sure they can't slip up too bad by claiming those packages, and two, you make sure that your development settings are set up with secure defaults.
+
+but I think going that extra layer could be really, really helpful.
+
+Lupin (55:35.932)
+Yeah, and I think that there is a lot of like...
+
+Those can be fixed. It's not like we are doomed and that the world will collapse because you are using a supply chain. You can fix all those holes in the supply chains. And of course, I think it would be a great resource to provide guidance on how to fix these issues and also how to assess them. But it has been a really long debate with a lot of different programs on how to assess
+
+Justin Gardner (@rhynorater) (55:43.905)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (55:47.777)
+Mm.
+
+Justin Gardner (@rhynorater) (55:59.073)
+Mm. Mm.
+
+Lupin (56:08.542)
+the bug bounty ram and paradigm does supply chain issues because again, we don't have a scope anymore, but the impact is always great. So how do you assess that?
+
+Justin Gardner (@rhynorater) (56:10.017)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (56:17.569)
+Mm -hmm.
+
+Dude, it's gotta be impact -based, man. I mean, at the end of the day, you've gotta look at these scenarios and you've gotta say, okay, listen, if Lupin is attacking this one -off little dev environment over here, but then it's compromising a server that has access to these AWS keys that give you the ability to interact with prod, and that's the end of the freaking world. You know?
+
+Lupin (56:42.908)
+Yeah, the keys of the kingdom.
+
+Justin Gardner (@rhynorater) (56:47.009)
+Yeah, exactly. And we know that it happens all too often. And that's, and I think, I think from the bug bounty side, obviously doing your, your due diligence and really understanding what an attacker could do from, from that perspective takes time and takes effort. But I think that's where you sort of kind of separate the wheat from the chaff there, as far as programs goes, you separate the good programs from the bad programs and the ones that are really, and not necessarily the bad programs, you know, I should be a little bit more understanding. If there's anything these,
+
+Lupin (57:09.083)
+Exactly.
+
+Justin Gardner (@rhynorater) (57:16.065)
+you know, program versus hacker debates that we've had in the pod over the past couple months has taught me it's like, you know, a lot of these people are severely understaffed. These organizations are severely understaffed and just cannot get the amount of people that they need to do their job properly. But yeah.
+
+Lupin (57:30.427)
+Of course, of course. And that's why I'm bringing those debates on the table because as a bug hunter, I want to be paid. But I need also to understand the realm and...
+
+Justin Gardner (@rhynorater) (57:35.425)
+Mm -hmm.
+
+Mm -hmm, yeah.
+
+Lupin (57:42.715)
+And that's a way in BlackBounty to redo more bounties and get more rewards is by understanding what the program needs from you. For instance, the email takeover to domains. Some programs accept that. It's rare, but it really depends on their maturity. But a lot of programs will tell you it's not our responsibility. It's the maintainer fault. And I...
+
+Justin Gardner (@rhynorater) (57:52.193)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (58:07.937)
+Mm.
+
+Lupin (58:09.339)
+I mean, in some ways they are right. Like they are not going to claim domains that are not theirs, right? But at the same time, it will impact their supply chain at one point. So it all boils down to your maturity, your budget, and how you want to treat the research community. More than bug hunters, it's really more about the research and like novel techniques and how do you see them and appreciate them inside your bug project.
+
+Justin Gardner (@rhynorater) (58:11.745)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (58:34.337)
+Mmm.
+
+Justin Gardner (@rhynorater) (58:38.209)
+Yeah, I think if it expands your understanding of your own infrastructure and you make remediations based off of that, I think you should pay for the scenario, the worst case scenario, if you do not have the resources to do your full due diligence. And I think that's painful for a lot of bug bounty programs. But at the end of the day, we all know.
+
+Lupin (58:39.293)
+program.
+
+Justin Gardner (@rhynorater) (59:00.513)
+what should be happening, which is that you should be doing a thorough assessment of these threats. And then, but if you don't have the manpower and the staffing to do it, you know, maybe split the difference with the researcher at least, but don't categorize these as lows or mediums because the impact is really large. And we all know, anybody who's ever performed an external to internal pen test knows that once you get in, like, your job gets a million times easier. So yeah, I guess we'll.
+
+We'll leave that at that. Okay, so maintainers, they're massive, they're everywhere, there's millions of them that can commit into your project at any given time. Love that for us. But there's also multiple ways to attack the maintainers. There can be them letting their domains lapse, like we mentioned, but there can also be weak credential attacks on these maintainers, and there could also be these maintainers leaking their own personal secrets from other side projects or something like that.
+
+and then giving an attacker access to their GitHub account or their registry account and allowing the attacker to move from there. So is that something you've also seen and something you're scanning for within Depi?
+
+Lupin (01:00:10.106)
+Yeah, we are still in the research module right now. So we have this beta we call the frontline access that will not have those secret scanning. But we are researching more and more trying to remove all those false positives. But definitely something really interesting to see because...
+
+Justin Gardner (@rhynorater) (01:00:13.601)
+Mm -hmm.
+
+Lupin (01:00:33.658)
+Like even in the CI compromision realm, there is a lot of developers that set up their own CI CD pipeline that will use their NPM token that is tied to the entire organization or their company. And if they don't secure their pipeline, you are going to compromise the overall.
+
+Justin Gardner (@rhynorater) (01:00:50.497)
+Yeah
+
+Lupin (01:00:57.306)
+So once you manage to find a package, then you need to find the GitHub associated to the package with the pipeline or the GitLab. Then once you find that, you need to find all the maintainers that can commit code inside. Once you find those maintainers, you find all their projects, all their pipelines, and you scan back again.
+
+Justin Gardner (@rhynorater) (01:00:58.017)
+Hmm.
+
+Justin Gardner (@rhynorater) (01:01:15.841)
+my gosh.
+
+Lupin (01:01:18.361)
+And that's something that we want to do and that we are actually starting to do. But that spidering is like how much in -depth we go. That's the question.
+
+Justin Gardner (@rhynorater) (01:01:29.921)
+Well, I imagine that's actually pretty computationally expensive too. Like when we're talking about the network effect of all this, like, you know, you've got all of these maintainers, let's say there's a million maintainers and then each of them has, you know, a hundred repos or whatever. And then each of these repos have like years of Git history, right? And it's like, wow, now we're having to sift through like terabytes of code to try to find that one place where some developer, you know,
+
+Lupin (01:01:53.497)
+Yeah.
+
+put a token. Yeah, of course. We have some technical challenges here and we have a lot of fun with them. There is a lot of stuff that we thought that were impossible, for instance, related to depth, because by the end of the day, we're like exponential.
+
+Justin Gardner (@rhynorater) (01:01:57.537)
+put a token or committed an SSH key or something like that. Holy crap.
+
+Justin Gardner (@rhynorater) (01:02:07.905)
+Yeah.
+
+Lupin (01:02:20.089)
+computing problem, but through different techniques, we managed to make one request that was taking like three minutes to analyze per package. We managed to make it like five seconds. Five seconds is, yeah, it's already long though, but we're getting there. We're getting there.
+
+Justin Gardner (@rhynorater) (01:02:28.769)
+wow, okay wow, lots of optimization going into this. Yeah.
+
+Yeah. And you're writing this in Rust too, right? So this is not like you're all of this is what? Yeah. Yeah. And it's not like all of this is running in like Python or like, you know, some, some much slower language. You're trying to do this at a really optimized level. And I think that's the right, the right choice from the beginning. Now hearing about the scale and we had a little bit of a debate on this the last time we discussed your, we did like a little brainstorming, you know, meeting for your product. And I was like, man, like, why you gotta write this in Rust? But now that I'm sort of understanding that.
+
+Lupin (01:02:44.089)
+Yeah, yeah, definitely.
+
+Justin Gardner (@rhynorater) (01:03:07.265)
+the breadth of all of this. It's an absolutely massive undertaking. So that makes a lot of sense, man. Okay, so the maintainer attacks, we've got those. Now, this is a, I guess this is sort of a complicated question. So people that are trying to build out these software build materials, right? This list of dependencies that they have for their given software. I was thinking like, okay, wow, this is actually gonna be really tricky. Like we got to kind of nuanced the,
+
+you know, map out everything else. But then I realized all we have to do is clone it down and then just run npm install, right? Like, I mean, that will pull, that's why these node modules folders are just so like ridiculously massive is they pull everything down, right? So, I mean, is a good way to do this to actually just clone the repo, do npm install, and then just like find, you know, find dot and just look at all of the package names.
+
+Lupin (01:03:42.457)
+Yeah, you can.
+
+Lupin (01:03:47.097)
+Really? Yeah.
+
+Lupin (01:04:00.665)
+Yeah, I think this technique is not as scalable because when you have a repository that is two gigs and then you see all the dependencies, it becomes horrible. But you can optimize a lot of things. For instance, GitHub exposes an API for the S -BOM. So every public GitHub repository has an S -BOM associated and that you can call with an API.
+
+Justin Gardner (@rhynorater) (01:04:05.089)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:04:09.953)
+goodness, yeah.
+
+Justin Gardner (@rhynorater) (01:04:21.245)
+really? that's awesome.
+
+Justin Gardner (@rhynorater) (01:04:29.825)
+No way. Dude, I did not know that.
+
+Lupin (01:04:30.841)
+Yeah, and if there is a log file, you can actually have all the packages back.
+
+Justin Gardner (@rhynorater) (01:04:38.945)
+Dude, this is so cool. I really appreciate it. I did not know that this existed. This is really cool.
+
+Lupin (01:04:41.849)
+Yeah.
+
+This is not like a secret source of our scanning, but it really helped me a lot when I was building all the tools. I think that would be the best way to do it.
+
+Justin Gardner (@rhynorater) (01:04:50.177)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:04:57.697)
+Yeah, well, especially for us, you know, for people looking for the 80 -20 situation here, that's really cool. And I think stuff like me not knowing about that shows, you know, how there are all these little pockets of info that we kind of need to be able to address the supply chain thing correctly. But I'm really glad that GitHub went ahead and went after that because that's a great level to solve it at, right? Almost everything ends up in a GitHub repo at some point.
+
+And so, and I imagine GitLab will put something together or already has something that can do it too. Mm -hmm.
+
+Lupin (01:05:31.831)
+Yeah, GitLab already is doing something and they also have Artifactories per repository. So one repository can expose one Artifactory that is just for the repository. And yeah, it's really interesting. And since GitLab is open source, you can see how they are pulling packages and stuff like that. And there is a lot of weird things that they are doing. And it's so fun to see the shortcuts that Artifactories are taking to be compliant.
+
+Justin Gardner (@rhynorater) (01:05:39.809)
+Mm.
+
+Justin Gardner (@rhynorater) (01:05:44.033)
+wow.
+
+Lupin (01:06:01.785)
+with the protocol of NPM and stuff like that and like most of the calls are mocked which is so funny.
+
+Justin Gardner (@rhynorater) (01:06:04.993)
+Yeah.
+
+man, I imagine that's a whole good scope for you to go after when looking at these in a GitHub enterprise and in GitLab as well.
+
+Lupin (01:06:19.223)
+We can talk about that a little bit, but if you really want to find that 20%, I think more than checking the dependencies, go check the artifacts because they all have a bug bounty program.
+
+Justin Gardner (@rhynorater) (01:06:22.177)
+Mm -mm.
+
+Justin Gardner (@rhynorater) (01:06:31.937)
+Mmm.
+
+Lupin (01:06:32.215)
+And once you find the artifactories, there's so many bugs. Why? Because supply chain is infinitely complex. And so there is so many use cases, even within an organization, like one developer, can a developer remove a version?
+
+No, on the NPM registry, it's not allowed, but on the artifactory, it's allowed. And you don't have any logging and monitoring, so you can replace a version back during the version that already exists.
+
+Justin Gardner (@rhynorater) (01:07:02.017)
+Wow.
+
+Lupin (01:07:02.903)
+but you don't have any way to know which developer did that, that's a problem. And once you step back and you do not see that as a web app scope, but more about a supply chain hub, you'll find many more vulnerabilities that you may think is a low vulnerability from a business perspective, but always ends up in a remote execution. And so, yeah.
+
+Justin Gardner (@rhynorater) (01:07:07.937)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:07:16.097)
+Hmm.
+
+Justin Gardner (@rhynorater) (01:07:26.657)
+Mmm, mmm, yeah, the stakes here are very high.
+
+Lupin (01:07:29.782)
+I've been hacking artifacts for the past year, I think, and the attack surface is so big for one single endpoint because of all the supply chain implications. So you have one endpoint, just the one pulling the packages, and you can hack it in so many different ways because, for instance, they didn't think about RNG's versions, or they didn't think about lowercase or uppercase or unicodes, and so you have confusion here, which is so funny.
+
+Justin Gardner (@rhynorater) (01:07:41.409)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:07:56.289)
+Mm -hmm.
+
+Lupin (01:07:59.736)
+to see.
+
+Justin Gardner (@rhynorater) (01:08:00.577)
+Hmm. Yeah, dude. Normalization bugs, just all sorts of, all sorts of craziness. I imagine, you know, one, one layer of URL encoding missed, you know, across this whole thing could, could mess up a bunch of stuff too.
+
+Lupin (01:08:11.382)
+And because those are proxies, artifactors are proxies, you also have SSRF in some ways.
+
+Justin Gardner (@rhynorater) (01:08:16.833)
+Mm -hmm. Yeah, wow, that's nuts, man. There's so many ways to look at that problem. Okay, so, sub -dependency mapping, we got the software build materials, we got our NPM install, that sort of thing. So, the next area that I sort of wanted to go to was this, and we kind of touched on this already, but attacking the artifactories and registries, right? There's a great way to go after that, like you mentioned, is doing a source code analysis of the artifactories, they've got bug bounty programs, going after the way that they deal with this. But also,
+
+it's possible for us to attack the registries. And so I know you have a bug here that you are gonna share with NPM, which I think would be really, really cool. And it just went out, it just went out like right before we recorded this podcast. That's awesome, that's great. And so we'll be covering it right on the pod, just a couple days. We'll be releasing this pod later this week, so we should be a pretty fresh coverage on this. But talk about your experience.
+
+Lupin (01:08:58.614)
+Yeah, two hours ago.
+
+Justin Gardner (@rhynorater) (01:09:12.705)
+hacking on these registries themselves and what kind of impact and what kind of attack vectors they have.
+
+Lupin (01:09:18.263)
+Yeah, so the bug that we disclosed today was on NPM. NPM is owned by GitHub. I know that a lot of developers or tech people do not know that, but NPM by name today is Microsoft in some ways. Yeah. Yeah, exactly. And so...
+
+Justin Gardner (@rhynorater) (01:09:34.273)
+my gosh, multiple layers of acquisition there, okay.
+
+Lupin (01:09:42.167)
+We were doing like a sub module for DEPI again in research mode and our question was like how we can, you know, impact the availability of the packages of our clients. And because they have like artifacts, we were like, hey, what if we do cache poisoning on the artifacts, we denied the artifacts if they are public and we just, you know, dust all the pipelines of our clients. That would be a really fun vulnerability, right? Yeah.
+
+Justin Gardner (@rhynorater) (01:10:10.593)
+Yeah, that would be nuts actually. And I love that you went for availability as well. That you didn't forget about the A and the CIA triad because it makes a lot of sense to go after confidentiality, getting access to that source code. Integrity obviously has RCE based impacts, but availability I think would not be one of the things that would pop into my head immediately when I'm thinking about this. But it has such a massive impact on the scope because it breaks all of these builds. And cache poisoning.
+
+is the perfect attack for this because if these packages are being downloaded millions and millions and millions of times, they have to be cached or else the CPU load is going to be way too much. So tell me how you ended up being able to exploit that.
+
+Lupin (01:10:44.727)
+They need to be cached.
+
+Lupin (01:10:52.728)
+Yeah, so we developed a small script, integrated that to DEPI, and we forgot to remove the public registries. And so we did the first scan, and then result, registry .npmjs .org is vulnerable. And I was like, no, that's...
+
+No, I'm not trusting my script. That was the first run and I'm not kidding like this is twice in in our research where we had like a first hit So a lot of luck
+
+Justin Gardner (@rhynorater) (01:11:22.145)
+Dude, miracles are happening, man. Like, seriously, like, one, the script works the first time you run it. Two, it works on the freaking biggest registry out there.
+
+Lupin (01:11:30.743)
+Yeah, and so I thought it was a false positive, right? And I go to check manually and it triggers. We have a cache poisoning. If you set a header at the moment you do the get request to take the package, it will create a 404 and this 404 will be cached. On the, like the prod registry.
+
+And it's not even an artifactory, it's like the registry, right? And so...
+
+Justin Gardner (@rhynorater) (01:11:55.809)
+That is not good, dude.
+
+Justin Gardner (@rhynorater) (01:12:02.113)
+Dude, you must've been so freaked out when it worked. You're like, I can't believe this, man.
+
+Lupin (01:12:06.487)
+So I didn't write that in the article, but I really stepped back from the computer, closed everything, and just went in my bed and just, you know... Yes, exactly. I was like, no, it's not possible.
+
+Justin Gardner (@rhynorater) (01:12:10.273)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:12:16.289)
+I stared at the ceiling for a little while. That's funny.
+
+I always, you know, we talk about finding bugs and stuff like that on the pod. And one of the things I always do that I've mentioned a couple of times is as soon as I find a bug, just step back a little bit, take a breath, and then run to my wife as fast as I can and say, Laura, I just found this amazing thing. And it's like, no, I haven't reported it yet. No, I haven't double checked it yet even, you know, and then half the time it's like a false positive and she's like having to pull me out of the.
+
+Lupin (01:12:35.671)
+Yeah
+
+Justin Gardner (@rhynorater) (01:12:48.897)
+the pit of despair or whatever after I thought I had a mega crit and now it's not but
+
+Lupin (01:12:53.783)
+I actually do that with a lot of bug hunters friends where I... You know, I've sent to you some of those crazy like, dude, I found that and like, no, it was a typo.
+
+Justin Gardner (@rhynorater) (01:12:57.441)
+Right, right.
+
+Yes, my gosh, I love those moments, man.
+
+Justin Gardner (@rhynorater) (01:13:06.593)
+Yeah, I love your messages. I found it! It's crazy! It's... Wait a second. But wait, maybe it'll... No, no, that's not gonna work. It's the life of a bug hunter, man. The life of a bug hunter.
+
+Lupin (01:13:21.289)
+Yeah, but when we hit something we are really happy. Yeah.
+
+Justin Gardner (@rhynorater) (01:13:28.577)
+We are, we are, and it shows the passion for it, so it keeps us coming back for more.
+
+Lupin (01:13:33.176)
+Yeah, but here I was a little bit more freaked out because I knew the implication of a software supply chain bug at that scale. Like if you manage to deny a package, you can like basically impact the entire JavaScript ecosystem and bring down pipelines and developers machine and like just say, hey, tomorrow is a holiday for everyone, right? You are not developing anymore.
+
+Justin Gardner (@rhynorater) (01:13:47.233)
+Yeah. Yeah.
+
+Justin Gardner (@rhynorater) (01:13:56.417)
+my gosh, dude, could you imagine the havoc that would cause if you like DOS'd like Express or something like that on like a Friday night or something or like when do people deploy? Probably Thursday, you know, DOS Express on Thursday, that'd be terrible, man. man.
+
+Lupin (01:14:06.264)
+Exactly.
+
+Lupin (01:14:13.912)
+That would be so funny, I think. And a lot of dev teams, security team, incident response would be like, what the heck is happening?
+
+Justin Gardner (@rhynorater) (01:14:22.017)
+Yeah, yeah, all of a sudden this package just expressed just 404s on NPM. It's like, no.
+
+Lupin (01:14:26.424)
+Yeah. And we know the way they think an incident response is like, we did something wrong. And then you check and then you're like, no, they did something wrong. Like, wait a minute, how'd that happen? Yeah. Yeah. I was thinking about the Facebook BGP bug. Like everyone was freaking out like, my DNS is not working. It's like, no, it's Facebook. No worries.
+
+Justin Gardner (@rhynorater) (01:14:30.977)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:14:35.968)
+Mm -hmm. Wait, it was DNS? No, they did something wrong here.
+
+Yeah, yeah.
+
+Justin Gardner (@rhynorater) (01:14:46.785)
+my gosh. Yeah. Man, and there's, that's another interesting area there is if you could attack it at the DNS level as well. I imagine things would be cached, but that's an interesting approach. Might have to bleep that, who knows, whatever. So the other sort of attack factor that I had, and DOS makes a bunch of sense here, but also if there was an IDOR in this sort of environment, it would absolutely be terrible.
+
+Lupin (01:14:56.46)
+Yeah, let's write that down. Try it and then we do a pod. Yeah.
+
+Lupin (01:15:11.944)
+Yeah. Yeah. Definitely.
+
+Justin Gardner (@rhynorater) (01:15:16.609)
+Have you done any of that more granular testing on these organizations or mostly are you focusing on the bigger ecosystem? Mm -hmm. Mm -hmm. Okay.
+
+Lupin (01:15:24.634)
+For now, I've done it on the artifacts level and not on the registry because I've sent this bug for GitHub, NPM, and they gave me a $500 bounty for the DOS.
+
+Justin Gardner (@rhynorater) (01:15:40.769)
+my gosh, dude.
+
+Lupin (01:15:42.297)
+Yeah, and I was like really surprised because they said, no, it's a distributed denial of service. And I'm like, I managed to reproduce it from a machine. Of course, the caching wasn't like for every backends, but you know, you are still affecting a huge part of the traffic if you manage to exploit it correctly. And they said, no, it's a DDoS. So it's not in our scope of the program. It's more abuse. And I was like,
+
+Justin Gardner (@rhynorater) (01:16:06.177)
+You're kidding me.
+
+my gosh dude, yeah, I mean, you've got a screenshot right here in your blog post that like says NPM install and then you're downloading the package and then you can see it goes through successfully and then just like what is this, like one minute later, not even one minute later, you try to reinstall it again and it says no, there's a 404 not found. Like how could they argue with that?
+
+Lupin (01:16:36.345)
+I mean, I didn't really understand and I wrote in the blog my, you know, why I was bothered about this entire assessment. I have nothing against the GitHub security team. They are amazing people. Again, I will tell you again, they are really amazing people. But the overall assessment of this report was a bit of a mess, I would say.
+
+Justin Gardner (@rhynorater) (01:16:39.809)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:16:45.121)
+Mm -hmm. Mm -hmm. Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:16:56.673)
+Mm -hmm. Yeah, I agree.
+
+Lupin (01:16:57.785)
+And I don't know if you've seen the timeline, but what they did is that they said it was an internal duplicate at the beginning. And then a couple of months later, they trashed it. And then a couple of months later, they closed it as informative. Six months later, I sent the...
+
+Justin Gardner (@rhynorater) (01:17:18.081)
+No, Ronnie, I'm so sorry, man. I know you told me lately you're a little burnt out on Bug Bounties, but and it makes total sense given this experience because this is not how it's supposed to work.
+
+Lupin (01:17:24.025)
+Yeah.
+
+Lupin (01:17:29.114)
+When you're doing supply chain, it happens a lot, that kind of assessment. But yeah, and then six months later, I think I send like, hey, can we disclose the vulnerability? They said, yeah, and we can help for the technical analysis of your write -up. And I was like, awesome. But they didn't fix the vulnerability, right? They didn't fix it. And they told me we are allowing the disclosure. And so I send them the draft report and they told me, hey, we are fixing the vulnerability now.
+
+Justin Gardner (@rhynorater) (01:17:34.465)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:17:51.393)
+no.
+
+Justin Gardner (@rhynorater) (01:17:58.369)
+Yeah, of course, I imagine so.
+
+Lupin (01:18:00.698)
+But my goal with disclosure wasn't to pressure or anything. I just wanted to talk about a super cool vulnerability that I really loved. But I was really disappointed about the assessment and the fact that one year after reporting they're fixing the vulnerability is for me really weird.
+
+Justin Gardner (@rhynorater) (01:18:03.745)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:18:07.841)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:18:20.257)
+Yeah, it's super weird, especially when the impact is so wide. And I'm looking through here, and I think they mention in here that there was some inconsistency with the caching servers, it seems like, where every fourth or fifth request was being dropped. But I'm like, when it's expressed, every fourth or fifth request is millions of requests. Why is this a problem? -huh.
+
+Lupin (01:18:32.378)
+Yeah. Because the... Yeah.
+
+Lupin (01:18:46.074)
+Yeah, to put some numbers express is 30 millions install per weeks. And on the latest version, it's 12 millions install. So every time there is a latest version in one week, it hits 12 million installs. And so even though you have one fourth of the requests that are getting denied, one fourth of the 12 millions is huge.
+
+Justin Gardner (@rhynorater) (01:18:54.113)
+no! my gosh.
+
+Justin Gardner (@rhynorater) (01:19:10.561)
+That's insane, dude, yeah. Man, this is, I mean, like you said, I love the GitHub team too. There has been some difficulties with them in the past, just to be perfectly clear. And in my experience, they've come around on it. And they normally, after you have to talk to them and you go through the whole impact scenario, they've paid out really, really generously for me in the past. But I imagine...
+
+Lupin (01:19:14.17)
+Justin Gardner (@rhynorater) (01:19:35.585)
+you know, sometimes it doesn't always end up quite that way. But I hope after this article is released and the general security, you know, industry says, shit, you know, this is bad. That, that, you know, they come back and make it right on this because this is a serious vulnerability.
+
+Lupin (01:19:44.857)
+Yeah, exactly.
+
+Lupin (01:19:51.801)
+Again, my goal is not to put pressure with the disclosure. If people want to say something publicly, they will tell something publicly. It's not my problem. I really wanted to talk about the research and more like, hey, on Deppy, we have a submodule that will check for availability too, which was the main goal of this research to be able to demonstrate that supply chain attacks...
+
+Justin Gardner (@rhynorater) (01:19:55.809)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:20:10.529)
+Mm -hmm.
+
+Lupin (01:20:18.969)
+when it comes to have ability impact can be huge.
+
+Justin Gardner (@rhynorater) (01:20:22.273)
+Yeah, yeah, clearly. No, that's amazing. All right, so we've covered attacks on the artifactories and on the registries, maintainer attacks. The last one, we sort of alluded to CI -related bugs. There's some research out there that you guys can go and dive into by Ed Overflow and this guy named Justin Gardner. Yeah, yeah, so there's that and there's also...
+
+Lupin (01:20:42.873)
+Never heard of him.
+
+Justin Gardner (@rhynorater) (01:20:50.465)
+I guess we will touch on one of these because I also wanted to mention this.
+
+Last time we had Johan on the pod, he mentioned this whole concept of hijacking a flow, a CI flow inside of GitLab. And I think that that's a really interesting approach and there's lots of ways to do that. But I think that's another really important part of this whole supply chain attack vector concept. Because these things are getting more and more complex as they go.
+
+And there's more and more opportunities for people to inject their input into it, whether it be a pull request, whether it be like a lapsed domain or S3 bucket or that sort of thing. And then gain control of these CI flows and then leak important secrets and that sort of thing. So yeah, what are your thoughts on that whole front and how is Deppy addressing this issue?
+
+Lupin (01:21:48.665)
+It's amazing. I love this area of research. There is one researcher that have been doing a lot of work on that and his name is Adnan. And it's amazing to see all of his CIA bug and I'm really impressed by how many bugs we can find in this attack surface. And again, it's one functionality, but the attack surface is huge and definitely something on the roadmap of DEPI for now.
+
+Justin Gardner (@rhynorater) (01:21:59.521)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:22:10.209)
+Mm -hmm. Mm.
+
+Justin Gardner (@rhynorater) (01:22:15.041)
+Mmm.
+
+Lupin (01:22:18.619)
+we're focusing on software artifacts, but builds, as we said, this is the beginning, is an important component of the software supply chain and is the natural process to go through builds at one point with Deppy. We found a couple of vulnerabilities related to CI, but more like GitHub overall.
+
+Justin Gardner (@rhynorater) (01:22:42.753)
+Yeah, yeah, there's lots of overlap there. Because I mean, at the end of the day, the stuff is going to be present in GitHub, because that's where the CI is running from. So if you're just doing this, if you're assessing from a GitHub level, you can see a lot of that. And I think the only exception to that really is the stuff that's being injected directly at the CI level, the tokens and the API keys and that sort of thing. And then also the logs that are generated from the
+
+Lupin (01:22:49.241)
+Is that good?
+
+Justin Gardner (@rhynorater) (01:23:11.969)
+the CI themselves. And that's where, you know, that research that we did with Travis CI came in and where I found an RCE a while back, it was actually one of my first RCEs was grepping through logs for this crypto website on their CI and finding out that they had echoed out their private key in one commit. And I just used that private key to just log in as root to the server. And it should have been a 10K bounty, but it was like,
+
+Lupin (01:23:19.705)
+Assassin.
+
+Lupin (01:23:38.651)
+That's awesome.
+
+Justin Gardner (@rhynorater) (01:23:42.049)
+They're like, it's a 1K bounty by classic crypto program BS. But yeah, I feel like there's definitely some difficulties in the sort of supply chain bug bounty ecosystem on getting them to actually pay the vulnerabilities for some reason.
+
+Lupin (01:23:45.466)
+Yeah.
+
+Lupin (01:24:01.018)
+One technique that I really like, for now I'm not focusing on exploiting the CI, but more about the results of the CI. And one technique that I love is to find all the metadata around the pulling of the packages. So you are going to see the traffic of which artifactory they use. And sometimes you can also find it inside the JavaScript exposed publicly, like which artifactory they're using. So basically...
+
+Justin Gardner (@rhynorater) (01:24:08.097)
+Mmm.
+
+Lupin (01:24:30.972)
+what I do is that I copy the domain of this private artifactory that we can find in CI and we can find in public JavaScript. Usually if I find it in CI, it's because Snorlax gave me the CI. He's an amazing hunter and really good with CI too. So often he gives me the artifactory. But then I go on GitHub and put path colon
+
+Justin Gardner (@rhynorater) (01:24:47.137)
+Mm -hmm, classic.
+
+Lupin (01:25:00.892)
+and then package -log .json, and then I put the artifactory domain. Because what's happening in the log file, you see all the artifactories and where is the tar .jz ball, like the tar ball, right? And so you see the domain. And so every log file, you know it comes from a developer of the organization.
+
+Justin Gardner (@rhynorater) (01:25:08.001)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:25:17.377)
+Mm, mm, mm.
+
+Justin Gardner (@rhynorater) (01:25:28.641)
+Mmm.
+
+Lupin (01:25:29.947)
+That's where I managed to leak source code of like private source code not even packages, right? source code of of many organization on and on developers accounts that weren't even inside the organization is just like their like test account and they did a Pushed internal source code and there you managed to find a lot of different stuff credentials
+
+Justin Gardner (@rhynorater) (01:25:40.769)
+Insane.
+
+Lupin (01:25:58.874)
+you can access it like do code review. You can already report it. For some companies, it's already good enough to report that kind of bugs. And so that's like my technique to find exposed source code, go through the artifactory and the build results.
+
+Justin Gardner (@rhynorater) (01:26:13.889)
+Yeah, and that's an awesome tip. And I think also getting your hands on any sort of enterprise source code is just so nuts. Like I remember that initial dependency confusion blog post, you know, mentioned that we were, that I handed him some source code from PayPal. The source code that we found that was actively being used in PayPal's environment leaked secrets in it that we were able to use to encrypt and decrypt stuff.
+
+Lupin (01:26:43.578)
+Justin Gardner (@rhynorater) (01:26:43.649)
+And it led to like over 50K in bugs. Just from being able to see these little pieces of middleware here and there that were like popping up around. And it's like, wow, just getting your hands on any piece of that that's actually running allows you to make such more nuanced attack vectors towards that target. So it's really, really essential.
+
+Lupin (01:26:47.194)
+Wow.
+
+Lupin (01:26:52.122)
+That's huge.
+
+Lupin (01:27:00.154)
+Yeah.
+
+Lupin (01:27:04.73)
+That can be taken more broadly in the supply chain and you just check all the internal domains of a company and then you search them on GitHub and that could be also a really fun thing to do.
+
+Justin Gardner (@rhynorater) (01:27:07.937)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:27:13.825)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:27:17.665)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:27:22.081)
+Yeah, yeah, I think that's really, anytime you see, here's the secret sauce for how we did it with PayPal, actually. It's been years. I'll just kind of share the secret sauce here. Essentially, in PayPal's environment, there's a bunch of different little microservices that are powering the PayPal app.
+
+And there's a way, I won't disclose it all, but there's a way that you'll see these around, in the responses of the requests or when errors are triggered or whatever. And then you can take these little microservices names and you just put those bad boys into GitHub. And those microservice names correlate to packages for the code. And so you put them into GitHub and then you search around, look through everything, and you may, if you get lucky,
+
+Lupin (01:28:05.243)
+hahahaha
+
+Lupin (01:28:11.739)
+that's awesome.
+
+Justin Gardner (@rhynorater) (01:28:19.585)
+Pop some some internal source code and I think a lot of other companies have similar structures I'm not sure if those little package names or host names or microservice names are getting leaked as much but I imagine I know on the back end that they have similar structures to that so Anytime you see a unique string that seems to correlate to the infrastructure behind the application you're attacking always take that to github and run a search on it because you'd be super surprised on what kind of stuff pop up
+
+Lupin (01:28:49.115)
+Definitely.
+
+Justin Gardner (@rhynorater) (01:28:49.857)
+All right, dude, let's see. Okay, so the NPM cache poisoning bug, super cool. The TLDR of that one was that you were able to go to attack the NPM registry where they're actually downloading the package files directly. And, you know, we won't specify through what method, but you're able to somehow provide a additional piece of information in that request that makes it go to a 404 and that 404 gets cached.
+
+Lupin (01:29:17.027)
+Exactly.
+
+Justin Gardner (@rhynorater) (01:29:18.785)
+And then when anyone else tries to request that page again, they get the 404 instead of access to that, you know, tar .gz file or whatever it is. Crazy bug. I really hope that gets addressed and we don't have to deal with that in the ecosystem. Let's talk about the next one that you wanted to share on the pod, which is the Grafana NPX confusion.
+
+Lupin (01:29:32.443)
+Yeah.
+
+Lupin (01:29:40.701)
+Yeah, that was really funny. So first of all, I think this needs to be said, the Graphics and Security team is one of the most mature security team I've ever worked with. And not just that mature, they are wholesome. They are so funny to work with and it has been a pleasure to send them back.
+
+Justin Gardner (@rhynorater) (01:29:52.961)
+So awesome.
+
+Justin Gardner (@rhynorater) (01:30:01.193)
+Yeah, I had the same experience with them back in 2020 with the Grafana SSRF. They were awesome.
+
+Lupin (01:30:08.188)
+And so what happened is that I was again, DEPI research mode. And this time I wanted to find a bug on GitLab code source, because I have a friend that challenged me to do so. And I was like, okay, let's do it. But when analyzing GitLab, I managed to find like dependency that is called graphana -toolkit. That was not claimed publicly.
+
+Justin Gardner (@rhynorater) (01:30:33.089)
+Mm -hmm.
+
+Lupin (01:30:38.142)
+And this boils down to, basically, graph -in -a -took -its is not a package, it's a binary, but there is a package manager called npx, which is from, and the same npm team, and npx stands for node package execute. And instead of being a manager and trying to install packages, yeah.
+
+Justin Gardner (@rhynorater) (01:30:39.425)
+Oof.
+
+Justin Gardner (@rhynorater) (01:30:53.665)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:31:02.977)
+I've seen this. Okay, I know what you're talking about.
+
+Lupin (01:31:06.268)
+Instead of being a manager that will just install the package, it will run a binary directly. But exactly.
+
+Justin Gardner (@rhynorater) (01:31:14.561)
+Okay, so these are like for like command line applications or whatever that you're going to use to supplement some, you know, maybe use Grafana Toolkit or whatever to add a user to Grafana or something like that from the command line or something. Yeah.
+
+Lupin (01:31:24.957)
+Exactly. Exactly. And so what's interesting with NPX is that if you do NPX package and you do not have the binary name inside your computer, it will pull from the public registry and then just install the package and we'll run it. So you do not have to do an npm install command before, but there is a problem. It's the NPX takes a binary name, but the public registry,
+
+is packages name. So there is a confusion on npx side between both of them. Basically, if you have like grafana -toolkit was like the name of the binary, but the name of the package was at grafana slash toolkit.
+
+Justin Gardner (@rhynorater) (01:32:11.841)
+that's not good.
+
+Lupin (01:32:12.988)
+And so a lot of companies in their Dockerfile, CI, CD, or even documentation was writing npx -graphana -toolkit, but this package didn't exist. So what I did, I cleaned it, and every time that you do npx -graphana -toolkit, you download my package. Yeah. And you are basically downloading this binary that I've claimed on the npm.
+
+Justin Gardner (@rhynorater) (01:32:29.441)
+So what that did, I claimed it. That's great, I love it.
+
+Lupin (01:32:41.98)
+What's really interesting from this bug and that we need to say from Grafana team, it didn't affect their source code and actually all their CI CD that were using npx -grafana -toolkit because there were some, were archived from a long time ago. But the open source community was still using this command because they usually install the package first and then running the npx command. But...
+
+Justin Gardner (@rhynorater) (01:32:54.657)
+Mm -hmm.
+
+Mm.
+
+Lupin (01:33:10.14)
+If you do not have the binary installed and that can go really fast, then you have the same dependency confusion and you have a remote code execution. But what's interesting here, it's not on the artifactory level anymore. It's directly on the package manager. And that's a realm of research that we haven't seen much before.
+
+Justin Gardner (@rhynorater) (01:33:19.585)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:33:30.529)
+okay, at the, I see.
+
+Lupin (01:33:33.662)
+Yeah, we are not trying to impact the artifactory and confuse artifactory. We are trying to confuse the package manager themselves and the Klee to install the packages. And so that's an area of research of DEPI that we are doing a lot, trying to find those zero days of misconfiguration and yeah.
+
+Justin Gardner (@rhynorater) (01:33:51.169)
+There's so many, too, of these package managers. There's NPM, YARN, it just goes on and on and on. So, wow, yeah, there's a lot of attack surface there. Well, I am super looking forward to seeing the results of your research, continued research on this stuff with Deppy, Lupin. It seems like you're doing an excellent job, and it's pretty great that I haven't seen any other.
+
+Lupin (01:33:56.03)
+PNPM. Yeah, create.
+
+Lupin (01:34:02.622)
+Definitely.
+
+Lupin (01:34:08.99)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:34:16.064)
+major competitors doing what you're doing here. So it's cool to see you sort of leading the charge with this. And I think it's also great to have you as a Bug Bounty Hunter, because we get the sort of from an experienced Bug Bounty Hunter perspective of how we can apply this sort of supply chain vulnerabilities to Bug Bounty. So thanks for coming on the pod and talking about that today.
+
+Lupin (01:34:36.062)
+Yeah, thanks a lot for the invitation. It's always super great to talk with you.
+
+Justin Gardner (@rhynorater) (01:34:41.249)
+Indeed, indeed. Thanks so much, man. Anything else you want to shout? Obviously, we've got depi. That's at, what is it? LNH. Yes, LNH .tech slash depi. You can find more information about the tool there. Anything else you want to shout before we end the pod?
+
+Lupin (01:34:49.438)
+And tack!
+
+Lupin (01:34:58.334)
+Yeah, I really want to shout out to the entire French team in the Hacquant World Cup. Yeah. I just want to say those are crazy people finding crazy vulnerabilities and amazing talents, amazing young people, new in the field and just breaking the biggest companies in the world. So I'm just impressed and amazingly surprised by all the talents that we have in France.
+
+Justin Gardner (@rhynorater) (01:35:03.809)
+Get out of here, no, cut it, cut it, cut it off.
+
+Justin Gardner (@rhynorater) (01:35:16.385)
+Mm -hmm.
+
+Lupin (01:35:25.462)
+And yeah, vive la France!
+
+Justin Gardner (@rhynorater) (01:35:25.537)
+Hmm.
+
+my gosh, alright, let's go, cut the pod here, let's go.

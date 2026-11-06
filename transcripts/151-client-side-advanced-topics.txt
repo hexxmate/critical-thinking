@@ -1,0 +1,701 @@
+Episode 151: Client-side Advanced Topics
+Source: https://www.criticalthinkingpodcast.io/episode-151-client-side-advanced-topics/
+======================================================================
+
+Title: Transcript - Thu, 04 Dec 2025 14:01:12 GMT
+Date: Thu, 04 Dec 2025 14:01:12 GMT, Duration: [01:07:27.54]
+[00:00:00.96] - Joseph Thacker
+There could be an iframe on their page. There could be an iframe on your page. You could be iframing your own page, iframing your own page to create a null origin, which is a separate origin from your attacker page, and then use that null origin to open up another page.
+
+[00:00:36.21] - Justin Gardner
+All right, hackers. I was just looking into this and I think I figured out how ThreatLocker elevation control works. Okay. So when a user launches an elevated processor, they try to. ThreatLocker agent will hook that into its own elevation flow. So we don't see any UAC prompt or anything. The ThreatLocker admin will be able to grant that process elevated permissions for a certain amount of time or whatever. Very granular control there. And then the ThreatLocker agent on the user's device injects a modified process security token which will elevate that process directly. This is awesome because it avoids things like UAC, which leaves NTLM hashes and stuff like that in memory. Right. In LSAs exe, it creates a time bounded elevation. Right. And it does the elevation to the process rather than to the user. Really great stuff. But of course there's always like maintenance mode and that sort of thing if you have to get in there and do a bunch of administrative activities. Great stuff by ThreatLocker once again. All right, let's go back to the show. All right, my guy. This is the episode of Client side Advanced Topics. I freaking love this, man. I freaking.
+
+[00:01:39.15] - Joseph Thacker
+This is your. This is your dream?
+
+[00:01:41.15] - Justin Gardner
+Yes. All right, so we got a lot of stuff on the docket today about Client side Advanced topics. Essentially, the vision for this episode was just me kind of brain dumping all of the things that I think are a little bit above, you know, intermediate tier as far as client side hacking goes. So I'm going to kind of lay out all those things that I think are really cool and you are going to play the listener and try to repeat these back to me and try to ingest this information and make sure I'm not like going too fast or too over the top with the explanation.
+
+[00:02:16.27] - Joseph Thacker
+Yeah, it's really easy to make mental leaps whenever you're the quote, unquote, expert on it. Right, Exactly.
+
+[00:02:21.87] - Justin Gardner
+Perfect. Quote, unquote, expert on it. What is that supposed to mean?
+
+[00:02:24.62] - Joseph Thacker
+Okay, Joseph, this is actually really, really good point. I never know how much flattery someone can take. I think you're a super expert. Whenever I talk to anybody and someone asks me, like, you know, who do I think the most Talented hacker is like, you're almost always the first name out of my mouth. And so. But then I never know. People want to hear that to their face. Like, I feel like usually you'd be like, nah or whatever. Right. So anyways, it makes people feel awkward.
+
+[00:02:46.16] - Justin Gardner
+I do that. You know, if you, if you're, if you're playing it up, then I play it down. And if you're playing it down, that's fair. What are you talking about? You know, so there's always some back and forth, I guess.
+
+[00:02:55.46] - Joseph Thacker
+I like it.
+
+[00:02:56.59] - Justin Gardner
+Appreciate you though, Joseph. Before we hop into that, we actually have a couple news pieces that I did want to show that are relevant to this topic. The first one is there's this guy on Twitter that's been tweeting out some interesting stuff lately. And it's like, yeah, I think there are some people commenting on it, be like, yeah, this is like well known, you know, but, you know, it is what it is. Uh, I, I thought that this was very interesting material, so I'll go ahead and share it with you guys. Um, the guy is now Aski JR on Twitter and he shared that if you create a XSS payload that looks like this, which I'm putting on the screen, but for audio listeners, it is a less than bracket with a question mark and then less than bracket a and then an href that ha contains an SVG onload in it, then that will actually fire. And the reason for that is because. These, you know, if you do not have an actual spec compliant tag, so you know, a less than sign plus an A through Z character, then it's going to encode those and not treat anything else as a actual attribute, which means that they won't be URL encoded, but which means the things inside of the href there will become the actual HTML and everything else surrounding it is just text that gets encoded. So this, these are kind of interesting payloads. Yeah, there's another one as well, which is less than zero.
+
+[00:04:31.04] - Joseph Thacker
+That's the one I saw.
+
+[00:04:31.80] - Justin Gardner
+Not a valid tag. Yeah. They need to start with an ASCII letter and if they don't, they're not going to be treated like a tag and the encoding is not going to be applied to the attributes or anything like that. A couple of the comments in here were saying, hey, this is pretty much only going to trick like syntax checkers and. Syntax highlighters and stuff like that. But I think it might also be relevant in some WAF bypasses as well that try to do contextually aware encoding.
+
+[00:05:03.56] - Joseph Thacker
+Or blocking it makes me think about what. I'm sure someone has done this before, but basically all of the possible. What's the opposite of compliant spec breaking?
+
+[00:05:15.01] - Justin Gardner
+Yeah, yeah, spec.
+
+[00:05:16.37] - Joseph Thacker
+Non compliant characters like that could occur in the first character in the tags like that. And I'm sure that someone has fuss for that or whatever, but.
+
+[00:05:22.93] - Justin Gardner
+Oh yeah, Shazner I'm sure has a list for that or something like that. Yeah. So anyway, I just thought this was a really interesting piece here. I think this is the kind of stuff that makes WAF bypasses pretty doable. And we talked about this a lot in the Ryan Barnett episode, but like, whilst they're fighting a losing battle because they just don't know what's going to be happening if they're trying to do any contextual aware stuff.
+
+[00:05:46.74] - Joseph Thacker
+So I do think it's kind of an interesting discussion on like the novelty required for stuff to be shared on social media because I think that like, there's a lot of people who kind of hate on anyone that shares like more beginner information. Like this is known, but that's clearly a spectrum. Right. And so it's like where on that spectrum should you like not post stuff or where on the spectrum is like. Because it's still useful for beginners. Still, like, this is still like news to me. Maybe a lot of people knew it, but it was news to me. When I saw this tweet, I thought it was neat. Right. But yeah, just kind of interesting kind of meta topic on, you know, what you should be sharing because there definitely are some. X accounts and some other social media accounts that share like such basic information that half of it's wrong and they've kind of just feels like more like snake oil or engagement farming. Whereas I don't think this is that at all.
+
+[00:06:30.83] - Justin Gardner
+No, this is. This is this guy sharing cool stuff that he either stumbled upon or learned and just wanted to disseminate the information. And I think you were the one that told me this a while back, but like it's something like only 20 or 30% of your followers will see, on average will see like your actual post, despite how many views it gets, you know, there's going to be a larger percentage that are not going to be, you know, followers or whatever. So if you really want to disseminate information to your followers, you kind of need to post it like two or three times. Yeah. Which is also interesting because it's like, okay, well, even if it, even if somebody else posted it, you know, they've got a different audience base, you know, and it does make sense to repost these things and reshare these cool tips. And I mean, to be honest, that's what we're going to be doing all day on this episode is like all the stuff that I'm going to talk about here. Very little of it is actually like just in research. There's like, right. Maybe one or two areas, but like.
+
+[00:07:21.50] - Joseph Thacker
+Super useful to have it rehashed and it's super useful to have it explained and it's super useful to have it.
+
+[00:07:25.31] - Justin Gardner
+In one place, formalized and organized. Yeah, I agree. So good stuff here by nowski. Thanks for sharing that. The other one is. This is an interesting one. I don't know if you saw this dude, but there's this guy, Bora Abdelhadi, who is creating something called REP plus, which is a lightweight HTTP repeater inside of Chrome Dev Tools. And I just think this is a really interesting place for this to live because, you know, a lot of us are in dev tools anyway have our dev tools open while we're hacking. And yeah, makes sense that you might want to replay requests in there, especially if you are like, you know, trying to do some lightweight hacking or something like that. So really cool project. I think it is a little bit handicapped because I think it is not HTTP 1 compliant. I think it uses Fetch and it forces everything to be sent over http2. But very cool project nonetheless.
+
+[00:08:21.39] - Joseph Thacker
+Yeah, I think in an ideal world, if you had to modify requests, you would want to modify it without going through a proxy. A proxy is almost like an extra. And so I don't think we'll ever get away from using proxies for a long time. But I think in like an ideal world, you could just like hack the request in the browser itself that you're using.
+
+[00:08:38.01] - Justin Gardner
+Yeah, yeah, totally. That is interesting. Well, this is one of the things that is also nice about Kaito's like, client server architecture is like, we could probably iframe Kaido into dev tools. Actually, I think I saw somebody do that already.
+
+[00:08:52.53] - Joseph Thacker
+That's funny and cool.
+
+[00:08:54.50] - Justin Gardner
+So if you really wanted to keep everything in one spot, you could actually put Kaido in Dev Tools. Interesting, Interesting thought. Yeah. All right, so that's all I had on the news. You didn't have any. Any news items this week that cropped up, did you?
+
+[00:09:06.99] - Joseph Thacker
+No, I did not.
+
+[00:09:08.35] - Justin Gardner
+Have you played with Opus 4.5?
+
+[00:09:10.50] - Joseph Thacker
+Dude, it's really good. Like, not only do I think it's good, but I've seen multiple people. Okay, let's actually clarify this because Gemini 3 is also incredible. I guess one big takeaway is they're Both better than 5.1, in my opinion by like a pretty large margin. But I think Opus 4.5 has like a very particular strength when it comes to debugging and coding. I mean, Gemini 3 is obviously incredible at those as well. But I think that Opus 4.5 is kind of like a really new state of the art when it comes to front end frameworks. When it comes to debugging, any kind of issue. I feel like models sometimes would break down when they were trying to debug an issue or they would get a recurring loop. Like I've seen a lot of people comment on four or five breaking out of that finally, where it like doesn't get in these like intense failure loops and it can often like solve its own problems.
+
+[00:09:59.74] - Justin Gardner
+So yeah, that's pretty sick, man. That, that is a big jump forward. And I know that the Claude models in particular are pretty sick with like tool calls and stuff like that, which is super important as well. So interesting.
+
+[00:10:12.17] - Joseph Thacker
+I'm excited to see if you use it much or if it comes in handy with your project for your Nahamsec talk.
+
+[00:10:16.74] - Justin Gardner
+So, yeah, the Nahamka. Whoa. The Naham Khan talk that I'm doing that I'll. I'll also drop on the pod later this month. Will be doing some, you know, a B testing with different models and stuff like that, but so far, man, it's Claude nice. It is. You know, the, the Gemini models, as much as I love them and I use them primarily, you know, outside of this specific project, which is essentially a gentification of our hacking workflows. It'S not doing as well with tool calls.
+
+[00:10:51.79] - Joseph Thacker
+Yeah, the tool calls just. They'll seem like a larger percentage of the time, right?
+
+[00:10:55.32] - Justin Gardner
+Yeah, it's a little odd. Kind of a bummer. I am rooting for Gemini though. I think Gemini, if they can fix that, I think that they're going to be the best.
+
+[00:11:05.08] - Joseph Thacker
+Yeah, I'm very bullish on Google in general. I think they have the customers, the distribution and their models are incredible. I mean, actually, we should talk about this for just a split second. Nano Banana. Banana Banana Pro is the wildest image editing piece of software. It's basically. Photoshop in a single tool call. Like it's crazy. Ridiculously good. I mean, it can create advanced slides with lots of text and advanced diagrams. Like, it would not surprise me if it can. Yeah, I mean, I've seen some that are like, that are extremely good, but like, it would not surprise me if it could one shot some like flow diagrams for like hacking, like oauth flow diagrams. So you should, you should test it for that. It's really good. Yeah, but when you use it on 4K res, it's also $0.25 per image, so be careful.
+
+[00:11:53.15] - Justin Gardner
+That gets expensive fast.
+
+[00:11:55.00] - Joseph Thacker
+I mean, yeah, you could just use the 1K resolution and then it's like 4 cents or whatever, but.
+
+[00:11:59.48] - Justin Gardner
+Wow, 4 cents. Yeah, that's, that's pretty doable. All right, dude, let's get into, let's get into the meat of it. I've got a lot of fun topics I want to go through today and I'm actually, they're kind of not that related, so I'll kind of let you take your pick. Okay, we've got post messages. Third party cookies, CSP ts, iframe tricks, URL parsing, and client side routes. Any of those stand out to you as like the one we want to hear about first?
+
+[00:12:29.71] - Joseph Thacker
+Yeah, let's hear about third party cookies.
+
+[00:12:31.54] - Justin Gardner
+All right. Third party cookies is actually, this is actually probably the shortest section. So this should be pretty quick in the beginning. I wanted to talk a little bit on this episode about chips, which is essentially how cookies are partitioned, when the partitioned value is or attribute is attached to a cookie in Chrome. Because this is something that I think we're going to see gain more adoption than it currently has even. And it is helpful for sort of threading the needle in some of these cookie situations that you're dealing with. The, the main thing that you need to understand about this is that with chips, cookies are no longer scoped just to the, to the domain that they're on. But they've also got a key for them that is tied to the top level page it that Scheme plus ELTD plus one. So whatever the TLD is and then the, the domain and then inside of that, right. If there's an iframe or something like that, it's tied to the host. So let's say you've got rhino raider.example.com iframe framing in, you know, example.rezo.com right. So, so used a different CLD there. I did, I did. But that's. They need to be different. They need to be different. So, so let's do. Okay, let's, let's keep it simple. Let's do renovator.example.com and as iframing reso.example2.com okay. Yep. The, the, the, the key for that is, is going to be. So first the TLD +1 which is example.com, right. Cut off the Rhino Raider piece. So there's that, and then there's going to be the whole second host, which is reso.example2.com, right. That smushed together is going to be your, your, your context for that specific cookie. So if you have a different, you know, key there, then it's not going to be able to access that, that cookie in a different environment. However, you know, if there's, you know, Gretme or whatever.example.com and it iframes in reso.example2.com because the TLD is the same example.com yes. And you know, reso.example2.com that key is going to collide, right. And they will be able to share cookies, but otherwise you're not going to be able to have access to cookies inside of an iframe. If the partitioned. This is if the partitioned value is set on that specific cookie. So, so the way.
+
+[00:14:59.62] - Joseph Thacker
+So right now most sites don't have that, you're saying.
+
+[00:15:02.11] - Justin Gardner
+Yeah, that's right. But just, just, you know, that's a new cookie value or attribute that has been attached. So something that I wanted to make people aware of, to be on the lookout for that.
+
+[00:15:13.14] - Joseph Thacker
+And is the primary mechanism for implementing that, the fact that they want iframes to be more secure?
+
+[00:15:18.25] - Justin Gardner
+Yeah, yeah. And it's also related to some privacy pieces as well.
+
+[00:15:21.37] - Joseph Thacker
+Okay.
+
+[00:15:22.74] - Justin Gardner
+So anyway, that was all I had on that. That one doesn't have a ton of, like, exploitation pieces. It's just something important to understand is that, that how that key is generated, ETLD + 1 or scheme plus ETLD + 1 and then the actual iframe toast.
+
+[00:15:36.46] - Joseph Thacker
+And will the parent one always be kind of wildcard like that? Or can the parent. Can the parent one have a subdomain as well?
+
+[00:15:42.50] - Justin Gardner
+No, it's gonna be. It's gonna be ETLD plus one every time. Okay. All right, I'll pick the next one. We'll go into post messages next. Okay. Post messages are my shit. Do you know. All right, tell me what you know about post message. Joseph, do you understand anything about postmasters or should I start from the beginning?
+
+[00:15:59.66] - Joseph Thacker
+Very little. You should start from the beginning.
+
+[00:16:00.99] - Justin Gardner
+Yep. Okay, I'll start. I'll start from the beginning. So post messages.
+
+[00:16:03.50] - Joseph Thacker
+I want you to. I want you to, in your explanation, explain it in such a way that there's an analogy such that I can create a mental picture of it. Because I think the biggest issue for most people's comprehension of a new concept is that they don't have a mental picture for it. So I think S3 bucket is the best example of this ever made. Like, the name of the thing is the analogy of the thing. Right, that's cool. And so like, because of that, everyone knows what a bucket is. It's like this place you put data. Right. And so I think like, with post messages, it's never like clicked strongly for me, even though I understand that. It's like this site is sending a message to this site, but it's not. The different ways in which you can do that are not overly clear because I don't have a good mental picture. So if you have a good analogy, do it.
+
+[00:16:45.62] - Justin Gardner
+And there's also some like, overlap too. Like I remember trying to teach my mentees about post messages and also post requests, you know, and those are not the same thing remotely. Right?
+
+[00:16:55.46] - Joseph Thacker
+Yeah.
+
+[00:16:55.89] - Justin Gardner
+And so, yeah, there is some difficulty there. Post messages, I mean, do kind of have that same imagery though. If you think about it as like a little, like a little post, Like a little postcard letter. Like. Yeah, like a little letter. I was like the only thing I could come up with Japanese. But yeah, the little letter. And you're kind of sending it from one tab to the other.
+
+[00:17:14.61] - Joseph Thacker
+Is it always via JavaScript?
+
+[00:17:16.29] - Justin Gardner
+Yeah, it's always via JavaScript.
+
+[00:17:17.61] - Joseph Thacker
+Okay, that helps me understand a lot.
+
+[00:17:18.81] - Justin Gardner
+Okay. Yeah, it's always via JavaScript. It's a feature of JavaScript and the browser, you know, kind of collaborating together. And the concept is you have multiple windows, right? Those windows can be in an iframe or they can be a tab. To be honest, it's probably most, most easy to think about it being a tab.
+
+[00:17:33.01] - Joseph Thacker
+Okay, maybe this is one big problem. When you say windows. Everybody knows what you mean from a front end perspective. Yeah, if I'm not a front end guy. When you like, what do you mean by windows? Is it literally tabs that are open?
+
+[00:17:43.41] - Justin Gardner
+Okay, so good, good differentiation. So a window can be a bunch of different things. Okay, you've got a window. When you've got a tab open in your browser, it can be a new window in your browser. Right? So you've got a new actual window. Right. It can be inside of an iframe. And those are, those are the main ones. Really. There are other niche scenarios, like, well, okay, technically it's not an iframe, it's like a picture in picture. You know, there's various SDKs or whatever that you can use to do different stuff, but those are the main ones. And what postmessage allows you to do is just do communication between these windows directly rather than via some API.
+
+[00:18:23.98] - Joseph Thacker
+Cool. Yeah, that's how I always understood it. Okay.
+
+[00:18:25.66] - Justin Gardner
+Yeah. So you know, you use the SDK that sort of comes with the browser. Right. So it's window postmessage. You get a window reference some way and then you do window postmessage and it just allows you to send a JSON blob, essentially.
+
+[00:18:40.94] - Joseph Thacker
+So the other window always has a listener.
+
+[00:18:43.50] - Justin Gardner
+No, so the other window has to register a listener. So that's one of the things that's interesting, right? Is like the other window is going to get it, but the code isn't going to react in any way if you don't register a listener. Right, right. Yeah. And so, yeah, that's. That's like a key part of that. And then, you know, the listeners are kind of what we look at often. And also messages being sent. Right. Because sometimes what will happen is you iframe a page and then it just yeets sensitive data up to the parent. Right. No matter who it is.
+
+[00:19:11.47] - Joseph Thacker
+Right, yeah, yeah. Because there's some code that just says like parent, post match or something along the lines.
+
+[00:19:15.34] - Justin Gardner
+Exactly, yeah. And it just yeets information up. So that's sometimes how that works. But other times, you know, you also got to look closely at the listeners on the page, send data specific kind of message, then it'll send other data out or do something on the page, Something like that. So anyway, post message, not necessarily like an advanced client side topic. I would consider this like a intermediate or lower client side topic. Here are some of the things that are more advanced about post messages that not a lot of people know. Okay, so one, when you register a post message listener, there is an event object that's being passed into the. So that event is what contains the data. Okay. So if you do event data, that's the data that got sent in the post message. Right. If you do event source. It will give you a reference to the window that sent that post message. If you do event origin, it will give you the origin of the event that sent the origin of the window that sent the post message. Okay. Yep. And what is interesting here is there are such thing as null origins in iframe. So we're going to sort of pop a little bit over to our iframe trick section as well.
+
+[00:20:32.80] - Joseph Thacker
+Yeah.
+
+[00:20:33.21] - Justin Gardner
+But essentially a lot of times what you'll see in a post message listener is you'll see, okay, event origin needs to match window origin. Which means like this, the same origin as sending the event or sending the message is the same one as me. Right. So I'm like, I'm talking with myself pretty much on a different page. Right. What's really cool though is if you iframe a. If you do a sandboxed iframe, the origin for that iframe becomes null. And then here's the really, really interesting piece here. Okay. If you do a. If you allow that sandbox or sandboxed iframe to control pop ups to pop open a new window. Yep. You can have it pop open a new window to any site. Right. You know, any arbitrary site and it will inherit the null origin of the page that opened it. Weird. Okay, so so now you've opened google.com or whatever.
+
+[00:21:34.90] - Joseph Thacker
+Right. Google origin. Because if a post message pulls the event origin of that page, it will be null still.
+
+[00:21:44.83] - Justin Gardner
+Exactly. And it's going to compare it to its own window origin which will also be null because it inherited the null origin. So now you've just completely bypassed event origin equals window origin.
+
+[00:21:57.00] - Joseph Thacker
+That's really cool. So if you ever see that there is a way to bypass it basically.
+
+[00:21:59.96] - Justin Gardner
+There is, yeah. It has some constraints because now you're in a null origin iframe on this page and a bunch of stuff might break. Sometimes the JavaScript doesn't run quite right and stuff like that. But it is possible to invoke that communication and bypass that check if it's using the objects window origin or just origin.
+
+[00:22:26.72] - Joseph Thacker
+Is that a security feature? Does that get set to null automatically? Because whenever you are trying to give sandbox iframe execution to something, it gives you some sort of security from the parent.
+
+[00:22:39.85] - Justin Gardner
+Yeah. So the reason that exists is. And I'm going to read it from the, from the docs here because I've actually got it right here. So a sandbox resource is otherwise. So unless if you don't specify allow same origin in the sandbox attributes then. So just what it is by default when you're using sandboxed, a sandbox resource is otherwise treated as being from an opaque origin, which ensures that it will always fail same origin policy checks. Yeah.
+
+[00:23:09.08] - Joseph Thacker
+So they set the null so that it fails same origin policy.
+
+[00:23:11.41] - Justin Gardner
+Yeah. And it's interesting because it's not just null, Right. Because if you have two iframes that are both null origin, they're going to say hey, we're both null origin that fails the same origin check. And I'm like, no, that's the same origin. But no it's not. It's a different null Right. So those nulls aren't the same, but their string representations are the same.
+
+[00:23:32.90] - Joseph Thacker
+Are the same. Yeah.
+
+[00:23:33.90] - Justin Gardner
+Right. And so when you do window origin and you get the string null back and you compare that to the other null origin null, then you're going to get a hard match. Yeah.
+
+[00:23:45.90] - Joseph Thacker
+So the practical tip here is to basically look for places where that is the security constraint. If it's checking, like if it's saying event origin equals event source, then you know you've probably got a bug because you can set them both to null.
+
+[00:23:58.74] - Justin Gardner
+Exactly. Yeah, yeah, yeah. So essentially I double checked it. I was like confused for a second because I was like, window source. Wait, which one was it? But it is, you know, event origin essentially is what needs to be used to get the null piece out of the null iframe, sending a post message. And then you compare that to window window origin.
+
+[00:24:18.70] - Joseph Thacker
+Yep. So it's event origin and window origin that if they're doing that comparison check, you're able to bypass it by having them both set to null because it does a string comparison of that value.
+
+[00:24:28.94] - Justin Gardner
+Exactly. Now here's the interesting thing. Typically if the origin was null on that page, then there's not a lot of other stuff you can do. You can't iframe hop or anything like that, but you can do requests still. Fetchrequests still work. You can do a bunch of stuff with it if you're able to like pop an XSS inside of it or something like that. And this. So yeah, so I guess that's where do I go down some other post message stuff or do I go into the iframe stuff now? Tricky, tricky, tricky.
+
+[00:25:04.90] - Joseph Thacker
+Yeah, just whichever one's the most relevant to what we're talking about.
+
+[00:25:07.29] - Justin Gardner
+Yeah, I guess I'll stay in post message and then we'll. We'll go back to it really quick. Okay. A couple, couple other quick shout outs. Is that post messages? A lot of people don't know that. Post messages. The first parameter in postmessage is your message and that can be an object, not just a string. A lot of people think it's a string and then they run JSON parse on it or whatever. That can be an actual object. You can just pass in curly brackets, whatever, inside JavaScript and it will work just fine. What's also interesting there is that you can send complex types through postmessage. Some of them, for example, big int is. It is a JavaScript object or like type that is not like, you know, JSON's stringifiable and you can send that through postmessage.
+
+[00:25:59.45] - Joseph Thacker
+Interesting.
+
+[00:26:00.56] - Justin Gardner
+So.
+
+[00:26:01.60] - Joseph Thacker
+So if there's ever something on the other side that's expecting only JSON stringifiable things, you're probably going to go down a weird code path that's not unexpected.
+
+[00:26:08.95] - Justin Gardner
+Yeah. And it can also send some regex related stuff. It can send like, there's a ton of stuff that you can do with that if it is not doing like strict type checking. So keep in mind that you're not just constrained to the basic JSON types. Right. String, array, object, integer, that sort of thing. You can send more complex types through postmessage as well.
+
+[00:26:31.58] - Joseph Thacker
+Cool. Yeah, that's awesome.
+
+[00:26:32.95] - Justin Gardner
+Okay, last one on post messages is this concept called message ports. Okay, so you said you wanted a little analogy. I'll give you an analogy for this one. I tried with the other one. You know, it's like a letter. You're throwing it back and forth between the different frames. Right. But message ports are very much like one of those little cans, you know, with a string on the other end. Right. And you kind of put the can up to your ear and you can listen and you can like throw somebody else the other side of it and then, you know, talk into it and then they can listen. That's kind of like what these message ports are. Okay. So essentially instead of post messaging into a window, you post message into a message port and only the person that has a reference to the message port on the other side will be able to listen to that message. So you see this sometimes nowadays so that people don't lose references to Windows and like try to figure all that out. They just shoot a port. The person that the, you know, the other side has the port and then we just communicate over this port. Now and depending on which tool you're using to like monitor message ports, you know, or your post messages, it may or may not hook these messages ports. So understand that there could be some, some post message communication happening in the background that, you know, fancy tracker for Firefox or FRANZ is old post message tracker. They may not be hooking into.
+
+[00:27:57.94] - Joseph Thacker
+Okay. Yeah. So these are not your traditional style ports. This is like another place where we're overloading. Like the word message is overloaded. And the word port is overloaded here.
+
+[00:28:06.01] - Justin Gardner
+Yeah, yeah. So it's a little different.
+
+[00:28:08.01] - Joseph Thacker
+So these are not ports like on like a web server.
+
+[00:28:10.57] - Justin Gardner
+And these are. Yeah, yeah, these, these are just, these are just like. Essentially it's an object. You throw data into it, you know, and, and, and the data comes out the Other side, regardless of what frame has the, the reference. Um, so it. Yeah, I could see your brain spinning a little bit.
+
+[00:28:30.58] - Joseph Thacker
+Well, what I'm curious about is like does, does this, is this resilient to like closing the other tab and reopening? Like, is it stored like some sort of like local storage where it's like it knows that that page can like reopen the same port it had open before the same message port. Like, I'm just curious like what value it adds.
+
+[00:28:47.06] - Justin Gardner
+I don't know. I don't know how, I don't know how you would store it. I think I. I think that it is not resilient of that, you know, but.
+
+[00:28:56.65] - Joseph Thacker
+But it is still a browser feature. It's not like a web page feature.
+
+[00:28:59.84] - Justin Gardner
+Yeah, it is. It's facilitated via, via the browser. And you know, you know you're throwing these messages into. Instead of a window, you're throwing them into a port.
+
+[00:29:10.08] - Joseph Thacker
+Okay.
+
+[00:29:10.60] - Justin Gardner
+And then it's coming out the other side is kind of the thought behind it.
+
+[00:29:15.04] - Joseph Thacker
+Besides that, is it treated very similar to post message? Like, does it still to have a dot event or like an event?
+
+[00:29:21.86] - Justin Gardner
+Yeah. Okay, cool. It does. And I will also say if you. In the past I have been using some weird tooling for these and like not been able to catch message ports. And I think even fancy tracker for Chrome, which is really good. I think sometimes it has some problems with message ports. Recently I've seen. So whenever I suspect there's some communication happening in the background, I just find the event listener and set a conditional breakpoint inside of it that just does console log and just logs to the console as sort of like a redundant hook to make sure I'm monitoring all communication that comes through those message ports.
+
+[00:30:01.73] - Joseph Thacker
+Yeah, that's a sick tip, right? I mean people like, we're immediately going to ask, okay, if the things I'm using to listen to post messages aren't finding this, how do I do it?
+
+[00:30:09.25] - Justin Gardner
+Right.
+
+[00:30:09.45] - Joseph Thacker
+And so yeah, good tip.
+
+[00:30:10.45] - Justin Gardner
+Yeah. All right, so that's what I had for post messages. Let's go and jump over to iframe tricks since we were talking about that. Just a second. So the first thing that's really interesting about iframes is, you know, knowing how to create this origin, which is essentially specifying the sandbox attribute. Inside of that sandbox attribute, you can specify a bunch of different like permissions that the sandbox attribute or the sandbox iframe has. Okay, a couple of these are allow same origin, allow scripts, you know, allow pop ups, those sort of Things, Right? And understanding what each one of those does is really important to be able to craft really good payloads using these.
+
+[00:30:55.32] - Joseph Thacker
+Okay, I have a really, I have a really kind of like, dumb, but maybe smart question here. I think when it comes to talking about iframes, especially around front end hacking, it's like always a little bit unclear in my mind, like, who, like, if you're working in an iframe, or if you're the one creating the iframe to then do the hacking. Right? Because like, obviously a normal website can have an iframe, but then also like a normal website that you're hacking can be iframed by you on your domain, which I assume is often where you're hacking. But then I know sometimes if you have like HTML injection, then you're like on one of their domains putting in your. Putting in an iframe to one of their other domains to pop a bug, right? And so I think that some. I think that sometimes is like a little confusing to my brain to wrap around it. So in this case, the majority of the attacks come from you taking your domain and you just putting in code that creates or instantiates an iframe to the vulnerable domain. Right? And that's almost what you're always doing. Or are you then also using that to then do post messages to it to the. To the other window?
+
+[00:31:56.00] - Justin Gardner
+It's all of the above. You just described the beauty of iframes and like fricking client side loveliness, dude. Is that. Yeah, all of those. Right? There could. There could be an iframe on their page. There could be an iframe on your page. You could be iframing your own page, iframing your own page to create a null origin, which is a separate origin from your attacker page, and then use that null origin to open up another page. You know, like, there's just like a ton of fun that could be. Aren't you just. Aren't you just thrilled? You're not looking as thrilled? No, no, no, no, no, no.
+
+[00:32:28.91] - Joseph Thacker
+I'm just thinking. I'm just thinking through, like, if there's like an easy way to conceptualize this, is it kind of like. Is it kind of like post messages, basically have. And not just post messages, but I guess other iframe tricks as well. But is it basically like you have a set of tools in your toolbox which are both the ways in which, like the different parameters with which a message can be sent, which are like kind of the things that you mentioned above, right? Like whether it is a null origin or not, and like the domain that you're on. And then also depending on the cookies that exist for that domain, and then. Those sets of attributes control both what you can do and what might be vulnerable. And so you have to like, basically test all of those different things.
+
+[00:33:15.20] - Justin Gardner
+This is good. This is elevating my thinking a little bit here from my nuts and bolts. Okay, so let me try to abstract it a little bit for you. Having, you know, an iframe is for several purposes. One is a window reference. Right. So I need to be able to reference a victim's window of that origin. Right. So that's useful for scenarios where you're like, sending post messages or something like that. Right. So getting a window reference, an iframe is one way to do that. Another way to do that is window open, which just opens up a new tab.
+
+[00:33:49.00] - Joseph Thacker
+By getting a window reference, you mean like the victim would go to your website, then you would load an iframe to the website that has a vulnerability on it, and then you can reference that window now, and you can now attack the victim. Before that, you didn't have a window to even reference.
+
+[00:34:04.11] - Justin Gardner
+You need a place to stand.
+
+[00:34:05.31] - Joseph Thacker
+Right.
+
+[00:34:05.64] - Justin Gardner
+You know, like, you know, what's that, that quote from like some philosopher, like, give me a lever and a place to stand and I can move the Archimedes lever. Yeah, yeah, that's it. And so, you know, that's kind of how I think about this a lot of time is I need a place to stand when I'm. When I am, you know, using these window references. So that's one one way, the other, the other piece is oftentimes, or sometimes you can incur constraints on those domains when they are in an iframe. Or. Yeah, you can control the context in which they load. Maybe that's a little bit better. Right. And you see this with credentialless iframes. You see this with sandboxed iframes. Right. These are ways that you can control the context in which.
+
+[00:34:49.80] - Joseph Thacker
+Interesting. Okay, this is making sense to me now because you control the parameters of the iframe being loaded. If you load it with different settings, if you want to think about it that way, then that actually can change what occurs inside of that iframe.
+
+[00:35:02.55] - Justin Gardner
+Exactly. Yeah. So. So a really good example of this is. One that I mentioned just a second ago. Let's say you. You create a attacker controlled page, and that attacker controlled page has a null origin attacker controlled iframe. Right. So I'm iframing myself. Yep. I'VE got it set to null origin and then I, from there I have in the sandbox I have allow pop ups and allow scripts. Right. So I can run JavaScript and I can allow pop ups for this sandbox iframe.
+
+[00:35:31.42] - Joseph Thacker
+Yep.
+
+[00:35:31.94] - Justin Gardner
+So from that sandbox iframe I do a window dot open to, you know, the victim's site or whatever. Now that victim site has the null origin as well. Right. It inherits. This is one thing that I really want to emphasize here. It inherits the sandboxed properties of the attacker control null origin page.
+
+[00:35:52.86] - Joseph Thacker
+Yep.
+
+[00:35:53.30] - Justin Gardner
+Okay, so if you, if you said. Say you said no, no script.
+
+[00:35:59.92] - Joseph Thacker
+Right.
+
+[00:36:00.32] - Justin Gardner
+Let's say you said no script and you did the pop up via a, an A tag or something like that. Right. In straight HTML. Right. That victim page is now running without any job script.
+
+[00:36:10.48] - Joseph Thacker
+That's so weird. So that, so if they ended up on roundwriter.com and you did this, all of a sudden a new window would pop up to the victim website google.com to google.com, with no JavaScript.
+
+[00:36:19.53] - Justin Gardner
+With no JavaScript. JavaScript is not allowed to run.
+
+[00:36:21.48] - Joseph Thacker
+Okay.
+
+[00:36:22.09] - Justin Gardner
+You know, and that's one of the beautiful things about this is like you are incurring constraints.
+
+[00:36:26.65] - Joseph Thacker
+Yeah.
+
+[00:36:27.28] - Justin Gardner
+Unanticipated constraints on these third party sites.
+
+[00:36:29.88] - Joseph Thacker
+Yes.
+
+[00:36:30.28] - Justin Gardner
+Right. And another example, and I'll give a shout out to. To Jorian in the the Cool Research channel on the Critical thinking discord. He's just constantly dropping cool shit in there, man. Hopefully by the time this episode goes live, he'll have his write up on lab ctv.show up on this sort of thing. But one of the things he dropped in the chat recently was that he was able to use this and he. The things he specified were allow same origin, allow pop ups, allow scripts, but he did not specify allow forms. So what was happening is there was a page that was auto submitting a form.
+
+[00:37:11.28] - Joseph Thacker
+Right.
+
+[00:37:11.55] - Justin Gardner
+And he needed it to not auto submit a form so that he could, he could attack it. Right. And so he used this constraint. It inherited the sandboxed properties of the other origin and it doesn't necessarily have to be a null origin. Right. In this scenario he said allow same origin. So it was just the normal origin for this page. But it did inherit the fact that it's not allowed to submit forms. So when it went to auto submit the form, it failed. Right. And so there are lots of ways that you can sort of manipulate these target pages that have been spawned from sandboxed iframes. Does that make sense?
+
+[00:37:46.25] - Joseph Thacker
+Yep, yep. And you know, a lot of these again are affecting different code paths. Like they may have expected that to always auto submit. And so when it didn't, what happens?
+
+[00:37:54.65] - Justin Gardner
+Some sort of fallback.
+
+[00:37:55.80] - Joseph Thacker
+Right?
+
+[00:37:56.13] - Justin Gardner
+You know, like, man, sometimes you see the craziest fallbacks. Like I think I've seen. One of the fallbacks I've seen for like not being able to parse JSON was just run eval on the string and it's like what.
+
+[00:38:11.88] - Joseph Thacker
+Fallback execute rc?
+
+[00:38:13.57] - Justin Gardner
+Yeah, exactly. It's like, okay, yeah. So a lot of these fallbacks can trigger unanticipated code paths. So knowing about these sandboxed like attributes that you can apply to these third party sites can be really valuable. Yeah, I will say there is an exception to that. So I said, I talked about sandbox inheritance here. The exception to that is allow top navigation. So there is this specific flag that you typically need to specify in your sandboxed iframe. Yep, that's. That will allow it to navigate the top level page. There is a specific exception made in the docs for inherited window. You know, windows that have inherited those sandboxed properties from a iframe. But it was opened via window open. So it's in its new tab. Right. Because it's saying, okay, well hold on a sec. Like we can't not let them navigate themselves.
+
+[00:39:12.11] - Joseph Thacker
+Right, right.
+
+[00:39:12.90] - Justin Gardner
+And because it's in a new window. So that is going to have implicitly have allowed top navigation associated with it. Cool. And it will be able to navigate itself.
+
+[00:39:21.23] - Joseph Thacker
+What does allow top nav do allow.
+
+[00:39:22.98] - Justin Gardner
+Top navigation allows you to navigate the URL bar for that tab. So I just wanted to make sure I put that, that caveat out there. Are you tracking with me so far? I know that that's very convoluted.
+
+[00:39:34.57] - Joseph Thacker
+I'm tracking extremely well with you and that's, that's great because I, you know, came in not knowing, you know, nearly as much. And so I think even our beginner listeners will have followed almost all this.
+
+[00:39:44.36] - Justin Gardner
+So that's great. I think, I think a lot of times, like, I mean I love this stuff obviously, but I, you know, whenever I go to talk about it, it's so nuanced and convoluted. I'm sure, I'm. I'm sure freaking demo or like some, some or whatever. Jorian, some of the listeners are going to be like, find something that I said in this episode, I'm sure in the corrections channel. So please do because that's how I learn as well. But this is my best, my best shot at representing these concepts. You're doing great. All right, so. Let'S talk about two more things. Credential list is one of them, which is another attribute on iframes, and this one was. It's fairly new, actually. But the thing you need to know about this, we've covered it on the POD before, is that if you apply the credential list attribute to an iframe, it just means that it is using a new ephemeral context. So no cookies, no local storage, no. No, nothing associated with that domain is going to survive that credentialless context. And so that's useful if you've got, you know, a cookie that you need not to be set for your attack to happen. But of course, that cookie is going to be set if the. If the user even uses this website. Right, right. So you need to, like, get them in a state where they don't have the cookie set, but they're still logged into the page or something like that. Right. Credential list is really good for this. And here's something that I should have looked up before the pod, actually. Maybe we'll pause and I'll look it up right now. I'm not sure that credential lists inherits on window open, so let me go check that right now. Okay. It doesn't look like it inherits the credential lists attribute. So this one's only helpful if you're, like, inside of an iframe itself, which does make this a little tricky because not every page nowadays is iframeable due to, like, extreme options and csp. Yeah, so that's an interesting little nuance, but it has saved our butts a couple times. You got that one. I know we've covered that one before.
+
+[00:41:48.76] - Joseph Thacker
+Yeah, no, that's great. I was going to ask, are there any other iframe attributes that you think are key that we haven't mentioned yet or that you think are interesting or. We mentioned most of them.
+
+[00:41:56.03] - Justin Gardner
+Yeah. I mean, these are the ones that just kind of popped into head. There are a couple things. The name attribute is really important. Right. That controls the name of the frame. And we'll talk about that one in just a second. With window hijacking, there are lots of interesting other attributes. Like you can specify a CSP that the victim page must conform to, and if it doesn't load that csp, then it's not going to load, you know, so there's. There are some interesting things you can do with that, but we'll save those for a time when I've researched them a little bit more recently and can talk about them more more clearly. The one I did want to specify though was window hijacking, which goes back to the name attribute that I was mentioning before. So. Here'S a really cool thing. You can name your windows and your frames and stuff like that. Various things. So let's say you name your, your window ABC or whatever. Right. If there is a scenario where you can force a victim page to open their window open into that iframe. So, so consider this scenario. Okay. And actually if you want to visualize it, Joseph, so you can see, click that frame hijacking attacker page link that I put in the, in the doc there. Yep. Consider this scenario. You've got an attacker controlled page. You embed inside of that page an iframe to the victim site called abc.
+
+[00:43:27.57] - Joseph Thacker
+Sure.
+
+[00:43:27.88] - Justin Gardner
+Okay. So that's the name. Then you do a window open to a victim page. That victim page goes through some oauth flow or whatever and then does a window open with the name abc. Of course it wouldn't be abc. It'd be like, oh, login session or whatever. What will happen is it will look for any other pages before creating browsing context. Yes. That are the same origin as itself. So it has to be the same as victim.com? and then it will open into that iframe rather than doing a window pop up. Right. And since you embedded that iframe in the first place. Right. You control where it's pointing to. So then you can redirect it to something else and then. Or like put something in the hash or something like that. And then when it redirects back to the victim page and that thing is still in the hash, it might try to read the hash and do something with it. Right. So this is what I'm talking about. Like having iframes open allow you to control the context in which pages are running. And in this scenario we just hijacked a pop up. Right. And instead we put it in our attacker controlled page.
+
+[00:44:31.71] - Joseph Thacker
+That's super weird.
+
+[00:44:32.90] - Justin Gardner
+Have control over it.
+
+[00:44:34.15] - Joseph Thacker
+That's super weird. And cool that that works.
+
+[00:44:36.03] - Justin Gardner
+Isn't that amazing? Yeah.
+
+[00:44:37.26] - Joseph Thacker
+I do think that another disjoint in my understanding is from like what is possible inside of an iframe. That is iframe from like attacker.com, right?
+
+[00:44:47.42] - Justin Gardner
+Sure.
+
+[00:44:47.67] - Joseph Thacker
+Like that's interesting.
+
+[00:44:48.71] - Justin Gardner
+You can redirect it for sure. Like that is one of the things.
+
+[00:44:51.51] - Joseph Thacker
+But you can't just like reach in and then get those cookies, right?
+
+[00:44:53.78] - Justin Gardner
+Yeah.
+
+[00:44:54.07] - Joseph Thacker
+You can't Right, Yeah, because there's.
+
+[00:44:55.34] - Justin Gardner
+Yeah, there's still. And you can't.
+
+[00:44:57.03] - Joseph Thacker
+You can't even see them on the way in, even though you iframed it.
+
+[00:44:59.90] - Justin Gardner
+Right, right, right.
+
+[00:45:01.19] - Joseph Thacker
+Yeah. So it's interesting.
+
+[00:45:02.46] - Justin Gardner
+It is a little weird, like, knowing.
+
+[00:45:03.59] - Joseph Thacker
+The nuances about what's possible with that iframe is another reason why I think there's like a gap in understanding between people who are like, really in the front end versus those that aren't.
+
+[00:45:11.59] - Justin Gardner
+Yeah, yeah. And the only way to get that is experimentation is for you to listen to this podcast and like pop open your browser and build pages that represent the scenarios we're talking about and toy around with it yourself. Or you can do what you do, which is understand it at just a deep enough level where you can say, hey, this is weird. Hey, Justin, this is your shit and this is what I do for you with AI stuff. And then we kind of bounce off of each other, which is great.
+
+[00:45:38.46] - Joseph Thacker
+No, I think this is huge though. And honestly, I think all of this front end stuff is extremely important and good even for kind of this new AI hacking stuff. Because there's so much HTML injection and so much like room for XSS and other front end like accessory when it comes to all of these different AI apps that are popping up. Because they very often are either iframe it in or doing translation between markdown to HTML or they just straight up have XSS to begin with. So, no, I think this is like all extremely beneficial.
+
+[00:46:09.55] - Justin Gardner
+So here's another really interesting thing. Okay. Oftentimes what'll happen is let's say you're on some AI page, right. And it's generating markdown output which has a link in it. Yep. If that link is allowed, if that a tag is allowed to have the target attribute, then you've got something really cool here. Okay. Because what you can do is, let's say, let's say we're on Gemini, for example. Okay. Gemini has an invisible iframe, you know, in it to do like analytics or like supply whatever feedback form or something like that. Right. That feedback form or whatever is named abc. If you can get the AI to spit out a tag that has target equal to abc, when they click that link, it's going to open into that iframe.
+
+[00:46:59.76] - Joseph Thacker
+Wow.
+
+[00:47:00.48] - Justin Gardner
+So now you've got a persistent invisible iframe with your attacker controlled page inside of Gemini. Right. And unless that iframe is sandboxed, you can also do like you. You can do like top dot location, navigate and, and change the top level page. Right. And, and there's just. Or you can send post messages from like an advantaged position and bypass coop.
+
+[00:47:23.57] - Joseph Thacker
+Like I'm, I'm gonna go find you this a place where we can control target in libraries. I'm gonna go find it for you.
+
+[00:47:28.53] - Justin Gardner
+Please, please let me know. Because like the target, unfortunately the target attribute is a little bit tricky to smuggle in there. But if you can, there's like a ton of really cool stuff you can do with it. Yeah, so keep that in mind. Dude, we man your boy can yap about client side stuff. Okay, let me see where we want to go next. Let's talk about URL parsing. Okay. This one is kind of an.
+
+[00:47:54.21] - Joseph Thacker
+I want to make sure we hit CSP T before we sign off too, so we can't skip that one.
+
+[00:47:58.61] - Justin Gardner
+We'll hit CSP T as well. Let's jump to URL parsing first.
+
+[00:48:02.88] - Joseph Thacker
+Sure.
+
+[00:48:04.30] - Justin Gardner
+Start us off with a basic one. Oftentimes backslash slash gets converted into. Double slash, which will allow you to actually produce an absolute URL rather than a relative URL that causes so many bugs. Always look, keep that in mind.
+
+[00:48:22.61] - Joseph Thacker
+Yeah, that's also probably applicable to AI because. I just had the best bug of a Amazon IPC and it was a bypass where. Markdown image rendering happened with slash slash. So if they then go fix that with slash slash, then backslash forward slash would potentially work to bypass it.
+
+[00:48:44.11] - Justin Gardner
+Right, exactly. Yeah. And you can do, you know, if it's inside of an attribute or whatever, you can do all sorts of encodings, HTML encodings, that sort of thing. So there's lots of depth that can happen there. This is one that is also quite interesting is that recently, and I think we covered this on the POD as sort of like a side note when it first came out. But recently. Chrome conformed to Safari's behavior about parsing JavaScript URIs such that JavaScript URIs can now have a host name associated with them. So if you do JavaScript, colon, slash, slash. Rhinorator.com rhinorator.com is the host name for that JavaScript URI, which doesn't make a lick of sense. That's really weird because like that's not what the URI is for. Yeah, right. And they had it the safer way before, which is that it was null. Yeah, but then they were like, ah, well you know, the spec says that it should be like this and Safari is doing it this way, so we're also going to do it this way. And the hackers were like, yes. Have.
+
+[00:49:49.11] - Joseph Thacker
+You seen this use Already?
+
+[00:49:50.00] - Justin Gardner
+Oh yeah, yeah, yeah. I've used it many times and I've seen many people use it. But this now makes it so that if there is a new URL, right. You know, parsing of this, this scheme and it does dot host name and compares it to like the hostname of this page or something like that, then you can have that. But then when they do location dot, you know, window dot location equals this, it will run JavaScript and you can just do like percent OA at the end of the JavaScript to create a new line. Because slash, slash is a comment in JavaScript, right? Yeah. So do you see how that works? Right? Like JavaScript colon slash, slash. Now we're in a comment.
+
+[00:50:25.07] - Joseph Thacker
+There's the comment. Yep. Then you get the next line.
+
+[00:50:26.94] - Justin Gardner
+Who cares what happens there, right? It's like just the stars aligning in so many good ways. Isn't that awesome?
+
+[00:50:32.90] - Joseph Thacker
+That's cool.
+
+[00:50:33.46] - Justin Gardner
+Yeah, so that one's a really good.
+
+[00:50:36.09] - Joseph Thacker
+One to very seldom you see new features unlock a bunch of bugs.
+
+[00:50:39.17] - Justin Gardner
+Yeah, yeah.
+
+[00:50:40.21] - Joseph Thacker
+Which I mean, I guess people probably reported it as like Firefox only bugs already, right?
+
+[00:50:44.09] - Justin Gardner
+But yeah, and I've reported it as a Safari only bug. But last time I reported it, you know, before they, they changed it, I saw in the, you know, in the Critical Thinkers channel we've got like the data feeds or whatever and I saw on the intent to ship feed that they were going to change it and I put that in my report and they paid me the full thing. Like it wasn't going to because they like Crochrome is going to ship this. So it's, you know, we're just getting ahead of the curve. And I was like, yes, that's awesome. So that one's a cool one. The other one that's really interesting and sort of relates back to post messages as well is that, you know, then the string null that represents the null origin is kind of weird because it is just a string and that string like can be perceived in different ways. So here's an example of how this might work. One of the, before the, I think the prevalence of the URL parsing framework that they have in JavaScript. Now one of the ways that you would commonly see to parse a URL is to do document, create an A tag and then set the href to a specific URL. Right. And so let's say you got a post message and you wanted to extract the host name from that post message in a reliable way. Logic that I've seen before is say document Createelement A A href equals event origin. Right. So you're setting the href of that A tag to the origin of the post message and then grab the host name of the A tag which is pre populated into that like object. Yeah. What's interesting is that if you send this from a null origin, it passes null into the href of the A tag and null, if you just put null as a string, it says, oh, that's a. That's a relative URL. That's/null. Right. And so what is the host name of a relative URL? Oh, that's the current page that we're on. Right. And so it just fills in the. Very helpfully fills in the current pages.
+
+[00:52:57.23] - Joseph Thacker
+Host again by the stars aligning only.
+
+[00:52:59.55] - Justin Gardner
+Exactly. Right. And then it compares it to itself and it's like always passing. Right.
+
+[00:53:04.94] - Joseph Thacker
+That's cool.
+
+[00:53:06.13] - Justin Gardner
+So I've seen that logic a couple times when they use create element A as like their. Their way to extract the host name. This does not work in new URL unfortunately, like because of some constraints that they have in the system for that. But it does work in other methods of extracting the host name. Yeah. Okay. You said you wanted to go to CSP T's next. Yeah, dude. Like the thing is, I've talked about CSPT so much on this podcast, so I don't know, I could go a little bit deeper than what I've got in the, in the doc there, but yeah, I guess I'll go a little bit deeper. Okay, so this is advanced techniques. All right. All right. CSP ts. I'm not going to explain what cspts are. You know, tldr, you get data from the URL or from the path, you stick it into a sub resource request and you can induce pass traversal. There's also another subset of these. I will say that I don't really know what to call them. I kind of think maybe it's like request hijacking. But this is when you take something from a query parameter or a path and you inject it directly into the domain of a fetch request. Right. So it's not a path traversal, you're just overriding what host the fetch request. The sub resource request is actually going to. Right. So be on the lookout for this.
+
+[00:54:23.17] - Joseph Thacker
+And this is common in like cloud providers and stuff, right?
+
+[00:54:25.48] - Justin Gardner
+Yeah, totally. You know what I'm talking about, actually. Yeah. But. These sort of vulnerabilities are pretty common and I would say one thing that is really useful to exploit these is knowing that you can Exploit the difference between what the browser perceives and what actually hits the fetch sync. And this was a great shout out by Turbo. I think he mentioned it on his episode or maybe it was in the chat. But anything like percent 09 or new lines and stuff like that, all of that just gets straight stripped from anything passed into Fetch as a part of the host name. So you can do rhinorator tab.com. And it will just pull the tab out when it does the fetch. So if there's any sort of parsing or like an analysis of that data that you're passing in, you can really, you can oftentimes finagle it by adding white space throughout there and then. And then also just be on the lookout for different levels of encoding here. Like, I think that's where a lot of the vulnerabilities occur. You're not always just going to be able to insert like a slash or, you know, a backslash or something. You got to try%, 2F% 5C percent 25 2F percent 25 to C percent. Right. For the at sign. You know, like all sorts of things like this that can sort of break these various contexts.
+
+[00:55:52.86] - Joseph Thacker
+Yep.
+
+[00:55:55.50] - Justin Gardner
+Okay. Going from there, let's talk a little bit about client side routes. Client side routes. I don't know, man. Like, I feel like I don't really know how to hack applications that don't have client side routes in anymore, man. Like it's just so overpowered that in single page applications that you just have access to essentially like the full app in the JS files, like right in front of you.
+
+[00:56:22.69] - Joseph Thacker
+Yeah, I've been doing hacking on Hacker one challenges that don't have that. And it's so frustrating. I mean, it's also really rewarding when you find a new path, especially if it's one that like you're not supposed to have access to and the page actually loads. It's like a massive adrenaline rush. But it is weird to go back to those because so many pages are just single page apps these days.
+
+[00:56:42.84] - Justin Gardner
+Yeah, I think we talked about it on the pod, like last week or the week before. But like, you know, there's just a totally different approach you've got to take where you're just like, you know, looking for patterns, brute forcing stuff. It is a lot more brute force heavy. Whereas with spas, all you have to do is just figure out how these routes are defined. And I think the best way to do this in so many levels is, is just reverse engineer what you've got. Right. What page am I on? Okay, well, that page has got a route somewhere. So just take the page, put it into Control Shift F in Dev Tools, where you're searching all of the JS files and then find where the place where the routes are defined, and then just look at every single route. That's like one of the first things to do on my checklist is just like, you know, go through every single route, understand everything that's happening and go from there. There.
+
+[00:57:31.21] - Joseph Thacker
+Yeah, I like that second tip that you have here. That's basically. It seems like you almost do the same thing for parameters. What, and how are all these parameters used? How are they parsed? What do they do?
+
+[00:57:42.98] - Justin Gardner
+Yeah, totally. And look for the nuances in the route definitions as well, because sometimes they'll be. Pathid or object ID or whatever in there. So they're taking path parameters. Right. And then also like you said, look at the way the framework they're using. They're probably going to do consistent parsing or access to given query parameters. So are they using URL search params? Are they using like, you know, a react or review. Piece here to grab. Grab query parameters and that sort of thing. And then look at every single query parameter that ever gets parsed ever in the whole app. Right. And understand every single piece of data that you can pass into this application by a via force by. By forcing them into a specific URL.
+
+[00:58:35.15] - Joseph Thacker
+Okay, so I've obviously heard you talk a lot about client side paths virtuals, and I've seen them a lot of places, but it's just dawning on me that I think that I've failed to test for a ton of places because I definitely see like the/onod or whatever. But if that's ever controlled by me, I can always check for if I name that object or if it's like attacker controlled. If I have like, for example, let's just say it's a username. Like if it's like slash, slash, user reso. If I go make my username, what happens?
+
+[00:59:03.48] - Justin Gardner
+Right, yeah, there's scenarios where you can get stored CSPT with that. Right. Where it will load from the database your name and then that causes a path traversal. What is going on? Yeah, yeah. And then, yeah, you can also just do, you know, it's a little bit trickier when it's path parameters because you got to do like various levels of encoding and stuff like that. But let's say you've got slash, user, slash, you know, user ID. Yep. You know, do slash, user slash, percent 2F, you know, dot, dot, percent 2F, you know.
+
+[00:59:33.11] - Joseph Thacker
+Yeah.
+
+[00:59:33.59] - Justin Gardner
+And you know, have that encoded version. And if that, if it's resolving those, then do percent 25 to F. Right. So you can still find path traversals inside of path parameters. So definitely be on the lookout for that. The other thing is that one of the ways that, you know, with, with the onset of same site cookies, which, you know, I think is, I feel like that's a little bit more of an intermediate topic. But. With it, with the onset of Same site cookies. CSRFs are getting a little bit more challenging. And one of the ways that you can exploit sea surfs pretty reliably nowadays is just by making sure that the request originates from the, the victim's page. And a lot of times that happens via these callback routes where it hits a third party provider, whatever. I want to link my account and then it comes back to this page on a specific route that is responsible for completing that linkage. Right. But if you can just grab your attacker, control data, redirect the victim to that finalize route. Right. Then it will send a, you know, a post request or whatever to modify the victim's account. Then boom, you got a sort of a cservice.
+
+[01:00:39.00] - Joseph Thacker
+Oh, that's cool. That's really cool.
+
+[01:00:41.15] - Justin Gardner
+Yeah. And then sometimes you can hijack those as well. Right. Maybe there's a CSP T inside of that and it's sending a post request. So you use it to hit a different endpoint and then do a different csr. Right. So it's this whole CSPT to CSRF idea that was really covered well by Doyen Sec in their, in their CSPT paper they did a while back. So lots of, lots of neat nuances there.
+
+[01:01:05.46] - Joseph Thacker
+Dude, your throat going out.
+
+[01:01:07.71] - Justin Gardner
+My throat is getting a little raspy. I'm going to close it up with just two more little quick shouts. And that is one. I kind of mentioned URL search params earlier, but that is a class in JavaScript that is used to parse query parameters. Right. So really good place for dom. DOM logger plus plus hooks. And also just control effing for URL search params to see where parameters are being parsed.
+
+[01:01:36.48] - Joseph Thacker
+Yeah.
+
+[01:01:37.55] - Justin Gardner
+So that's just a little tip I'll throw out there. And also do not ignore on hash change events because hash change is something that you can control as a, as a hacker. Right. On your evil page. I don't know if this is something that's commonly.
+
+[01:01:51.48] - Joseph Thacker
+I didn't know that. Yeah. So how does this happen?
+
+[01:01:53.32] - Justin Gardner
+Yeah. So let's say you Do a window open to a victim page, right. And you know what URL there are on. You can do that same window open again to that same URL with a different hash and it will swap the hash without refreshing the page.
+
+[01:02:05.03] - Joseph Thacker
+Interesting.
+
+[01:02:05.90] - Justin Gardner
+And it will trigger the on hash change event on that page. And sometimes when the hash changes, various things will occur on that page.
+
+[01:02:14.78] - Joseph Thacker
+That's really cool. Is on hash change how like it like jumps to different like table contents buttons or.
+
+[01:02:22.94] - Justin Gardner
+No, sometimes depending on. Yeah.
+
+[01:02:25.38] - Joseph Thacker
+Or is that the on page load?
+
+[01:02:28.15] - Justin Gardner
+There is some functionality for that. But I think like most of the stuff now that I'm talking about here is just hooked into this event that you can register that says hey, whenever the hash changes, I want this code to run. And you look at that code and you say, oh, okay, well one of those is a redirect. So I redirect to this hash and then it, you know, drops your JavaScript source or something like that, you know, your JavaScript URI into a window location or something. Yeah, so great stuff there. The last thing that I had here, this is, and this is just like a random piece that I decided to throw into this episode. I probably should have bumped this up to the top when covered it during news, but it's actually a post from terzenk back from 2021 that somehow recently came across my X feed and he was saying that something that really blew my mind, which is, and this is something I guess to cover a little bit more from an higher level perspective is like there's this concept of the dom, right? Which is the rendered the document object model that it's like your HTML that's being shown on the page. And a lot of times for stuff to run you have to create an element in JS and then attach it into the page, right. You could do document body.append child or something like that. So you create the element. Now it's just living in JavaScript land and then you insert it into the domain.
+
+[01:03:46.96] - Joseph Thacker
+Makes sense.
+
+[01:03:48.23] - Justin Gardner
+What's really weird here is that what Terzhenk tweeted out was that like you can create an element. So let's say you do document create element div or whatever and then you say div.inner HTML equals, you know, image source equals X on error equals alert one that still has not been inserted into the DOM yet. So it's not like it shouldn't be rendering, but for some reason that will run that on error handler will run.
+
+[01:04:19.36] - Joseph Thacker
+Even without any protections. Like obviously DOM purify implies that it's purifying the dom.
+
+[01:04:25.21] - Justin Gardner
+Yeah.
+
+[01:04:25.61] - Joseph Thacker
+Would that, like, not get purified? Because it's not.
+
+[01:04:28.32] - Justin Gardner
+That's kind of the first thing that came to my mind as well, was like, I feel like some of these parsers are probably, like, depending on the fact that they can, like, take the HTML and stick it inside of, like, another HTML element that they crafted in the JavaScript, you know, VM or whatever, and then, like, do stuff to it. Right. But. But if you even get it to that point, you're already done because it's going to run.
+
+[01:04:53.78] - Joseph Thacker
+Yeah, that makes me think. It makes me think that there are a lot of cases where people have, like, tried to get XSS but failed, but they never tried a.in or HTML.
+
+[01:05:01.38] - Justin Gardner
+Yeah. Yeah. Well, it's very interesting and there could be other nuances around.in or HTML because I know that that's. That's, you know, that is a pretty dangerous function that a lot of people will try to avoid when they're doing these parsing. But I still wouldn't have thought it would have triggered. I wouldn't have thought that it would trigger even without being inserted into the dom. And it is interesting as well, because I know this is just making me think a little bit. I know that there is a bug in dompurify where if you put a meta tag into the dompurify, like, parser, that meta tag will be applied to the page even though it got sanitized away. So. So they are, like, definitely taking that in, doing something with it where. So I don't. I don't think this is a DOM purified bypass, because that's like a very vanilla paper that I'm seeing here. But like, but like, there's definitely some weird nuance of, of that because that's the same thing that's happening with this meta tag that Jrock mentioned back on his episode back in the day. So something odd. Something odd's happening there. I got to double click into that a little bit.
+
+[01:06:07.63] - Joseph Thacker
+I'm sure something is. Will come out of this episode. Almost definitely.
+
+[01:06:10.76] - Justin Gardner
+Yeah. For sure, man. All right. That was a lot of Justin yapping. You got any questions about any of that or do we think we're. We're good for now?
+
+[01:06:18.11] - Joseph Thacker
+No, dude, I think you explained it super well. I. It's funny. This is like the advanced episode, but we also were like, super beginner all the way to the advanced stuff. So I think this will be super useful for both sets of listeners, which is probably great, because if it was only advanced, then I feel like half people would stop listening immediately. But there will be enough listeners like me that will like hang on for the ride because you, you bridged it so well. So thank you for that.
+
+[01:06:39.15] - Justin Gardner
+Of course, man. Yeah, I think there's a lot of, a lot of both here. A lot of, you know, covering some of the foundational concepts, but also like this super weird, like double null origin iframe stuff that's, that's pretty whack. So hopefully we triggered some, some advanced minds out there to go down some, some paths with some of this stuff and help some of the beginners along as well. Yeah, dude.
+
+[01:06:57.63] - Joseph Thacker
+Sweet.
+
+[01:06:58.26] - Justin Gardner
+All right, man. Peace. Good episode. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'.
+
+[01:07:04.65] - Joseph Thacker
+All.
+
+[01:07:04.86] - Justin Gardner
+If you want more Critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of the master classes, hack alongs, exclusive content and a full time hunters guild if you're a full time hunter. It's a great time, trust me. All right, I'll see you there.

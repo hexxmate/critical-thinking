@@ -1,0 +1,1793 @@
+Episode 55: Popping WordPress Plugins - Methodology Braindump
+Source: https://www.criticalthinkingpodcast.io/episode-55-popping-wordpress-plugins-methodology-braindump/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:00.298)
+Alrighty, we're rolling. Ram, welcome to the pod, man.
+
+Ram Gall (00:02.893)
+Hi, I'm happy to be here.
+
+Justin Gardner (@rhynorater) (00:04.854)
+Dude, yeah, this episode's gonna be great, and I have to say, I'm excited for it, even though I just got pulled out of the hot tub to record this episode, when it's snowing outside, man. Like, I know, like, I just, ugh. You know, if there was a time, time to be in the hot tub is when it snows. But, there's a lot of great content in this episode. I'm looking through this doc, and it is chock full of awesome information about WordPress. So just to...
+
+Ram Gall (00:16.052)
+Oh, man, that's the best
+
+Ram Gall (00:23.653)
+Absolutely.
+
+Justin Gardner (@rhynorater) (00:33.974)
+give the listeners a little bit of background. Ram, you work for Wordfence, and Ram does some very impressive security research on WordPress, and so our thought today was, let's go ahead and dive into some of these more nuanced WordPress-based knowledge that you need to hack WordPress plugins, because ever since we did the sponsorship in December, I've just been like, deep diving that shit, and I love it.
+
+So now my chance comes to geek out over this, and Ram's the perfect guy to do it with. So with that, Ram, I was hoping we can start with your bugs in particular. So just like every other guest, we're gonna put Ram through the give us a cool bug wringer here, and let's start with the subscriber plus RCE on Elementor if you wanna kinda just give us the rundown of that one.
+
+Ram Gall (01:28.617)
+Sure. So this is only run for a couple versions, but Elementor introduced a new functionality for their onboarding module. And they had an action running on admin in it, which basically runs any time you're on any admin page, regardless of whether or not you're an administrator. It wasn't using a normal Ajax listener. It actually had their own custom Ajax listener, just like, are we doing Ajax? Yes? OK, cool, then take care of this. And all it used was a nonce check.
+
+Justin Gardner (@rhynorater) (01:32.278)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (01:35.939)
+Mm.
+
+Justin Gardner (@rhynorater) (01:54.902)
+my ass.
+
+Ram Gall (01:58.645)
+And effectively what it would allow you to do was, it was intended to allow you to upload and install the Pro version of Elementor, but you could just feed it any old zip file and stick your, you know, web shell in there. And if you were a subscriber, you grab the knots off the admin page, upload the Pro upgrade zip and bam, you own the box.
+
+Justin Gardner (@rhynorater) (02:08.288)
+Ah.
+
+Justin Gardner (@rhynorater) (02:23.114)
+Wow, dude. OK, so let me get this straight. Elementor is also the, it's like a 5 million install plug-in. It's like the biggest WordPress plug-in, right?
+
+Ram Gall (02:28.837)
+I think it's more than that, but WordPress doesn't, they stop counting after five. Yeah.
+
+Justin Gardner (@rhynorater) (02:32.274)
+Oh do they really? Oh my gosh, that's crazy. And I think if you look on their website, it says 10 million, Elementor does. So this was when they were, they implemented this functionality when they were including some pro upgrade stuff. And so the whole functionality on this is to actually put PHP files on the web server, right?
+
+Ram Gall (02:45.667)
+Basically, yeah.
+
+Ram Gall (02:51.009)
+Yeah, yeah, so I mean it was working as intended just not.
+
+Justin Gardner (@rhynorater) (02:54.658)
+from an access control perspective. And this actually goes to a topic that I can't wait to talk about later with you, which is essentially nonce acquisition as access controls, which is something that we see quite a bit in WordPress, I think. And so actually, this brings to my mind that there's a bunch of other nuanced things about WordPress, for example, Ad Action and Admininit, that we haven't really covered for the listeners just yet. And so...
+
+Ram Gall (02:56.154)
+Exactly.
+
+Justin Gardner (@rhynorater) (03:23.19)
+What I think we'll do is, we may even swing back around to this vulnerability, even though this one's pretty simple to understand, it's just a, you know, a arbitrary PHP file upload on the most, you know, popular WordPress plugin out there. And we'll come back to this once we've covered a little bit more of the basics of WordPress functionality. And then we'll go to the rest of your bugs too. So with that, what I had in mind for this beginning part is like,
+
+We're talking to, with our audience here, Ram, we're talking to a lot of people that know stuff about web pen testing, right, but may not know the intricacies of WordPress and all the weird shit that WordPress does. And so what I'm hoping to do is kind of have you talk us through some of the crazy stuff I've been learning about with add action and then all of these different hooks that we can hook functions into, and then start to see what it looks like to identify sources and syncs.
+
+in a WordPress application. So let's go ahead and start from there. Let's talk about ad action and how that works in conjunction with these various hooks, admin init, add wp underscore ajax underscore, and that sort of thing.
+
+Ram Gall (04:33.781)
+All right, so realistically, bread and butter is WPAjax. There's a WP admin, admin Ajax endpoint, and basically everything uses it. For everything, including stuff that doesn't actually need Ajax functionality, it's just the endpoint if you wanna get stuff done. It accepts an action parameter. By default, you have to be authenticated, but that's all. You can set it to allow unauthenticated users and...
+
+Justin Gardner (@rhynorater) (04:40.607)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (04:44.325)
+Mm.
+
+Justin Gardner (@rhynorater) (04:48.191)
+Right, right.
+
+Ram Gall (05:00.977)
+plugins have mostly stopped doing that because that's generally not a great idea. But it's pretty basic. It just accepts a request or post-request parameter and sometimes processes within the actual callback. Sometimes it calls another callback.
+
+Justin Gardner (@rhynorater) (05:20.942)
+Gotcha. So there's this, so unlike other PHP applications where you navigate to specific PHP files and execute the PHP inside those files, with WordPress there's the opportunity for us to create hooks in the application that correlate to different paths on the WordPress core functionality, right? And so, add action is one of the ways to do that with, and there's various types of hooks in there. Admin init.
+
+Ram Gall (05:40.604)
+Yeah.
+
+Justin Gardner (@rhynorater) (05:47.746)
+being one of them, wp-a-jax- and then some string being another one, and what those allow us to do is interact with core files, right, like, what is it, wp-admin-ajax.php, is that right? Yeah.
+
+Ram Gall (06:04.345)
+Yeah, that's the endpoint that if you send something to that endpoint, you add a WPAJX hooks anywhere in any active plugin and it'll call whatever callback you have set.
+
+Justin Gardner (@rhynorater) (06:11.904)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (06:16.042)
+Right, so instead of hitting direct PHP files, we can trigger functionality in these WordPress apps by this admin, you know, this interface, which has admin written all over it, admin init, admin-ajax.php, but unfortunately, admin action, right, but unfortunately can also be hit by unauthenticated users and triggered. Is that correct? Yeah, so that's kind of nuts. That was one of the things when I first, you know.
+
+Ram Gall (06:31.589)
+Admin action.
+
+Ram Gall (06:38.533)
+Yeah, that's correct.
+
+Justin Gardner (@rhynorater) (06:43.57)
+After we launched the campaign back in December, I was just really like, wow, I can't believe this is how this works. Like this is so easy to make a mistake on.
+
+Ram Gall (06:52.037)
+I mean, if you do it right, it's not that bad, but you know, a lot of people don't do it right.
+
+Justin Gardner (@rhynorater) (06:55.646)
+Yeah, yeah, just the naming convention's a little bit tricky too, you know, with all the admin and then, you know, and we'll cover this probably a little bit later, but there's also a function called is underscore admin, right, in the WP, right, it's not checking whether it's an admin, it's checking whether the request originated from an administrative page, right? Yeah, so there's...
+
+Ram Gall (06:59.119)
+It is.
+
+Ram Gall (07:06.961)
+which is not what you think it is.
+
+Ram Gall (07:15.097)
+Yeah, yeah, anywhere on the admin panel, even if you're unauthenticated, there's some pages that are on in the admin folder that will trigger that. So.
+
+Justin Gardner (@rhynorater) (07:23.95)
+It's crazy, man. It's crazy. So there's lots of sources. So we've got admin init. That's the hook that can trigger on various accessing of various pages. So, for example, if you wanted to trigger an admin init hook, you could visit pretty much anything under WP-admin, right? Yeah.
+
+Ram Gall (07:40.229)
+Yeah, yeah. Admin WP admin slash admin dash post is pretty common. That was originally designed similar to XMLRPC to, you know, allow people to just fire off new posts without logging into the whole admin panel. Just basically automate it.
+
+Justin Gardner (@rhynorater) (07:45.667)
+Mm.
+
+Justin Gardner (@rhynorater) (07:57.666)
+Wow, wow, that's a lot, man. So, and then, you know, by hitting those endpoints, admin post or admin Ajax, we can trigger that callback function. So the add action call, which is something that we can, is provided by WordPress, takes a hook. So admin init or admin wp underscore ajax underscore, plus a callback function. And then it triggers that callback function. So then, you know, we can start executing, forcing that code to execute. And a lot of times that's making decisions off of our.
+
+you know, input, right, like post and get, like, you know, dollar sign underscore post, dollar sign underscore get, and that sort of thing. And that's sort of like, for those people that are listening that know PHP but haven't done WordPress stuff, this is the sort of hidden attack surface that the WordPress plugins are hiding behind, where you can really pop some crazy vulns. Would you say that's accurate, Ram? Yeah.
+
+Ram Gall (08:46.037)
+I would say that is extremely accurate. The WordPress relies on a lot of user input and, uh, core is actually pretty secure these days. Pretty secure, but a lot of plugin developers, you know, it's an open source ecosystem. Anyone can post their code and, uh, a lot of people learn by doing.
+
+Justin Gardner (@rhynorater) (08:53.802)
+Hmm. Yeah.
+
+Justin Gardner (@rhynorater) (09:00.298)
+Right, yeah. Yeah, I imagine there's lots of mistakes being made, which is one of the really cool things about the WordFencebook Bounding Program too, is that constantly there's new plugins being added to the scope as things pass 50,000 installs. So the people that are messing around and finding out, so to speak, and then find success and get over 50,000 installs, all of a sudden their code is up for review, which is something that's a really good opportunity, I think.
+
+Ram Gall (09:29.692)
+Absolutely.
+
+Justin Gardner (@rhynorater) (09:31.327)
+So, okay, so now we know how we can access some of this attack surface, right? There'll be these calls to admin, add action, and then there'll be these hooks specified, admin init, admin post, WPAjax underscore. And we'll link in the description of this episode.
+
+a PDF file, Common WordPress Vulnerabilities and Prevention Through Secure Coding Best Practices. It's kind of a mouthful, but it's a PDF file released by Wordfence that documents all these interesting hooks and stuff like that. So we're able to trigger code for running, and now we're looking to have our user input affect the server in some way, right? Because that's how the vulnerabilities are made. We trigger some code, and then it takes our input, and something happens. So what are the most common ways?
+
+user input is accessed in a WordPress application.
+
+Ram Gall (10:24.861)
+Well, are you talking about sinks or are you talking about a...
+
+Justin Gardner (@rhynorater) (10:27.23)
+I'm talking mostly about sources still. I guess the traditional method would be in PHP, you've got the dollar sign underscore get or dollar sign underscore post. I'm sure we have that in, yeah, I'm sure we have those in WordPress too. Is there any other ones we should be aware of or is it just those PHP-based ones?
+
+Ram Gall (10:32.077)
+Okay, yeah. Yeah.
+
+Yeah, it uses the superglobals, yeah.
+
+Ram Gall (10:45.077)
+A lot of WordPress plugins use get query var. That's usually for the specific WordPress search functionality. You know, some people use filter input, which does not actually sanitize your input unless you tell it to. See that a lot. You'll also find some plugins using customer quest parsing functions that just use the super globals or filter input, but, you know, call it something fancy. So
+
+Justin Gardner (@rhynorater) (10:49.313)
+Mm.
+
+Justin Gardner (@rhynorater) (11:00.167)
+Exactly.
+
+Justin Gardner (@rhynorater) (11:10.583)
+Mmm.
+
+Ram Gall (11:12.502)
+It can, if you're just using a regex to search through a whole bunch of files, you might miss something like that because they're all using a specific function to parse requests.
+
+Justin Gardner (@rhynorater) (11:22.254)
+Yeah, that's one of the difficulties that I've kind of run into with automating WordPress vulnerability analysis because when I saw this opportunity of like, wow, there's new scope coming in, there's new plugins coming into scope every week, every day sometimes, and these are old and it might be untouched even sometimes. I was thinking, wow, it'd be great if I could just run some static analysis tools on these on a regular basis and extract.
+
+information out, but it's not always as simple tracing user input because when it can come from, it can be abstracted behind all these functions. They can use input underscore get or input underscore post, and they can also use the dollar sign underscore functionalities that come attached with PHP. So there's a variety of things you need to be aware of when looking at these.
+
+Ram Gall (12:07.917)
+Yeah, there's this huge variety of coding styles and it does make it really hard to do static analysis. I mean, there is there is a sort of WordPress recommended coding standard, but, you know, not everyone uses it. They're getting people on board.
+
+Justin Gardner (@rhynorater) (12:18.271)
+Mm.
+
+Justin Gardner (@rhynorater) (12:21.706)
+Yeah, that seems like something really interesting and something that should be globally applied to maybe all of these plugins and then maybe like a badge added or something like that to the WordPress.org plugins page or something if they comply with it. I think that'd be really cool. So regarding these Ajax functions or this functionality that we can trigger using these core PHP hooks, what is...
+
+Ram Gall (12:37.737)
+That's not that idea.
+
+Justin Gardner (@rhynorater) (12:51.562)
+So these do not have any functioning in place protections for CSRF, is that correct?
+
+Ram Gall (12:57.033)
+Correct, they don't have any in-place access control, they don't have any in-place CSURF, and you know what? WordPress doesn't even have a working content security policy unless you add it and, you know, futz with everything to actually make it compatible. So...
+
+Justin Gardner (@rhynorater) (13:02.33)
+Ah, I love it. I love to hear it. I'm sorry, I just, you know, I know it shouldn't make me happy.
+
+Justin Gardner (@rhynorater) (13:14.45)
+Oh my gosh, yeah, no. I mean, I hate to love it. I love it, but I hate it, but I love it. Being on the offensive side, you got this sort of pull of the heart in each direction. Exactly, exactly, it's just so much fun. But yeah, and that does make these functions particularly enticing for an attacker, right? Because there's no built-in default access control. There's no built-in default.
+
+Ram Gall (13:20.473)
+Now I know exactly what you mean.
+
+Ram Gall (13:26.217)
+Playground!
+
+Justin Gardner (@rhynorater) (13:44.002)
+non-SUR or CSURF protection. So that could be really cool. So in my WordPress plugin assessing journey, I found a couple scenarios where we have CSURF, but that CSURF is limited to a post request, right? They're using $signup score post or something like that to pull user input. In those scenarios, obviously we're in the era of same-site cookies and...
+
+A lot of times cross-site requests are not sending cookies anymore because of those same-site defaults implemented by Chrome. This is something that I wanted to ask you, and I'm not sure if you got the chance to look it up before we got on the call, but do you know if there's any way to trigger a session refresh in WordPress via C-Surf? Because here's the approach that we normally take when doing C-Surf in a bug-bounding context, is you...
+
+Ram Gall (14:38.665)
+Thanks.
+
+Justin Gardner (@rhynorater) (14:40.366)
+You find your CSR, if you get it validated, you validate it with a two minute post, there's a two minute exception to the same site lax default stuff, right? And which I'm not even sure if WordPress uses same site, lax byte, yeah.
+
+Ram Gall (14:56.852)
+It doesn't use same site cookies by default. You're stuck with whatever Chrome sticks on there. And I've honestly never had it be a problem. I've never run into any problems executing a CSR fun of WordPress site.
+
+Justin Gardner (@rhynorater) (14:59.134)
+Okay. Okay, so, mm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (15:08.414)
+OK, wow, that's great. So maybe they've got it even turned off. But one of the things that Chrome should be protecting it after the two-minute window of login. But it could be re-auth-ing the session. That's something that I need to kind of look into is like, I wonder if there's some core gadget that we can use to send a C-Serve to refresh the user's session and then get that cookie reset and refresh that two-minute window. Do you know anything sort of like that? Or?
+
+Ram Gall (15:36.833)
+off the top of my head though, no. I've been like there's the heartbeat, there's the heartbeat, but that actually does use a, you know, different nonce every time. So yeah, well, not different nonce every time, it does use a nonce. So.
+
+Justin Gardner (@rhynorater) (15:38.387)
+Okay, that's something that I'm...
+
+Justin Gardner (@rhynorater) (15:44.894)
+Oh, does it? It uses an ounce. Okay, gotcha. Right, right. And that's the funny thing about the whole nonce-related thing, too, is like, it's not a number used once in this scenario. It's like, that's kind of hilarious.
+
+Ram Gall (15:54.533)
+No. You get two, each one lasts 48 or you get one that lasts 24 hours and then it's still valid for another... okay, it's valid for 24 hours and then they generate a new one for the next 24 hours, but the old one still works for that period. So yeah, right, right?
+
+Justin Gardner (@rhynorater) (16:10.602)
+Okay, love that. Yeah, and I did look into the implementation of that when I first started deep diving WordPress stuff and it's pretty solid. They essentially take your session token, it's tied to your session, so even if it's from a different session, you can't use it. They take your user ID, your session token, the current timestamp, a bunch of other things, hash it, and then use it as the non-switch, it's kind of a pain in the ass, but, you know.
+
+It's good to see good CSR protection in place, you know, as long as the developers use it Which is what you know is a little bit iffy in these scenarios
+
+Ram Gall (16:44.125)
+I mean, it's pretty easy to set up, but yeah, a lot of developers don't use it or try to use it for access control.
+
+Justin Gardner (@rhynorater) (16:49.57)
+So I guess while we're on that topic, what are the, what is a nonce in the context of WordPress? I guess we've kind of already covered that. It's a CSRF protection. It stands for number used once, but it's not really used once. It's just kind of like a CSRF protection. And what are the functions that we need to be on the lookout for to see if they're verifying the nonce or not?
+
+Ram Gall (17:12.249)
+Check admin referrer is one of them. Let's see, wp-verify-nonce.
+
+Justin Gardner (@rhynorater) (17:14.23)
+Mm. And, yeah. So check admin refer, it's kind of weirdly named again because it doesn't actually check the refer, I don't think, right? It checks, love that. Yeah. Oh my gosh. And so then instead, it checks the nonce that's passed into it. And nonces in WordPress, they have some sort of action associated with them, right?
+
+Ram Gall (17:24.045)
+No it doesn't, no. That would be a terrible way to do things.
+
+Ram Gall (17:39.202)
+I mean, if you're talking about Wcreate or create notes.
+
+Justin Gardner (@rhynorater) (17:43.198)
+No, I mean, what is that little string that's passed into them? Oftentimes, it'll be the name of the action that nonce is supposed to be associated with.
+
+Ram Gall (17:52.249)
+Oh yeah, no, yeah, you can create different nonces for different actions. Yeah, there's a default, you know, general nonce for a user, but most plugins will have, you know, different nonces for different purposes. Some plugins will just have one plugin global nonce and that's especially bad if you're using it for access control, but yeah, you can basically create, you know, nonces for different purposes, nonces specific to use cases.
+
+Justin Gardner (@rhynorater) (17:55.444)
+Okay.
+
+Justin Gardner (@rhynorater) (18:15.742)
+Okay, so there are various actions that can be associated with nonces. And so I can't take a nonce, even if it's associated with my account, for changing my user profile and then use it in the specific function on the specific plugin, because more than likely they're going to have some sort of action that's associated with that nonce.
+
+Ram Gall (18:35.333)
+Yeah, it's not even really an action so much as just a label. Yeah, it's just like this, now it's just for this, that now it's just for that, for this user. So.
+
+Justin Gardner (@rhynorater) (18:38.399)
+a label. Okay.
+
+Justin Gardner (@rhynorater) (18:43.222)
+Gotcha, gotcha. So, and those can have value, I guess, in some ways for an attacker, because if you're able to leak nonces that are associated with specific values from an access control perspective, and then that function is solely relying on nonces for access control, then we can start, we can bypass access control in those scenarios, right?
+
+Ram Gall (18:57.203)
+Yes.
+
+Ram Gall (19:08.666)
+Exactly, yeah.
+
+Justin Gardner (@rhynorater) (19:09.878)
+So I guess the attack in that scenario would be like, let's say that they're generating a nonce on admin underscore init, right? I think this is similar to the scenario we just talked about with elementor. And it's generating a nonce, and then it's sticking it in the response from admin init, which we know that anybody can access, right? And then you go there, you get that nonce, and then you craft the request to trigger a specific code path, and they're only relying on a nonce.
+
+Ram Gall (19:17.061)
+All right. Yeah.
+
+Justin Gardner (@rhynorater) (19:38.97)
+the access to that nonce, whether you can access that nonce or not, assuming that you can't access that nonce in a scenario where you actually can, that is a code pattern that I've seen that can result in vulnerabilities. Would you say that that's fairly common? Okay.
+
+Ram Gall (19:49.657)
+Yeah. That is incredibly common. You should never assume that someone can't access a nonce. You should never use nonce as the sole form of access control. We'll get into some other stuff, but we were going to talk about menu pages. But a lot of the ways that WordPress, or a lot of the ways that plugins try to protect nonces is by checking which page the user is currently accessing and only displaying the nonce if it's on that particular page. But there are ways to mess with that.
+
+Justin Gardner (@rhynorater) (19:56.162)
+Okay.
+
+Justin Gardner (@rhynorater) (20:01.11)
+Hmm.
+
+Justin Gardner (@rhynorater) (20:11.884)
+Hmm.
+
+Justin Gardner (@rhynorater) (20:18.11)
+Interesting. Oh really? Can you tell me a little bit about that?
+
+Ram Gall (20:23.169)
+Yeah, so WordPress uses a global called page now to determine which admin page you're on. And yes. Yeah. And on some configurations, I believe it's NGINX. It might have gotten a little trickier recently. But on some configurations, because it uses PHP self, you can basically, you know, do one page at an all byte and then do the page you want to think you're on.
+
+Justin Gardner (@rhynorater) (20:28.229)
+Okay.
+
+Justin Gardner (@rhynorater) (20:32.042)
+Oh, and is this a part of core? Oh, really? Interesting. Huh.
+
+Justin Gardner (@rhynorater) (20:42.297)
+Mm-mm.
+
+Justin Gardner (@rhynorater) (20:53.25)
+interesting and then that might generate some other nonce for you. Assuming, well, what would be the assumption then in that scenario that page does not have access controls that prevent your user from, well, then you could just access it in the first place.
+
+Ram Gall (21:10.193)
+Well, let's say all subscribers, if you're not running WooCommerce, for instance, can access the profile page. So you know, you're a subscriber, you log in to the profile page. But let's say the nonce only shows up on an admin page for, you know, XYZ plugin. So you go to the profile page and add an all byte, add, you know, admin.php.
+
+Justin Gardner (@rhynorater) (21:14.306)
+Sure, yeah.
+
+Justin Gardner (@rhynorater) (21:35.223)
+Oh. So it's still coming from an admin source, but then it's perceived to be a different page. Wow.
+
+Ram Gall (21:37.029)
+uh, page equals. Yeah. Yeah, and it's tricky to pull off, like, you know, it's a fairly rare case, but it does happen.
+
+Justin Gardner (@rhynorater) (21:46.07)
+Wow, that's really cool. Is this, is this, this is under the weird WordPress shit section of our document. Is there, is there a, is there, do you have any, I guess, documented places where this has been exploited?
+
+Ram Gall (21:52.093)
+This is under the weird WordPress jet section. Yeah, there's a bunch of that.
+
+Ram Gall (22:02.953)
+Yeah, you know Mark Montas, I think he works for Automatic now. I'll add it to the notes at some point, but I believe it was in a... Oh yeah, there was a backup download in our updraft plus a while back that took advantage of this.
+
+Justin Gardner (@rhynorater) (22:07.49)
+Yeah.
+
+Justin Gardner (@rhynorater) (22:10.849)
+Yeah.
+
+Justin Gardner (@rhynorater) (22:21.466)
+Ah, no way. That sounds really cool. Yeah, definitely go ahead and grab that and put it in the doc. I would love to see that afterwards. And for any of you guys that are also interested in looking at it, that's something that we'll link in the description because that seems like a really valuable way to get your hands on nonces. And unfortunately, we see a lot of plugins do this thing where they don't do any authorization checks. We'll kind of cover this a little bit later.
+
+Well actually, I guess we'll just cover it now. The way WordPress does auth checks is they do current user can calls, which is a function that comes apart of WordPress, and it accepts a capability, right, and that capability is associated with different types of users.
+
+Ram Gall (23:04.813)
+Yeah, it'll also accept a role, but that's generally considered poor practice. Uh, it's pretty old.
+
+Justin Gardner (@rhynorater) (23:08.67)
+Okay, I was gonna ask you about that actually, because I saw that the other day and I was like, what the heck, administrator is not a capability. Does this code even work? And then it did.
+
+Ram Gall (23:18.041)
+It does actually. It's WordPress has a ton of backward compatibility stuff. So.
+
+Justin Gardner (@rhynorater) (23:21.93)
+Wow, okay, so it will accept the role as well. And that's literally pretty much the primary way. Like 99.9% of the time, that's how they're doing auth checks, right? So, but there are some plugins that will not even use that and just rely on your ability to access the nonce for the access controls, which is really, like you mentioned, Ram, really bad form. So, any extra tricks that could get us access to nonces when they think we shouldn't be able to get access to nonces, extremely valuable.
+
+So that's really rad. Yeah.
+
+Ram Gall (23:55.345)
+Also, it looks like that updraft plus thing that was not a nonce bypass using that page now was Yeah, it was something else. I think
+
+Justin Gardner (@rhynorater) (24:00.812)
+Okay.
+
+A different one? We'll find it afterwards and we'll put it in the notes for the people that are interested. That covers a lot of the ad action stuff. There's a lot more to unpack there though. I just wanted to make our goal here on critical thinking, we try to get as technical as we can, but at the end of the day it's an audio medium. You the listener need to go and look into this more or else your brain's going to forget it and you're not going to be able to be triggered by this thing in the past.
+
+when you see something that's similar to this. So definitely check out the link in the description and figure out how to access these really weird part of the WordPress functionality. With that, Ram, I wanna have you talk to me a little bit about something that I don't really even fully understand still, which is the add filter functionality, which is a little bit different than add action.
+
+Ram Gall (24:52.677)
+Yeah, addFilter is basically a register as an observer and a callback whenever an action happens. So you can add a filter that runs a callback whenever your profile is updated or a post is updated. It doesn't actually run it until applyFilters gets executed, but it's basically a way of setting up different observers for stuff. It's a little clunky, but...
+
+Justin Gardner (@rhynorater) (25:08.354)
+Hmm.
+
+Justin Gardner (@rhynorater) (25:12.874)
+Mmm.
+
+Okay, okay. Yeah.
+
+Ram Gall (25:18.929)
+The name filter means that it often gets used to like, you know, sanitize stuff, do some post-processing on content, but there's also certain move for exploitation. For instance, we see a lot with like update profile. Like you can add a filter on update profiles. So it'll run a callback whenever a user updates the profile and accept extra input.
+
+Justin Gardner (@rhynorater) (25:22.786)
+Mm.
+
+Justin Gardner (@rhynorater) (25:31.589)
+Mm-hmm. And that's the hook.
+
+Justin Gardner (@rhynorater) (25:39.746)
+Ah, interesting. So then anybody who can update their own profile can trigger that code. Okay, okay, so add filter, WordPress built-in function that allows you to create callbacks on specific actions that occur when apply filter is run, right? So apply filter is the trigger, add filter is the hook or whatever.
+
+Ram Gall (25:45.089)
+Exactly, yeah.
+
+Ram Gall (25:59.513)
+Yeah, and the cool thing is that it'll actually accept not only built-in WordPress actions, but also custom actions by plugin developers. So.
+
+Justin Gardner (@rhynorater) (26:07.706)
+Ah, so they can define their own. Anytime that action happens, they just run apply filter and then that kicks off a bunch of, I don't know, are they async or are they sync? They gotta be synchronous, I imagine. Okay, okay, yeah, so synchronous actions that are correlated with that specific hook. That's interesting. So, yeah, we have update profile, update post, a couple other things that non-administrative level users could trigger and thus result in some, you know, malicious code flow occurring.
+
+Ram Gall (26:19.015)
+They're in a priority, but I believe they are synchronous. Yes
+
+Ram Gall (26:25.852)
+Exactly.
+
+Justin Gardner (@rhynorater) (26:37.186)
+where the user can do things they shouldn't do. Very cool, I like that. So that's sort of, I guess when I was sort of looking into WordPress history, that's sort of like the mid, the mid-tier, you know, way back in the beginnings of WordPress time, they were using XML, RPC, and stuff like that for a lot of implementing routes and implementing AJAX requests and that sort of thing. Then we moved to ad action and that whole flow with the admin dash AJAX.php, and we're still a little bit in that era, there's active development occurring with those functionalities.
+
+But then WordPress implemented this register rest routes functionality. Can you tell me a little bit about that?
+
+Ram Gall (27:15.865)
+Sure. So I mean, it is, WordPress rest routes are super handy. What's even cooler is that you can actually go to WordPress or you can go to the site slash WP dash JSON and it'll just show you all the registered rest routes and you can dig into them and it just gives you a map of it.
+
+Justin Gardner (@rhynorater) (27:31.918)
+What?
+
+Justin Gardner (@rhynorater) (27:37.462)
+You know, I think I heard of this before. I think I saw it somewhere in the... Is it.php?
+
+Ram Gall (27:40.777)
+It's super handy.
+
+Just go to the site slash WP dash JSON.
+
+Justin Gardner (@rhynorater) (27:48.758)
+You know, I think I've got some sort of weird routing thing hacked up with my Docker container because it's not hitting it.
+
+Ram Gall (27:54.446)
+Oh, you might have to have pretty permalinks that turned on. If not, you can do, let's see, just add rest dash route equals forward slash.
+
+Justin Gardner (@rhynorater) (27:57.685)
+Uh-huh.
+
+Justin Gardner (@rhynorater) (28:08.75)
+at the end.
+
+Ram Gall (28:10.354)
+Yes.
+
+Ram Gall (28:15.345)
+Rust-dash, I think it's a dash.
+
+Justin Gardner (@rhynorater) (28:18.487)
+Interesting. Let me see this here.
+
+Ram Gall (28:22.185)
+It might be an underscore.
+
+Justin Gardner (@rhynorater) (28:25.074)
+Is this as a, huh, dude, I'm gonna have to, I'm gonna have to look into this, cause this, is that as a parameter? Rest underscore route.
+
+Ram Gall (28:29.841)
+Yeah, it's on rest underscore route. Sorry.
+
+Uh, yes.
+
+Ram Gall (28:38.057)
+and it'll show you all the namespaces and you can dig into the namespaces. It'll it's amazing, right?
+
+Justin Gardner (@rhynorater) (28:38.654)
+Woh... No way.
+
+What?
+
+Wow, okay, so we can just hit slash question mark, rest underscore route equals slash, and it will give us access to this interface. Wow, whoa, dude, it took actually so long for this to load because there was so many of them and my poor Docker container is overloaded. Wow, this is like a big recon dub. I don't have to be, do I have to be authenticated for this? Dude, RAM, this is not good, dude.
+
+Ram Gall (28:59.889)
+I know, right?
+
+Justin Gardner (@rhynorater) (29:17.034)
+Why do they do this?
+
+Ram Gall (29:18.693)
+Uh, ease of use, I guess. I mean, it's definitely one of those things you'd want in like debug mode, but I don't know if you'd really want that in production. I mean, like the rest routes are, it does give you a lot of info on what's installed.
+
+Justin Gardner (@rhynorater) (29:24.555)
+Yeah.
+
+Justin Gardner (@rhynorater) (29:31.466)
+Yeah, I mean, you can get access to it anyway, because you can just hit the plugins directory and use enumeration to figure out what plugins are, then look at the readme.txt and figure out, okay, what code is running, and then look at that and extract all the rest routes, but this is just so much more convenient. Yeah, for sure, wow. Guys, this is a big dub here. I'm gonna put this in the... Dude, why is this not under the weird WordPress shit section? Is this a, yeah.
+
+Ram Gall (29:37.799)
+Yeah.
+
+Ram Gall (29:48.018)
+Time saver.
+
+Ram Gall (29:58.381)
+I don't know, I grew up thinking it was normal.
+
+Justin Gardner (@rhynorater) (30:01.086)
+This is crazy, man. So I'm gonna go ahead and add it to the weird WordPress shit section. That's a really big dub for anybody looking at a WordPress site. Just literally add the parameter rest underscore route equals slash, and then it just dumps all of the rest routes associated with that site. That's crazy. Okay, so then we've got those. We can access them like a normal API or whatever, but there are some nuances to that, right? Which is...
+
+they fixed the whole no automatic CSRF protection thing. Can you tell me a little bit about that?
+
+Ram Gall (30:35.453)
+So if you don't provide a nonce that's, again, per user to a rest route, it will basically assume that you're unauthenticated, which is, well, if you're trying to access something that has a permission callback that returns true or that has a permission callback that, yeah, if it has a set, if it has, you can have the permission callback.
+
+Justin Gardner (@rhynorater) (30:44.831)
+Mm.
+
+Justin Gardner (@rhynorater) (31:02.986)
+I guess, so the permission callback is the thing that allows access control, right? So if that permission callback does some sort of like current user can check or something like that, the current user's gonna be not there because it's on off, so then you drop it. But then if there's no reference to the current user in that interface and they're just assuming that it's secure, then you're screwed. Wow, okay, all right, well hey, I mean.
+
+Ram Gall (31:07.003)
+Yeah.
+
+Ram Gall (31:15.93)
+Exactly.
+
+Ram Gall (31:26.385)
+then it has no seizure protection.
+
+Justin Gardner (@rhynorater) (31:31.362)
+That's better than the Ajax stuff, the ad action stuff, where there's just no implementation at all that runs by default.
+
+Ram Gall (31:38.696)
+It is.
+
+Yeah, and you have to use Ajax to get the resonance.
+
+Justin Gardner (@rhynorater) (31:45.562)
+Oh, yeah, that makes sense. And then, so I guess, let me ask this. Give me just a gut feeling on this. What is the distribution of use right now between add underscore action, WP underscore AJAX underscore, versus rest routes?
+
+Ram Gall (32:02.513)
+I want to say it's still 80% AJAX. Yeah. Yeah, and that's the thing, as more and more plugins start bringing REST routes online, they're making mistakes in their first implementation. So there's a lot of opportunity for, you know, seeing plugins not using best practices on their first go.
+
+Justin Gardner (@rhynorater) (32:05.45)
+Really? No way.
+
+Justin Gardner (@rhynorater) (32:15.737)
+Interesting.
+
+Justin Gardner (@rhynorater) (32:21.674)
+Yeah, that makes sense. And actually, I'm gonna keep my cards closer to my chest here than I normally do, Ram. I know you know about my WordPress automation because we've talked about it a little bit, but that is definitely something, I guess, since the kickoff in December of the WordFence Spoke County program, I've built some automation stuff that uses some, let's just say some code parsing grammar.
+
+And that has been kicking out a lot of vulns. I think we've identified over 10 vulns from the automation. And we're seeing vulns popping up in real time as developers push new code. It doesn't even support register rest routes yet. So I think that's going to get bumped up on my priority list after this. I think there could be some really good stuff there. OK, so we've got register rest routes. That's another great way to be able to execute code.
+
+Ram Gall (33:03.613)
+Think of how and see what's that.
+
+Justin Gardner (@rhynorater) (33:15.315)
+to be able to trigger code execution flows on the server side.
+
+Ram Gall (33:19.769)
+I want to mention the weird WordPress shit about this. Okay. So, uh, you know how, you know, most rest APIs, um, if, if it accepts get as a method, then you have to use query string parameters with WordPress. You can put Jason on the body and, and get as the method and it'll just parse it.
+
+Justin Gardner (@rhynorater) (33:22.302)
+Yeah, yes, please, yeah.
+
+Justin Gardner (@rhynorater) (33:40.242)
+It'll parse, so it allows for the body of, it allows for a get request to have a request body. It's not parsing like you're not putting the JSON like in the query parameter and then question mark and then like a blob of JSON.
+
+Ram Gall (33:47.709)
+Yes.
+
+Ram Gall (33:54.789)
+No, it'll read the entire raw post body for all request methods.
+
+Justin Gardner (@rhynorater) (34:01.694)
+What the heck? And then if you use functions like, I can't even really wrap my head around that. So then if you use functions like wp, query, because it's not gonna show up in $get or $post, will it?
+
+Ram Gall (34:20.933)
+No, it uses PHP input.
+
+Justin Gardner (@rhynorater) (34:24.046)
+Oh, PHP input or, would it show up in request, do you think? Oh, dollar sign underscore request. That could be interesting. Okay, so WordPress parses. You can send a get, oh.
+
+Ram Gall (34:28.762)
+I mean it would probably, yeah.
+
+Ram Gall (34:34.921)
+Though actually no, Request has to use either form-encoded or multi-part-encoded. So yeah, no, it wouldn't show up in any of those.
+
+Justin Gardner (@rhynorater) (34:42.768)
+Xwwform you're all encoded. Yeah, you're right.
+
+interesting, so it's gotta be, it's gotta use the PHP, you know, the input underscore post, input underscore get, but that's still really, really pivotal for ways that, one, you know, WordPress will parse that data, and then that's the kind of sneaky shit you guys gotta know about to be able to pop crazy bugs, is like, oh, I can, they're not expecting me to be able to give JSON input to this specific function because I'm doing it under a get request, you know? No doubt, no doubt in my mind that there's some,
+
+Ram Gall (35:12.381)
+Gab is sitting on that one for a while.
+
+Justin Gardner (@rhynorater) (35:17.126)
+some code out there that's like, all right, a get request will allow. A post request, no. And then they're sharing logic and you can send body along with a get request and it's gonna screw their whole mechanism. That's crazy. That's really good. Thank you for that, Ram. This is exactly the stuff that I wanted for you to talk about when you came on here. Yeah, dude. And that's why I've been kind of finding that out over the past month or two as I've been kind of geeking out about it.
+
+Ram Gall (35:37.661)
+WordPress is full of stuff like this.
+
+Justin Gardner (@rhynorater) (35:45.17)
+And the crazy thing to me about it too is that it's everywhere, man. WordPress is literally on every single attack surface you can possibly think of. Like every company has a blog, or like three blogs. They got an engineering blog, they got a marketing blog, they got a company-wide press release blog. And so there's so many opportunities out there. And people are installing plugins that are like 500 installs or something like that and using it on their, you know.
+
+main site, stuff that hasn't really been audited and stuff like that. So there's a lot of value here, specifically for bug bounty hunters that wants to find vulnerabilities using white box code review to look at WordPress.
+
+Ram Gall (36:29.141)
+Yeah, if I were going to make a recommendation, a lot of the low install count authentication plugins are full.
+
+Justin Gardner (@rhynorater) (36:38.798)
+Dude, that's terrifying, man.
+
+Ram Gall (36:41.243)
+They're below our current scope requirements, but man, there's a lot of stuff in there.
+
+Justin Gardner (@rhynorater) (36:45.916)
+Yeah, unless you get the, what is it, like elite status or something like that, right? Then it drops to like a thousand or something, I think the requirement does.
+
+Ram Gall (36:54.565)
+Yeah, if you end up with the elite status and you know, that's not that hard to get just keep on putting in good bugs and
+
+Justin Gardner (@rhynorater) (36:58.07)
+Yeah, I'm well on my way. I'll get there eventually. So I'm excited for that. All right, so next thing we've got on the list here, as we're kind of going through WordPress Sinks, I mean sources still, excuse me, and then we're gonna talk about Sinks at some point too, but we gotta get our sources in place so we know where our data's coming from and we can start tracking code flows, okay? So we mentioned earlier page-related code, right? So...
+
+This is using built-in WordPress functions like add underscore submenu underscore page. This allows us to, I assume, define little pages on the left side in the admin panel, and how does that work, and how could a person hook functionality into that?
+
+Ram Gall (37:43.389)
+So if it's done right, you can't. WordPress basically lets you register pages and it performs a capability check during the page registration and then has a callback to whatever function renders the page. But not all plugins only use that to call that function. Some of them will also call those functions using admin Ajax, using admin init.
+
+Justin Gardner (@rhynorater) (37:45.471)
+Okay.
+
+Ram Gall (38:12.917)
+and it'll perform a check to see what the current page is to see if you're supposed to be there. WordPress does actually use the page get parameter to verify what page you're supposed to be on. So, yeah.
+
+Justin Gardner (@rhynorater) (38:26.494)
+Really? So tell me about that. What is that? So in the query parameter, in the get query parameter, you can say query question mark page equals something, and then it will.
+
+Ram Gall (38:38.405)
+Yeah, that's what the register page or register menu basically does is it'll basically register that page as the thing that calls that function.
+
+Justin Gardner (@rhynorater) (38:50.086)
+Interesting. Hold on. Maybe my Docker container is being slow because I've got too many plugins installed. Yeah, it's like classic problems. I need to go back and disable them. I'm going to log in really quick and see if I am actually remembering properly what you're talking. Ah, yeah, because then you've got the... and then there's the page parameter. Okay, okay. I see. Yeah, so that is also used to show...
+
+Ram Gall (39:01.141)
+I feel you man, I've got like 150, I just disable them most of the time.
+
+Justin Gardner (@rhynorater) (39:19.478)
+you know, as sort of a source of truth in those scenarios to see what page you're on specifically.
+
+Ram Gall (39:25.145)
+And that's pretty hard to mess with for the actual page parameter, the thing we talked about earlier accepted. But yeah.
+
+Justin Gardner (@rhynorater) (39:35.434)
+Yeah, interesting. And so yeah, wp-admin slash admin.php, question mark, page equals whatever, will trigger various stuff. I just went to this page and an alert popped because my buddy's working on something. Sounds like he got it to pop, that's great.
+
+Ram Gall (39:47.597)
+You already had something in there.
+
+Ram Gall (39:53.445)
+And I try to use different messages from my alerts so I know which one it's actually from, so.
+
+Justin Gardner (@rhynorater) (39:57.438)
+Yeah, that's smart, Ram. We're not all as smart as you at that, because you're just like, wait, where's this popping up from? That's great. All right, so then the last little thing that we wanted to talk about from an input perspective is short codes. I'll try to give it a little bit of a summary of that, and then you can fix it. So essentially, short codes are a way for people who have the ability to write posts normally. I don't know if you can use them.
+
+Ram Gall (40:17.097)
+Showers.
+
+Ram Gall (40:24.817)
+contributors, editors, authors, yeah.
+
+Justin Gardner (@rhynorater) (40:26.122)
+Yeah, contributors and above, yeah. Those are roles in WordPress, by the way. You've got subscriber, that's the lowest level, permission. All the way up to administrator with editor, author, contributor in that order? Descending?
+
+Ram Gall (40:43.085)
+Yep. It's a administrator, editor, author, contributor, and realistically, editors can become admins at any point if they really want to because they have unfiltered HTML access. So.
+
+Justin Gardner (@rhynorater) (40:54.494)
+Right, okay, and then you can just, at that point, you can just input HTML anywhere, and next time an admin comes in there, hijack their session into whatever you want. Gotcha, so editor is pretty much administrative level permissions anyway.
+
+Ram Gall (41:01.294)
+Exactly, yeah.
+
+Ram Gall (41:06.645)
+It's one of those we trust you enough that if you really want it to yeah Don't give that it or to anyone you don't trust
+
+Justin Gardner (@rhynorater) (41:10.134)
+Yeah, gotcha. We trust you. Yeah, that makes sense. So, short codes are a way for contributors normally, I guess authors as well, to embed specific functionality in posts that a lot of times it's functionality that's inside of plugins. And it's kind of, oh yeah, context forms too, yeah for sure. And then there's like, I think the syntax is like a square bracket and then some text. It's almost like an HTML tag, but it uses a square bracket. Oh, oh yeah.
+
+Ram Gall (41:24.441)
+Yeah, contact forms, that kind of thing.
+
+Ram Gall (41:35.753)
+It's like BB code actually, you remember that?
+
+Justin Gardner (@rhynorater) (41:40.162)
+Dude, I haven't heard that name in a long time. Special implementation of HTML. Yeah, this is back in the form days when I was on hack forms or something like that. It's crazy. So yeah, it's kind of like that. And then you're triggering various pieces of functionality. How does this hook into plugin code?
+
+Ram Gall (41:47.709)
+I know, right?
+
+Ram Gall (41:59.613)
+So plugins will basically register short codes and the attributes those short codes accept. It is really wide open because yeah, and WordPress has a short code parsing regex that scans through posts looking for short codes and if it spots one that has been registered, it goes here you go run this function and do whatever.
+
+Justin Gardner (@rhynorater) (42:22.338)
+Wow, and is there any built-in controls there for sanitization in attributes or anything like that?
+
+Lovely. Love that. Love that for me.
+
+Ram Gall (42:31.333)
+Yeah, I want to say like more than half of the actual in scope vulnerabilities we got over that, over that period were short code cross scripting.
+
+Justin Gardner (@rhynorater) (42:39.786)
+Yeah, wow, and I imagine that has limited, well, you know, I guess it's contributor to, yeah.
+
+Ram Gall (42:48.29)
+I mean, honestly, you're going to have a much better chance of someone, you know, pulling off a credential stuffing attack for a contributor than you are for an actual contributor to want to go bad.
+
+Justin Gardner (@rhynorater) (42:56.566)
+Mm, that's true. Yeah, so compromising contributor account. And then, I guess depending on the location as well where they can trigger it, it could be a no user interaction, cross-site scripting, right, because it triggers somewhere the admin would go naturally, or it could be a user interaction, excuse me, stored XSS, because you still have to get them to navigate to a specific page where your payload will fire.
+
+Ram Gall (43:22.053)
+I mean, realistically, if it's a page that we're going to land on anyway, we don't consider that user interaction. Yes, and here's the thing, since contributor posts have to be reviewed by an editor or an administrator in order to be published, they're going to see that post no matter what.
+
+Justin Gardner (@rhynorater) (43:27.251)
+Okay, gotcha.
+
+Justin Gardner (@rhynorater) (43:33.925)
+Hmm.
+
+Justin Gardner (@rhynorater) (43:38.082)
+Hmm, interesting. That's good to know. So if you can, so actually, yeah, there's a decent amount of impact then, and then of course we all know admin, admin XSS in WordPress results in you being able to modify the plugin source code.
+
+Ram Gall (43:39.078)
+So uh...
+
+Ram Gall (43:53.957)
+Yeah, you can create new admin users. You can edit, plug in your theme source, all sorts of stuff.
+
+Justin Gardner (@rhynorater) (44:00.979)
+So it results in RCE. Wow, that's very interesting. That's cool. And I guess this might be more of a Chloe-oriented question, but the way that Wordfence still rates that in a... Well, I guess stored XSS is rated a little bit higher than reflected XSS, and... Okay.
+
+Ram Gall (44:16.849)
+Yes, and the big reason behind that is just because vulnerabilities that require genuine user interaction, including CSRF, I mean, that's going to, they're gonna have to be personalized, they're gonna have to be targeted. You're not going to have as much luck as something on like a big platform where, you know, it's all, a URL everyone expects to see.
+
+Justin Gardner (@rhynorater) (44:23.807)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (44:34.603)
+Yeah.
+
+That makes a lot of sense. Unauthenticated XSS too, you know, like there's lots of ways that you can pivot that, pivot that, but yeah. There's definitely, if you've got an authenticated, reflected XSS, there's gonna be a little bit of a tricky, tricky piece to that. Yeah, for sure. All right, so that's mostly covered our sources. I'll just go ahead and run through them real quick, because I know we kinda hit the ground running pretty quickly for the audience. We've got add action, that allows you to,
+
+Ram Gall (44:51.665)
+though that is where the value is. So.
+
+Justin Gardner (@rhynorater) (45:06.486)
+hook various callback functions and hook into specify callback functions for specific hooks, there we go, that you can trigger. So for example, there's an admin init hook and that can be triggered by navigating to pretty much any admin endpoint. And that will trigger callback code, so that's a great place to look for vulnerabilities.
+
+Ram Gall (45:27.817)
+There's an admin action callback that just looks for an action parameter anywhere you're on the admin page. And that's on, that doesn't get used as much, but when it does get used, it's usually used poorly.
+
+Justin Gardner (@rhynorater) (45:33.674)
+Really? Okay. Great, love that. I love patterns like that. If they do use it, it's used poorly. So admin underscore action, admin underscore, or admin underscore post, I believe, is also one of them. And then WP underscore...
+
+Ram Gall (45:50.777)
+Yep, that usually gets used poorly as well since it's an older pattern.
+
+Justin Gardner (@rhynorater) (45:53.93)
+Love that. And then there's WP underscore Ajax underscore and then some text which will allow you to trigger that. And there's the no-priv versions of those as well. So that's a great way to trigger some code that you want to run. Those are all vulnerable to C-Surf and auth, well, I guess some of them have auth by default, but some of them don't. And so those are great places to look for volums. In addition, we've got the add filter functionality, right? And that's where...
+
+various actions are occurring, and then you're specifying callbacks for those actions. So if you're able to trigger that action, for example, updating your profile, then you may be able to run that code, which may have a vulnerable aspect to it. Mm.
+
+Ram Gall (46:36.349)
+Yeah, one thing I would recommend strongly is just if you can get X debug set up on a Docker container and just, you know, a step through some basic Ajax actions, you'll get a much better sense for just however.
+
+Justin Gardner (@rhynorater) (46:47.918)
+That's a good idea. That's a great idea. I haven't gone as far as to hook up a debugger to it, but I have modified the PHP code directly and just put die statements in there. You know, like, yeah.
+
+Ram Gall (46:57.67)
+I've got a Docker configuration that has xdebug working on it if you want me to send it over.
+
+Justin Gardner (@rhynorater) (47:00.898)
+That's great. We should do that. And we should update the Docker container script that I created for the campaign to have some of that stuff on there, because that would be really helpful to the researchers, I think. And then from there, we've got the rest routes stuff that has some CSRF protection in it by default and some access control on it by default. But because it's newer technology, it's being used
+
+less and or being used for the first time, which is triggering vulnerabilities. So that's another great place to look. And then we've got page-related registration, so add submenu page or something like that. Not as great of a place to look. And then shortcodes, which apparently is a great place to look for contributor plus stored XSS. Does that about wrap it all up, Ram?
+
+Ram Gall (47:50.865)
+Yeah, that more or less wraps it all up. We didn't really cover XML RPC, but most of the use case for that is honestly credential stuffing because it lets you fire off a bunch of authentication requests really quickly. Yeah.
+
+Justin Gardner (@rhynorater) (47:59.509)
+Okay.
+
+Yeah, you can batch them, right? Yeah, yeah, so that's helpful for maybe identifying contributor level accounts from which to take over the whole server if you're actually doing a bug bounty or a pen test or something like that. I will throw out there, sometimes programs do not like credential stuffing and or trying to find that sort of thing on bug bounty programs, so listeners, yeah.
+
+Ram Gall (48:26.129)
+Yeah, XML RPC use cases are not well suited for real bug hunting because they're like Nihilus service credential stuffing stuff that you wouldn't really use unless you were on like an actual red team engagement.
+
+Justin Gardner (@rhynorater) (48:36.478)
+Right, right, so, and I know there are programs out there that will accept stuff like that, especially, I shouldn't say especially, only if you found valid credentials, but program by program, so make sure you're not overstepping the balance. With that, we'll go ahead and move over to top syncs for WordPress. And let me just go see in here, we already kinda covered capabilities, we already kinda covered filters, we already kinda covered leaking nonces.
+
+I'm just kind of going through the WP, the WordPress concepts section here to make sure we are hitting everything. Yeah, let's go ahead and jump right into the top sinks then. I don't think we have anything else we need to sort of talk about from the weird WordPress concepts perspective. So, regarding top sinks, obviously we've got a lot of PHP related stuff, which is mostly gonna be something that the listeners need to go suss out for themselves, but that's gonna be stuff like
+
+Unlink is file, file exists, file get contents require slash include or anything like that, which could result in RFI or LFI.
+
+Ram Gall (49:44.645)
+Old standbys like eval, exec, pass through, whatever.
+
+Justin Gardner (@rhynorater) (49:47.978)
+Yeah, exactly, just like those. These are things that we're not really focusing on in this context because we're mostly focusing on WordPress related stuff for this episode as we have the man Ram here who we can ask about any WordPress related stuff. So, as far as things go that are WordPress included functions, what should we be looking for Ram?
+
+Ram Gall (50:08.145)
+One of the big ones is update option. And the reason for that is that WordPress options include things like the default role and whether or not users can register. If you can set the default role to administrator and set users and register to on, then you can register an admin user. I do wanna offer a word of warning. I have had some trouble getting these to work lately and I've been looking for the code, trying to figure out how they're sanitizing them. And so I wouldn't necessarily rely on it.
+
+Justin Gardner (@rhynorater) (50:22.38)
+Hahaha!
+
+Justin Gardner (@rhynorater) (50:27.7)
+Oh no.
+
+Justin Gardner (@rhynorater) (50:33.508)
+Mm, mm.
+
+Ram Gall (50:37.213)
+test it at your own risk, but if you can get it to work, then it's a very powerful exploit.
+
+Justin Gardner (@rhynorater) (50:42.026)
+OK, so that scenario would be, I imagine update option looks something like key and then value, right? That sort of thing.
+
+Ram Gall (50:48.133)
+Yeah, yeah, update option users can register value one.
+
+Justin Gardner (@rhynorater) (50:53.07)
+Sure, sure, sure. And then one of the things that I've seen a little bit more often is you don't get to specify the key and the value, but you can specify just the value. And that's helpful in attacks like CSRF or access control stuff, because it can modify the options of the plugin or the website. Excuse me. Yeah.
+
+Ram Gall (51:00.517)
+Yay.
+
+Ram Gall (51:09.949)
+The big thing you get from that is XSS. What we see a lot of is update options being used for things like API keys and not escaping or validating the API key on output. So you can put like an XSS payload in that API key option. And it'll echo out when an administrator visits the page where they set the API key.
+
+Justin Gardner (@rhynorater) (51:18.663)
+Oh, interesting.
+
+Okay.
+
+Justin Gardner (@rhynorater) (51:29.102)
+Huh. That's great. That is actually the bug that triggered when I went to open up that page to check what you were talking about. Buddy of mine, who's actually been on the pod before, Codi, he found one where he was able to C-surf an update option. And then that update option would then get triggered on the page, on the admin page. So we actually did this cool exploit where it was able to C-surf an update option.
+
+Ram Gall (51:39.015)
+Nice.
+
+Justin Gardner (@rhynorater) (51:57.342)
+you, and it's in y'all's inbox, so. Yeah, yeah, so you go to the page and you click the link and it does like, it opens up a new tab, it submits a form to a new tab, right, and then on the old tab it does a timeout, and after two seconds or whatever, it'll redirect the user to that page, which was now poisoned with the cross-site scripting payload because.
+
+Ram Gall (51:59.941)
+No, I think I remember this one, yeah.
+
+Justin Gardner (@rhynorater) (52:24.07)
+of the form opening up on the new tab. It's like this time sync thing too, which is a really cool piece of that exploit. So that is definitely something that I've seen and actually happens, I'd imagine, quite a bit. And then there's also, I think, Ram, the use case of like, okay, well maybe it can't be put in an XSS sort of scenario, but it's also just updating the site's settings. So from an access control perspective or...
+
+Ram Gall (52:27.977)
+price.
+
+Ram Gall (52:49.649)
+Yeah, you can set. You can change the site URL. You can change the blog URL. You can get it to redirect home advertising site. You can, yeah, you can pull all sorts of stuff. Yeah.
+
+Justin Gardner (@rhynorater) (52:53.758)
+Yeah. Or plug-in specific functionality, like, you know, hey, maybe we can set a value for a specific option and that has very high plug-in relative impact, right?
+
+Ram Gall (53:07.849)
+Oh yeah, no, I mean like some plugins allow you to set which roles are allowed to use which functionality so you'll have like a file manager plugin that's restricted to admin by default but if you can set the option to allow subscribers to use the file manager plugin then you have RCE.
+
+Justin Gardner (@rhynorater) (53:15.466)
+Yeah.
+
+Justin Gardner (@rhynorater) (53:22.326)
+That's great. So update options is a big one, for sure. Any other ones we should be aware of?
+
+Ram Gall (53:27.559)
+is. For update options or are we moving on to other stuff?
+
+Justin Gardner (@rhynorater) (53:30.394)
+No, no, within the, I'm sorry, within the syncs section. So WordPress related syncs. Update option is a WordPress, just to be clear for the listeners, update option is a WordPress function that you will see in the code that could alert you to a sync. What other sort of syncs do we have? Yeah.
+
+Ram Gall (53:34.822)
+Okay.
+
+Ram Gall (53:44.073)
+I just want to see if we're moving on to the next sync. One of the ones that we see a lot is add post, update post, delete post, trash post. If you can add post and it doesn't sanitize the content on the way in, or if you can update a post and it doesn't sanitize the content on the way in, then you have XSS again.
+
+Justin Gardner (@rhynorater) (54:01.398)
+Ah, okay, so you specify the content of that, or I imagine for delete post and trash post, you can delete them or get rid of them and that sort of thing.
+
+Ram Gall (54:05.265)
+The title. Yeah.
+
+Ram Gall (54:10.305)
+Another weird WordPress shit thing, if you trash a post twice, it permanently deletes it.
+
+Justin Gardner (@rhynorater) (54:15.822)
+Oh, interesting, so if you can double trigger it, it actually has some serious impact, which, yeah, you could do that with that same setup that I was talking about, because you could trigger it in a new tab, that would delete it once, and then trigger it in the main tab again, and that would delete it for the second time, which is gone. Interesting, that's, Ram, thank you very much, sir. I love this stuff, this, I can, phew, the heart is beating quickly. Yeah, I love that.
+
+Ram Gall (54:18.227)
+Yeah.
+
+Ram Gall (54:25.231)
+Exactly.
+
+Ram Gall (54:32.845)
+Exactly.
+
+Ram Gall (54:37.073)
+Yeah, lots of weird stuff like this.
+
+Justin Gardner (@rhynorater) (54:46.743)
+That's great. And I imagine also there's a little bit, and this is something that I don't fully understand, so maybe you can enlighten me a little bit on this. Some users have the capability to inject unfiltered HTML, right, like editors and administrators, that you mentioned earlier. And so I guess if you had the ability to C-surf and then affect the contents of an ad post,
+
+Ram Gall (55:00.105)
+Correct.
+
+Ram Gall (55:04.473)
+Yep, editors and administrators.
+
+Justin Gardner (@rhynorater) (55:14.13)
+and do that for an administrator or an editor, then you could use that functionality to trigger XSS inside that post because of the person's receive surfings, unfiltered HTML injection capability.
+
+Ram Gall (55:26.137)
+You could, you could. It doesn't come up very often because it's fairly rare for a post update to have nonce protection or access, or to have access control but no nonce protection. Usually it lacks both or it has both. And the default way of updating posts does use nonce checks, but you know, some plugins will do some weird stuff where they update it manually without going through all the motions.
+
+Justin Gardner (@rhynorater) (55:30.484)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (55:41.594)
+Mm-hmm. Ah, OK. Yeah, that makes sense.
+
+Justin Gardner (@rhynorater) (55:54.382)
+Gotcha, that makes sense. Yeah, that's one of the things that's a little bit tricky for me about WordPress too is like, you can trigger sometimes server-side code that your current user doesn't have access to do at the WordPress level, but it won't do it. It's not like the WordPress system itself is running as system or something like that, it's still always applying that WordPress level, I guess.
+
+Ram Gall (55:56.594)
+But you could do that, yeah.
+
+Justin Gardner (@rhynorater) (56:22.23)
+capability or role assessment to those functions, which makes sense. OK, so the next one here is update user meta. Talk to me a little bit about that.
+
+Ram Gall (56:24.593)
+Yeah.
+
+Ram Gall (56:31.921)
+So user meta, there's your role, your capabilities, those are all stored in your user metadata. So you can set your capabilities to administrator and then you are an administrator.
+
+Justin Gardner (@rhynorater) (56:41.015)
+Okay.
+
+Justin Gardner (@rhynorater) (56:48.474)
+Okay, so if we were able to find a place where we could update arbitrary user metadata, gg. Wow.
+
+Ram Gall (56:56.089)
+Exactly. And one of the ways that we, one of the places we see that happen a lot is with membership plugins. From what I can remember, pretty much every single membership plugin we've ever analyzed has at some point in its life cycle had the problem where you were able to set your role upon registration.
+
+Justin Gardner (@rhynorater) (57:02.295)
+Mmm.
+
+Justin Gardner (@rhynorater) (57:14.294)
+You love to see it and you hate to see it.
+
+Ram Gall (57:14.865)
+by setting the WP capabilities user medi-key.
+
+Justin Gardner (@rhynorater) (57:17.998)
+Wow, yeah, that makes sense. So that's something that we can particularly look into is like, and I imagine that's a little bit more helpful on like the action that's associated with updating your profile or like some sort of filter-based thing that triggers when you are taking some action, like updating your profile.
+
+Ram Gall (57:36.921)
+Yeah, that's one of the places update profile comes in handy.
+
+Justin Gardner (@rhynorater) (57:40.33)
+Nice. So a couple, man, I have to say, I love it when the guests come on here and they do a great job preparing on the dock. That just warms the heart. And the episodes always turn out so much better because there's so many things you know that I don't know, that I wanna know, and then you.
+
+Ram Gall (57:57.849)
+I mean, I've forgotten half this stuff. I had to brush up on it.
+
+Justin Gardner (@rhynorater) (58:00.234)
+No, it's great. And then you put it in the doc, and then I'm like, oh, that is something I wanna know. And then I ask about it, and it makes me happy. So the move underscore uploaded file slash unzip related functionality, tell me a little bit about that.
+
+Ram Gall (58:14.425)
+Oh, I mean, I guess to some extent that's basic PHP stuff, but WordPress has its own upload handler, which plugins should use. So if you see them not using that, that's a danger sign. So if it uses move uploaded file, if it uses an unzip, I mean, that's, you know, again, it's normal PHP stuff, but if it doesn't specifically look.
+
+Justin Gardner (@rhynorater) (58:18.97)
+Mmm.
+
+Mm, mm.
+
+Justin Gardner (@rhynorater) (58:24.936)
+Mmm.
+
+Justin Gardner (@rhynorater) (58:29.371)
+Interesting, okay.
+
+Ram Gall (58:42.205)
+check file types within the zip, then you have an opportunity.
+
+Justin Gardner (@rhynorater) (58:45.662)
+Interesting, yeah, anytime you're dealing with zips, this is a pretty general web application hacking thing, is like, if they're dealing with zips, there's gonna be some weird shit that can happen there. You could do zip slip, you can do, you know, all sorts of file extension, hidden files that don't get deleted from directories, like all sorts of weird stuff you can do with that. So that's always a good one. And then I see you also put here, wp underscore remote underscore get.
+
+Ram Gall (58:50.415)
+Mm-hmm.
+
+Ram Gall (58:57.786)
+Absolutely, yeah.
+
+Ram Gall (59:07.92)
+Absolutely.
+
+Justin Gardner (@rhynorater) (59:15.302)
+which is a great one, and I imagine that's often used as a sync for SSRF.
+
+Ram Gall (59:20.625)
+Absolutely, yeah. WP Remote Get is the built-in WordPress server-side request functionality. It uses curl or whatever it has available, but you can use it for SSRF if you're on an EC2 box with IMDS, or is it IDMS? I can never remember. Either way, V1 of IDMS, you can grab the EC2 box credentials, and then you own the box.
+
+Justin Gardner (@rhynorater) (59:28.59)
+Sure, sure, sure. Mm-hmm.
+
+Justin Gardner (@rhynorater) (59:36.92)
+Mmm.
+
+Justin Gardner (@rhynorater) (59:40.21)
+Yeah, I forget.
+
+Justin Gardner (@rhynorater) (59:47.37)
+Yeah, dude, I love that, man. I saw earlier, I was snooping around the bugs. I try not to snoop around the bugs too much before people come on because I like to be surprised on the podcast, but I did see you pwned some box with that. So I'm excited for that one. Well, yeah, but it still counts. Every WordPress is very often launched in AWS, so that's good to see.
+
+Ram Gall (01:00:03.603)
+It was my own box, but yeah.
+
+Ram Gall (01:00:09.053)
+Good guess.
+
+Ram Gall (01:00:14.221)
+And the other thing is that a lot of configurations don't use IDMSV2, and a lot of WordPress plugin developers don't really take into account that SSRF is a thing. There's some plugins whose entire functionality basically depends on at the very least blind SSRF. So, you know.
+
+Justin Gardner (@rhynorater) (01:00:17.816)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (01:00:27.)
+is SSRF.
+
+Yeah, 100%. I've seen that often as well. SSRF is definitely becoming more well-known in primary web app circles, but I imagine that hasn't trickled down fully to WordPress plugins and peripheral environments like that. So that's good. So let's talk a little bit now about Echo as a sync. Anybody who's familiar with PHP knows that Echo as a sync will echo something onto the screen. It will print onto the page the HTML that's being outputted.
+
+WordPress has a lot of escaping mechanisms for various things. Okay, so can you talk to me a little bit about some common mistakes that you see in escaping within a WordPress environment that results in XSS?
+
+Ram Gall (01:01:05.613)
+It does and some of them are very good.
+
+Ram Gall (01:01:18.509)
+Oh, I actually almost added this to the vulnerabilities, but you'll have the function escape part of it and then run sprintf on the outside of the escape. And...
+
+Justin Gardner (@rhynorater) (01:01:32.074)
+Wait, wait, say it one more time, you'll have an escape part of it.
+
+Ram Gall (01:01:35.033)
+Yeah, it'll have escape part of it, and then you'll run sprintf around the escape. And yeah, that one's fun.
+
+Justin Gardner (@rhynorater) (01:01:39.382)
+Oh no, yeah. You'll see those sort of things. And actually, later this week, we'll record. I'm not sure what order we'll release these. But at some time soon, critical thinking listeners will be listening to an episode about vulnerable code patterns, which was inspired a lot by reviewing a lot of the source code of WordPress plugins. And that's always a funny piece that you see where they try to sanitize stuff, but they just do it a little bit off. And there's some common patterns you can find that.
+
+Ram Gall (01:02:05.414)
+video.
+
+Justin Gardner (@rhynorater) (01:02:08.15)
+will help you find bones in any language based off of that sort of thing. But there's, I guess, the WP underscore KSES related functions. Okay, gotcha, yeah.
+
+Ram Gall (01:02:17.977)
+It stands for a strip evil scripts, but it's pretty solid. It's complicated, it's reject based, it's very slow, which is why they don't run on absolutely everything. But it does a decent job of cleaning up basically any HTML tag from any unsafe attributes. But it has to be a complete HTML tag. It has to know it's an HTML tag in order to remove those attributes. So that's where we run into stuff like
+
+Justin Gardner (@rhynorater) (01:02:29.388)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:02:45.698)
+Yeah.
+
+Ram Gall (01:02:48.017)
+Shortcode based cross-site scripting because it runs the KSAS on just the attributes before it adds them to the HTML tag
+
+Justin Gardner (@rhynorater) (01:02:53.294)
+Mmm.
+
+Gotcha, so this is something that actually is used to parse HTML. Okay, gotcha, because there's like text. Yeah, yeah, that's not a great idea. So that's something where they're expecting HTML. And a lot of times also they'll be expecting just normal input, and they'll use this function sanitize text field, which I think is pretty bulletproof. Like there's not much you can do about that, right?
+
+Ram Gall (01:03:01.157)
+Yeah, using regex. We know how that goes.
+
+Ram Gall (01:03:18.909)
+Sanitize text field also doesn't escape attributes if they're being added separately. So it'll kill any tags you have, but if you have tag and you have control over the attribute from a source, then sanitize text field isn't going to.
+
+Justin Gardner (@rhynorater) (01:03:23.34)
+Okay.
+
+Justin Gardner (@rhynorater) (01:03:29.973)
+Ah.
+
+Justin Gardner (@rhynorater) (01:03:34.218)
+So you may be able to, ah, and that's, so if it's being injected into an attribute, it won't escape the double quote, so you can escape out of the attribute, define it your own attribute, like onload, or onair, or something like that, trigger js to do that.
+
+Ram Gall (01:03:48.005)
+Yeah, I honestly should have brought that up, but it, yeah, it just didn't come up until you mentioned it.
+
+Justin Gardner (@rhynorater) (01:03:53.71)
+No, you're good, you're good. That's what this section's for. So that's great. So we gotta understand what parts of the app, and I know there's functions like escape, oh, yeah, you added it right here to the doc. Escape underscore ATTR that are specifically used for escaping attributes. So when you're looking at this code, you kinda gotta get your brain to be like a machine and say, okay, where's the context? Did these the right function? Context function, context function.
+
+Ram Gall (01:04:05.135)
+Yeah.
+
+Ram Gall (01:04:17.733)
+Yeah, if they're using escape URL on something that's not a URL, either might be a way to get around it. If they're using escape JS on something that's, you know, not. Yeah, then there might be a way around it.
+
+Justin Gardner (@rhynorater) (01:04:23.636)
+Yeah, yeah, for sure.
+
+in HTML or something, yeah. Yeah. Interesting, very cool. So the naming convention is, I should be pretty much similar to the context in which that string is used. So that's something to be on the lookout for. Tell me about this E underscore, or underscore E thing, what is that?
+
+Ram Gall (01:04:46.685)
+WordPress has a lot of translation capabilities. There's a lot of websites that will show content in multiple languages just by setting the language parameter. So underscore e echoes out the text or the translation of the text if one is available for the requested language. Most of the time, most sites don't actually use translations, so it's basically just echo. But it won't show up if you're just searching for echo.
+
+Justin Gardner (@rhynorater) (01:04:50.612)
+Mm.
+
+Justin Gardner (@rhynorater) (01:04:57.013)
+Uh.
+
+Justin Gardner (@rhynorater) (01:05:05.012)
+Ah, interesting.
+
+Justin Gardner (@rhynorater) (01:05:10.764)
+and ah
+
+Justin Gardner (@rhynorater) (01:05:14.158)
+Interesting. OK, so that's another sort of echo equivalent of sorts in the WordPress environments that we need to be familiar with. Very cool. So.
+
+Ram Gall (01:05:17.604)
+Exactly.
+
+Ram Gall (01:05:21.537)
+And you can also, if you have, you know, some sort of limited file upload, you could potentially upload some translations, malicious translations with cross-site scripting payloads and set the language for those.
+
+Justin Gardner (@rhynorater) (01:05:35.814)
+Interesting. Wait, so you would need to be able to upload what?
+
+Ram Gall (01:05:40.189)
+you'd need to be able to upload translation files. I forget what the extension is, but.
+
+Justin Gardner (@rhynorater) (01:05:45.102)
+So there's some maybe non-administrative, not always associated with administrator functionality that allows you to update translate files, and then you may be able to do something funky with that.
+
+Ram Gall (01:05:53.477)
+Yeah, by default it's admin only, but you know, some things perform, you know, they use a block list instead of an allow list. All right, they use it, yeah. So if you can get some of those translation files uploaded, do you have the link?
+
+Justin Gardner (@rhynorater) (01:06:03.906)
+Sure. Yeah, yeah, yeah.
+
+Interesting, that's a good path, because if you're working with a plugin that does translation in particular, then maybe there could be some access control stuff, and then, okay, you think, well, all right, maybe I can affect the translation, but what does that really do? It gets XSS. So that's good to know, very cool. And so then moving on from XSS to, and obviously blind XSS is a big thing in a WordPress environment as well, so that's something that sort of we got.
+
+Ram Gall (01:06:21.339)
+Exactly.
+
+Justin Gardner (@rhynorater) (01:06:35.746)
+triggered from last week had Ben started talking a ton about blind XSS and now my brain has just been spinning about blind XSS.
+
+Ram Gall (01:06:42.937)
+Yeah, just assume the XSS and WordPress is blind and will work and it probably will.
+
+Justin Gardner (@rhynorater) (01:06:45.706)
+Yeah, yeah, that's great. Now that's good. So moving on to SQL Isinks, they have a pretty good wrapper around SQL stuff in WordPress. It's WPDB prepare normally is what's being used. What are some problems with that we can be on the lookout for when we're auditing WordPress plugins?
+
+Ram Gall (01:07:09.053)
+Well, the biggest problem is developers that don't use it at all. But as you mentioned, preparing part of the SQL query, but concatenating it with an unprepared portion, and then actually running the query so that part of it's not prepared. We do see that on occasion. There is a sort of backward compatibility issue with WTB prepare,
+
+Justin Gardner (@rhynorater) (01:07:13.827)
+Okay.
+
+Justin Gardner (@rhynorater) (01:07:27.415)
+Mmm.
+
+Ram Gall (01:07:38.829)
+If instead of percent s for a string, it'll do like labeled strings like percent one s, then it won't add quotes to it. So you can run like character based SQL injection.
+
+Justin Gardner (@rhynorater) (01:07:45.016)
+Mmm. Yeah.
+
+Justin Gardner (@rhynorater) (01:07:52.49)
+Ooh, interesting. So if you, so it doesn't, ah, maybe that's because it doesn't know it's a string. No, but it should know it. It shouldn't know it's a string.
+
+Ram Gall (01:07:58.865)
+Well, it does know it's a string. It just, it doesn't, it does know it's a string, but because of the label, it doesn't treat it the same. There's some WordPress developer doc on it that just says, due to backwards compatibility. So.
+
+Justin Gardner (@rhynorater) (01:08:11.626)
+What the heck, Ram? Is this something that's known by people or are you just dropping a WordPress core SQL zero day on Critical Thinking podcast right now? Okay. Wow, that's weird, man. Okay, so they've got that functionality and it won't put in the double quotes, so you might be able to escape out of that. Very interesting. Mm.
+
+Ram Gall (01:08:20.379)
+Nah, nah, Core doesn't use this practice, but they just support it in case someone else does.
+
+Ram Gall (01:08:31.291)
+Exactly.
+
+Also, you can't escape out of single quotes if you're using a GB case, a character set using multi-byte encoding, but that almost never happens. So I yeah.
+
+Justin Gardner (@rhynorater) (01:08:43.95)
+Interesting. Is there some character in that language that is correlated, gets normalized to a single quote or something?
+
+Ram Gall (01:08:49.425)
+Effectively a double quote. That is effectively a single quote, yeah. Yeah, it's real old. It's been around since like 2006. It just almost never comes up because I've never seen a site using that character set.
+
+Justin Gardner (@rhynorater) (01:09:01.534)
+and it has to use that character set in the database. Okay. Yeah, that's pretty rare. But that makes me think, though. Maybe there's some websites that are using specific character sets that are not normal, foreign. That could be a good place to do some WordPress-related research. That could be cool. I should nerds. There's a guy that came on the pod.
+
+Ram Gall (01:09:04.933)
+in the database here.
+
+Ram Gall (01:09:17.265)
+that we haven't found it yet.
+
+Justin Gardner (@rhynorater) (01:09:31.206)
+I guess probably a couple months back now. This is very much obsessed with character set related stuff. So I should nerd snipe him with that. That'd be good. It's complicated. He dropped a really good blog post, though, that I still haven't found the time to read on, which is essentially like, actually, I've got it right here. It's literally right in my bookmark bar. The absolute minimum every software developer absolutely, positively must know about unicoding character sets is the name of the, of no excuses, it says at the end.
+
+Ram Gall (01:09:38.877)
+That stuff hurts my brain, man.
+
+Ram Gall (01:09:59.685)
+I think I might have read that one actually.
+
+Justin Gardner (@rhynorater) (01:10:02.446)
+That's a great article. If you've read it, I'm sure it's got a lot of value to it. And Matthias mentioned that he endorses it as well. So that's another one we'll link. I'll go ahead and, sorry, Richie, the editor, you're gonna have a really long description for this episode because there's so many things to link, but I'll put that in the doc and it'll be waiting for you guys in the description when you go to read that. And so the actual things that, going back to,
+
+to WordPress. The things that actually trigger SQL-related statements are WPDB query or get row, right?
+
+Ram Gall (01:10:39.006)
+There's a number of other functions. Update, you can do time-based SQL injection on updates or deletes. Though those are kind of a pain to deal with.
+
+Justin Gardner (@rhynorater) (01:10:42.187)
+Mm, sure.
+
+Justin Gardner (@rhynorater) (01:10:46.143)
+Okay.
+
+Yeah, I imagine so, yeah. But we need to be looking for direct injection into query and get row or concatenation with prepare or some sort of label-based printf-like functionality.
+
+Ram Gall (01:11:04.869)
+Yeah, I'd honestly put the label based one in the weird shit WordPress does because it's pretty rare. We were just like that blew my mind when I found out about it. So I had to mention it.
+
+Justin Gardner (@rhynorater) (01:11:09.355)
+Sure.
+
+Justin Gardner (@rhynorater) (01:11:13.202)
+Yeah, no, that's exactly the stuff we want to know about. And that's the kind of stuff you want to hear about on a podcast and then be like two years down the road when your brain has trapped that little piece of information deep, you're like, oh, wait a second, I thought I heard something about that. And then you Google it and you find it, and then you pop the bug. So that's the kind of stuff we're going for, for sure. One of the things that my mentee actually brought up as he was doing some WordPress plugin assessment
+
+Ram Gall (01:11:33.775)
+Deep cuts.
+
+Justin Gardner (@rhynorater) (01:11:42.558)
+escape underscore SQL being used in conjunction with non-quoted strings. So in those scenarios as well, you can trigger SQLI, right?
+
+Ram Gall (01:11:47.75)
+Yes.
+
+Ram Gall (01:11:52.905)
+Correct. If there's no quotes to escape, then you can just use character-based SQL injection.
+
+Justin Gardner (@rhynorater) (01:11:58.646)
+Right, and you don't really even need to break out of any string-related context, no double quotes, no single quotes, anything like that. So, a lot of people will just blindly trust Escape SQL.
+
+Ram Gall (01:12:10.041)
+Yeah. I remember my first security job, we used to patch stuff using escape SQL. And then I found out that it wasn't enough. I was like, Oh, no, what am I doing? Yeah.
+
+Justin Gardner (@rhynorater) (01:12:19.354)
+Oh, I made some mistakes. Yeah, I was a PHP developer, actually. It was my first software engineering job. And I wince when I think back on the code that I wrote in those days. But yeah, I think this is particularly one of the things I wanted to call out here is this is particularly interesting in context of dealing with integers that, and there being a type confusion. Because in WordPress environment, you know, you can say, hey, when you're doing an SQL query,
+
+Ram Gall (01:12:29.54)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:12:48.278)
+with a specific integer, you can put it in there and you can say x equals whatever without having to use the double quotes. So if they're assuming that x, y, z argument that's being pulled from the query parameters is a integer and they insert it that way, then it could be very vulnerable to this if you just give it a string instead and manipulate the SQL statement.
+
+Ram Gall (01:13:10.617)
+Yeah, we just actually, I think we just published a really fun type juggling article. So, uh, yeah. Oh, also don't use sanitize stacks fields for SQL, uh, proving stuff.
+
+Justin Gardner (@rhynorater) (01:13:15.634)
+Ah dude, I love those vulnerabilities. I gotta go consume that.
+
+Justin Gardner (@rhynorater) (01:13:24.458)
+Synetize, oh yeah, Synetize text fill. You're getting your, yeah, yeah. That would be bad. That's great, I love that. All right, let me see where else we wanna go here. I do wanna talk a little bit about WordPress-based escalations, and we also wanna talk about sort of deserialization in a WordPress context. I'm gonna glan, yeah, geez, there's a lot there.
+
+Ram Gall (01:13:26.717)
+That's for XSS. It's not for SQL.
+
+Ram Gall (01:13:45.757)
+You had some fun with that one, huh?
+
+Justin Gardner (@rhynorater) (01:13:49.494)
+I'm gonna go ahead and look through here really quickly and make sure we're not, this document has become pretty chunky, so I'm gonna make sure that we're not, so yeah, I guess one of the things that is a vulnerability that's only specifically correlated to WordPress that I kinda wanted to bring up is this whole concept of an arbitrary non-sleek vulnerability, and this is a scenario where you can,
+
+take user input and generate a nonce for any given label, like you mentioned before.
+
+Ram Gall (01:14:21.977)
+Yeah, yeah, Chloe found one a couple years ago. I think it was in one of the Facebook plugins.
+
+Justin Gardner (@rhynorater) (01:14:28.318)
+Yeah, yeah, I read that right up. It was amazing. And so essentially what this allows the user to do is escalate privileges in a lot of scenarios where nonces are being used as the access control because they can generate a valid nonce for any label. That's a weird bug. That's one I wanted to make sure that people were aware of because it took a second. It's only something limited to a WordPress-related context.
+
+Ram Gall (01:14:53.093)
+WordPress, yeah. Yeah, I'm glad they're as rare as they are. Well, I hope they're as rare as I think they are.
+
+Justin Gardner (@rhynorater) (01:14:58.054)
+Yeah, yeah. Well, I did poke around a little bit for them because I needed them for a chain, and I didn't see a lot of them. So even grepping through all 800 and something plugins that are in scope of Y'all's program.
+
+Ram Gall (01:15:10.333)
+Now you'll have a better time trying to find the non-sound like, you know, an admin page.
+
+Justin Gardner (@rhynorater) (01:15:14.026)
+Yeah, exactly. So let's see here. You have some stuff on here, WP handle upload. Was that the stuff that we talked about before? Or was that some other tidbit, juicy tidbit of knowledge that I don't want to miss out on?
+
+Ram Gall (01:15:27.729)
+Oh, WP Handle Upload is the built-in WordPress file uploading mechanism. It runs some pretty decent MIME type checks and file type validation checks and extension checks, but some plugins will put in overrides to tell it not to test the file type and or to allow different MIME types and then you can get away with some mischief.
+
+Justin Gardner (@rhynorater) (01:15:44.124)
+Ha ha ha.
+
+Justin Gardner (@rhynorater) (01:15:50.742)
+Wow, interesting. So WP Handle Upload, that's a function. And look at that. There's overrides right there as the secondary parameter.
+
+Ram Gall (01:15:58.825)
+Yeah, I realistically WordPress has really good safety faults for a lot of things and a lot of developers just don't just turn them off. So look for that.
+
+Justin Gardner (@rhynorater) (01:16:07.614)
+Love that. Love that. Okay. Wow. Yeah, that's a great call out. Thanks for that. I'm glad we didn't skip over that. Definitely, you know, anytime there's... And I'll share some interesting stuff with you outside of the pod because I've got, you know, a top plugin that I've been working on recently and reported some bugs in. They have some really sketchy mime extension check and mime checking functionality that literally just doesn't work at all. So...
+
+Ram Gall (01:16:19.497)
+Alright.
+
+Ram Gall (01:16:33.569)
+Yeah, look for non-standard MIME type checks and file type checks. You'll find all sorts of crazy stuff.
+
+Justin Gardner (@rhynorater) (01:16:37.846)
+There's also, and this is like a very well-known plugin too, so I was very surprised. Great, well, let's go a little bit, let's dive back in again to the weird WordPress shit section before we go to pop chains and WP escalations. There's, oh actually, you know what, I think, you know, yeah, we covered all of these because this is the page thing and the, right, we covered all the weird WordPress shit.
+
+Ram Gall (01:16:58.569)
+Did we?
+
+No, I don't think we covered how WordPress actually lets you overload the request and get super globals. So remember how we were talking about how WordPress uses the page get parameter to tell you what page it's on? So WordPress verifies that that's the correct page, therefore the function wouldn't run if you weren't on that page, right? So a lot of developers will echo out the page parameter.
+
+Justin Gardner (@rhynorater) (01:17:08.039)
+Oh, talk to me about that then. What is that?
+
+Justin Gardner (@rhynorater) (01:17:15.818)
+Yeah, yeah, on the admin.php.
+
+Ram Gall (01:17:28.221)
+but they'll use request instead of get. And WordPress basically smooshes together. It, if there's a post page parameter, it'll stick it in the request page. Even if there's also a get page parameter.
+
+Justin Gardner (@rhynorater) (01:17:43.161)
+It's just, ah, what if you did a post to that page with the page in the post body and the page in the query parameter? Ah.
+
+Ram Gall (01:17:51.533)
+Yes. So you use the correct page in the query parameter and you put an XSS payload in the post parameter and it echoes out the page name. Yeah, I found a few of those.
+
+Justin Gardner (@rhynorater) (01:17:59.97)
+Dude, Ram, that is sneaky, man. That is sneaky. That's great. So anytime we see echoing of request page, there could, well, yeah. Right, that makes a lot of sense. So there's some way for you to sort of overla, yeah, that's really weird. So in request, it smooches, what is it, just like implode them with a comma or something like that? What does it do?
+
+Ram Gall (01:18:09.049)
+or echoing of request anything when it should be using getter posts, then.
+
+Ram Gall (01:18:25.277)
+So PHP by default will basically stick both get and post into request in order of priority, but you can change the priority in php.ini. But WordPress will make darn sure that whatever's in post gets priority over whatever's in get if it's the same parameter.
+
+Justin Gardner (@rhynorater) (01:18:31.008)
+Right.
+
+Justin Gardner (@rhynorater) (01:18:42.67)
+No, and WordPress looks at get to decide what page it's in. Love it. I love that little discrepancy between the two. This is exactly what we're looking for. That's great. And so in those scenarios, you can trigger XSS by injecting into the post body. Very cool. Yeah. And did we cover the JSON related? We did cover the JSON related stuff in the body. So that's great.
+
+Ram Gall (01:18:46.278)
+Yes.
+
+Ram Gall (01:18:59.141)
+Exactly. I mean, it's usually reflected, but...
+
+Ram Gall (01:19:09.664)
+Okay, cool. Yeah.
+
+Justin Gardner (@rhynorater) (01:19:10.358)
+With that, let's go ahead and move along to popchains. So this is PHP object. Pop.
+
+Ram Gall (01:19:17.913)
+Ninja, I don't know what pop actually stands for. Most people just call them gadgets, but I like pop change because it's fancy.
+
+Justin Gardner (@rhynorater) (01:19:23.478)
+Hold on, I swear I've read this. It says it's like ROP chain, PHP object pollution? PHP object. What the heck? Why is it escaping my head now? Uh.
+
+Well, that's a little bit rip. Although the only one that I see is similar to ROP chains. POP chains allow you to do whatever. So I guess POP chains, they're essentially useful in these sort of deserialization scenarios. And actually, I've spent, funny story, I've spent definitely like 40 hours looking for POP chains in WordPress core and WordPress, top WordPress plugins, because I needed it for a chain.
+
+Ram Gall (01:19:55.217)
+Exactly, yeah.
+
+Ram Gall (01:20:09.769)
+There's some pretty good ones in, I want to say, TCP to PDF. The main problem is that never ends up actually, the class never ends up actually loaded when you need it.
+
+Justin Gardner (@rhynorater) (01:20:15.04)
+Oh really?
+
+Justin Gardner (@rhynorater) (01:20:21.166)
+I hate that, Ram. Ugh, that drives me nuts. So essentially, for the listeners, the scenarios in which you need this is a deserialization scenario. And specifically, this is the scenario that I was using it with was when you were using a FAR-based deserialization, and this is when you can inject an arbitrary URL into file underscore exists or is file. And what that will do is if you give it a phparchive file.
+
+far file, it will try to load that file up and deserialize the metadata associated with that. And in that scenario, you need sort of a chain of gadgets in order to get RCE. And to be clear, this only affects PHP versions. What is it? 7.4 and below. I think, wasn't it patched in 8.1?
+
+Ram Gall (01:21:06.065)
+7.4 and below.
+
+Ram Gall (01:21:11.097)
+I think they might have just, it was either 8 or 8.1.
+
+Justin Gardner (@rhynorater) (01:21:14.478)
+Yeah, yeah, 8 or 8.1, you know, some of the, if it's in the sevens, you're fine. Exactly.
+
+Ram Gall (01:21:18.213)
+Everyone's still using 7.4. It's the 5.6 of 2024.
+
+Justin Gardner (@rhynorater) (01:21:22.934)
+Right, great, yeah, that's good. So, you know, still widely used, but you can use that functionality to get RCE as well. So if you have arbitrary injection into a file underscore exists or is file any stat-based call in PHP. And so I found that and I was looking, I was like, I need to find a pop chain, so I started going through. Unfortunately, there was one that was patched in December.
+
+that was like blatantly obvious, you know, that was just like, that one was very obvious and I would have loved to use it, but in the end I couldn't find one. And there's a bunch of really good write-ups out there, like essentially chaining together just this crazy massive beautiful flow of functions and classes and stuff to trigger these chains. But essentially the concept for these is that you need some...
+
+Ram Gall (01:21:52.536)
+That one was real bad.
+
+Justin Gardner (@rhynorater) (01:22:18.606)
+class that you can instantiate and just set the attributes of that class, and then have some function trigger or something being called on that class like toString or __wakeUp or __destroy that kicks off a code flow that eventually allows you to gain control of the whole application just from populating the attributes of a certain class. Is that accurate, Ram?
+
+Ram Gall (01:22:41.925)
+that is better than I could have said it myself.
+
+Justin Gardner (@rhynorater) (01:22:44.694)
+It's a cluster, man. It's nuts. And spending time looking for this is crazy because you're having to reach so deep into all of these PHP internals of like, all right, well what if I treat a class like an array and I'm trying to access the certain attributes of this array, but actually it's a class and it's calling these functions. It's nuts. So, so many interesting things there. We'll link an amazing one. Yeah.
+
+Ram Gall (01:23:10.717)
+WordPress uses serialized data basically everywhere in its internals and built-ins handle that serialization fairly well, but a lot of plugins seek to emulate it and don't handle that serialization quite as well. So you'll end up with, you know, storing session data as an object and cookies and
+
+Justin Gardner (@rhynorater) (01:23:26.474)
+Mm, yeah, that's scary, man. And so, yeah, that's a great point, Rem. So, cookies is actually probably one of the top sources for that sort of deserialization front. Wow, yeah, that's good. Definitely something to be on the lookout for there.
+
+Ram Gall (01:23:40.337)
+Yeah, I'd say so.
+
+Ram Gall (01:23:45.321)
+We also see a lot of settings, import, export functionality. That's always a fun source to play with.
+
+Justin Gardner (@rhynorater) (01:23:51.39)
+Right, or even update options probably, right? You know, there's stuff being stored in there in a serialized format. Anyway, I just wanted to talk about this because I'm a little mad right now. I don't like being defeated by technology. That's one of the things that makes me a good hacker. So I spent a lot of time and I over-indexed on finding this pop chain. So if anyone can find a pop chain in WordPress Core or any plugins above five million installs, then...
+
+I will be very impressed because I spent a lot of time and I couldn't do that. So there's a little challenge for you WordPress enthusiasts in the audience. Yeah, well they need to add one, right? There's gadgets, man, I swear, Ram, I went down every single path. I got really meticulous about it too, man. I started saying, okay, here are all my sources.
+
+Ram Gall (01:24:28.937)
+I'm sure it's only a matter of time before I add a new one.
+
+Justin Gardner (@rhynorater) (01:24:42.762)
+Like I started drawing, you know, I almost like that Pepe, you know, like whatever it is, the dude that's like, you know, there's like strings all over the place and he's like talking. Yeah, and yeah, exactly. And yeah, I was like that, except for the pop chains and Joel is like, Justin, chill out, dude. Like, this is not, you know, and this is not even like, you know, a top dollar bounty for me normally either. So it's just like, hmm.
+
+Ram Gall (01:24:49.81)
+Yeah, I know what you're talking about. Who is Peppi Silva?
+
+Ram Gall (01:25:06.053)
+I will admit to searching for all the destructor methods in every plugin I look at, just in case.
+
+Justin Gardner (@rhynorater) (01:25:12.706)
+It's nuts, man. Just in case. I don't know. I want one. Give me one. It's critical thinking listeners, please. That would soothe my soul. All right. Ram, we're coming to the end. We're going to hit WP escalations. We're going to hit WordPress escalations, ways to escalate impact in WordPress. Then we're going to swing back around to your bugs, and we'll call it a wrap. So talk to me about some WordPress escalations. I wrote down some basic ones here. For example.
+
+one that you taught me in a fine little vulnerability exchange, file deletion of WP config results in RC. Can you talk about that a little bit?
+
+Ram Gall (01:25:51.313)
+Yeah, so when you delete the WP config file, the WordPress site thinks it's being newly set up, which means that the first person to visit the site gets to tell it what database connection information it needs to use, which means if you already have a database set up somewhere else, you can just point it at that existing database that already has you as an administrator, or add a new admin account, and log in, and then you can edit.
+
+plugin files, install file manager plugins, run code on the server, you own the site. You might lose access to the old database, depends on if you want anything in there, but if there's any backups, you know, you got those.
+
+Justin Gardner (@rhynorater) (01:26:29.738)
+Or you might not, right? Because a lot of times people make WP config backup files.
+
+Ram Gall (01:26:34.849)
+Exactly. And then you can download those and then you have access to the database instead of the site.
+
+Justin Gardner (@rhynorater) (01:26:38.314)
+Yeah. Or, yeah, and then after you put your little shell, your little reverse shell on there, then you can just sub the old WP config file back in, and then boom.
+
+Ram Gall (01:26:48.221)
+Pro tip, WordPress still uses MD5 for password hashing. It uses a lot of rounds.
+
+Justin Gardner (@rhynorater) (01:26:54.627)
+Oh, no way, really? That's interesting.
+
+Ram Gall (01:26:56.121)
+It uses a lot of rounds of MD5, but still MD5.
+
+Justin Gardner (@rhynorater) (01:26:59.15)
+Wow, I'm sure that's gonna bite him in the butt someday. Yeah, yeah, I did notice that. So I guess the next one on the list here, so that's great, if you got an arbitrary file deletion, results in RCE WP config, boom, you're done. Next one on the list here, stored blind XSS to RCE via admin hijacking and then editing the plugins. Obviously if you're an administrator, you have the ability to edit plugin code, that's one of the features of WordPress, so anybody who's new to WordPress should know that.
+
+Ram Gall (01:27:01.957)
+It does use salts, but you know.
+
+Ram Gall (01:27:28.557)
+or you can add new administrators. There's a fancy little JavaScript going around. I was so happy. I'm still taking some, I'm taking the OSCP and I was so happy to see this little JavaScript. It was like, I know that guy. It's just this character encoded JavaScript that adds a new admin user.
+
+Justin Gardner (@rhynorater) (01:27:30.55)
+Yeah, that's true.
+
+Justin Gardner (@rhynorater) (01:27:39.496)
+Yeah, yeah.
+
+Justin Gardner (@rhynorater) (01:27:44.086)
+That's great, I love that, because it makes it so easy to implement. I think Hack Luke has something out there for that too, he's great. And then, so tell me about some of the ones you added here that are ways to escalate privileges in WordPress.
+
+Ram Gall (01:27:57.161)
+So we sort of discussed this already, but if you have update options, you can set the default role to administrator and enable user registration. And we already discussed about how you can use hard-coded options for cross-site scripting.
+
+Justin Gardner (@rhynorater) (01:27:58.88)
+Mm.
+
+Justin Gardner (@rhynorater) (01:28:03.702)
+Hmm. Ah, yeah. Yeah.
+
+Justin Gardner (@rhynorater) (01:28:11.986)
+Okay, gotcha. So a lot of the ones that came to mind surrounding this as well are options-related ones. If you have arbitrary option update, then just boom. User registration, boom. Default user should be an admin, and then you're in. That's great. Yeah, I'm looking at them. We did. Yeah, so this is good. The only other one that's down there is this roll your own password reset functionality.
+
+Ram Gall (01:28:28.242)
+Yeah, yeah, we actually discussed a lot of these at least sort of in passing. Yeah.
+
+Ram Gall (01:28:37.201)
+Yeah, a lot of plugins sort of use less than secure practices. They don't use all of the built-in password reset functionality. Again, you'll see this in a lot of membership plugins, other plugins that are designed to keep track of users and take their money for stuff. And yeah.
+
+Justin Gardner (@rhynorater) (01:28:52.395)
+Yeah.
+
+Ram Gall (01:28:55.045)
+A lot of them will have insecure password reset functionality, like it'll set a second, it'll set like a reset code that's deterministic and easily gassed, or it'll let you set the user ID to reset the password for even if it's not your user ID, or it'll let you know you'll send yourself a password reset, and then you click on the link, but you just spoof out your user ID for the other user and you can reset their password.
+
+Justin Gardner (@rhynorater) (01:29:11.269)
+Mm, yeah, yeah.
+
+Justin Gardner (@rhynorater) (01:29:20.734)
+Man, there's so many things like that whenever you try to bypass traditional functionality that gets really tricky. When you said predicting, being able to predict what the reset token might be, excuse me, it made me think of a function where I found a vulnerability in some PHP code the other day. Unique ID in PHP is literally, it's UNIQID, right? It reads unique ID, not a unique ID at all.
+
+Ram Gall (01:29:25.35)
+Yeah.
+
+Ram Gall (01:29:48.357)
+Yeah. It's not suitor. It's just, it's, is it even suitor in him?
+
+Justin Gardner (@rhynorater) (01:29:53.688)
+It's just timestamp based pretty much, so if you-
+
+Ram Gall (01:29:55.425)
+Oh, oh yeah. Yeah, that's another one of the things that you see with bad password resets. They'll basically just set the code to the current exact time.
+
+Justin Gardner (@rhynorater) (01:30:03.006)
+It's like, oh no, this is so bad. And so, unique ID, one of the plugins I was looking at the other day was using it as like a temp directory name. And I was like, this is not good, because we can guess that. And so, definitely some volumes to be found there. It might even be worthwhile to just grep all this PHP source code for unique ID of the plugins and see where it's being used, because I'm sure a bunch of bugs would fall out of that.
+
+Ram Gall (01:30:29.581)
+Absolutely. Yeah. WordPress is one of the places where a lot of those vulnerabilities you think are just theoretical end up being entirely practical to exploit.
+
+Justin Gardner (@rhynorater) (01:30:36.83)
+Yeah, that's great. And I'll mention as well, just for any of those listening, I actually mirrored, I have a piece of code that runs every day and mirrors the GitHub, I mean the SVN plugins that are in, you know, on the plugins page for WordPress. It mirrors them into a GitHub organization. And that is github.com, I'm gonna type it in as I'm doing it, slash.
+
+WordPress plugin directory. That's one that I maintain. And essentially, you can see diffs on any changes that are being made there. This is a part of my own personal automation. And so you can see any changes being made there to various plugins and new code that's being pushed. And you can diff it with, oh my gosh. You know, as I'm talking about this, I just started scrolling through there and I see a vulnerability. That's hilarious. Well.
+
+Ram Gall (01:31:30.481)
+new stuff, new toys.
+
+Justin Gardner (@rhynorater) (01:31:33.006)
+I'm gonna go ahead and bookmark that bad boy. But yeah, go ahead and head over to github.com slash wordpressplugin directory and then you can search within that organization on GitHub and you'll be able to do stuff like look for unique ID. But I will probably do that before you, before this episode airs.
+
+Ram Gall (01:31:49.457)
+I am so glad that you've done that because we used to use WP directory.net and it has gone down.
+
+Justin Gardner (@rhynorater) (01:31:53.502)
+Yeah, yeah, yeah. It was a little bit of a pain in the ass, especially in the beginning, because there's a limit on the number of repositories you can create in a certain timeframe on GitHub. So I had to write a script that would be like, all right, wait, upload, wait, upload, that sort of thing. But it's all automated now, it's all in a cron tab now, so it should be easy searching for any of you guys that are interested in mass searching WordPress plugins. Alrighty.
+
+With that, I think we finished the WordPress escalation section. Let's get back to the Buggos RAM, and let's talk about the rest of them. I guess let's go ahead and briefly revisit the one, now that we know a little bit more about the Elementor remote code execution one. So this was a scenario. OK, add action, admin init. We talked about this. So this is a way you hook into, you provide a callback function for specific hooks.
+
+Ram Gall (01:32:45.134)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:32:50.61)
+And the admin init one can be triggered from an unauthenticated context, and then also can be triggered by visiting literally anything under wp-admin, right? Okay, and in this scenario, I'm gonna try to, I'm gonna do a reverse writeup here. I'm gonna summarize it, and then you can tell me if I'm right. So, in this scenario, it says wp underscore doing ajax, which I assume is just a check to that, to whether it's being an ajax request or not.
+
+Ram Gall (01:32:59.529)
+Correct, yeah.
+
+Ram Gall (01:33:07.535)
+Alright.
+
+Justin Gardner (@rhynorater) (01:33:18.782)
+And then you've got the WPVerifyNonce, which does make it require some sort of authentication, because the user ID has to be associated with a specific thing for the nonce, and you have to be able to access it. And then it... Oh, really? Okay.
+
+Ram Gall (01:33:28.729)
+Elementor uses one-notes for a lot of stuff. I mean, they've got more than one, but they use the same one for most things.
+
+Justin Gardner (@rhynorater) (01:33:34.25)
+Very cool. So using that, you can just trigger the upgrade of the Elementor plugin and provide PHP code, which is wrong, on the server. RIP, dude. That's a bad one. That is a bad one. I'm glad you pounded that one out before that was there for too many versions, because that would have been a bad one.
+
+Ram Gall (01:33:53.861)
+And technically was an admin Ajax one, but they did it a weird way where it didn't actually register the Ajax hook. It just checked if you happened to be on the Ajax page.
+
+Justin Gardner (@rhynorater) (01:34:02.686)
+Oh, interesting. OK, cool. Huh. That little function looks a little interesting there. Let's go ahead and talk about the SSRF, the Next One Subscriber Plus SSRF. Also, all of these write-ups that Ram is talking about, these are public, and they are in more detail on the Word Fence blog, which we'll link below. And I just want to say, we cover a lot of write-ups and stuff like that here on Critical Thinking. And the ones done by the team, I think,
+
+A lot of the ones done from a corporate perspective are kind of schme. The word fence ones are very good and clearly very technically in depth. I've learned...
+
+Ram Gall (01:34:41.445)
+Yeah, I didn't have quite as many screenshots for the Elementor one just because I think I was in a hurry for that one, but...
+
+Justin Gardner (@rhynorater) (01:34:46.282)
+Yeah, no problem. And they're very useful for education when you're trying to learn how to do WordPress plugin assessments. So I've been dread almost all of them. So I've seen these before, but I'll let you sort of take it from there on this one.
+
+Ram Gall (01:34:53.993)
+trying to make a little bit of a corpus here.
+
+Ram Gall (01:35:03.177)
+Okay, so the credential stealing server side requests for Adrian, this was in the get with Gutenberg blocks plugin, which has a bunch of installs. Not that many, but they registered a rest route to get remote content.
+
+Justin Gardner (@rhynorater) (01:35:13.694)
+Mm. Pretty popular, yeah.
+
+Ram Gall (01:35:20.557)
+And the permission check was just current user can read, which is the one capability that subscribers have. So it's so, but that does mean that it ran a nonce check. So you couldn't see surf this, but it did mean that, you know, if you were subscriber, you could Retrieve arbitrary content from arbitrary URLs. And if you're on an EC two box, then you can pass a specific local IP URL incidentally WordPress has a WP safe remote get
+
+Justin Gardner (@rhynorater) (01:35:27.519)
+Hahaha
+
+Justin Gardner (@rhynorater) (01:35:32.82)
+Okay.
+
+Justin Gardner (@rhynorater) (01:35:40.119)
+No way.
+
+Ram Gall (01:35:48.701)
+that prevents this from happening but no one uses it? Yeah.
+
+Justin Gardner (@rhynorater) (01:35:51.47)
+Oh, really? Oh, is that like a non-default setting on WP, retrieve remote or whatever, or remote get? Interesting. So I'm looking at the code here. Essentially, all they do is $ get the content URI. So get the URL. They pass it directly. They just pass it directly right on. Yeah, it's gave it there. And then pass it directly into remote get, which gets the result back. They just undecode it, and then they just send it right back out.
+
+Ram Gall (01:35:57.186)
+Yeah.
+
+Ram Gall (01:36:09.251)
+And just decode it.
+
+Ram Gall (01:36:19.481)
+Yeah, realistically, the biggest impediment to see surf is the request, you know, expecting it in some format that isn't what I want. So the fact that this is in JSON is like, Hey, that's perfect.
+
+Justin Gardner (@rhynorater) (01:36:28.358)
+Exactly. Yeah, JSON, that's a very, very lax consideration and definitely correlates really well to the AWS EC2 API because everything is in JSON in those scenarios, which is great. Very cool. This is it. And I'm wondering also, wp-u if you have full direct access to the URL that's associated with there, is there anything else you can do with PHP related like, yeah.
+
+Ram Gall (01:36:42.397)
+Exactly.
+
+Ram Gall (01:36:56.657)
+Yeah, no, if it's echoing out that information and you happen to have access to the remote URL, you can put like a cross site scripting. You can put like a cross site scripting payload. If it's putting the contents of that remote URL somewhere, then you can get RCE. It's a little more rare, but.
+
+Justin Gardner (@rhynorater) (01:37:04.801)
+Hmm.
+
+Justin Gardner (@rhynorater) (01:37:13.142)
+via PHP. Yeah, but what about like, can you give it a URL that has like a PHP scheme, like PHP filters or like a file scheme, you know, file colon slash slash. Do you know if that works with WP Remote Get or does that something you have to do elsewhere?
+
+Ram Gall (01:37:28.713)
+I don't think it works for non-standard pseudo protocols, but I will have to check that because if it does that would be really cool.
+
+Justin Gardner (@rhynorater) (01:37:33.886)
+Okay, okay. Yeah, that'd be something interesting. We may insert something here if it does. But I imagine it would just be used for, remote get. I imagine that would just be used for, yeah, I mean it says right here, performs HTTP requests. I think it's explicitly for HTTP-related functionality. Otherwise, I know, otherwise that'd be pretty fun, because you could do some tricky stuff with PHP-related schemes that are supported.
+
+Ram Gall (01:37:52.641)
+Ah, that'd be so cool though.
+
+Justin Gardner (@rhynorater) (01:38:03.082)
+Very cool, Ram. Let's go ahead and hit this last one here. This is unauth XSS via the user agent header. Wow, this seems pretty cool.
+
+Ram Gall (01:38:10.665)
+I mean, it's pretty basic, but you know, it was one of the more recent ones just because I haven't been focusing as much on vulnerability research in the past year or so. So, uh, but yeah, it was in a security plugin. Uh, and, uh.
+
+Justin Gardner (@rhynorater) (01:38:12.874)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:38:19.217)
+mmm
+
+Justin Gardner (@rhynorater) (01:38:25.478)
+Ooh, that always feels good.
+
+Ram Gall (01:38:27.393)
+And you know how security plugins will show you which requests were blocked or which IPs were blocked and they'll show you the user agent? They forgot to escape that on output.
+
+Justin Gardner (@rhynorater) (01:38:33.479)
+Interesting. Yeah.
+
+Justin Gardner (@rhynorater) (01:38:38.454)
+That's clutch. That's actually a really interesting, yeah.
+
+Ram Gall (01:38:41.477)
+And that's the thing we keep on seeing this in security plugins. I wanna see even Wordfence has something like this at some point way back in like version two or something.
+
+Justin Gardner (@rhynorater) (01:38:45.706)
+Mm.
+
+Yeah, yeah, where you're, because there's so much data to log because it's a security related thing. Something is gonna pop in there that's a little bit tricky. Very, very interesting. So then they were just echoing out the refer directly, I guess maybe after URL decoding it or something like that. And then that was actually just being embedded right into the DOM so you could just redirect it from a page that had that in the URL. And actually, that makes sense as well. I'll add a little caveat here. And I don't know if you had to.
+
+Ram Gall (01:38:51.654)
+Yeah.
+
+Ram Gall (01:38:56.361)
+Exactly.
+
+Ram Gall (01:39:03.079)
+Yeah.
+
+Ram Gall (01:39:16.973)
+It wasn't even reflected, it was stored. So you could just visit the site, do something that would get you blocked with the user agent, with the malicious user agent in there. And.
+
+Justin Gardner (@rhynorater) (01:39:22.318)
+Ah.
+
+Justin Gardner (@rhynorater) (01:39:25.962)
+Of course, because it's a logging plugin. Exactly, that makes so much sense. Okay, I was missing that. You're good, and actually, that makes sense with the user agent and how it would be stored there and outputted, that's something people would wanna see. It makes me think of a different thing with the referrer since we kinda had that little mix up. Chrome, recently, I guess, I don't know when it was, maybe 2019 or something, so maybe not that recently.
+
+Ram Gall (01:39:30.513)
+Yeah, did I say referrer? It was user agent. I think it's just cause I saw a referrer one recently too.
+
+Justin Gardner (@rhynorater) (01:39:56.034)
+started not providing a referrer for cross-site refers beyond just the domain. So now if you're going from psc.renderator.com or whatever to a different site, the only thing you'll see in the referrer is, you know, https domain.com/. You won't see the path. But when you're using it for exploits, that's something that's controlled on the first page side. So you define...
+
+a referrer policy using the meta tag that says, please send my referrer. And then you can send a full referrer to the victim's side. And then if they're URL decoding it or base64 decoding it or whatever, and then doing something with it, then you can still get syncs. So.
+
+Ram Gall (01:40:26.448)
+Oh.
+
+Ram Gall (01:40:41.541)
+We actually just we were I remember just discussing something like that with Chloe I want to say earlier this week just it was like I bet you could do that and
+
+Justin Gardner (@rhynorater) (01:40:44.46)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:40:49.814)
+Yeah, I've used it a couple times in XPlays. It's pretty fun because there's this secure default that they put into place. But then, because it's from your site, you can just turn it off. And the whole point is, and it was very needed because we were using image tag injection and stuff like that to leak OAuth codes or something like that were in the URL that would be sent along with the refer. So very smart move by Chrome.
+
+In this specific scenario, you can undo the work and use the refer policy to gain. Exactly, yeah. So it's very cool stuff there. Dude, great bugs. RCE and the top plugin at a beautiful SSRF to EC2 metadata and a great XSS on a security plugin. Love to see that. Bram, this has been great, dude, and I really appreciate you coming on. Obviously, Wordfence has...
+
+Ram Gall (01:41:18.397)
+get away with even more.
+
+Justin Gardner (@rhynorater) (01:41:44.082)
+working at Wordfence, you've really developed a lot of great skills there. Anything you want to shout out before you we hop off?
+
+Ram Gall (01:41:51.501)
+Just that check out our bug bounty program. Think there we were probably going to have some very exciting news in the very near future. So keep an ear out. And I look forward to processing all your bugs.
+
+Justin Gardner (@rhynorater) (01:41:59.498)
+Yeah, yeah.
+
+Justin Gardner (@rhynorater) (01:42:05.298)
+Yeah, yeah, I'm sure you'll be getting a lot more from the critical thinking audience in the future. Yeah, yeah, and I can speak from experience that Ram really enjoys getting cool bugs because we've kind of geeked out together over Discord over a couple things. So, very cool stuff. Well, thanks for coming on, man, and I think that's the pod.
+
+Ram Gall (01:42:09.377)
+Show me some cool stuff, guys and girls and everyone else.
+
+Ram Gall (01:42:21.155)
+Yeah.
+
+Ram Gall (01:42:27.025)
+Thank you.

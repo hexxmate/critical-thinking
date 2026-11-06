@@ -1,0 +1,1295 @@
+Episode 76: Match & Replace - HTTP Proxies' Most Underrated Feature
+Source: https://www.criticalthinkingpodcast.io/critical-thinking-bug-bounty-podcast/episode-76-match-replace-http-proxies-most-underrated-feature/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:02.741)
+You hear that?
+
+Joel Margolis (teknogeek) (00:05.016)
+Nothing like the sweet smell of allergies.
+
+Justin Gardner (@rhynorater) (00:05.493)
+That is... That is... That is the sweet sound of a clear nasal passage. And the sickness is gone.
+
+Joel Margolis (teknogeek) (00:14.008)
+Yeah, mine is... I'm almost there. I'm like 90 % of the way there.
+
+Justin Gardner (@rhynorater) (00:17.301)
+Ha ha!
+
+All right, well hang in there man hang in there. I'm feeling 110 % back in the game after last week. Have a nice restful week off. So thanks for taking over the pod last week, man
+
+Joel Margolis (teknogeek) (00:26.232)
+That's good.
+
+Joel Margolis (teknogeek) (00:30.712)
+Yeah, of course, absolutely.
+
+Justin Gardner (@rhynorater) (00:32.757)
+we got some stuff we're going to cover today as usual. you've been doing some hacking lately. You want to talk a little bit about that?
+
+Joel Margolis (teknogeek) (00:44.216)
+Sure, yeah, I talked about it a little bit at the beginning of last episode, but yeah, I took a little vacation and I got that little itch again and I just started digging in on some target that I had been interested in for a while and I just found a bunch of really interesting, you know, sort of almost bugs and stuff and then I hit a bit of a stopping point so I sent a bunch of it over to you.
+
+Justin Gardner (@rhynorater) (00:51.573)
+Mm.
+
+Justin Gardner (@rhynorater) (01:09.045)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:12.725)
+Mm.
+
+Joel Margolis (teknogeek) (01:14.264)
+And then in like five minutes, you started escalating stuff. And then we like, we like started writing stuff up. We submitted it and we checked the scope page and it was explicitly out of scope. So we self -closed it. So yeah, it's just one of those things, but it was, it was a good experience.
+
+Justin Gardner (@rhynorater) (01:16.657)
+Classic, classic collaboration.
+
+Justin Gardner (@rhynorater) (01:26.037)
+Out of scope. No.
+
+Justin Gardner (@rhynorater) (01:34.933)
+Have you followed up with that target at all after that day or did we get a gut punch there with the adiscope?
+
+Joel Margolis (teknogeek) (01:42.136)
+Well, I think I had to return back to normal a little bit as well. So I think I lost a little bit of momentum. So haven't returned back to the target yet, but maybe I will. I might. I might. I think that there's some other things for me to look at.
+
+Justin Gardner (@rhynorater) (01:48.085)
+Mm, mm.
+
+Justin Gardner (@rhynorater) (01:53.205)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:57.621)
+Do you think you will?
+
+Justin Gardner (@rhynorater) (02:02.197)
+That website was sketchy as heck, dude.
+
+Joel Margolis (teknogeek) (02:04.152)
+There's a lot of weird things going on.
+
+Justin Gardner (@rhynorater) (02:06.709)
+There was, there was a lot of weird stuff. I think it happens, you know, sometimes it, and I think it's good to put it on air and on the pod as well that, you know, this sort of thing happens to more experienced bug hunters as well, where you're just like, you know, you kind of get in your flow or you're excited to look at a target or whatever, and you start poking at it, poking. What did you say? Poke it, poke it, poke it, poke at it, poke at it until you can't poke at it anymore. And then, and then, you know, you realize something's out of scope.
+
+And you know, it's just that the L's we take along the way in Bug Bounty, right?
+
+Joel Margolis (teknogeek) (02:38.361)
+It happens, it happens. It's all part of the process, you know?
+
+Justin Gardner (@rhynorater) (02:41.621)
+It is indeed. It is indeed. So speaking of else, I did want to talk a little bit about the the Ambassador World Cup because every other country besides the US is going to be taken in L. No, hopefully that's true. No, no, I just so you know, the first round of the Ambassador World Cup has been completed and the results are not.
+
+Joel Margolis (teknogeek) (02:56.76)
+I wasn't sure where you were going with that. I was like, wait a sec.
+
+Justin Gardner (@rhynorater) (03:11.029)
+And when I say the Ambassador World Cup, of course, I'm speaking about the Hacker One Ambassador World Cup hacking competition where ambassadors from all the different countries around the world and their teams are competing in a hacking competition for what last year was an in -person live hacking event and a bunch of prizes and that sort of thing. So pretty fun little thing. However, something was really odd with it this year, which kind of
+
+threw me off a little bit as a full -time hunter. So we've got over 700 hackers participating in this. It's massive. It's massive. So just for scale size, that's 15 times the normal live hacking event. You've got 50 people, roughly. So it puts it at a pretty decent ratio there.
+
+Joel Margolis (teknogeek) (03:48.28)
+big event.
+
+Justin Gardner (@rhynorater) (04:05.301)
+There's no dupe window.
+
+That seems a little off to me, man, because like for me as a full -time hunter who's doing this for my livelihood, right? Why am I going to expose myself? So expose myself to what is the equivalent of probably a hundred times or more, the dupe risk. And man, I have seen some absolutely gutting dupes come through from this live hacking event. Like, like people working really hard.
+
+getting what should be 25k plus crits getting duped out. And they submitted them within the first couple days of the competition. I don't know. It seems a little off to me.
+
+Joel Margolis (teknogeek) (04:47.928)
+Yeah. Yeah. So I think, yeah. So we have participated in the ambassador world cup before, from the program side.
+
+Justin Gardner (@rhynorater) (04:59.541)
+Mm -hmm. Yeah.
+
+Mmm. Okay.
+
+Joel Margolis (teknogeek) (05:03.896)
+And I think, I don't remember how it works and they might've changed it this year, but it could be a points thing. So one thing to remember is that teams are given points based on the severity of bugs found. I don't recall how duping affects that and whether or not dupes count. Like if you have a dupe of a crit, does that count as points, even though it's not a bounty? No? Okay.
+
+Justin Gardner (@rhynorater) (05:18.389)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (05:22.037)
+Mmm.
+
+Justin Gardner (@rhynorater) (05:28.533)
+It does not, it does not. So it's like, it's kind of like a double whammy because obviously, you know, if dupes counted, you would be getting some gamification of that, that whole thing. But, you know, it's, it's no bounty, no, no points, right? And I could understand if they wanted to say like, okay, you know, we'll, we'll give you, you know, no points because whoever gets the first submission in gets the points, but no bounty. Like, like, like.
+
+I mean, across these 700 hackers, so many of them have spent all this time hacking on these targets. I can't even fathom the amount of like hacker hours wasted because of dupes on this, right? Whereas at least with the live, and then here's the other piece of this, right? Like the bounties aren't that inflated for the Ambassador World Cup, right? So if they were mega inflated, it's like, okay, well, I'm exposing myself to a little extra risk for a little extra reward.
+
+Joel Margolis (teknogeek) (05:58.136)
+Yeah.
+
+Justin Gardner (@rhynorater) (06:27.061)
+Right. But the only reward in this situation is you get to move on to the next round of the ambassador world cup. Right. And and so I think I think for me as a full time hunter, it's hard for me to justify just from a financial perspective, whether like, should I be investing time in this or not? Because at the end of the day, my dupe risk is so much higher and my reward is nominally, you know, more. So I don't know. Maybe I'm off base with that. That being said, I did put, you know,
+
+Joel Margolis (teknogeek) (06:33.144)
+Yeah.
+
+Justin Gardner (@rhynorater) (06:56.117)
+I wanna say like 15 hours or so, like two days into the competition just to kind of support my team. I got a couple triaged bugs. So, you know, it is what it is. It'll pan out one way or the other, but I, next, and also let me just caveat this explanation with, like, I get that it's hard for HackerOne to deal with dupes at this scale, you know, when we're dealing with.
+
+you know, 700 hackers, how do you even in like 1400 submissions, how do you even dedupe across 1400 submissions? Very challenging across three targets even. But I still think that it strongly de -incentivizes the hacker, that hacker that takes their time and, you know, time investment into these sort of things seriously.
+
+Joel Margolis (teknogeek) (07:44.536)
+Yeah, yeah, it's definitely tricky because I don't think the programs are asked to operate really differently than, you know, they're basically still.
+
+Justin Gardner (@rhynorater) (07:51.829)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (07:55.928)
+programs that are participating right so it's it's not like a full -on live hacking event or anything like that it's like halfway between so
+
+Justin Gardner (@rhynorater) (07:57.045)
+Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (08:05.653)
+Yeah, I did appreciate that the bounties for one of the targets, they increased the mediums and the lows at least, which is like, okay, that's something. And I think increasing mediums is an underrated play by programs because that really does help put some cash back in the hacker's pocket along the way, especially if you're like a chain heavy and like a...
+
+Joel Margolis (teknogeek) (08:14.616)
+Nice.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (08:34.453)
+sort of a progressive hacker like I am, like I'll get in there and I'll find a couple mediums. You know, I'm looking at these sort of medium and low severity bugs as well as going for these bigger ones instead of trying to put them all together. So, but sometimes along the way, you're just going to run into some mediums. So it definitely helps to get those paid out well.
+
+Joel Margolis (teknogeek) (08:48.896)
+Yeah, for sure. And I will say like the one advantage that there is to sort of, you know, making it to that next round, other than, you know, just the fact of making it there is that theoretically that dupe, you know, rate or whatever goes down as you, you know, filter down to fewer and fewer teams. So in theory, it does get easier in a sense or harder, you know, harder, but easier, like less dupes, but more skilled teams.
+
+Justin Gardner (@rhynorater) (08:59.445)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (09:05.749)
+Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (09:12.853)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (09:18.165)
+Yeah, yeah, it's more of a hustle, I think, you know, in this first round than it will be in the later rounds. And that's what some of the guys in the chat were saying. But yeah, you know, maybe it's the price you pay. And for me, you know, as somebody who, for me and you Joel, you know, people that are sort of accustomed to the live hacking event circuit or whatever, it may seem as like, okay, well, why aren't we being actually incentivized here? But for, you know, the people that haven't had the opportunity to participate in a live hacking event, and that's their like...
+
+Joel Margolis (teknogeek) (09:25.624)
+Yeah. Yeah.
+
+Joel Margolis (teknogeek) (09:41.72)
+Yeah.
+
+Justin Gardner (@rhynorater) (09:46.965)
+bucket list item or whatever, then having the opportunity to participate in a live hacking event is the ultimate motivation. So I can see that.
+
+Joel Margolis (teknogeek) (09:56.824)
+Yeah. Yeah. Have you ever seen an F1 race? Have you ever seen an F1 race?
+
+Justin Gardner (@rhynorater) (10:00.405)
+Have one.
+
+Justin Gardner (@rhynorater) (10:04.373)
+Have I ever seen, an F1 race. No, I haven't seen an F1 race.
+
+Joel Margolis (teknogeek) (10:06.872)
+F1 race. Yeah. Okay. Well, have you ever seen like a clip of an F1 race starting? Okay, well Maybe this analogy will fly over you but I feel like this is This is very much so like the first turn in the race where it's always turn one where just like shit hits the fan and All the cars just like everybody because everybody's like starting and trying to like get ahead. Yeah, every really tight They're trying to like get whatever lead they can they're all like, you know inches from each other and like
+
+Justin Gardner (@rhynorater) (10:12.821)
+No, no I haven't.
+
+Hahaha
+
+yeah?
+
+Justin Gardner (@rhynorater) (10:25.364)
+man.
+
+Cause everyone's so tight. Yeah.
+
+Joel Margolis (teknogeek) (10:35.768)
+dad's disaster strikes and then whoever just makes it out of that is immediately ahead of the pack. Right. So that's kind of like, what's going on here with round one of the world cup is, you know, it's, it's turned one. So everybody's, everybody's neck and neck and whoever makes it through the blood bath at the beginning will, you know, inevitably lead the pack.
+
+Justin Gardner (@rhynorater) (10:41.237)
+Like, that's great.
+
+Okay, okay, I see it.
+
+Justin Gardner (@rhynorater) (10:56.917)
+We'll see, we'll see. I don't know where, I think last night US was in fourth place or something like that. So, you know, are we at third? Nice, sweet, sweet. So hey, you know, there's a chance, there's a chance. Dude, I don't know why, like, I don't know if it was just like the intonation or something, but it sounded like you were saying like, have you ever seen an F1 raise? Like, and I was like, is this some sort of like knock -knock joke or something like that? Like, I don't know how I'm -
+
+Joel Margolis (teknogeek) (11:03.096)
+I think we're third now actually. I believe so, so yeah.
+
+Yeah, yeah.
+
+Justin Gardner (@rhynorater) (11:26.805)
+Who's there? You know, I don't know how I'm supposed to, exactly, like, how am I supposed to respond to this? All right, well, moving along from that, did you get a chance to peek at this no -cline Zoom ATO? Dude. Mm.
+
+Joel Margolis (teknogeek) (11:28.184)
+Elephant Who.
+
+Joel Margolis (teknogeek) (11:41.944)
+Yeah, man. really interesting bug. There was some stuff in there that I was like, I don't even know. Like the Google OAuth thing. Is that like a zero day? I don't even.
+
+Justin Gardner (@rhynorater) (11:50.101)
+Mm -hmm, yeah. No, you know, well, I think it depends on the implementation. You know, Google's got a bunch of little nuances to their OAuth flow, but I thought this one was really a really cool example of like a really solid client -side exploit chain and sort of using all these different pieces along the way. You've got a little bit of CSP, you got a little bit of cookies, you got...
+
+you know, cookie tossing, you've got the post space XSS, you've got the cookie XSS, and then chaining it all the way through to create something of massive impact. And I was actually thinking about Ejiole whenever I was reading this because I was like, you know, I know that your focus has often been a lot on mobile and APIs and that sort of thing. When you're looking at this stuff, a lot of times you're looking more at, you know, the backend stuff because that's the stuff you've got more exposure to when it comes to,
+
+you know, hacking APIs through the mobile front. And this is, I think is just a really cool example of like how all of this stuff can be applied in front end, in the browser, in a full chain. So for any of you guys that haven't read it, it's super good. We'll link it in the description. I guess the TLDR of this is that there was a cookie based XSS in Zoom that affected, I love this.
+
+the CSP feature for Zoom. So apparently you could set a cookie that would reflect nonce into the CSP. And, okay. So this was a really interesting takeaway that is also something that I've been looking at recently. The way that they reflected their content into the header, or the CSP, the nonce attribute for the script.
+
+Thank you, Joel. Joel's over there like, you got it, Justin. Was this cookie parsing thing? Have you seen this like double quoted cookie parser oddity?
+
+Joel Margolis (teknogeek) (13:56.632)
+Yeah, so I guess I never really thought about it, but I definitely have seen this where cookies, right? If you think about it, this kind of exists in a couple different areas. I think a great example of it is with HTML elements, actually, where you can define an HTML attribute within an element without quotes, with quotes, with slashes. You know, there's a ton of different separators, right? So you could just be like input equals value.
+
+Justin Gardner (@rhynorater) (14:14.037)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (14:20.597)
+Yeah. Yeah.
+
+Joel Margolis (teknogeek) (14:26.744)
+and then you can put a space and it'll just assign value to input or you can surround it with quotes. Maybe there's special characters or delimiter, single quotes, double quotes, right? Exactly. So it's a very similar kind of thing here where I assume that the reasoning is maybe there's special characters, maybe there's spaces. I think technically you're supposed to URL and code cookies, cookie values entirely. But this is probably trying to account for maybe some weird special edge case or just to give the option for you to,
+
+Justin Gardner (@rhynorater) (14:26.901)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (14:34.197)
+There's double, single quotes, double quotes, yeah.
+
+Justin Gardner (@rhynorater) (14:47.54)
+Mm -hmm. Eh, eh.
+
+Joel Margolis (teknogeek) (14:56.952)
+send a non URL encoded cookie, which I don't really know how that would ever happen. But yeah, so you can basically wrap your cookie values in quotes or double quotes. And that seems to allow you to basically bypass it by like wrapping a double quote in a single quote, right?
+
+Justin Gardner (@rhynorater) (15:01.365)
+Yeah, yeah.
+
+Justin Gardner (@rhynorater) (15:12.437)
+Exactly. So, so yeah, there's, there's a lot of oddities to the way that cookies are parsed. And I feel like it's not something that's super looked into. And we, we talked about this actually at the beginning of the year in the top 10 web hacking techniques from, excuse me, from 2023 post, because there was a, some research done and I forget who it was by.
+
+But I've actually referenced it on a couple of podcasts since then. So I think it was probably some of the more impactful research that was done in 2023 for sure about cookie parsing. And like, for example, you can put like cookies that don't have any values or cookies that don't have like some specific parts of it, right. And it will sometimes the backend server will get confused and like smush cookie values together and you'll be able to like cancel out headers or other cookies, you know, by setting a specific cookie. So.
+
+There's all sorts of oddities there. And the one that they're using in this scenario is that if you put in, you know, let's just say you set the cookie value for this nonce to ABC double quote, you know, ABC, right? It's going to properly figure that out and remove the double quote and just put it into the nonce, you know, it just ABC and then cut off everything after that. But if you do, if you open the cookie value with a double quote, so you're doing like equals.
+
+double quote and then a ABC backslash double quote ABC and then close it with a double quote then it's sort of like a string encapsulated value for that for that cookie and and then that value gets reflected on unescaped into the the script nonce attribute in HTML and and I think I think that this was a very apt time for me to be reading this right up because
+
+there was a vulnerability that I discovered recently that I was not able to exploit. And that a lot of, let's just, let me see how I, I need to be, I need to be more vague about this because, yeah, because it's still, it's.
+
+Joel Margolis (teknogeek) (17:09.656)
+I know what you're talking about, I think.
+
+Joel Margolis (teknogeek) (17:16.504)
+A lot of hackers were unable to, yes.
+
+Justin Gardner (@rhynorater) (17:20.213)
+A lot of hackers were unable to exploit this vulnerability and there was a particular hacker, a hacker that you will hear, you guys will hear this write up story at some point, but a particular hacker was able to come in and exploit this vulnerability because of very similar logic to this with a double quote being placed into a cookie value and being able to cut off the cookies that come after this.
+
+up until another double quote or some other weird cookie parsing nonsense. So I think that this is a really strong takeaway is like if you get caught in a situation where your cookie, like maybe you need to do cookie tossing and you're sending two cookies to the server or like there's a cookie that isn't being reflected properly or you need to get rid of a cookie somehow.
+
+playing around with this cookie parsing logic of where does this cookie end, where does it start with the double quotes, with the single quotes, with backslashes, with different uses of semi -colons, which is the delimiter for cookie attributes and that sort of thing. All of those are really high rate of success techniques, I think. More than I thought so before reading this write up.
+
+Joel Margolis (teknogeek) (18:35.864)
+Yeah, yeah, so a couple thoughts that I have on this. One, it's probably a good opportunity for some sort of automation or tooling around testing cookie values for a couple different escapes and conditions and just alerting and saying, hey, there's, you know, this cookie on this endpoint supports being encapsulated with quotes or something. That's one thing. Another thing,
+
+Justin Gardner (@rhynorater) (18:44.821)
+Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (18:50.005)
+Mmm.
+
+Justin Gardner (@rhynorater) (19:00.117)
+Mm.
+
+Joel Margolis (teknogeek) (19:05.688)
+that I was thinking about is I would almost never test this. And it's such an interesting gadget to have found because I'm really guilty of taking all the cookies in my request. And the first thing I do is I delete every single one of them, except for the ones that I need because cookies, like a lot of times the cookie string is just really long and like, you know, busy and it, I want to just be able to look around it. And so I'll say, okay,
+
+Justin Gardner (@rhynorater) (19:12.981)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (19:21.525)
+Hahaha
+
+Justin Gardner (@rhynorater) (19:27.509)
+Yeah.
+
+Joel Margolis (teknogeek) (19:33.72)
+where's which one of these is the auth cookie? I'll remove everything else except for that one. And then I'll minimize my requests down to just that. And I don't even look at the cookie values. And so I probably would have never found this. Yeah, yeah, I can understand. You know, it's good to know sort of like what's required in the requests and to be able to identify, you know, maybe unauthenticated requests or what part of the request is providing authentication. But yeah, I'm super guilty of that. So I think testing for this and testing those types of
+
+Justin Gardner (@rhynorater) (19:42.229)
+There's a lot of merit in that though. Yeah.
+
+Justin Gardner (@rhynorater) (19:49.301)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (19:52.789)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (20:02.936)
+Values like inherently I don't even know if like let's let's say, you know, like the reflection in the CSP issue that by itself is not like really an issue like yeah, you can leverage it like as it was demonstrated in the blog, but by itself is like, you know, what are you going to do with that? You have to have something else that can set that cookie and then, you know, actually like leverage it to trigger the XSS. So it's just one of those things that is a super useful gadget, but testing it by itself.
+
+Justin Gardner (@rhynorater) (20:14.965)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (20:24.533)
+Mm -hmm. Yeah.
+
+Joel Margolis (teknogeek) (20:34.072)
+is a very interesting thing. Unless I was looking for something explicit, right? Like it was like, okay, let me try and find a gadget that I can use later. I would probably do it in reverse, honestly. If I found something, some XSS and I wanted to escalate it, being able to then find a cookie that I can reflect.
+
+Justin Gardner (@rhynorater) (20:36.469)
+Yeah, it's very thorough.
+
+Justin Gardner (@rhynorater) (20:48.853)
+Mm -hmm.
+
+Yeah. Well, I, I agree. I kind of think, I think in this scenario, like a lot of times cookie based XSS is, is sort of like an open redirect. Like you don't really look for it until you need it, you know? And, and, and I think, and I think maybe that's a little underrated because I think, there's probably more stuff there than we often go after because we're not often really fuzzing stuff in the, in the cookies.
+
+Joel Margolis (teknogeek) (21:05.08)
+Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (21:18.613)
+as like a matter of habit, or at least I'm not. Maybe some, I mean clearly some hackers are. And I want to say.
+
+Joel Margolis (teknogeek) (21:21.784)
+Yeah, I'm not either. And that was one of the big takeaways I had as well when we were hacking together, was like, I started sending you stuff and you were like, hmm, I wonder if, you know, how this works. And then you were like, here, here, I got it. And you had fuzzed the parameter names with like a static value and you'd found it like a hidden parameter that allowed us to do something. And, you know, I was like, I need to start doing that.
+
+Justin Gardner (@rhynorater) (21:27.797)
+Hmm.
+
+Justin Gardner (@rhynorater) (21:36.725)
+Mm -hmm.
+
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (21:44.597)
+Yeah. Well, the interesting thing about that was you found this like crazy endpoint that's like clearly like, what was it like slash render HTML or something like that? Like exactly. It's like, okay, we got to figure out how this works. So, so yeah, definitely in that scenario, that was, that was the route I took. But I also wanted to say, I saw, I want to say it was in the critical thinking discord, Franz comment on.
+
+Joel Margolis (teknogeek) (21:54.232)
+Yeah, slash PDF proxy. I was like, yeah.
+
+Justin Gardner (@rhynorater) (22:12.821)
+this write up somebody had posted, I wanna say in the cool research channel, and that he had known about it. He had said like, yeah, that weird thing on Zoom with the, reflecting the script value into the HTML attribute. So I think that's really interesting because it shows that he at least was looking at that sort of thing. Which, so, I mean that's another good positive indicator. If Franz is doing something then maybe you should be doing it too.
+
+Joel Margolis (teknogeek) (22:27.512)
+Yeah.
+
+Joel Margolis (teknogeek) (22:39.608)
+Yeah, yeah. And it also goes to show like the gadget thing is very universal where like other hackers probably know about that thing and have probably seen that behavior, especially if you're really familiar with the program. I think that's one big thing I see a lot when people, I see this all the time at live hacking events, when hackers come together after hacking on the same target for two weeks, there's like a lingo almost.
+
+Justin Gardner (@rhynorater) (22:42.965)
+Yeah.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (22:50.389)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (23:03.221)
+Yeah.
+
+Joel Margolis (teknogeek) (23:03.448)
+where we're just like, yeah, that behavior. And like everybody just sort of knows that you're talking about because they've seen it. yeah, yeah, yeah, that thing. Yeah, did you find a way to use that? Like, yeah, so it's really interesting to see how everybody sort of picks up some of the same identifiers, but nobody like, it's usually only like one or two people who figure out the right way to be able to leverage it or they piece together like the correct chain to actually exploit it.
+
+Justin Gardner (@rhynorater) (23:06.133)
+Yeah. The script nonce. yeah, the script nonce. Yeah.
+
+Justin Gardner (@rhynorater) (23:18.549)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (23:28.437)
+That's the crazy thing to you, Joel, about going to these live hacking events is the amount of times that the thing that you thought was interesting actually gets exploited is like, it's like 95%. Like, like.
+
+Joel Margolis (teknogeek) (23:41.432)
+I can't tell you how many times I've seen a show and tell where they're like, yeah, so a lot of people probably saw this thing and everybody just like groans.
+
+Justin Gardner (@rhynorater) (23:48.869)
+Yeah, dude, it's so crazy. But it should be really inspiring because it's like, okay, this thing you're looking at, this thing that you're playing around with, you just haven't given it enough time, probably. And, you know, a part of all this is knowing when to quit. You got to know when to quit, right? Like that's an essential part. But, and, you know, to know your own limitations as a hacker. But as long as you can continue to ideate and you can continue to think about what the possibilities are for some of these...
+
+you know, gadgets that are floating around, I think there's value, there's a lot of value in that.
+
+Joel Margolis (teknogeek) (24:22.488)
+Yeah, yeah, like if you think about it, right, like there's only so much depth you can get out of certain things. Like if you find this CSP injection, you can mess with it to your heart's content, but I would almost guarantee that you're never gonna turn that by itself into a bug. And you could spend a week straight poking different values into there and it's gonna give you the same output. You have to find something else that allows you to actually leverage that to use it. So like,
+
+Justin Gardner (@rhynorater) (24:27.893)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (24:43.893)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (24:50.744)
+Knowing about it is one thing, but like, just like with any bug, not everything that you find can be directly turned into a bug. Sometimes you have to leverage other things along with it to actually make it into something.
+
+Justin Gardner (@rhynorater) (24:56.917)
+Hmm. Yeah.
+
+I remember, I remember a scenario where I was hacking with my mentee, moxul, he's come on the pod before. I think he was in the bug bounty mentorship episode and we were hacking together and he found this like absolutely sick client side path traversal flow that used like a post message in the implicit auth between a relationship between like a window generated via client side path. I mean, it was just, it was an awesome bug. but he couldn't exploit it because he didn't have a, an open redirect.
+
+And I was like, okay, you know, I'll poke around and see if I can find an open redirect. And so I started poking around and like 15 minutes later, I was like, I got an open redirect. And he's like, he's like, you what? You freaking what? You got an open redirect? And then he just like jumps up and we like start screaming and like, you know, and he puts it into the chain and it...
+
+Joel Margolis (teknogeek) (25:50.007)
+I know the target you're talking about too because I had asked you, like we had a very, very almost bug on the same target and I was like, hey, do you have an open redirect? And you're like, no, actually it's not the right kind of open redirect. It was like HTTP or it needed to be HTTPS or something like that. Yeah.
+
+Justin Gardner (@rhynorater) (25:55.317)
+We did.
+
+Justin Gardner (@rhynorater) (26:00.309)
+I used it, sorry. Yeah.
+
+Yes, you clearly know the target. So yeah, but in this scenario, it ended up working and it was like, sometimes you just gotta go hunt for those gadgets along the way. And I think as you get your, that's another skill in and of itself is this sort of, can I fill the requirement of this vulnerability by finding a very specific niche functionality? You know?
+
+Joel Margolis (teknogeek) (26:08.76)
+Yeah.
+
+Justin Gardner (@rhynorater) (26:34.133)
+And I think that takes reps just like everything else does in hacking. You gotta get your reps trying to find this gadget, you know, and get the hints on. Okay, if I'm looking for an open redirect, I should look at the login functionality. I should look at the account linking functionality. I should look, you know, all of these areas where redirects commonly occur. So.
+
+Joel Margolis (teknogeek) (26:52.792)
+Yeah, for sure. I think it's definitely a different skill set to be able to think sort of cross functionality within the application like that. And probably the hardest part of being like a really getting to that next level of top hacker is being able to go from just like single sort of level vulnerabilities where it's like, here's an eye door, here's, you know, and then combining functionalities.
+
+Justin Gardner (@rhynorater) (26:56.405)
+Mm -hmm.
+
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (27:12.309)
+Mm.
+
+Joel Margolis (teknogeek) (27:18.2)
+to piece together a vulnerability and having these multiple different things across the application that you can click together and say, yeah, there's this thing that I can leverage to set the cookie here, which will then force it to redirect to here, which will then take me to Google, and being able to piece those things together in a successful way instead of just having them as separate ideas or just not even having those notes. I think that's the real hard part.
+
+Justin Gardner (@rhynorater) (27:19.797)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (27:43.029)
+Yeah, it's a force of will thing too. It's like, all right, I'm gonna bend this application to my will, you know, I'm gonna make it happen. And I think that's a really valuable part. So we've talked about this right up to him gently for like 15 minutes now, I do wanna add one more thing before we move along, which is I think there is another like one, cookie tossing. If you don't know what it is, you need to figure it out because it's super helpful. TLDR is you can use a sub domain to set.
+
+Joel Margolis (teknogeek) (27:50.104)
+Yeah. Yeah.
+
+Joel Margolis (teknogeek) (27:58.616)
+Yeah
+
+Justin Gardner (@rhynorater) (28:13.557)
+cookies for the top level domain and that cookie gets sent to all the different domains and you can specify a more specific path so that your cookie gets prioritized when it's sent in. Extremely, extremely valuable tool in the hackers tool kit. So research that if you're not a master of it already. The other tip was I really like, and I've seen this before, but I kind of, I don't know, it hadn't really fully seeped into my brain yet.
+
+I think I could have figured it out in this scenario if I needed it, but I just figured I'd shout it out here again, is like this whole concept of switching the response type in an OAuth flow to code, comma, ID, underscore, token, right? And what that does is it, because the token can't be sent in the query parameters like the code can, it will put the code and the ID token in the hash.
+
+Joel Margolis (teknogeek) (28:58.072)
+Code comma. Yeah.
+
+Justin Gardner (@rhynorater) (29:09.941)
+And the beauty of that is that you don't have to even like have an endpoint that requires you to, or, you know, allows you to like hand it a token or anything like that. You can just take the hash back out and put it in the query parameter when you're finishing your exploit, if you're able to leak that hash. and I just think that's, that's pretty nice because it's like, you don't have to find any sort of alternative flow or alternative gadgets or anything. You just smuggle the piece of information you need in a different medium.
+
+because of the caveat of also sending the ID token along with it. I thought that was really good. Yeah.
+
+Joel Margolis (teknogeek) (29:42.104)
+Yeah, yeah, for sure. It's interesting that it behaves that way. It's very similar format to the, like the scope parameter that you would also send, which, you know, comma delimitate, delimit, delineated, delimer, whatever, comma separated. Yeah, yeah, yeah, comma separated values of, you know, ID, profile, email, et cetera, same type of format here. There's a...
+
+Justin Gardner (@rhynorater) (29:48.629)
+Mm -hmm. Mm -hmm. Mm -hmm.
+
+Justin Gardner (@rhynorater) (29:54.453)
+Mm -hmm. Delineated, comma, delin - There's a comma delimiter.
+
+Joel Margolis (teknogeek) (30:09.656)
+A couple of things that we talked about today that I would be really interested to see sort of like a broad analysis of how these features work across different implementations. So different OAuth libraries that are being used to implement OpenID as well as like the cookie thing, for example, like different web frameworks that are being used and just see like how does Express handle this? How does PHP handle this? How does, you know, Go handle this? Like all sorts of things. I'd be really interested if somebody from the community wants to
+
+Justin Gardner (@rhynorater) (30:18.421)
+Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (30:26.325)
+Mm -hmm. Yeah, different browsers, different web frameworks, yeah.
+
+Joel Margolis (teknogeek) (30:40.024)
+take me up on that and yeah, yeah, I'll tell you what, if you make a blog post about it, we'll probably shout it out, so.
+
+Justin Gardner (@rhynorater) (30:40.149)
+Give us a free B, give us free research.
+
+Justin Gardner (@rhynorater) (30:45.749)
+Yeah, well, absolutely will, for sure. Yeah, absolutely. And I think the cookie thing has got me thinking, man. So I don't know, I might take the dive and do some of that research myself because we'll cover it later. We'll cover it later. Let me just wait on it. Okay, next one on the list. Amazing write up that I'm not even gonna attempt to consolidate into the audio medium.
+
+Joel Margolis (teknogeek) (31:01.688)
+Yeah, yeah, yeah, yeah, yeah. Yeah, yeah.
+
+Justin Gardner (@rhynorater) (31:13.077)
+This is the SharePoint XSE write up by Chuddy PB. It was posted by the Zero Day Initiative. And essentially this is an XSE on SharePoint. And you really need to go read the whole write up because he does an awesome job of explaining the whole flow of the exploit and how he identified it, what all the turning points were, what nested code he was reading and how deep he went.
+
+But I did want to shout out one thing here, which was a takeaway for me, which is he was looking at a piece of the SharePoint functionality where a, you know, XML was parsed. So of course every hacker, XXE. But there's very clearly XML reader settings .dtd processing is set to prohibit and it uses like safe XML, safe resolver or something like that, right? And it's like, okay, this probably isn't vulnerable to XXE.
+
+Joel Margolis (teknogeek) (31:53.048)
+That's sexy. Yeah.
+
+Justin Gardner (@rhynorater) (32:10.933)
+But he still tries a couple things against it. And I'll just read one little snippet from the blog post now. I decided to play around and send a general entity -based payload as some of the text code I wrote similar to the code shown above. So he sends in this general XXT payload. As expected, no HTTP request was performed and a DTD processing exception was thrown.
+
+but what about this payload? And he provides another payload. And I'm gonna try to attempt to describe this now. So typically with doc types and entities, you've got your doc type section, you define an entity, and then that entity is then used in the XML body. So within the...
+
+Joel Margolis (teknogeek) (32:54.776)
+Right, right, so that its value is evaluated and put into, yes. Yes, it has a value within an L.
+
+Justin Gardner (@rhynorater) (32:58.709)
+into the XML body, right, exactly. So, yeah, so you'll see like a XML tag and then you'll see ampersand, the name of the entity and then a semicolon and that entity will be expanded when the XML document is processed. However, and that was the one that didn't work, right? However, what he does in this scenario is he actually does the doc type definition, defines the entity.
+
+and then references the entity inside of the doctype on the next line. So you've got the entity line defining this SP variable is the one that he chose in this specific scenario. And then directly below that before closing the doctype, he just writes %SP semicolon to reference that entity. And wow, this is an interesting one because it bypasses all of these DT
+
+D, processing settings. And I think the reason for that is it processes the entities that are there and then checks after it processes that whether the XML body contains any of the entities that need to be expanded. And if it is, it says no. And I just thought, wow, there's probably a lot of sort of sketchy blocking of XML entities out there considering this.
+
+Joel Margolis (teknogeek) (34:24.792)
+this one of the list of broad -scale research.
+
+Justin Gardner (@rhynorater) (34:27.509)
+Exactly, like, you know, this is a pretty core .NET, I wanna say this was .NET, functionality here. They were talking about how these XML reader libraries are used pretty globally across that languages ecosystem, and this still had this massive hole in it. So when you're testing for XSE, it might be helpful to have several variants of processing in place that have outbound calls as well, because there could be a sort of a niche.
+
+exception to that to that here so anyway so sorry for that super long -winded explanation Joel
+
+Joel Margolis (teknogeek) (35:01.656)
+Super cool. No, I honestly like if it doesn't click, just open the write up on ZDI and there's two little XML snippets and it'll say, I decided to play around with this one and it didn't work. And then I tried this payload and just look at the two of them and it's a very, very subtle thing. But if you know anything about XSEs, it's one of those things that like you might try.
+
+Justin Gardner (@rhynorater) (35:09.501)
+Yeah. Yeah.
+
+Joel Margolis (teknogeek) (35:29.848)
+the first payload and just be like, all right, XSE is not possible here. They're blocking it and never try the other one. And it kind of just goes to show that you, you know, testing in depth is one of those moments where make sure that you, you know, you've tested sort of a bunch of different payloads and a different bunch of different options before you decide to move on, not just one.
+
+Justin Gardner (@rhynorater) (35:49.845)
+Yeah, yeah, I totally agree. And actually, when you said, you know, look at the two XML blobs, I was like, all right, Joel, I'll look at the two XML blobs. And I actually realized something that I sort of missed before, which was the second blob there that contains the payload that actually worked. There's a percent sign right after the entity tag before the name of the variable. And I think that, so I just quickly Googled it. I think that...
+
+Joel Margolis (teknogeek) (36:13.367)
+Yeah.
+
+Justin Gardner (@rhynorater) (36:17.877)
+is called a parameter entity, which the percent sign tells the XML processor to look up the entity name in the DTD's list of parameter entities, insert the value of the entity into the DTD in the place of the entity reference, and process the value of the entity as part of the DTD. So it's like sort of, hmm.
+
+Joel Margolis (teknogeek) (36:36.6)
+Right, so I don't think you could do and be in the doc type like that. I think you have to do it with percent because it's a parameter and basically referencing the entry above. Yeah.
+
+Justin Gardner (@rhynorater) (36:43.861)
+Exactly. Yeah. So it's like a way for you to dynamically create other, you know, doc type definitions in there, I think. So very, very cool idea. this is starting to ring some bells now. I have seen something similar to this before, so I understand why, why he tried that, but it is definitely concreted in my brain now as like a core core XSE must check sort of thing, these sort of, perimeter entities.
+
+Joel Margolis (teknogeek) (36:51.576)
+Yeah. Yeah.
+
+Joel Margolis (teknogeek) (37:10.168)
+Yeah, absolutely, absolutely.
+
+Justin Gardner (@rhynorater) (37:11.701)
+Okay, last one on the list before we get to today's prepared educational topic. If you like that new section there, I don't know, I came up with that on the fly. Is Shazer. And this is sick.
+
+Joel Margolis (teknogeek) (37:24.568)
+Yeah, yeah.
+
+Joel Margolis (teknogeek) (37:29.528)
+Dude, okay, I was like, you put this in the doc and I was like, what the heck is this thing? I look it up, I was like, trying to find out more about it because I won't lie, it's a cool tool but there's like zero documentation about what this thing is or how it works or anything like that. And the first thing that caught my eye was there's a lot of, at the bottom of the page it says like popular users and new users and I've seen all these names of people that I knew and I was like, okay.
+
+Justin Gardner (@rhynorater) (37:45.397)
+Yeah.
+
+Justin Gardner (@rhynorater) (37:53.429)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (37:58.936)
+These people know what's up. So let me go check this thing out. And from what I gather, it's basically like a continuous sort of like testing fuzzing platform for little snippets of like, here's this function I want to call, or here's this area that I can inject into. What are the possible inputs that I can escape or what characters can pass through this and stuff like that? And...
+
+Justin Gardner (@rhynorater) (38:13.237)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (38:18.069)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (38:27.48)
+This was created by none other than Mr. Gareth Hayes over at, at port Swigger research creator hack verter. and, when I, when I started searching this thing, I found a blog post or like announcing this thing from 2012. That was like, here's this tool I created called, you know, shazzer or whatever shared fuzzer. And then yeah, at the bottom it says fuzzing browsers is 2012. So this is like super old tool, 12 years old.
+
+Justin Gardner (@rhynorater) (38:33.845)
+I'm golf clapping. Mm -hmm.
+
+Justin Gardner (@rhynorater) (38:42.741)
+Hahaha!
+
+Justin Gardner (@rhynorater) (38:48.021)
+my gosh.
+
+Justin Gardner (@rhynorater) (38:54.517)
+Wow.
+
+Joel Margolis (teknogeek) (38:56.632)
+been around for ages, way ahead of the curve. And yeah, it's really, really interesting. There's a bunch of cool things on here. I think one of the coolest things is this little cheat sheet page that's underneath the vectors dropdown at the top. And it basically just says, it has a bunch of different examples of essentially cheat sheets that have been generated by this tool that'll say, for example, you've got a character.
+
+Justin Gardner (@rhynorater) (39:11.381)
+Hmm.
+
+Justin Gardner (@rhynorater) (39:17.397)
+wow.
+
+Joel Margolis (teknogeek) (39:25.144)
+injection between the exclamation point and the greater than in an HTML comment. What can I put in there? And then it'll tell you, okay, the only thing you can put in there is a greater than symbol. Or, you know, you've got a multi -line string and there's a backslash and you can input a character in there. What can you put in? And CR, I don't know if that's...
+
+Justin Gardner (@rhynorater) (39:31.285)
+Wow.
+
+Joel Margolis (teknogeek) (39:52.824)
+individually C and R or if that's specifically a character turn. Yeah, but it has this for a lot of things like ignored characters and JSON property values. This was something that I didn't know, which was super interesting. You can put like spaces at the front of a value. You can put a plus at the front of the value and it'll just ignore these things.
+
+Justin Gardner (@rhynorater) (39:52.885)
+Carriage return.
+
+Yeah, it is.
+
+Justin Gardner (@rhynorater) (40:02.133)
+Hmm.
+
+Justin Gardner (@rhynorater) (40:13.717)
+Dude, that was crazy to me. Like, and... Mm -hmm.
+
+Joel Margolis (teknogeek) (40:17.496)
+Yeah, like if you do like X colon as a string plus one, three, three, seven, and you parse it as the Jason object, it'll just say X is one through three, seven.
+
+Justin Gardner (@rhynorater) (40:27.669)
+Well, it will, but the caveat to that, which they didn't put in the title of this one that I noticed when I was like, wait a second, there's no freaking way that works, is that it's a loose comparison to an integer. So if you, yeah, exactly. So it's not a strict comparison, exactly. It's implicitly converting the string into an integer. But the interesting piece about that is like, wow, okay, I can put plus one through three, seven in a string.
+
+Joel Margolis (teknogeek) (40:41.304)
+because it's a double equals. I see, so it's implicitly converting.
+
+Justin Gardner (@rhynorater) (40:56.565)
+and then have that loosely compared to an integer and it will actually just drop the plus straight off the front, which I thought was really rad. So essentially what this thing allows you to do is define some templates, define some JS code that you want to use to fuzz something in the browser. And it will go ahead and run it against the latest versions of Chrome, Firefox, and Safari.
+
+Joel Margolis (teknogeek) (41:04.792)
+Yeah, yeah that is super interesting.
+
+Justin Gardner (@rhynorater) (41:25.781)
+And you can also note the differences. And I think that's a really, really cool piece of this is like, there's so many, if you go to the, the schazer .co .uk website, there's like a ton of different, like most popular, most liked new vectors that people have created, that sort of thing. Where you can see how different browsers parse things differently and, and understand the nuances between the two. Because if you need an exploit, you know, if you've got an exploit and you need a specific little quirk,
+
+Okay, Firefox might have that or Safari might have that and we know from the episode when we talked about all the different browser market share stuff that Safari actually is very is very quirky for one and has a very sizable amount of the market share. Yeah.
+
+Joel Margolis (teknogeek) (42:11.16)
+Yeah, yeah, especially because mobile browser, right? And WebKit is across everything, right? So it's not necessarily that it would be a WebKit bug, but if it affects Safari, it's probably gonna affect Safari on iOS, Mac OS, watch OS, iPad OS, right?
+
+Justin Gardner (@rhynorater) (42:18.965)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (42:22.58)
+Mm -hmm. Mm -hmm. Yeah, man, poppin' a smartwatch over there, that'd be something interesting.
+
+Joel Margolis (teknogeek) (42:30.364)
+I'm not going to lie, that has been, I have seen many of the watchOS vulnerabilities end up coming through stuff like WebKit and those shared frameworks that are on everything.
+
+Justin Gardner (@rhynorater) (42:39.477)
+yeah.
+
+Justin Gardner (@rhynorater) (42:43.349)
+What was that like, I want to say there was like some crazy iMessage bug that came out earlier this year. And it was like, you know, it showed like a timeline of the bug and it was like 12 different bugs chained. And then just at the end, like, you know, it would get like, you know, code execution in like a controlled environment. And then it would just pop open the browser and then just like, bone the system via some sort of browser exploit.
+
+Joel Margolis (teknogeek) (42:56.952)
+I'm gonna go.
+
+Joel Margolis (teknogeek) (43:07.352)
+Yeah.
+
+Justin Gardner (@rhynorater) (43:12.373)
+which I thought was hilarious.
+
+Joel Margolis (teknogeek) (43:12.824)
+I'm trying to remember what you're talking about. I know the one you're talking about. man, what was that? Yeah. Yeah. But yeah.
+
+Justin Gardner (@rhynorater) (43:15.509)
+Yeah, yeah, we'll have to look it up after. Anyway, the, yeah, very good stuff there.
+
+Joel Margolis (teknogeek) (43:20.728)
+Super cool site. Go check out Chazer. Yeah, chazer .co .uk, another Gareth Hayes awesome tool.
+
+Justin Gardner (@rhynorater) (43:27.889)
+All right, so let me clear the throat really quick. Let me get some coffee.
+
+Joel Margolis (teknogeek) (43:36.376)
+Another certified CTBB moment of 43 minutes of news.
+
+Justin Gardner (@rhynorater) (43:40.149)
+43 minutes of news. Man, ya boys can yap, can we not? We can yap. We are engaging in yapping activities. Okay, so let's go ahead and continue that. And what I kinda wanted to talk about today was match and replace, okay? Match and replace is, I think, severely underrated by top hackers in particular, because I think that...
+
+Joel Margolis (teknogeek) (43:46.008)
+we are yappers, yeah.
+
+Justin Gardner (@rhynorater) (44:06.837)
+there is a lot of like, okay, you know, if you're just getting into bug bounty, you use the match and replace, you do this and that and the other thing. But I think a lot of people stop using it. And I think that's a mistake because there's a lot of, there are a lot deeper layers you can go into with match and replace that allows you to very quickly and easily test an application. Once you already have a deeper understanding of the application and
+
+Some of these things really do require a more thorough understanding of the browser than a lot of people mention when they're like, beginner, go try the match and replace thing or whatever. I kind of wanted to talk about some of the areas where I've seen some success with this. I also wanted to try to get your thoughts on if you ever use this in a mobile hacking environment because I feel like there'd be some weird stuff with that since there isn't an actual ...
+
+client side of sorts. I guess the client side is like Java code. But let me start out with this. So one of the cool areas that I've seen with this is actually using match and replace to turn on and off feature flags and experiments and A -B testing stuff. And you very often see this, it could be an HTTP request that gets issued from the JavaScript. And oftentimes it's not even to
+
+Joel Margolis (teknogeek) (45:09.592)
+Yeah.
+
+Justin Gardner (@rhynorater) (45:33.397)
+This is the tricky part, okay? Oftentimes it's not even in your defined scope, right? Like it'll be reaching out to like launch darkly or like some of these other feature flag controlling domains. And it'll be like, hey, what features should I turn on for user XYZ? And then it'll be like, here's a list, you know, super admin functionality enabled, false, you know? And just using a match and replace rule to turn on all of those.
+
+will give you access to so much more functionality and save you so much time because at the end of the day, we're gonna find the features because we're just gonna parse through the JS and we're gonna understand where each of these endpoints are and we're gonna try to recreate the request. But man, how much easier would it be if you just clicked a button in the browser and it was like, okay, you are a super admin and you just get to use the interface like it's intended.
+
+Joel Margolis (teknogeek) (46:24.76)
+Yeah, that's one of my, honestly, one of my favorite things to do is just set a matcher in a place to replace false to true and like nothing even specific, just false to true.
+
+Justin Gardner (@rhynorater) (46:29.205)
+Mm -hmm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (46:36.789)
+Dude, that just wreaks freaking havoc on the application though. I, I...
+
+Joel Margolis (teknogeek) (46:39.352)
+It does. It does. But that's my favorite thing is, you know, it shows you so many things that generally you wouldn't see. You know, sometimes it may end up doing the opposite thing, like, you know, maybe they have is band false and then you said that one's a true by accident. But, you know, it helps you sort of narrow down where you want to, you know, you can narrow it down later and be more specific on, you know, which endpoints it replaces on or whatever. But just setting false to true is a great thing. I would encourage this is a little I'll just drop this. Go to hacker one.
+
+and set your proxy to replace false to true. You're going to see a lot of really interesting things.
+
+Justin Gardner (@rhynorater) (47:11.633)
+Okay, so...
+
+my gosh, Joel. Yeah, and I think that is a, that is one of my first exposures, I think, to match and replace was I remember very pointedly talking to none other than Mr. Mark Litchfield himself, the king of finding weird little techniques. And if you talk to him, he's very humble. He'll say like, he's very humble in some ways.
+
+but when I was talking to you, he's very, very humble about like, okay, you know, I don't actually know that much about how all this stuff works, but I found that if, what he's really good at is understanding the, the logic of the application, the business logic, the application and that sort of thing. And he's like, if I set false to, to true where the match and replace role, then I see a bunch of extra stuff. And then I can kind of go through here and dig through all these requests and document it and that sort of thing.
+
+I was like, okay, that's weird. Why does that work that way? And then I started looking deeper into it and you see some of this stuff. And I think setting false to true is sort of the naive approach to this whole thing. And you will get some results out of this, but you will get much better results if you actually just look at the HTML page, look at the API request that's turning on feature flags or look at, if you determine the way that the front end application is being informed about what role you are or what features you have enabled, and then you...
+
+design a custom match and replace rule to enhance that. Either you look at the JavaScript and you extract all the roles and you match and replace that into the roles array that's coming back from the API request or you look at the request that's saying, is this feature enabled, is this feature not enabled, then you match and replace those to true. You'll get a lot of good results on that. And I think just to what you were saying there, Joel, about
+
+Justin Gardner (@rhynorater) (49:08.757)
+just changing false to true. I think this works a lot better when you use Kaido's conditional match and replace, which I haven't, maybe I'm just not as familiar with how to do this in burp, but I haven't seen a way to do this in burp where you essentially say, okay, if the request path is something like this, then replace false with true. So then it becomes much more like much less destructive.
+
+You're not taking your JavaScript file and then just saying every time the false is in a JavaScript file, turn it to true. Instead, you're saying you can define a specific path and then switch false to true.
+
+Joel Margolis (teknogeek) (49:40.824)
+Yeah.
+
+Joel Margolis (teknogeek) (49:45.112)
+Yeah, so in burp, as far as I know, the only way to do is basically like an all or nothing type of way where on Kaido each individual match or replace rule can have its own conditions. Burp is either, you know, apply this to in scope and then you can define in scope how you want it. Or it just doesn't apply at all to anything like that. Or you can, I think you say like it, you know, it has to be the URL has to match a certain, like you can do it, but again, those rules are like all or nothing. It's not.
+
+Justin Gardner (@rhynorater) (49:49.333)
+Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (49:55.061)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (49:59.253)
+Mm -hmm. Mm -hmm.
+
+Justin Gardner (@rhynorater) (50:13.397)
+They're segmented, yeah. Yeah, and so I think that's a really cool feature of Kaido. And I think they're also, I've been talking with the team because I really want them to put extra effort into the match and replace feature. And I actually wrote a sort of some augmentation, some things that make the match and replace stuff better. And I put that into even better the Kaido extension.
+
+Joel Margolis (teknogeek) (50:14.616)
+Yeah, yeah, it's not like per rule.
+
+Justin Gardner (@rhynorater) (50:38.389)
+where you can just sort of select some text, right click, send a match and replace, and it will auto -populate the name and the matching string in match and replace for you, and then you can just easily create your rule. So definitely some cool stuff there. The Cuddle team has also mentioned that they will potentially, at some point, allow for a regex plus convert workflow match and replace, which would be really awesome, and I think how that would work is you define a regex that matches it.
+
+Joel Margolis (teknogeek) (51:02.744)
+Nice.
+
+Justin Gardner (@rhynorater) (51:07.861)
+And then that match is then passed into a convert workflow, which is a kind of construct where you can perform sort of hack verter esque modifications to that data. So you can URL encode, you can base64 encode, you can do whatever. And this is the best part, you can just run JavaScript. So then, you know, you have access to a bunch of different things you can shell out, you can do all sorts of stuff.
+
+And I'm excited for that because I think that will add a little bit more that will allow for you to match things that are not static and turn them all into something that is relative to what it was. So if you have some integer that needs to increase with every match or something like that, then you can do that with the convert workflow. And I have run into a couple of scenarios where I just have to manually create a shit ton of match and replace roles to get it to do what I want it to do.
+
+So I'm excited for that feature to roll out as well.
+
+Joel Margolis (teknogeek) (52:07.416)
+Yeah, yeah, super awesome. And I think like that's one of the really awesome things about Kaido is that it has a, it has like built -in flexibility, right? Where burp, I think you basically, to do any of this, you'd have to install some sort of extension that allows you to do it, where this is sort of just native functionality that's built in. And then there are extensions, but usually those extensions are using the built -in functionality. It's not, you know, behind some SDK or something like that. And.
+
+Justin Gardner (@rhynorater) (52:15.573)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (52:26.549)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (52:35.096)
+Even just recently, I wrote a convert workflow that just made a shell command. And it basically like, so I could work it, you know, originally it was from for burp. It was honestly doing the same thing. It was just like calling a script. And I was like, here, let me just convert this over to kind of, and just turn it into a convert workflow that calls the same script. And yeah, it works great.
+
+Justin Gardner (@rhynorater) (52:44.853)
+Mm -hmm. Yeah.
+
+Justin Gardner (@rhynorater) (52:50.357)
+It's pretty fast, right?
+
+Yeah, yeah, it's surprisingly, I think there's still, they're still working on backend plugins and stuff like that with Kaido, but there is a lot of flexibility that comes along with passive workflows and active workflows and convert workflows. With just those three constructs, you can do a lot of stuff, a lot of implementing your ideas into automation very quickly without having to build a whole plugin, which I think is pretty rad.
+
+All right, so back to the match and replace stuff. This is another sort of maybe something that isn't really often categorized with match and replace is this whole ability to save yourself some time. This is such real shit too, dude. Like to save yourself some time on going down a wrong attack path. Because what I'll often see is like, I'll make assumptions about the application. I'll see, okay, I'm thinking of a specific scenario. So I'll just give you the specific scenario.
+
+there was an input that I could provide to a front end page that would then get passed into a fetch request and then be reflected in the body of the response. And then that piece of data would then be put directly into window .location .href. So I'm thinking, okay, great. If I can get it to hit a JavaScript URL and it just goes straight to window .location .href.
+
+then I can get XSS and it, you know, let me start fuzzing around with this thing. And there was some really weird stuff and I was like, I'm pretty close. I think I can get this. So I was like, I'm going to spend some time fuzzing this, trying to like figure out what characters I can put in there to get it to accept it. And, and then right as I was about to go down that hole, like 30 minute rabbit hole, I was like, wait a second, let me just validate this attack strategy really quick without having to go and parse through like 25 ,000 lines of JavaScript. And,
+
+Justin Gardner (@rhynorater) (54:48.341)
+and figure out whether this is gonna work. So I just took the value, I just put in like an accepted value, I matched and replaced it to a JavaScript URL, and I popped it in there, and lo and behold, it was not gonna work. There was some other way that it was doing it that wasn't compatible with that. And it was doing some checks along the way that were never gonna be compatible with the JavaScript URL. And I could see that very quickly.
+
+Because I just used match and replace to quickly validate whether this attack path that I was going down was actually going to work in the end or not so I think this is sort of like a a threat model validation or like a Attack vector validation method as well that can save you some time is just really quickly doing a match and replace rule validating what you're thinking about and then Deciding whether to go down that path or not
+
+Joel Margolis (teknogeek) (55:38.872)
+Yeah, because I think otherwise you'd probably have to set a bunch of breakpoints and chase down stuff in the JavaScript. And that would also work, but it would take a lot more time and energy and effort to try and find that exact thing. And sometimes your breakpoints don't trigger and you're just like, you're going to spend 30 minutes just banging your head against the wall. And yeah.
+
+Justin Gardner (@rhynorater) (55:51.925)
+Mm -hmm.
+
+Yeah. And the freaking dev console, man, you know, I love it and I use it every day, but it's like, there it's, it's much nicer to just very quickly, just do a little match and replace thing because it's so quick and easy. You could validate your attack strategy in 20 seconds, you know? So it's definitely, that's definitely another sort of underrated usage of it, I think. all right. So I've got three more. Let's see, let's go with, okay. Another under, underrated.
+
+implementation, I think, of matching in place is actually matching and replacing JavaScript files, which is a little bit counterintuitive because it's like, okay, normally we're just kind of modifying data in HTML or in API requests. But essentially what I was able to do one time was I was kind of sussing out, I'll be public about this target, this was Google Bard, and I was kind of sussing out the way that they had their feature flags implemented.
+
+because Google Bard was under mega rapid development. They were cranking out features for that thing every single day. It was very important to Google to get features out ASAP. And so I was like, okay, well, there's gotta be some feature flag stuff surrounding this. So I was kind of sussing it out, and I found this one function that was like, is this feature enabled? And it would return true or false, right? And I was like, okay, wait a second. So I just...
+
+match and replace rule to just make that function always return true. So I didn't even have to do this whole thing where it was like, okay, let me match and replace enabled true for this specific one and that specific one, because they were all sort of encrypted in a weird way in true Google fashion. And so I just match and replace that one thing to true and all of a sudden, boom.
+
+Justin Gardner (@rhynorater) (57:46.549)
+like my screen just lit up with new features and I found like five or six bugs from it.
+
+Joel Margolis (teknogeek) (57:50.264)
+Nice. Yeah, I had a very similar thing happen just the other day actually where I was looking at, again, feature flag type thing. There was a function in the JavaScript that was being called every single time it would pass in this key for the feature name and then it would return whether or not it was enabled. And so I just looked for calls of that and instead I replaced it with true. I actually, I believe I chained it together where I did like,
+
+Justin Gardner (@rhynorater) (57:54.357)
+Yeah.
+
+Justin Gardner (@rhynorater) (57:58.069)
+Yeah.
+
+Justin Gardner (@rhynorater) (58:02.773)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (58:19.512)
+variable equals call and then I just did equals call equals true and then yeah. Yeah.
+
+Justin Gardner (@rhynorater) (58:23.733)
+there you go. Nice, so you replaced any reference to that with something that evaluated to true. That's a great idea, it doesn't even call the function, it just replaces it with true. That's cool. Yeah, so I think, imagine replacing JavaScript, there's a couple different applications of it, I think, as well. This was just the one that I had most freshened my brain. One of the other things that I've kind of seen with this is like,
+
+Joel Margolis (teknogeek) (58:30.232)
+True. Yeah. Yeah. Yeah. Yeah. Yeah.
+
+Justin Gardner (@rhynorater) (58:51.829)
+there will be a weird edge case sometimes with web -packed JavaScript where the browser's like, I know what this does, and it'll try to expand it or whatever. And then you're trying to go through and you're trying to set breakpoints and it won't do it, and it's like some statement call that is outside of an if statement will get triggered even though the statement isn't true or something like that. And essentially what's happening is,
+
+the browser is messing up the reconstruction of that minified JavaScript file, and it's showing you something that's not accurate. So there's a little button down at the bottom of the dev console that's like, see the source where this originally came from. I forget what the button actually says, but you can click on it, it'll show you the location of the minified source, but then if you try to do anything to that minified source,
+
+it'll just be like, you wanna see the unminified source, don't you? And then it'll send you back to the unminified source and you're like, grr. So what I do in that scenario is I'll set up a match and replace rule to just remove the source map. And just say, just don't do it, browser, please. And then you refresh it and now you're just dealing with the minified source, which...
+
+Joel Margolis (teknogeek) (01:00:05.976)
+Interesting.
+
+Justin Gardner (@rhynorater) (01:00:11.317)
+despite being very difficult to read, is always the source of truth, right? Because that's the code that it's actually running. And you can make your modification there.
+
+Joel Margolis (teknogeek) (01:00:19.256)
+That's interesting. I've never had to do that, although maybe I haven't, just haven't done it. I'm thinking, you know, there's definitely a lot of annoying cases where I've just given up and done something else to get around that, because I'll set something that I know should be happening. It's just not, yeah. Yeah.
+
+Justin Gardner (@rhynorater) (01:00:23.989)
+Yeah, Joel is sitting there like, why is this breakpoint hitting?
+
+Justin Gardner (@rhynorater) (01:00:33.429)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:00:38.965)
+DevTools can be a bitch sometime, man. It really can. So it is what it is. All right. Of course, this would not be a comprehensive math and replace episode if I didn't talk about paywall bypasses in RBAC testing. I did sort of mention a little bit the fact that you should really try to dive into the JavaScript a little bit, try to look at the API calls and figure out exactly where they're making decisions about.
+
+what kind of user you are. And I'll share a personal little anecdote about this the other day. I've got a mentee and he was, I told him, hey, I found some bugs here with matchinterplace. I think there's probably some more. Here's the place. I'm busy for the next week or whatever. Try to see if you can find some bugs and we'll split them because I gave you the hot lead on it and I showed you exactly how to do it. And he's like, okay, great. So he gets in there and...
+
+he starts poking around and he starts setting up these match and replace roles. And I just sort of saw the role endpoint in the, like in this sort of environment. And I was like, okay, great. This is where it's happening. And I like, you know, match and replace all the roles in there. And I saw my screen light up and a bunch of features turned on and I was like, great. And I found some bugs and I got excited and I was like, this is the way, right? But I said, okay, I'm not gonna tell you exactly how to do it. So you can try to figure out how to do it yourself. Go check it out. And so he found that.
+
+But he also found something that I didn't find, which was like this little boolean that's at like the very end of a massive blob of data inside a script tag in the HTML page that was like, is admin, you know, is moderator true false? And I'm like, man, if of course I had seen that, you know, that'd be great. And it was, it wasn't like his admin, it was actually his moderator. So it didn't really, I didn't, you know, when I searched for admin, it didn't like pop up or anything, but.
+
+Joel Margolis (teknogeek) (01:02:36.216)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:02:37.813)
+turning that on gave him access to a whole nother set of functionality in the web app, just from that one boolean rather than having to do the whole complex like role thing. So he got access to a bunch of stuff that I didn't get access to. And then I was kind of poking in there around there with him and we found like client side path traversal piece that was in there that would only affect the moderators. And so there's definitely some value in really being thorough about your assessment. And even if you found where you think.
+
+The application is doing those RBAC decisions or those role decisions, taking it another layer deeper, really being thorough with that and trying to uncover every single little auth decision or decision on what should be displayed in the application.
+
+Joel Margolis (teknogeek) (01:03:24.312)
+Yeah, yeah, for sure. Again, this is one of the instances where it just keep it simple, you know, keep it simple is when you know how to use so many tools, it's easy to want to use those tools to fill very specific use cases. But a lot of times it's just more complicated than it needs to be. And you know, you're.
+
+Justin Gardner (@rhynorater) (01:03:29.461)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:03:36.149)
+Mm -hmm. Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:03:42.773)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (01:03:44.952)
+You'll write some really complicated regex or something, or you'll go and you'll set all these breakpoints. And really, you should just be doing a match and replace for just a single string. And just keep it simple so you can keep your testing moving instead of getting sidetracked and pulled away into this sort of rabbit hole of doing it correctly or doing it very precisely and accurately.
+
+Justin Gardner (@rhynorater) (01:03:47.381)
+Mm.
+
+Justin Gardner (@rhynorater) (01:03:55.509)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:04:02.133)
+Yeah. And, and reevaluating and making sure that you are, you know, hitting all of these different spots, like, cause you could make the same mistake that I did going down this route of like, the roles, that's the whole RBAC, you know, and there's actually another section that you missed. so that, that's a good shout there. the other one that I was going to mention here is paywall bypasses, which, you know,
+
+Joel Margolis (teknogeek) (01:04:14.648)
+Yep. Yep.
+
+Justin Gardner (@rhynorater) (01:04:26.773)
+I don't know, maybe, am I the only one that calls them paywall bypasses? Because I feel like I searched this up the other day and there isn't a bunch of stuff on like reading materials. Yeah, there's not like a bunch of articles on this VOM type. So maybe it's under some other name, but I call playwall bypasses essentially when there is some functionality that's behind a paywall, you need to be a premium subscriber to access XYZ feature.
+
+And you're able to bypass that. and these are very impactful bugs because I know that I personally paid a decent chunk of money. Let's just say that for access to a software that I use every day that makes my life super much better. And I love it. but I only needed one feature that the premium for that, for that software was going to add. And then I found out afterwards that that software has a bug bounty program. And I was like, wait a second. And I started poking at it.
+
+And I was actually able to access that feature without going through the, without paying for it. It was a paywall bypass on that and I reported it and it got paid and it was great. And it paid for my subscription to that software for a long time. but I wouldn't have, you know, if I were a malicious user, I wouldn't have paid for that software, because I had just access this feature and it was a very simple, very simple exploit to that. A non -technical user could have easily found.
+
+Joel Margolis (teknogeek) (01:05:43.352)
+Yeah.
+
+Joel Margolis (teknogeek) (01:05:50.712)
+One thing I will say is paywall bypasses often it's very case by case. So some programs it's just an accepted risk or it's not something that's easy to exploit at scale. And so they won't really either they'll lower the severity significantly or it's just like not like a huge like security risk for them. But a lot of times you can use those paywall bypasses to test other features where you will find bugs. And then again, you can sort of like chain that together or you can leverage that to get a more impactful exploit.
+
+Justin Gardner (@rhynorater) (01:05:55.093)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:06:03.221)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:06:12.661)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (01:06:20.152)
+and access that attack surface without having to pay for it.
+
+Justin Gardner (@rhynorater) (01:06:22.677)
+Yeah, we often talk about just paying the price. Well, wouldn't it be cool if you just didn't pay it and you still got access to the feature? So I think that's.
+
+Joel Margolis (teknogeek) (01:06:27.48)
+Yeah. Yeah. Just think about like paywall bypass is kind of like, you know, WAF bypasses, right? It's more of a barrier to other things than it is like necessarily a bug by itself. It can be a bug by itself, but you know, I see it more as like a barrier to other features and other functionality that you can test.
+
+Justin Gardner (@rhynorater) (01:06:40.661)
+You know?
+
+Justin Gardner (@rhynorater) (01:06:47.701)
+It's interesting you say that because I actually have had a lot of success with paywall bypasses, man. Like, like, I think I've been like, I don't know, talking about this specific bug type before and people are like, yeah, paywall bypasses. Like, yeah, sometimes they pay for those. And I'm like, what? Like the pay... No, I mean, it absolutely is.
+
+Joel Margolis (teknogeek) (01:06:52.92)
+interesting.
+
+Joel Margolis (teknogeek) (01:07:06.84)
+I mean, it's not really a security bug, right? It's like, I mean, there is like an access control being bypassed, but other than that, it's like, it doesn't affect user data or anything like that. Like it's more of a business. It's more like a business impact than it is, you know, right? Yeah, like it affects like the revenue side of the business more than it does like any like, like it's not like, you know what I mean? It's not like a standard security vulnerability.
+
+Justin Gardner (@rhynorater) (01:07:15.669)
+What do you mean? There's a I mean
+
+BusinessLogicAir, yeah, or something like that.
+
+Justin Gardner (@rhynorater) (01:07:35.541)
+sort of, I think the revenue for business is pretty important. And, you know, and so especially with high dollar, high dollar products, you know, if it's like, you know, something that's like five bucks a month or whatever, then it's, you know, they may not care. But to be honest, man, I found Paywall Bypasses on on like very, very nominal fee stuff on massive companies, and they still paid it. And I'm like, huh, let me just look at this bounty like.
+
+Joel Margolis (teknogeek) (01:07:41.08)
+It depends, right? Yeah.
+
+Joel Margolis (teknogeek) (01:07:46.744)
+Yeah.
+
+Joel Margolis (teknogeek) (01:08:02.84)
+interesting.
+
+Justin Gardner (@rhynorater) (01:08:04.341)
+this bounty is like, this bug would have had to have been exploited like 50 times for this bounty to actually cover the loss that they made. So there is some sort of nuance to it, but I also think that there is a desire from these companies to be very...
+
+Justin Gardner (@rhynorater) (01:08:29.973)
+thorough with their security assessments, especially companies that are running Pug Pounty programs. And so my experience has been that if you can show impact, if you can show like a pricing matrix table that says, hey, you should not be able to configure the single sign -on for a non -enterprise organization, and you can, and it works for like a pro level organization or something like that, and there's a little X in the box for pro, and there's a little.
+
+you know, check mark in the box for business, then they're normally like, all right. I mean, that's the real shit, right? Like, that's the, you know, and yeah.
+
+Joel Margolis (teknogeek) (01:08:58.516)
+The true crux of having documentation for your product is, is a bug bounty hunter reading it. If you never make documentation, then they can't call you out on it.
+
+Justin Gardner (@rhynorater) (01:09:11.541)
+Exactly, man. I love when I find documentation that's like, you know, this goes back to the whole Douglas Day thing where it's like, look for the nodes in the application. I love it when we come across some documentation that's like, XYZ user should absolutely not be able to do, you know, whatever. And I'm like, let me just screenshot this bad boy right here and just drop them right into the report. And I don't know, I feel like that kind of makes it bulletproof personally.
+
+So, well there's two takes for you guys on the paywall bypassing thing. It seems like Joel has also not had as much luck with it. I would say my paywall bypasses get accepted 95 % of the time. So.
+
+Joel Margolis (teknogeek) (01:09:49.464)
+Yeah, yeah, I think it, yeah, it definitely depends on the business. That's what I've observed.
+
+Justin Gardner (@rhynorater) (01:09:52.501)
+Yeah, interesting. All right, last one before, also I do want to hear from you about, well, let's just go there now. Is there any applications for match interplace inside of a mobile environment? I mean, obviously you've got similar sort of things where like it's loading the role, but.
+
+Joel Margolis (teknogeek) (01:10:09.368)
+Yeah, I mean, I think a lot of the things that we talked about already apply here as well, especially with like JSON replies, you know, like hitting an endpoint to check if you're this role or if you have these permissions or fetching what feature flags are turned on or off. That's very, very common for mobile because like you said, it's not like a client -side application in the sense that it's using HTML and the web and JavaScript to do all that. It's making individual API calls, taking those responses, parsing them.
+
+Justin Gardner (@rhynorater) (01:10:15.349)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:10:18.965)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:10:25.525)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:10:32.085)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (01:10:37.88)
+using those results to do things within the client app, like to enable a debug menu or to enable some features, whatever. So it's almost a little more straightforward in the fact that you're generally gonna be getting straight JSON or API responses that you can modify and match or replace on those responses or requests, then you would have to go and dig through a JavaScript file and find the call that's enabling a feature fly. You can also do it, you know, less of a match or replace, but like with Frito, right, where...
+
+Justin Gardner (@rhynorater) (01:11:05.813)
+Mm -hmm. Yeah.
+
+Joel Margolis (teknogeek) (01:11:06.232)
+you go and you find maybe there's, you know, oftentimes there's a feature flag function within the Java. You go find that call, you just return true, for every, you know, input or whatever. And it's a similar type of thing, but a little more involved than just on the API level.
+
+Justin Gardner (@rhynorater) (01:11:20.245)
+Yeah, yeah, no, that, that makes a lot of sense. Yeah. That you just have to implement that, I guess, at the, at the Java level, if you want to address it from a JavaScript perspective, or if you wanted to actually use matching to place in an HTTP proxy, then you would, you would do it at the API API level. yeah, that, that makes sense. I had, I had something else that I wanted to ask you about that and it's escaping my mind right now. Drat.
+
+Yeah. Whoa, that's what it was. So, like in these mobile applications, sometimes there is this whole piece of like client side features that I feel like is a little bit more expected than in like a browser because the phone has actual functionality. Like for example, like, we can't like take a picture and like apply a certain filter to it or something like that.
+
+when you don't have the premium product or whatever, right? But all of that stuff is client side. So all of that is in the Java code, you know, if we're talking about an Android app for this application. So, and I did run across this really interesting thing the other day where I was like, I'd kind of like to be able to like proxy web traffic a little bit. And if it doesn't have cert pinning, then what you can do from what I've seen is even with a non jailbroken phone,
+
+you can stand up a VPN on the actual device itself on a high level port or a high port number, right? Then configure your device to go through the VPN on the device and proxy some traffic through there. And this is a non -rooted thing. So I think it would be really interesting if they don't have cert pinning to...
+
+Provide that as some sort of demo, which is like we have this app it automatically does proxying There's no sir pinning. So it just essentially match and replaces The role to true and now we have access to all these client side features just from installing this like upgrade your you know Whatever filter app for free, you know apk file
+
+Justin Gardner (@rhynorater) (01:13:41.045)
+and now you get access to these features. So what do you think about that sort of paywall bypass in a mobile context?
+
+Joel Margolis (teknogeek) (01:13:47.224)
+Yeah, I mean, it's definitely trickier because there's gonna be like system level. There's a lot of like system level protections and stuff. So, you know, a lack of cert pinning in the app, there still might be cert pinning on the system. You know what I mean? Like it's gonna check if the certificate's valid.
+
+Justin Gardner (@rhynorater) (01:14:03.925)
+Yeah, but if you install it as a VPN, it'll trust the certificate that's associated with the VPN.
+
+Joel Margolis (teknogeek) (01:14:10.296)
+Yeah. And then that, again, like that's a whole nother level of the user has installed as a VPN and then they, right. So there are definitely like layers to it, I think. And this is what makes it challenging to have like really high impact mobile bugs is like, usually there's a lot of weird caveats or like system level things that are kind of in your way. But I think it's still, you know, you could, if you could put together a POC for it and get it to work like cleanly, you know, I think that's, it's certainly a valid POC. Like,
+
+Justin Gardner (@rhynorater) (01:14:12.469)
+Mm -hmm.
+
+Yeah. Yeah.
+
+Joel Margolis (teknogeek) (01:14:40.152)
+Again, I don't think it's out of the question that you could, an attacker would have control over some app on your phone, whether it's through compromising a developer account or compromising, or, you know, getting you to install an APK that ends up being malicious or something, you know, it does happen. One thing I was talking, I just did an episode with Greg from Bubbani reports. Yeah. And he, we were talking about, you know,
+
+Justin Gardner (@rhynorater) (01:14:47.349)
+Mm.
+
+Justin Gardner (@rhynorater) (01:14:55.957)
+Mm.
+
+Justin Gardner (@rhynorater) (01:15:00.213)
+Mmm. Excited to see that.
+
+Joel Margolis (teknogeek) (01:15:09.08)
+It might be nice to see some numbers from probably Google on what they observe as this, like the frequency rate of this stuff happening. Like how often does somebody have a malicious third party app on their phone? How often does a developer account get compromised? How often does a malicious app make it through the Play Store? I'm sure they don't really want to talk about those numbers because it doesn't look great for them. But I would be really interested to know from like a impact standpoint, trying to evaluate that, how you can sort of quantify.
+
+how likely it is for a user to actually go through these scenarios because that would make it a lot easier for hackers and programs to sort of get on the same page about the likelihood of these sort of events happening. And if it's a high likelihood, okay, then programs should probably be paying more for this or adjusting and saying, okay, this is actually kind of likely. But if it's not something that happens all the time or rarely ever happens at all, then I think it's fair to say there's a strong mitigating factor here. There is an issue.
+
+to some extent that they may or may not decide to fix, but the overall impact might be a lot lower because of just the likelihood for exploit.
+
+Justin Gardner (@rhynorater) (01:16:18.213)
+Yeah, dude, that's a great, that's an awesome point. I would love to see some data on that from Google. And while you were talking about that, I was just scrolling through my phone, looking at all the apps, and I'm just like, man, you know, like you install these like shitty little apps for like all these little edge cases, like, I gotta like park in Idaho, you know, now I've gotta like have this app. And then like that app just sits there, and then they lose the government contract, and like the company goes under, and they sell their little app.
+
+Joel Margolis (teknogeek) (01:16:35.96)
+Yup, yeah you forget to uninstall it, yeah.
+
+Justin Gardner (@rhynorater) (01:16:46.325)
+You know, and how easy would it be to just buy some of these apps that have millions of installs that the business model's gone.
+
+Joel Margolis (teknogeek) (01:16:51.8)
+Well, and it happens. And one thing I was saying to Greg was like, especially with telegrams, the other list nowadays, you have to imagine that at least one app developers on there who's had their creds gotten stolen and now you can compromise an app. And all you have to do is figure out the methods that all these malware devs are figuring out to sneak stuff through the Google Play Store integrity, scanners or whatever, and compromise an app. It doesn't even have to be like,
+
+Justin Gardner (@rhynorater) (01:16:57.845)
+Yeah.
+
+yeah. Yeah.
+
+Joel Margolis (teknogeek) (01:17:21.112)
+malware, right? It just has to do like a very specific malicious action or something like say you're trying to exploit some specific bug on an app that might not look at like malware. And you know, all they have to do is compromise the developer. So I wouldn't be surprised if that's already happening to some extent, but I would be curious again to see what the actual numbers are on that, both from a program and a hacker perspective, just on like what is the likelihood of this? Cause I think right now the common sort of understanding is that
+
+These things do happen, but not that often. And it's hard to say how often it happens and how likely it is.
+
+Justin Gardner (@rhynorater) (01:17:54.869)
+Yeah, absolutely, man. I know there are some people from Google listening to this podcast. So if you're at Google, reach out to your people, try to make this happen. I know Bodorini, I think, is on the Android team at Google. So we should probably reach out to him because he might have some introspection into that sort of thing.
+
+Joel Margolis (teknogeek) (01:18:00.12)
+True.
+
+Justin Gardner (@rhynorater) (01:18:12.597)
+All right, last thing on the match and replace, that is header replacements. And I think this is pretty niche and sometimes has some application. But the two ones that I came down or I wrote down with was host header modification. So essentially, like this is pretty common in the world of people that do hacking based off of SSL certificates. So what'll happen is like,
+
+you'll scan the whole internet for SSL certificate, using something like certs .io or Shodan or whatever, and you'll get back this host that has an SSL certificate for like, test123 .site .com, right? And you try to resolve test123 .site .com and it doesn't resolve. Either that DNS record is on an internal DNS server that's not responding to sort of requests outside of the organization,
+
+or they just deleted the record and left the server up. And so you're like, okay, you try to visit that IP and it's like, you know, generic 404 Apache or whatever, right? Because it's got a vhost set up for that specific purpose. So obviously you could go into your Etsy host file or whatever and like static the IP to that, or you could just say, okay, let me do a match and replace rule in in Kaido and say match host colon IP address, replace it with.
+
+host colon test123 .site .com. And then now you're navigating that site as if there was a DNS record that was resolving to that domain and you're making requests, you're interfacing with the app like that.
+
+Joel Margolis (teknogeek) (01:19:54.808)
+Yeah, I wanted to check and see if Kaido had it. I didn't see really when I looked really quickly right now, but this is one thing I do actually like about burp that there's a static routing table that you can add entries into. Yeah, and you can just say, this host should resolve to this IP. And so you can basically, it's like a host file just within burp within your proxy, and you can route stuff to local host. You can route hosts to whatever IPs that you want. And that's super helpful for...
+
+Justin Gardner (@rhynorater) (01:20:00.757)
+Mm.
+
+Justin Gardner (@rhynorater) (01:20:04.405)
+Really?
+
+Joel Margolis (teknogeek) (01:20:23.032)
+doing this exact type of thing where maybe you have an IP that resolves to an, or you have a host that resolves to an internal IP or to a dead IP, or that doesn't resolve and you need it to resolve to an IP, and you can configure those on a case -by -case basis without having to go and edit your host file or do a match and replace like that.
+
+Justin Gardner (@rhynorater) (01:20:30.997)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:20:40.917)
+Wow, that's super awesome. This is a great thing about Burp. And you guys know I'm a Kaido fanboy, but I will give credit where credit is due. Burp has, I don't know, how old are they? They're pretty old. Like 15 freaking years, 20 freaking years of features that they've integrated into Burp. And it's just a lot of really niche stuff that is super helpful for mega niche situations. So.
+
+Joel Margolis (teknogeek) (01:20:56.76)
+Yeah, at least. At least.
+
+Justin Gardner (@rhynorater) (01:21:09.077)
+I think it definitely pays to still know how to use burp and be able to use some of these. Is it 20 years old?
+
+Joel Margolis (teknogeek) (01:21:12.504)
+Burp's almost 20 years old, wow. In June of 2000, it's over 20 years old, holy cow. June of 2003 BurpSweep 1 .0 launched. So.
+
+Justin Gardner (@rhynorater) (01:21:23.445)
+Wow, yeah, look at this. Okay, so if you go to proxy settings, you go to the network tab under the settings and you look for connections, there's this host name resolution overrides table that you can provide host name overrides, which is your own little Etsy hosts in the inside burp. That's really awesome. That's a great feature. And I like that because it applies it just for that specific project too.
+
+Joel Margolis (teknogeek) (01:21:47.896)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:21:52.501)
+And you don't get your Etsy host file all clogged up and I'm always concerned whenever I modify my Etsy host file I'm like man, I'm gonna leave this in here I'm never gonna go back and remove it and like yeah exactly and then
+
+Joel Margolis (teknogeek) (01:22:02.776)
+It's like the apps, man. You said it once and you forget it. And six months from now, you're going to be like, what the heck is going on with my computer?
+
+Justin Gardner (@rhynorater) (01:22:08.373)
+Well, exactly, or like, I'm gonna go to, you know, that host is gonna like come alive again, and I'm gonna have it redirected to this old IP or something like that, and it's gonna be like, you know, no response from the server. And then freaking, you know, somebody in the live hack event is gonna be like, well, I went to test123 .site and this whole website, web app popped up and then I popped 15 crits.
+
+Joel Margolis (teknogeek) (01:22:15.448)
+Yeah.
+
+Joel Margolis (teknogeek) (01:22:28.592)
+And you go on you and you're like, what the heck? I swear I looked at that. You open it on your local. It doesn't work. And that's when you find out that it was still said.
+
+Justin Gardner (@rhynorater) (01:22:35.857)
+that it was the Etsy host, man. It's like, that sort of thing happens, man. It happens. So, yeah. All right, cool. Well, that's a wrap, I think. I don't, this was, there was one other header, Joel. What's the other header? There you go.
+
+Joel Margolis (teknogeek) (01:22:52.972)
+yeah. Yeah, exported for. This is one that, man, so often there are web proxies that either incorrectly filter this out or completely allow it to go through. And especially if it's passing headers through to internal requests and stuff, maybe it's doing like a secondary context type thing where it's making a separate request and it's taking your IP address. A lot of times if there's a web proxy and some complicated stack, it's gonna merge all those entries together. I've seen this before.
+
+We saw this very recently actually, where it was basically building an X4 to four header internally and it was combining the IP addresses into one, but it was taking the X4 to four from the request and it was using it as the first IP in the chain. And case sensitive, my goodness. This one will come bite you all the time because we found this one recently where X4 to four, capital X, capital F, capital F blocked, doesn't work. X4 to four with any of those three,
+
+Change to a lowercase. Just one little character off. totally, totally fine. Works. IP allowed. So yeah, that's a really weird one. And a lot of the time you'll find that your fuzzing tool is like Fuff. This was an annoying one. Fuff auto capital eight like does title case on headers. So if you give it all lowercase x forwarded for, it will change the x to capital X, forwarded capital F, for capital F. And you'll get, you know, IP blocked.
+
+unless you test it manually. I was testing it manually through Kaido and I found, yeah, sweet, this works. I go to try and fuzz it. Can't get it to fuzz because Fuff keeps auto title casing and I can't force it to do like, even with a raw request, it wouldn't go through. So that's just something to keep in mind. You know, if you're doing a lot of like at scale scanning and stuff and you're hitting some IP blocks or anything.
+
+Test it out locally first, test different cases on the X forwarded four, test different spacing on the X forwarded four, try like empty commas or just dummy IPs. There's a lot of different things you can do. Sometimes you can escape out of that value. Sometimes you can inject a new header, depends on how it's being used. So yeah, X forwarded four is always a great way to try and get around some of those IP restrictions.
+
+Justin Gardner (@rhynorater) (01:25:03.541)
+Yeah, absolutely, and I think the scenario that we were looking at before, it gave us some nice, like, super great verbose error message. It was like, you're not allowed to, like, IP whatever is not allowed to access this. And we're like, okay. What if I wasn't me though? And then it was like, sure. So, no, that's great, but also I think this is a pretty easy thing to fuzz for too. You know, if you're doing.
+
+Joel Margolis (teknogeek) (01:25:16.236)
+Yeah, okay. Very interesting. Yeah.
+
+Justin Gardner (@rhynorater) (01:25:31.733)
+if you're just trying to find stuff that's weird at scale, you know, checking for X worded for with various values and then checking for X worded for with various casing was not something that I've tried before. So I think that's a great call out, Joel. yeah, and then the actual application for this with match and replace is like once you find this sort of weird caveat is that you can just add the header in via match and replace, just match a blank, a.
+
+Joel Margolis (teknogeek) (01:25:43.896)
+Yeah. Yeah.
+
+Justin Gardner (@rhynorater) (01:25:59.573)
+a blank line on the header and it will just throw the header in. And then you can navigate that application as if you, you know, that header was always there from the reverse proxy or whatever. So.
+
+Joel Margolis (teknogeek) (01:26:11.48)
+Yep. Yeah. Yeah, so match replace, it does have a lot more use than just adding your username or that required header that's in the scope page. That's the first step. I like that. That's sort of the entry point for a lot of people to find this feature. But I would encourage everybody to sort of dig deeper and try and maximize the value that you can get out of it, because there's a lot of stuff that you can do with it.
+
+Justin Gardner (@rhynorater) (01:26:17.477)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:26:30.485)
+Mm.
+
+Dude, I was actually, so I was planning on ending the episode here, and I know you've gotta run here in a second, but I also realized that this is also a pretty decent, a pretty decent way that you can use match and replace is for storing payloads as well. So let's say you've got this like, you've got this sort of XSS payload or whatever, right? And instead of typing it out every time, you just kind of put like, XSS payload.
+
+or whatever into the thing and have it match and replace to something. Now, I will caveat this with the fact that it will, it is not context aware. So if you say XSS payload and your XSS payload, no, no, no, no, no, no, in the request, in the request, so you have to set it to the request. You have to set it to request body or whatever. But if you put it,
+
+Joel Margolis (teknogeek) (01:27:01.816)
+Nice, nice.
+
+Joel Margolis (teknogeek) (01:27:17.528)
+And it returns it in a response. Okay, okay.
+
+Justin Gardner (@rhynorater) (01:27:28.085)
+Let's say you put XSS payload into a form and you press submit and then you have a matcher in place role to convert XSS payload to whatever XSS payload it is. If it's sending a JSON request out and your XSS payload contains a double quote, then it's just gonna screw the whole JSON and break everything. So it's not like the best technique for this. You have to be aware of how the app is actually using this, but I actually have seen it in scenarios where like your...
+
+Joel Margolis (teknogeek) (01:27:44.312)
+Yep.
+
+Justin Gardner (@rhynorater) (01:27:54.581)
+wanting to put a blind XSS payload in your user agent or like there's a specific set of like headers and stuff like that that you want to inject this stuff into or maybe there's a specific niche payload that you would have to type a lot using a different character set on your keyboard. Wow, very specific example there. And you have to switch back and forth and your fingers hate it. Then you can just.
+
+Joel Margolis (teknogeek) (01:28:14.072)
+Hehehehehe
+
+Justin Gardner (@rhynorater) (01:28:22.005)
+write the match and replace rule and just have it auto -inserted. So that's another use case that I didn't have down in the notes that I just sort of popped into my brain.
+
+Joel Margolis (teknogeek) (01:28:30.104)
+Yeah, maybe in the future with the more complex use cases for match and replace, like if Kaido decides to go a step further than just the conditional matches, but also like having the workflows or something like that, you could do more advanced, like checking each parameter and then check the content type. And if it's JSON encoded this way, you know, that sort of thing and have it more bespoke.
+
+Justin Gardner (@rhynorater) (01:28:35.381)
+Mm -hmm.
+
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:28:41.813)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:28:49.013)
+Yeah, yeah. Yeah, that absolutely should be possible with the convert workflows because I was talking to the team as well about like, hey, you know, we definitely with convert workflows and with these other types of workflows too, but specifically with convert workflows, we need some way to access the core request that it came through, even if that isn't the input that's being passed in. So we can get context surrounding our...
+
+you know, conversion that needs to happen. Is this conversion happening in a, you know, XWWForm URL encoded environment? Is it happening in a put request? You know, what's going on here?
+
+Joel Margolis (teknogeek) (01:29:26.968)
+Yeah. Is it a parameter or is it a body body, you know? Yeah.
+
+Justin Gardner (@rhynorater) (01:29:29.493)
+Exactly. So I think that will also be something we'll see implemented in the future, which I think will be really, really helpful.
+
+Joel Margolis (teknogeek) (01:29:33.592)
+Which I've actually seen you do in a, in, you know what I'm talking about.
+
+Justin Gardner (@rhynorater) (01:29:38.101)
+Yeah, yeah, yeah, there's a, that one's actually public. So yeah, I have done that before.
+
+Joel Margolis (teknogeek) (01:29:42.624)
+yeah, yeah, yeah, you created a convert workflow for no -aft -plus from Shubs during the HomCon talk. And it basically checks what content type is this and it will generate the payload based on that content type, whether it should be a comment or an HTML comment or a body, you know, whatever. So yeah.
+
+Justin Gardner (@rhynorater) (01:29:47.765)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:29:51.381)
+Exactly.
+
+Justin Gardner (@rhynorater) (01:30:01.461)
+Yeah, that one's out there. I think that one is actually in the, let me check really quick before I say, I do need to update it.
+
+Joel Margolis (teknogeek) (01:30:07.934)
+you might need to update it actually, I think, because, yeah, they moved over to the new plugin. The workflows are now have to be in the new plugin SDK format with like, yeah.
+
+Justin Gardner (@rhynorater) (01:30:18.357)
+Yeah, actually it is compatible with that. So, and it is in the, it is in the even better workflow library that even better ads. So if you add even better plugin to your Kaido, then it will give you a list of workflows that are just linked back to this GitHub repo that you can pull request on. And I went ahead and merged in the no -waft -close workflow. Yep.
+
+Joel Margolis (teknogeek) (01:30:22.76)
+awesome.
+
+Joel Margolis (teknogeek) (01:30:45.112)
+I do, I see it. I see it.
+
+Justin Gardner (@rhynorater) (01:30:46.677)
+I've also got my color top level and iframe navigations one in there. Just extremely helpful. Like that will absolutely be a core feature of Kaido soon. But in the meantime, definitely use that to keep track of where you are in your page refreshes and iframe navigations and stuff like that. So, all right, man, is that a wrap? All right, sweet. Peace, y 'all.
+
+Joel Margolis (teknogeek) (01:30:50.616)
+true. I've got that one turned on as well. Yeah.
+
+Joel Margolis (teknogeek) (01:31:09.112)
+Yep, absolutely. I think that's a wrap.
+
+Peace.

@@ -1,0 +1,455 @@
+Episode 165: Protobuf Hacking, AI-Powered Bug Hunting, and Self-Improving Claude Workflows
+Source: https://www.criticalthinkingpodcast.io/episode-165-protobuf-hacking-ai-powered-bug-hunting-and-self-improving-claude-workflows/
+======================================================================
+
+Title: Transcript - Thu, 12 Mar 2026 15:12:23 GMT
+Date: Thu, 12 Mar 2026 15:12:23 GMT, Duration: [00:44:37.44]
+[00:00:00.88] - Justin Gardner
+Claude can also do the hosting now. Like you can literally just say like host it, you know, and then it will go do that. You know, I did that for the Zero Trust World thing.
+
+[00:00:33.71] - Justin Gardner
+All right, y'all, we've talked about ThreatLocker ring fencing a lot. We know how it allows you to set ACLs and policies for exactly what an application is allowed to do in your network. But today I'm gonna tell you how it does that, okay? 3 technologies: mini-filter drivers, Window Filtering Platform, and EXVersion kernel notification routines. Mini-filter drivers are essentially a hook or callback for I/O requests, okay? So when you're trying to write or read from a file. You can create a hook with those and approve or deny based off of the ThreatLocker ACL. Windows Filtering Platform, similar situation but for connect-bind requests, right? You can say, "Okay, hey, is this process allowed to talk to port 443 over there on the internet? Yes or no? Approve or deny." Lastly, you've got EX version kernel notification routines. The EX version's important because it allows you to approve or deny versus just getting a notification from the kernel. And this is specific for, hooking various native API calls like NTCreateUserProcess, which is what you would use to spin up PowerShell.exe or something like that. Okay? So those three are very useful to ThreatLocker's ring-fencing core technology. Hope you enjoyed learning how this is implemented. Check out ThreatLocker if you think your work could benefit from something like that. All right, let's go back to the show. All right, dude, so I actually have a confession to make.
+
+[00:01:50.56] - Joseph Thacker
+Uh-huh.
+
+[00:01:51.51] - Justin Gardner
+So you remember— Don't, uh-huh me like that. So you remember on the pod a couple months ago when I said I'll never give a talk ever again?
+
+[00:02:00.21] - Joseph Thacker
+Yes.
+
+[00:02:01.01] - Justin Gardner
+So I accidentally gave a talk.
+
+[00:02:02.06] - Joseph Thacker
+You already did it. You already did it.
+
+[00:02:03.34] - Justin Gardner
+I already gave a talk at Zero Trust World and it was so much fun, dude. Oh my gosh, it was great. And, uh, like obviously ThreatLocker is great. They sponsor the pod. They're, they're really, um, instrumental to what we do here on the pod, but that conference is freaking great, man.
+
+[00:02:20.02] - Joseph Thacker
+Is it their conference?
+
+[00:02:20.86] - Justin Gardner
+It is massive. Yeah. And my, my talk, I just, can I brag on it for just a second? Like I was so pleased cause I, I roll up there and I like, you know, get everything set up and then the people start coming in and the people start coming in and they, they gave laptops to every participant too at the workshops. Like the laptops were sitting in the seats, you know, that were there for them to use. You don't take them home, but like, you know, they prepared them for you in advance. They imaged them and everything. So anyway, all of the seats fill up. And then there's still a long line of people. And then they come up, the, you know, the ThreatLocker team comes up and they're like, hey, Justin, sorry to do this to you, but the line is like around the corner still. We need to put you in this bigger room. So like last minute before the talk starts, we move like 400 people to this next room, you know, and then that room fills up and there's people standing in the back. And the turnout was awesome. And the crowd was so engaged, man. They were like doing the labs. Uh, like along, we had more than half of the people, you know, raise their hand saying I finished the lab, you know, uh, which was sick.
+
+[00:03:25.88] - Joseph Thacker
+What was the lab?
+
+[00:03:27.33] - Justin Gardner
+Okay. So the lab was, and this, this is where, I'm sorry. Thank you for bringing me back around there. This is where all of this comes, comes back to, which was the reason I don't, didn't want to do talks is because I freaking hate prepping slides.
+
+[00:03:38.93] - Joseph Thacker
+Yeah. You don't want to prep.
+
+[00:03:39.65] - Justin Gardner
+Right. But just like you said, all you do is you Write an outline in a.md file, and then you just give it to Cloud Code, and it just builds a website with, for you with all of your slides on it. Yep. And that is the best for us as hackers because not only is like, are you dealing with HTML rather than like drag this element here, you know, that sort of thing. Uh, but you also can just build the, the labs in like the interactive workshop directly into the slides.
+
+[00:04:08.06] - Joseph Thacker
+Oh, that's dope.
+
+[00:04:09.53] - Justin Gardner
+It's awesome, dude. It's freaking awesome. And, uh, it was so fun to present. No issues. You know, you just drop it on a VPS.
+
+[00:04:16.33] - Joseph Thacker
+Yeah.
+
+[00:04:16.69] - Justin Gardner
+It's all, you know, more or less static. So it's like, okay, you know, 500 people brute forcing on it at the same time is not going to cause a problem or whatever. Yeah. Um, so anyway, dude, that's awesome. I'm back. I'm back. I do kind of like giving talks. I love giving talks and the slide prep is not that bad anymore. So I'm very pleased.
+
+[00:04:34.25] - Joseph Thacker
+Okay. I do have to give you a hard time though. Did I see something that said you signed some stickers?
+
+[00:04:39.72] - Justin Gardner
+Okay. Yes, I did.
+
+[00:04:41.18] - Joseph Thacker
+You're famous, Justin.
+
+[00:04:42.43] - Justin Gardner
+People are going to collect your signed stickers. Listen, man. Listen. That was shout out to Everett, head of partnerships. He's like, hey, man, I'm going to buy this Sharpie that we need to sign the stickers. And actually, people really liked that though. So after the talk, they were like— we gave out a couple signed stickers with codes to get free swag for CTB Beyond on them. And then people were coming up afterwards like, hey, can you sign the sticker? Can you sign the sticker? And I'm like, okay, you know, and so I don't know.
+
+[00:05:09.37] - Joseph Thacker
+That's cool. No, I actually really like my, uh, I think, um, Network Chuck for you and I both like wrote like DC the date last year when he gave us like Network Chuck stickers. And that's like one of my favorite stickers on my laptop. Yeah, I will say it is kind of wearing off, so we need another one, Chuck, if you see this.
+
+[00:05:24.30] - Justin Gardner
+But yeah, yeah, the silver, the silver Sharpie is the way to go apparently according to Everett. So, um, yeah, really great conference. I'm, I'm definitely gonna go back next year. Uh, I thought it was a blast and the venue was really good. ThreatLocker Killed it on how they put it on. And so I'm gonna go back, and I really like that it has aspects of like, there's definitely some more like corporate cybersecurity stuff there, but then there's also like literally hands-on-the-keyboard hacking stuff. Yeah, operators labs as well, right? So I think it's like a good like CISO and technical, you know, conference, which I think is pretty rare. It's one of the other typically.
+
+[00:06:02.48] - Joseph Thacker
+That's dope. Also, by the way, if you hear like hammering or tile cutting, we have contractors upstairs, so Dude, I also have contractors upstairs right now.
+
+[00:06:11.12] - Justin Gardner
+That's funny. Hopefully, Richard, try your best with this episode, man.
+
+[00:06:14.43] - Joseph Thacker
+Yeah, I'm going to try to mute between stuff, but we'll see.
+
+[00:06:17.04] - Justin Gardner
+Yeah. All right. We got a couple things to say.
+
+[00:06:20.63] - Joseph Thacker
+We don't have a lot of time.
+
+[00:06:20.92] - Justin Gardner
+Yeah. Yeah, not a lot of time. So let's jump through it. You're up first.
+
+[00:06:25.04] - Joseph Thacker
+Okay, sweet. I mean, a lot of this episode, don't let it scare you away. I think it'll be really interesting. Obviously, I've often been talking about hacking AI, but this is going to be about using AI to hack. Not the whole episode, but a lot of my content is. And I'm doing that honestly because it feels like it's in the zeitgeist, which if people don't know what that means, it's like that's what's in the culture right now. Like if you're on X, everyone's just like blowing up talking about using Adahack and there's like overreactions and there's bad takes and there's like good takes. And so anyways, a bunch of the things I'm going to mention are like relevant to that. Our boy Sweetly or Sweet Lie, however you want to pronounce it, updated BBscope. He has like a website and like he updated the open source code. So if you don't want to use the website, you can just like spin up your own instance of it. But I've always loved this. I'm kind of like a recon guy and love big fuzzing. I've always loved bbScope to just dump all of the scope for like— because there are things like, is it Aditya's target bbScope something GitHub that's useful for all the public programs? But if you want all of your privates, which is really where often things are more likely to be found, you can use bbScope to dump that. And the HackerOne a while back added an API key so you're not using something sketchy where you're pasting in your cookies and all that. And so anyways, he has a big new upgrade. And I think you shared with me a link right before this, which we'll drop it in the show notes, that there was a pull request. Like he released this like a couple of days ago. And then as of like today, there's no pull request that allows you to actually just dump your reports, which can be really useful. Now there is some drama around that also, if you want to get into that about whether you should give your reports.
+
+[00:07:58.13] - Justin Gardner
+I don't know. I don't know. I think it's good. I think exactly what you did and what Corbin did as well, where you just dump your reports And you, you say, Claude, go build yourself a set of skills to implement the techniques that are referenced in this report. I think that is really, really good idea.
+
+[00:08:15.43] - Joseph Thacker
+I haven't done it yet personally, but well, well, Tommy's big pushback against that is that we don't have the right to share it with third parties. So Tommy was going at me on, on X, our last guest, which, by the way, if you haven't seen that episode, it's awesome. Go check it out. But yeah, you know, Tommy is obviously due to his past a very, a very by-the-book person these days, right? Like he is very much by the book. And I, you know, my personal belief is that if you've got, you know, if you've set it in the settings for major model providers that you trust, like Google, OpenAI, Anthropic, that they can't train on your data, I don't think there's any risk with like importing your reports to Cloud Code or Codex, whatever, to have it try to bypass or to find adjacent bugs to that or to build skills. If we get some, if we get some sort of top-down direction that we shouldn't do that, then maybe it's a different discussion. But anyways, that's the drama around that part.
+
+[00:09:04.96] - Justin Gardner
+Yeah, dude, I think it's— I mean, I think that we put these HTTP requests into Kaido, you know, we put these requests into Burp, you know, like there are— obviously it's different when it's going up to the cloud or whatever, but like they're hosting stuff in AWS, right? You know, HackerOne is, right? So there's third parties going to be involved in here, right?
+
+[00:09:23.58] - Joseph Thacker
+Um, and as long as there's some legal protection there around like, you know, they're not allowed to train on it. And, um, I just don't think that there's any chance that they're going to be going through the, you know, tens of trillions of tokens to go find like my report, you know, like it just seems silly, right? Yeah.
+
+[00:09:38.58] - Justin Gardner
+Like, get your head out of the freaking, like, I'm the main character vibe here. Like, no one gives a shit about your bug bounty reports. Like, it's exactly like if you've got some crazy, like, zero-day on Android, you know, then, okay, maybe you need to be careful, you know, like, like one of those $2.5 million chains.
+
+[00:09:56.12] - Joseph Thacker
+If you have a Pegasus exploit, like, maybe be careful.
+
+[00:09:58.39] - Justin Gardner
+Yeah. But like, really, if you're not in possession of something like that, No one gives a shit, dude, like about you, you know, like, and I really— I'm saying that as a higher profile individual, like, no one gives a shit about me. Like, it's— it's— yeah, yeah.
+
+[00:10:13.73] - Joseph Thacker
+And I think what Alex said was really eye-opening too, that we do actually retain full IP to our reports. And so in some ways, I think we do have, um, you know, some types, types of, um, rights. I don't know exactly, you know, where all those boundaries are, but I think that it is at the end of the day still our IP. It is oftentimes the company's IP also for their use, but it still is also ours.
+
+[00:10:32.50] - Justin Gardner
+So. Dude, I actually just logged into Claude.ai/settings/data-privacy-controls and turned off those, those little, little things. I haven't done that yet, so I'm glad you reminded me to do that. If you guys haven't done that, you could just log into Claude.ai, go to your settings, go to the privacy tab and turn those off.
+
+[00:10:49.47] - Joseph Thacker
+Um, yeah. And maybe do that for each of your subs if you have multiple.
+
+[00:10:52.59] - Justin Gardner
+Exactly. Who knows if you have multiple. You, you certainly don't have multiple, Joseph.
+
+[00:10:57.35] - Joseph Thacker
+So, yeah, I've never mentioned that. No, actually I have 3, 3 right now, but I'm hoping to keep scaling up, so.
+
+[00:11:01.92] - Justin Gardner
+I feel like you're not allowed to say that, bro. Okay.
+
+[00:11:04.57] - Joseph Thacker
+Nevermind. I don't have that many.
+
+[00:11:07.45] - Justin Gardner
+Anthropic is like, I'm sorry, what'd you say? Um, yeah. So, all right, man. Well, that's good. Um, I actually, as our next topic, just wanted to give a shout out to, uh, our boy Matt Brown, who recently announced that he was going full-time and, you know, pulled the trigger. Did it.
+
+[00:11:23.72] - Joseph Thacker
+Long overdue job.
+
+[00:11:24.64] - Justin Gardner
+Yeah. Is a full-time, um, you know, pentest content creator, bug bounty hunter, that sort of thing. So if you guys haven't seen his channel, um, you're definitely going to want to go check it out. We'll link it in the description. He's @nmatt0 on, uh, Twitter. And, um, yeah, his content is just the best content out there around for IoT device hacking, in my opinion.
+
+[00:11:46.65] - Joseph Thacker
+Yeah, and, and, you know, I think that this is very resilient and important. Like, obviously, I think for, for being resilient and bug bounty I think that you can look at games, look at desktop apps. There are things you can do to stay more resilient as AI stuff picks up. But I think going into hardware hacking is one of the smartest plays you can do if you have the time and the bandwidth to do it. And his YouTube channel is gold. It's just the best at hardware hacking on YouTube. And he's one of the boys. He's been around the life hacking event scene. He's really cool. We got to support our friends.
+
+[00:12:18.67] - Justin Gardner
+So yeah, and, and I will say one of the things he announced in his video was that he is also doing training stuff by mass request. So he has two courses out there right now, Digital Signal Analysis for Hardware Hackers and Beginner's Guide to IoT and Hardware Hacking. And guys, these are grossly, grossly underpriced. These are like $200 and $50.
+
+[00:12:42.75] - Joseph Thacker
+Oh gosh.
+
+[00:12:44.12] - Justin Gardner
+So Yeah, I gotta hit up my boy and be like, what are you doing? Yeah, uh, like, but yeah, definitely go check those out. We're gonna give away a couple subscriptions, uh, to this Critical Thinkers tier on Discord, uh, as a way to support Matt as he starts his endeavors here. But definitely a good place to get started with, uh, for hardware hacking if that's the route you want to go.
+
+[00:13:04.25] - Joseph Thacker
+Yeah, and if you have any hardware stuff or want any type of pen test, like he does contract pen tests, so if you're a company, definitely reach out to Matt.
+
+[00:13:11.36] - Justin Gardner
+Yeah. All right. What you got next?
+
+[00:13:14.63] - Joseph Thacker
+The second thing is probably short, so you might have me skip it, but original sick sec on X. I feel like people have maybe seen that before. Are you going to share? You may share.
+
+[00:13:26.79] - Justin Gardner
+No, no, go for it, man.
+
+[00:13:28.08] - Joseph Thacker
+Oh, man, I'm logged in.
+
+[00:13:31.32] - Justin Gardner
+Oh, share your screen.
+
+[00:13:32.27] - Joseph Thacker
+Yeah, it's fine. I'll let you share or people can look it up themselves.
+
+[00:13:35.15] - Justin Gardner
+Anyways, I got you. I got you.
+
+[00:13:36.39] - Joseph Thacker
+Another bug bounty hunter who built a MCP style client for accessing and listing your reports and stuff. Honestly, I was going to share this before Sweetly upgraded his BBSCOPE. I'd rather have it all in one tool, so I'll probably just use BBSCOPE. But if anybody wants to use like an MCP for HackerOne to search your reports and that sort of thing, that's a good one to do.
+
+[00:13:57.96] - Justin Gardner
+Okay.
+
+[00:13:58.75] - Joseph Thacker
+Yeah. So my main thing and this is like actually I'm going to let you go first. I'll let that be my second small one. You go first because my the rest of mine are all kind of around the same topic. Um, so yeah, and that'll be like a bigger discussion.
+
+[00:14:11.60] - Justin Gardner
+I got you. So, um, the next item that I had to share on the list was I've just been having a lot of success lately on Google with Protobuf related stuff. Okay. And, and obviously there's like this ProtoJSON stuff that they're doing where, you know, uh, they're removing the fields. It's kind of like Protobuf, but, but in JSON format, that is a necessity. You've got to know how to deal with that if you're going to hack on Google at all. That's not what I'm talking about. What I'm talking about is the actual Protobuf stuff. Like there are a lot of parameters that are Base64 encoded, like, you know, binary protocol Protobuf stuff. Um, and I think a lot of people just get scared of it and assume it's signed or, you know, uh, just don't mess with it. Um, and I've been messing with it and it's been giving me some good stuff. Uh, so I built a little Kaido, uh, convert workflow, which I'll drop in the Discord., that allows you to just inline inside of Kaido, decrypt those, uh, or I shouldn't say decrypt, decode, decode those, uh, Protobuf Base64 encoded strings. Okay. And then you can just kind of look at them. They're not going to have the key, the key values, right? That's the sad thing about Protobuf is just, just has the value. But, um, you can look at the value and kind of extrapolate what's going on there. Uh, and so you'll see nested Protobuf. So Protobuf inside of Protobuf and, uh, You know, I'm not gonna lie, it does get to be a little bit of a pain, but if you de— you know, decode all of that stuff and you look deep into it, you'll find IDs, you'll find, you know, strings that you, that you see get manifested in the UI. Uh, and those things have some really, really crazy impact once you start understanding it. Yeah.
+
+[00:15:54.62] - Joseph Thacker
+It actually unlocks the ability to hack stuff that you kind of weren't able to like, even like test before.
+
+[00:15:59.89] - Justin Gardner
+Yeah, absolutely. And I did want to give just a really quick explanation of how Protobuf stuff works here. They've got a bunch of different features of Protobuf. But one of the things that I wanted to mention was that there are length-limited strings, right? So you can say, okay, I've got the string, it's this length and it's sort of standard binary protocol like that. But they also encode the wire type, field number, and continuation flag. Inside of it. And that's kind of what the, you know, single 8 bits recommend represents there. So I'll explain very briefly. The first 3 bits are the wire type. So this is like, oh, you've got a varint, you've got a string, you've got a, you know, fixed integer size. That's going to be encoded in those first 3 bits. In the next 4 bits, you've got the actual field number that is associated with this content. So if you have the Protobuf, um, representation, you can map, you know, the key names back to the values. But if not, you're just gonna get the field number that is associated with this specific value. Right. Um, and that takes, uh, no, that's fi— Uh, no, that's 5, 5, 4 bits. The last bit is, uh, the continuation bit, which allows you to continue expanding that metadata. And then, um, you've got your actual data representation. So it's a, it's a little bit complex, but once you kind of wrap your head around it, it's not too bad. You gotta familiarize yourself with the, um, different variable types and stuff like that. Uh, and all of that gets extracted away by this Quido convert workflow that I use. And just allows me to say, okay, you know, field 1 maps to this string, field 2 maps to this integer, that sort of thing. And if you just have even that rudimentary level understanding of it, then you can really pop some cool bugs. If you can reverse it, you know, write, take Cloud code and say, hey, write me something that reverses this. Uh, and then you can inject into those various fields. Does that, does that make sense? Yeah. Yeah.
+
+[00:18:12.72] - Joseph Thacker
+No, it makes sense.
+
+[00:18:14.00] - Justin Gardner
+Yeah. And Cloud is so good at it, man. Every time you hand it a buffer, it's like, oh yeah, of course the, the Protobuf, here's the Python script. And I'm like, thank you.
+
+[00:18:23.22] - Joseph Thacker
+Yeah. And that wasn't true a year ago. I actually wasn't. Yeah. So I've got a lot to say on that. But on the topic of Kaido, and I'm wearing the Kaido shirt today, um, and Cloud Code, we released— by sorry, we, me and Justin are advisors, but, uh, Kaido released a Kaido skill for Cloud Code or Codex or whatever to plug into. It's at github.com/kaido/skills. But there's also a blog that's getting posted today, and I'm posting a blog post about it as well, kind of addressing missing some of the elephants in the room. Um, but yeah, actually, do you know, can that skill yet— uh, it probably cannot because workflows are kind of complex. It can't edit workflows yet.
+
+[00:19:01.68] - Justin Gardner
+I don't think so, but that is something we definitely want to build on the fly, is like, hey, letting it hook in there and say, hey, build me a workflow to like decrypt this Protobuf.
+
+[00:19:09.35] - Joseph Thacker
+Like, oh my gosh, or implement this, this, uh, workflow that Justin, uh, made.
+
+[00:19:14.83] - Justin Gardner
+Like, you know, install it for me and kind of But I will say though, I'm sorry, going back to my Protobuf thing, because it is sort of relevant to that. Like if you do get Claude to analyze these Protobuf strings, and I'll just say it straight as I can here, this is a really good area for you guys to use AI to find bugs that were not really as accessible a year ago without AI, right? Because Claude is very good at understanding these Protobuf structures. So you give it this string and it can easily create you a program to reverse those and, and, you know, re-encode them in the right format, right? They do sometimes have checksums for those in, in Google's architecture inside of those Protobufs. Uh, but dude, Claude is like a very high hit rate of like being able to just look at it and be like, oh yeah, that's clearly the checksum for this. So I'll just calculate that based off of the, and I'm like, whoa. Okay. Um, so definitely a good area to use those. And like you were saying, if we can get AI to be able to build workflows very easily inside of Kaido, I think that'll be a, a big level up too. So. Maybe I'll try to add that to the skill within the next couple of weeks before this airs.
+
+[00:20:19.48] - Joseph Thacker
+Yeah, it already has a ton of functionality. So, um, Emil and Jan added some really cool SDKs that are now plugged into that skill. So it can like add findings, edit requests, search HTTP history, like add, match, replace stuff. I really want it to— I really want them to, and I think in the next release they're going to add it, be able to mess with the sitemap tree because I think it'd be really cool to like, um, have some sort of like coverage map where you— and because they're— because they're adding plugin to plugin, um, plugin to plugin. Wow, what's that called? Interoperability? Yeah. Well, no, like, uh, not compatibility. Anyways, the ability for plugins to communicate.
+
+[00:20:54.82] - Justin Gardner
+Communication is the word I was looking for.
+
+[00:20:56.91] - Joseph Thacker
+Yeah. Yeah. Um, and I think having like a sitemap coverage tree would be so cool where like it puts the sitemap into like a plugin and then it like marks them all red. And then like as you and Claude Code like add them to Replay and test things, it like turns them all green. And so you can be like, oh, I've definitively tested all this. It makes me think of a long time ago. I heard that like Space Raccoon used to do that. Like when, especially when he first got started, he would basically list out every API endpoint and like every query. And then like all the bug class he likes to check for. And he would have like a coverage map in Google Sheets and he would just test every single thing. And then you would end up finding a bunch of bugs that way because he was way more thorough than anyone else.
+
+[00:21:30.25] - Justin Gardner
+Right. That jerk, man. You know, the same thing that, that Ron Chan did that really like messed with me was like, he's like, oh yeah, I just need, you need to be so thorough. You need to like test every field and every value for every field of every endpoint of every mutation of every freaking— I'm like, dude, like stop, you know? And, uh, I don't know. I'm still so jaded from this one live hacking event where I spent like an hour on this one, you know, trying to exploit this one endpoint and he popped in and got arbitrary ATO on like GitHub or something, or no, on GitLab. This is before he worked with them.
+
+[00:22:06.55] - Joseph Thacker
+And it was because you missed a single key, right?
+
+[00:22:09.00] - Justin Gardner
+Yeah. And it's like one of the weird values of the GraphQL schema that doesn't look like it's going to do anything, so you don't even really check it, but then it completely bypasses the whole auth scheme. It's like, ugh.
+
+[00:22:22.16] - Joseph Thacker
+But yeah. Dude, so on that exact same topic, because it's just relevant to all of this, Claude Code, when hacking for me and XSS Doctor, basically found a high or maybe it's a critical on like a major company by looking at like the survey endpoints. Like that's just the stuff that I always ignore, you know, like this just stuff that's like feedback submission, survey junk. Same thing with the same thing with those headers that there was like that big finding on last year, like trace headers or something. It's like these things that like we get so used to as bug hunters, used to ignoring that sometimes, you know, Claude or whatever we're using will end up testing.
+
+[00:22:58.44] - Justin Gardner
+So, dude, are you even hacking anymore, bro? Are you just like directing Claude? Like every time I hear you talking about it, you're just like directing Claude.
+
+[00:23:06.70] - Joseph Thacker
+Yeah, I feel like my job is more triage and validation, like over the last 6 weeks. It's crazy. And I mean, I don't think that it in any way— I mean, I'm sure over time it will degrade skills, but in general I find that it's, it's like leveling up my heuristic for like where to look and what to look at. And it's also Yeah, it's just finding stuff that I would, that I would have not found, right? And so it's expanding my scope and my understanding of these applications, especially on big targets like Google. Like just the random gadgets and information it finds about architecturally about these targets levels up my understanding architecturally where even if Cloud Code were to go away, I now understand Google's infrastructure way better.
+
+[00:23:47.65] - Justin Gardner
+Yeah. Yeah. I think that is the plus. I will say that I have found myself becoming a little bit lazy though. Like the other, the other day I, like a buddy of mine found a CSS injection and I was like, oh yeah, dude, I'll just use like my stuff to hack this. And I was like, oh man, I'm gonna have to like set up the Font Leak and the ligatures and, uh, all right, let me go do it. And I started doing it. I was like, oh, I'll have Claude do it. And then I spent like 2 hours trying to get Claude to do it.
+
+[00:24:11.72] - Joseph Thacker
+And Claude couldn't do it.
+
+[00:24:12.48] - Justin Gardner
+You could have just done it. No, I know I could have just done it myself. And I'm like, no, I'm just gonna like get Claude to do it. And then it like, you know, and then you run it for the first 5 minutes. And it's like, oh wow, it's doing everything. Like this is gonna be so fast. And then something's off, but you have no idea what, 'cause you didn't do any of it. And it's like, dang it. So I don't know. Sometimes you get big wins, but sometimes there's misses on that as well, I think.
+
+[00:24:36.47] - Joseph Thacker
+Yeah. All right, dude, here's the major topic. You got one more thing before I jump to this whole major topic?
+
+[00:24:40.99] - Justin Gardner
+Okay. Yeah, I do. Okay. So I wanted to mention as well, and I've mentioned this, I think briefly on the pod before, but I've actually been finding a lot of permissions issues, client-side bugs recently. And I wanted to mention a chain that is, uh, that is pretty good that maybe people can use. So, um, one of the vulns I found recently was a CSurf of sorts to start recording with the victim's mic. Uh, and then, you know, what would happen is if after a certain period of time, it would take whatever you said, transcribe it, and put it into their service. Right. Okay. And, and so I was like, okay, well, if I go to the site and I click allow, you know, allow this site to always access my microphone or whatever, um, then this doesn't require any user interaction at all. You could, it can just start recording your microphone at any time. Um, so what I did is I, I did a login CSRF to my own account. Wow. Then, then I, you know, audio record CSRFed. The endpoint to start recording. Sick. And then after a certain period of time, it would, you know, cut the recording and then upload it to my account. Right, it's in your account, yeah. Right, so now I can just effectively spy on the user. And yeah, it's, I mean, it seems to hit pretty well. I've reported this a couple times now and it, you know, they care about this. I think it's a little bit of a flaw with the whole concept of like, domain-locked permissions because it almost needs to be account-locked, right? It does. It needs to be account-locked, right? Because if, you know, basically this is like a really weird question, but like, you know, is gonna be on my account. If it's on my account, I'm fine with it recording, right? But if somebody logs in, sees their own account, then I'm gonna, you know, now I'm just uploading data into somebody else's account, you know, and it's like, this is not good.
+
+[00:26:41.20] - Joseph Thacker
+Well, I just love it because I think that taking a gadget like, like, like login CSRF and turning into something impactful is really cool.
+
+[00:26:48.51] - Justin Gardner
+Yeah. Yeah. So anyway, and then there's also the, the concept that I've talked about before of like permission delegation down into iframes. Like whenever you're seeing an iframe that you can control, make sure you check the permissions, you know, the allow, um, uh, attribute on that to like know whether it's allowing like screen recording, mic recording, any of those things. And that whether those permissions are being delegated from the top level frame down into the iframe. And if it is, then you might be able to abuse those as a third-party iframe inside of a trusted top-level page.
+
+[00:27:18.98] - Joseph Thacker
+Right. Yeah. I remember you'd mentioned that. What's the name of that attribute again?
+
+[00:27:22.09] - Justin Gardner
+Yeah, I think it's like the, I'm going to go pull it up right now, but it's like the allow, allow iframe permissions. Let me pull it up on MDN. Yeah. The allow property.
+
+[00:27:30.53] - Joseph Thacker
+Yeah.
+
+[00:27:30.81] - Justin Gardner
+We saw that. The allow property of the HTML iframe element indicates the permissions policy specified for this iframe. So yeah, that's the one.
+
+[00:27:39.14] - Joseph Thacker
+All right, dude. So in a private Discord that you and I are in, I've had lots of discussions. I had these same discussions back whenever AI was getting a little bit better at coding and it was getting better at image gen and video gen. I was always in there hyping it up as the hype man that I am. But I would get some pushback, like, oh, I can definitely tell this is AI and that sort of thing. And it eventually kind of passed. Of course, you can still tell sometimes when things are AI, but it is getting harder. But anyways, now that discussion has now kind of moved into over the last week or two, can AI hack things? Right. And I'm sure if you're on X at all, you've probably seen all these discussions. People are blowing up tweets like, I found this with Claude Code and I found that with Claude Code. And it's brought out, in my opinion, a couple different thoughts. And these are in my most recent blog post that I just put up on the site. But the thoughts that I often feel compelled to believe are things like, even my grandma could do it, right? And there was some really cheesy AI slop about my grandma finding a bug, not literally mine, but the person who was posting it. Sorry for hitting my mic. And I think that I am like, I tend to overestimate what other people can do, especially people who don't have our skillset for our understanding for how we see bug bounty, how we see life, how we see coding, how we still see servers. In fact, in building small AI apps for just friends and family, when someone says thank you, I'm like, "Ah, don't worry about it. Claude did it." My wife's like, "Stop saying that. Sure, that's true, but you know how to host the server. You know how to tell it what to do. You know how it should build it. Then when things don't work, you know how to fix it. You're basically leveraging all of your technical expertise to actually make this possible." I disagree with that though, dude.
+
+[00:29:24.49] - Justin Gardner
+Totally, I agree with you, but Cloud can also do the hosting now. Like, you can literally just say like, host it. Yes. You know? And then it will go do that. You know, I did that for the Zero Trust World thing.
+
+[00:29:35.40] - Joseph Thacker
+Yes.
+
+[00:29:35.48] - Justin Gardner
+I was like, okay.
+
+[00:29:36.35] - Joseph Thacker
+But when you say host it, it's going to say like, where do you mean to host it? Right? And so like, for somebody who's non-technical, it's going to say like, okay, well, do you have a virtual server anywhere? And when grandma says no, it's going to be like, okay, well, you need to go sign up on this website. Right? And then get me an API key. It's like, we know what API keys are. We know how to sign up for websites. We know, and like that is a low barrier to entry. But what I'm saying, what I'm trying to say here is I think that when I say, you know, kind of anyone can do it, I'm talking about like anyone with knowledge of APIs and servers and who has done some hacking, right? And at that point, I think I'm 1000% correct. But I don't think that like anyone can do it, right?
+
+[00:30:11.75] - Justin Gardner
+Okay. So yes, I agree. But I think the difference between you and I who are like spending like time deploying stuff, hacking things, you know, very technical in the weeds, right? And my friend Tobias, who is, you know, business IT automation, you know, is what he loves to do. The gap between me and him just got a lot smaller, a lot smaller because, because he, he can now say to Claude, okay, yeah, you need a VPS. I got you. Here's, you know, the, the IP address and I set the password to this login. And then it just logs in and does it.
+
+[00:30:46.89] - Joseph Thacker
+Right.
+
+[00:30:47.04] - Justin Gardner
+You know, he can do that. Yeah. You know, he can go grab an API key and, and, and, you know, if you get given an API key for DigitalOcean, it'll just get the domain. It'll grab the thing, you know, it can do all of that. Right. Um, so I don't know. I, on, on one hand, certainly that's true, but, but I think the gap for between him and us just got a lot smaller. And I also think it superpowers us., you know, to be able to do things like the gap between me and the person that invented Protobuf, you know, like, you know, there's, there's tiers to this. And I think Claude helps, helps, you know, take people that have a general knowledge of something and be able to actually implement it, which is really beautiful.
+
+[00:31:26.90] - Joseph Thacker
+Yeah, no, I agree. And I think, and I think that for the, I think for anyone who is just like slightly further down, they can just keep asking like, okay, well, how do I do that? Okay, well, how do I do that? And when everybody's in that mindset, it really does. Level everyone up. But the other thing that kind of hit me was like, so let's say your, your buddy, your IT buddy spins it, he spins up a VPS, he's using Cloud Code, he's getting into bug bounty. He's like, okay, go find these bugs. All right. So now what's the next limiting factor? The next limiting factor is he doesn't know what is a false positive. And so this is another thing. This is another thing that actually Patrick pointed out to me. And it's, you know, because I'm kind of like, I kind of hate the fact that like any salesperson right now could just go use Cloud Code, make a hack bot, and then go like rip a bunch of local businesses off, like running his hackbot as like a pentest as a service and selling pentests, right? But I think that the difference, um, and obviously business owners can't differentiate this, but the real difference between that and what I'm doing or what you're doing is that we do know, right? When it, when it, when it says jackpot critical finding, we're like, yeah, that's just a wildcard course and it's not a chance it's actually valid. Yeah, yeah, yeah, exactly. And I do think, um, if you are building this and you're having those issues, the pro tip here is basically play whack-a-mole with those errors, right? As you run it over the next week, go back and look at the false positives and incorporate those back into the prompt. Like, hey, when you found this, it was a false positive because of this. When you found this, you said it was a critical. On my rating, that's more like a low or a medium. I still reported it, but like, you know, like basically play whack-a-mole with the issues it has and it will improve. And so I think that that's a good tip. But I do think that that's another place where our intelligence is baked in to what we just expect of others, but that they might not be able to actually have or do because it often will even take me a while to fully grok and to fully validate some of these bugs. And it's because they're like weird ones, right? It's like it's not using my knowledge. It has knowledge about stuff that I don't even understand, right? And so then I have to go understand and figure that out.
+
+[00:33:21.48] - Justin Gardner
+Now we understand what it feels like to be a triager, you know, where they're like, oh, we just got this report. Like, I don't— being a triager, I think, is a really crazy skill, you know? Like, you've got to be able to, you know, figure out the threat model, look at this person's attack vector that you've never heard of before. Figure out if it's valid. You know, it's, it's pretty cool. Um, but yeah, I, I don't know, man. I, I think one of the areas I'm underusing Claude right now is like getting more customization and playing whack-a-mole. Like you said. Mm-hmm. Like I'll often just really rely on like very few things that I have in my Claude.md file, a handful of skills, and then just spend most of the time actually just explaining to it.
+
+[00:34:02.57] - Joseph Thacker
+Okay.
+
+[00:34:02.66] - Justin Gardner
+Well that—
+
+[00:34:03.01] - Joseph Thacker
+what to do. Okay. Well stop. Yeah. Let me, let me fix that for you. It, it's gonna take like 3 lines really. It makes a big difference. You just need to add to your Claude MD anytime I get frustrated or anytime I have to re-explain something to you that you did not understand, or anytime that you like try one command and it fails and you try another command and it fails and you try another command and it fails, add that to the applied learning section in your Claude MD and it will literally grow. Like every time you use Claude, it improves. It's like a self-improving loop that will then level up your own local Claude that will make it much better.
+
+[00:34:37.65] - Justin Gardner
+What? What?
+
+[00:34:37.98] - Joseph Thacker
+Okay.
+
+[00:34:38.17] - Justin Gardner
+Are you mad you didn't do this? Do you disagree? What is it? No, I just like, I don't know, man. I don't really, I feel like, is it going to know what things I want to have it improve on? I don't get frustrated with Claude. I don't say, listen here, you dummy. I tell it, hey, do this. I try to, I don't know.
+
+[00:34:59.57] - Joseph Thacker
+Okay, here's what I notice when I'm using it. I'll say, hey, go pull up whatever that we were working on last week, go find it. And what will it do? It'll run like 20 different bash commands. It'll try to find it in someplace. It'll try to use this thing. It'll use too wide of a thing. It'll find too many files. It'll find too few. Ever since I added that thing that I just told you, now what it does, once it's had to try something and got a bunch of errors or not found what it's looking for, it will then update its information. It'll be like, when Joseph asked me to look for session files in Claude, they're located in.claud sessions. Now the next time I ask it to search, it only searches once. And so it basically improves itself, which saves tokens and then like saves frustration, saves time.
+
+[00:35:41.32] - Justin Gardner
+Okay. All right. All right. Fine. I'll give it a shot. I'll add it.
+
+[00:35:45.73] - Joseph Thacker
+All right.
+
+[00:35:46.44] - Justin Gardner
+Okay. Before we, before we close though, one of the things I did want to discuss was I think there's this whole concept of like token FOMO right now where people are like, I should be really, really utilizing my ClogMax subscription to the absolute max. I think you're doing a great job of that. Um, they integrated Cloud, uh, Cloud RC, which is something that I was really looking forward to with, um, like just being able to take your Cloud session and, you know, resume it on your phone and give it instructions in the real time. But it doesn't support dangerously skip permissions, which is something that you essentially have to use if you're using Cloud, because it's like, it's gonna run 50 bash commands, you know? And you're like, I don't wanna press yes every single time. Like, I want you to sit in this container that I've got you in. And then do whatever the heck you want in my little container, you know? So I don't know, man. Do you have any good solution to that? I was kind of disappointed by RC.
+
+[00:36:39.84] - Joseph Thacker
+I just haven't needed it. I didn't need OpenClaw or RC, and it's specifically because I just deployed a Discord bot that creates a thread, and in that thread, it's the same thing as a Claude session. So I just have a private Discord server. I just— what do you dislike about this?
+
+[00:36:53.13] - Justin Gardner
+It doesn't look as good though, right?
+
+[00:36:54.73] - Joseph Thacker
+Oh, it looks great. Let me see if I can take a good screenshot and share it with you all. I want to do it very quickly, but basically put it in the doc or something because yeah, yeah, I'll put it in the doc. But basically what I did. Yeah, that's fine. What it looks like is, have you ever even seen this? This is a little pro tip for the listeners too. Did you know that Discord has a diff code block type? Send me a message. Send me a message to Discord. Actually, everyone listen along in Discord. Do backtick, backtick, backtick diff and then have some lines with a plus and some lines with a minus. The lines with a plus will be green. The lines with a minus will be red.
+
+[00:37:34.59] - Justin Gardner
+Oh, interesting. Wow. What the heck?
+
+[00:37:37.28] - Joseph Thacker
+That's cool. It's beautiful. And you can— so you just have it write that out. So I have mine write out all the tool calls, all the things. Let me see if I can show you.
+
+[00:37:45.80] - Justin Gardner
+You don't have to redact in real time. You can just put it in the doc and then we'll redact it afterwards.
+
+[00:37:50.19] - Joseph Thacker
+And okay. Yeah. Well, let me— when I show you what this looks like, you're going to be like, oh, I need that. I'm going to put it in the dock and yeah, we'll just put it. Yeah, that's true. We can just like do an overlay or I can even find a better picture.
+
+[00:37:58.69] - Justin Gardner
+Okay.
+
+[00:37:58.82] - Joseph Thacker
+I just put in the dock. What do you think? This is what my threads look like.
+
+[00:38:03.69] - Justin Gardner
+Yeah, that looks pretty good, man. Yeah.
+
+[00:38:05.42] - Joseph Thacker
+You can see exactly what it's running and I even have it snip if it's too long. And I have it where I can like send audio messages in. So what about Control-O? Control-O. Oh, to show more.
+
+[00:38:16.34] - Justin Gardner
+Yeah.
+
+[00:38:16.50] - Joseph Thacker
+I can't do Control-O, but I do have things like, you know how you can Control-C if it's like going down a rabbit hole? Yeah, you just, you just send in like a stop command, it stops it.
+
+[00:38:26.44] - Justin Gardner
+Um, okay. Yeah. So you just had to code up this bot for you?
+
+[00:38:28.67] - Joseph Thacker
+Yeah, I had to code this bot. I would maybe be willing to share it. I'll think about that.
+
+[00:38:33.36] - Justin Gardner
+But either way, I mean, anyway, plenty of solutions out there, I'm sure.
+
+[00:38:36.36] - Joseph Thacker
+Yeah. And I will say you have to write custom handlers for like each tool call type. So let me show you this in the doc. Um, basically what I'm showing for the listeners only is that, you know how there's a todo write and like a todo read? So I have mine use emojis for like the to-do, right? So like right here you can see it's already finished all the to-dos at the top and it's working on the bottom one. And so it updates that as it goes and it writes that out.
+
+[00:38:58.01] - Justin Gardner
+Wait, does it go back and update the message or does it write a new to-do list every time?
+
+[00:39:03.09] - Joseph Thacker
+No, it's writing a new to-do list. Yeah, but it doesn't matter because I'm just watching the bottom anyways. And at the top of these new threads, I have it give me the --resume. So if I need to go like jump on this on the VPS, I have a copy and pasteable command to jump straight into this session.
+
+[00:39:17.82] - Justin Gardner
+Hmm.
+
+[00:39:17.94] - Joseph Thacker
+What are you so skeptical for?
+
+[00:39:19.38] - Justin Gardner
+This is great. It's good.
+
+[00:39:20.59] - Joseph Thacker
+I can just hack from my phone basically like with continue. Oh yeah, sorry, I have that too. So if I do slash my Discord bot resume, I can paste in the resume. So this is basically like the RC continue or remote control from my local machine or from my VPS. And it will resume that session. So then I can walk away and keep going.
+
+[00:39:40.46] - Justin Gardner
+Wait, do you have this running on your local machine and on your VPS?
+
+[00:39:44.07] - Joseph Thacker
+Um, no, the bot doesn't actually have access to local.
+
+[00:39:47.23] - Justin Gardner
+So it's only—
+
+[00:39:47.75] - Joseph Thacker
+you could do the same thing if you wanted to, but it would have to pick it up from local or SCP it or something.
+
+[00:39:53.23] - Justin Gardner
+But yeah. All right, man. I don't know. I, I, I just like, I, it's not good. The cloud interface, the cloud code interface on the phone is not good. It's, it's bad, but it looks like how I want it to look, you know, like, and it feels how I want it to feel, but like the implementation is really bad.
+
+[00:40:09.00] - Joseph Thacker
+Here's the, here's the diffs, by the way, since we're about to end. Um, yeah, here's like the type of diffs it writes whenever it's updating stuff for me.
+
+[00:40:15.55] - Justin Gardner
+Oh, wow. Dang.
+
+[00:40:17.07] - Joseph Thacker
+That's super gorgeous. I know it's actually, it's actually easier on the eyes than the, than the, um, TUI.
+
+[00:40:23.92] - Justin Gardner
+Dang. Okay. All right. Maybe that, that one I'll give you a maybe on. I will definitely go add to my CloudMD file, you know, the self-improvement loop thing.
+
+[00:40:32.55] - Joseph Thacker
+But, uh, well, here's the thing about the Discord bot. You don't have to use it. Like what it's really useful for is a lot of times on my VPS, like let's say I'm out and about and, you know, somebody messages me as like, hey, here's this critical thing. Can you validate it real quick? I will then just like pull up my phone, pull up Discord, do like start a new session in that new thread and just be like, hey, validate this for me. Or I'll say like, hey, you know, my, my website went down. Can you check out, like check the logs real quick, check the errors? It's kind of like my DevOps engineer on speed dial in Discord where I'm already at anyways when I'm out and about when I don't have my computer.. And so I can both hack from remote or check on things via remote or download things, or I can say like, host this for my friend at this path.
+
+[00:41:12.30] - Justin Gardner
+And I can do all of that without my computer. But like, can you do that? Like, does it take images? Does it take voice recording and stuff like that? Because even with ClaudeBot, I had issues with that back in the day. Yeah, no, all day being like 3 weeks ago when ClaudeBot got popular.
+
+[00:41:27.90] - Joseph Thacker
+No, mine does accept attachments and it does accept voice. I don't have it accepting images, but I mean, it would be mostly trivial, trivial to use. I just never have to give it images.
+
+[00:41:37.23] - Justin Gardner
+So yeah, that makes sense. All right, man, we'll see. We'll give it a shot. I feel like this episode was like a bunch of us talking about Claude, but the world is really changing, man, with the way that it works with, with bug bounty stuff right now, I think.
+
+[00:41:48.28] - Joseph Thacker
+Yeah, actually, let me respond to that with like, even though we're going over by like 1 minute here, I do have to go pick up my daughter. But I, I think that people who are annoyed by us talking about AI hacking, like like they're just missing out or they're just being grumpy about it. Because even if you're only going to use it to just write code for you to reproduce something, or even if you're only going to use it to host a POC, you're silly to not use it for some things like that, right? Or even if you're only going to use it for reversing RPC. You don't have to use it as your full-blown hackbot if you don't want to. I know BuzzFactor, he just really wants to be human in the loop with it, right?, but it found him a high on a program that pays $8K for highs last night. And before that, he was kind of like skeptical. I didn't really like it. It was kind of just like piecing it together or copying and pasting from chatbots. And now I think he's probably going to be hooked because that one bug will pay for his usage for 3 years. Right. And, and there's no doubt it's going to get better. So that's one thing I didn't get to mention was, you know, I think the reason why this is so possible, like hackbots worked a year ago, right? Expo or whatever, like companies were able to do some stuff with it, but you had to have a a bunch of specialized wrappers, specialized prompts. And the reason for that was because the models were not that smart. You needed the internal monologue of experts or good reports in the context. You don't need that anymore because Claude Opus 4.6, even SONNET 4.6, and I think Douglas Day has been using Haiku and finding bugs with it. He's found like 5 figures worth of bugs in the last couple of weeks and he's using mostly Haiku, is because they went in CyberBench from 30% to 69%. A pass rate. What this means is the models actually understand hacking better than they ever have before on this most recent release. And so anyways, people can be skeptical, people be mad. I don't really care. I think that this is going to continue to impact our industry and you have the opportunity to really like level up and make more money this year or more bugs and people should do it.
+
+[00:43:40.32] - Justin Gardner
+So yeah. Yeah. Well, GG, man, I think that's true. And I think, you know, just a moment ago, I sort of had that experience with, with Shift a while back. Back, you know, and I got that $15K bounty. And every time I just recently had to go and, uh, refill my OpenRouter with credits, I was like, oh man, do I put another $200 on here? And I'm like, wait a second, this has already paid for itself time and time and time and time again, you know? So yeah, it's definitely worth it. All right, let's, let's make it, let's, uh, let's call it a wrap then. Yeah, perfect. Yep. Peace, guys. Peace. Goodbye. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild if you're a full-time hunter. It's a great time. Trust me. All right. I'll see you there.

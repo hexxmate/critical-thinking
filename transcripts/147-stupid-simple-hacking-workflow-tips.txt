@@ -1,0 +1,677 @@
+Episode 147: Stupid, Simple, Hacking Workflow Tips
+Source: https://www.criticalthinkingpodcast.io/episode-147-stupid-simple-hacking-workflow-tips/
+======================================================================
+
+Title: Transcript - Thu, 06 Nov 2025 15:13:56 GMT
+Date: Thu, 06 Nov 2025 15:13:56 GMT, Duration: [00:58:49.95]
+[00:00:00.64] - Joseph Thacker
+You don't hit a deposit, you enter deposit. Yeah, now you just hit AFS to add filter size.
+
+[00:00:06.32] - Justin Gardner
+If you do.
+
+[00:00:06.83] - Joseph Thacker
+If. If you do fs, it will just do like filter size, but because.
+
+[00:00:12.32] - Justin Gardner
+And then enter to resume.
+
+[00:00:13.83] - Joseph Thacker
+Yeah, it just resumes it.
+
+[00:00:17.03] - Justin Gardner
+How did I not know about this?
+
+[00:00:18.32] - Joseph Thacker
+Well, so this is why we're doing this episode.
+
+[00:00:43.60] - Justin Gardner
+all right, hackers, the ad read's gonna get a little technical today, so buckle up for this. Okay, I'm gonna tell you exactly how Threat Locker is screwing hackers at every step along the way with dynamic access controls, preventing even port scans from happening on threat locker networks. So let's dive into it. There's three primary ways that threatlocker implements this. I'm going to give you guys two for this quick read, and hopefully you'll be able to understand how exactly they're preventing hackers from doing port scans. So, first one is called Local Challenge. This is on the common scenario where a computer wants to connect to a network resource and they're on the same network. So it's going to happen is over this threat locker handshake. Uh, the computer is gonna send a request to the server, the server is gonna respond with a challenge, and then the computer has to, you know, complete that challenge and provide a response back to the server before the SMB port is even opened up to that specific computer. Right? So you can't do any port scanning or anything like that because you're not going through this handshake with the computer. So that's, that's one way. The next way is in, like, remote work scenarios where your laptop is like, you know, out on some wifi or whatever, and, and you still need to access network resources. In this scenario, the computer is going to shoot an authenticated IP change up to the threat locker cloud. Then when it requests access to a specific server, maybe it's trying to get in by like, RDS or whatever. If it's in a remote work scenario, the RDS server, before it opens up that port, is going to query the allow list in the threat locker cloud and say, hey, this IP is trying to connect. What should I do with him? And then Threat locker cloud will give them a yes or no on that, and they'll open or close the port based on that response. Okay, so with Threat Locker in place, really, you can't even do port scans, guys. So, tell you what, let's go back to the show and hack something easier and we'll let Threat Locker do their thing. All right. All right, let's go. All right. So packers, before we jump into the episode Gotha this weekend bug bounty segment, we've got actually quite a few items this week, the first of which is is an exciting one. HackerOne has launched the Netscaler program, which is a really cool opportunity for those of you guys that like to go after the, you know, asset note esque attacking enterprise applications or appliances or whatever. Enscope is the netscaler gateway, the netscaler adc, netscaler aaa and they have treasure maps and credentials for each of these. It's a public program. Lows are 300, medium 600, highs 4,000,000 crits 10,000. Not bad. Definitely something that you guys should look at if you're interested in those sort of enterprise applications. Going after this. Next up is from yes, we Hack. We have the ultimate guide to bug bounty HTTP request smuggling vulnerabilities. Like I've said in the past, guys, everybody has been sleeping on yes, We Hack educational content. It is super freaking good. So if you're looking to sort of clean up your knowledge on HTTP request smuggling, something that intimidates a lot of hackers, from what I've heard, this would be a great place to do it. It's very thorough, very long, very detailed. Really good place to clean up your knowledge on HTTP request smuggling. So we'll link that down in the description. Also, this is coming from bugcrowd. There have been some changes to the Request a response feature in bugcrowd, and this is when you need some feedback from the program. And previously this feature was limited to one request open at a time that has been bumped to two, and you can request a response on submissions in the informational state. So they're expanding that a little bit, which I think is cool. Right? They are creating more overhead for themselves to give you a voice. I just wanted to highlight that for you guys because I just think that's a good guy bugcrowd, really caring about the hacker there. In addition to that bug, Crowd also released a Hacker Spotlight recently for Evan Connolly, who is one of my favorite hackers out there. And this is a great read as well, if you're interested in getting to know the pastor and hacker, which I think is a really cool personality that Evan's got there. So it's a good read. I recommend it. Last but not least, I wanted to point out a couple positions that are actually open in Epic Games now. I collaborated closely, you know, worked with the Epic Games teams really closely in the past life, hacking Event. And I got to know a little bit of the team and they are recruiting for some really cool roles. One is Senior Manager, Threat Intelligence and Offensive Security, and the other one is EcoSec programmer intern. Okay. Both of these are really good opportunities. They're located in Cary, North Carolina. And so if you're interested, if you're in that area or you're interested about hopping into these, we're going to link these at the website. Jobs CTB Show. Okay. Jobs CTB Show. There we are right there. So we've got those on there. I would definitely recommend working with the team. They're amazing. If either of those titles sound good to you. All right, let's go. Let's hop to the show.
+
+[00:05:55.32] - Joseph Thacker
+There was kind of two things. One was, I just think this is a really funny story for my daughter. I thought of it when I saw myself wearing a black shirt today. I was like, oh, I don't think I ever told Justin that story. But we were at her cross country meet and she was walking behind me talking with a friend and I heard her say, her friend asked like, oh, who's your dad? Or which one's your dad? And my daughter sailor pointed and said, oh, he's the one in the black shirt. He almost always wears black. He's a hacker.
+
+[00:06:24.36] - Justin Gardner
+Yes, that's me.
+
+[00:06:26.60] - Joseph Thacker
+I thought that was funny.
+
+[00:06:27.51] - Justin Gardner
+Kids. Kids are hilarious, man. I. Yeah, one of my kids was writing a little, you know, essay for school and she was talking about my job and I was like, you got to put ethical in front of hacker, you know, because they're like, yeah, my dad's a hacker. He works really hard at it. He loves it, you know, that sort of thing. And I was like, their image is like, be over here like scamming people, like working really hard as a hacker, stealing money and stuff.
+
+[00:06:55.25] - Joseph Thacker
+So funny. And honestly, like with the. Some of the bugs you found around CSS injection for like credit card leaks, it's like legit at that. But no. Yeah, I want to do, before we hop into the episode, talk about the life hacking event for just a second. Yeah, I don't know. We don't, since we're alive, we don't have to necessarily talk too much about it if you don't want to share. But I feel like I had a self realization. I just struggled with, do I go solo or do I be on a team for the last like three or four events? And I have kind of just, I don't know, had mixed results or mixed success. And then this time I was like, I want to hack with literally everyone. Like Justin's at this event, Ronnie's in this event, Kieran and Buzzfactor in this event. A bunch of people from like ply. These B Team 6 are in this event I want to hack with. Really?
+
+[00:07:38.98] - Justin Gardner
+I didn't know that.
+
+[00:07:39.89] - Joseph Thacker
+Yeah, there's like, there's like five or six of them and half of them have never been to life hacking event before and so it's really cool. But anyways, so I basically just like didn't commit and then within one day of being at the event I was like, I should have just committed. This is like such a struggle and it's so annoying and I think it's just my personality type. I know you are a big fan of like at least until dup window ends solo hacking, but I think it's just 100% personality related because what I did was I buddied up with one of the more talented BTM 6 guys who's never been to a live hacking event before. And it wasn't like he fed me the bug. In fact, he had nothing to do with one of the bugs that I found. But we immediately found two bugs. One I found basically solo, but just like, because I was like communicating with him and because I was much more energized and excited about the event having like someone I'm hacking with, I immediately found a bug and then we found one together that was like, like pretty incredible too. And so anyways, I think I'm just gonna like stop trying to be solo unless for some reason, I don't know, I have to. But I think that for me it's just like I feel so much more motivated, energized, excited and work harder when I'm with other people.
+
+[00:08:38.63] - Justin Gardner
+So yeah, man, I think, I think it depends on your personality type and I also think this event is kind of like very well aligned to your skill set and your, your hype, you know? Um, so I think this could definitely be a fun one for you to, to play with, you know, and, and at the end of the day, man, you know, when we've reached the point that we're at, it's kind of like, well, I might as well do it for fun, you know, it's like, it's like we don't have to, you know, like, I think there's a lot to being content and you know, a lot of value to being content and then, you know, making decisions that are not necessarily the most optimized for winning the life hacking event or cash return. You Know, but I had a lot of fun with my friends and I found bugs that I'm proud of, you know? Yeah.
+
+[00:09:23.55] - Joseph Thacker
+So.
+
+[00:09:23.91] - Justin Gardner
+Dude. Yeah. All right, so that being said, we are in the middle of a live hacking event and. And so we have some hacking to do today. And I'm realizing actually I am wearing the wrong glasses. I don't know if you guys know this. I actually have special glasses for my CTVV episode that don't reflect.
+
+[00:09:41.47] - Joseph Thacker
+Oh, that's cool.
+
+[00:09:42.66] - Justin Gardner
+Yeah, so I'm gonna switch into those. But yeah, so let's, let's get into the. Let's get into the meat of the content today so we can get back. Because I was just telling you right before I got on this call, I was like, man, I wanna hack so much right now. I have a POC exploit, like primed, and I haven't. And it's ready to press test on it. And I'm waiting till I get done with this to test it. So it's going to be a palooza. All right, you want to, you want to start out with. With some of the stuff you got or do you want me to start with one?
+
+[00:10:16.00] - Joseph Thacker
+Sure, yeah. So, I mean, let's just set the stage real quick. Basically, this episode is going to be. I thought this was a good idea. I suggested it to Justin. I, again, maybe it's a personality thing, but I'm just obsessed with, like, ways to make myself more efficient. Like, I've just kind of always been obsessed with efficiency and, and one of the best things I've noticed that I take away from other hackers is basically watching them work. Anytime I'm screen sharing or collaborating with other hackers, they're doing things that are like, oh, wow, if I had known that I could have saved so much more time, I would have, like, found more bugs or been more efficient or whatever. And I was like, this would make a great episode. And I think you and Justin, or you and Joel, actually, almost like a year ago or a year and a half ago, did an episode where you kind of talked about something light. It was more like, kind of like scripts or like, you know, the best tool for certain jobs or something. And so this will probably fill similar to listeners to that episode. But I think that cumulatively all of these, like, little, like, efficiency hacks are gonna make you a much better, faster, more efficient hacker. Because honestly, some of that boredom and some of that downtime can not only make you like, like, make you slower, but it also can make you lose motivation. I don't know, like, if You've noticed that. But sometimes it's like if there's a barrier to entry, to like doing the next thing. Oh, yeah, you always say reduce the friction or remove the friction when there's that friction there. You basically just don't test for things you should be testing for.
+
+[00:11:32.45] - Justin Gardner
+100%. Yeah. You've got to figure out a way to optimize these things. And I was actually working with Matthias the other day on a bug, Matthias Carlson. And you know, like, before I even really knew that there, like, I was very confident there was a bug there. He was like, hey, dude, we've got to automate this whole test process. Like, you know, like. And I was like, well, I think maybe we should validate it first, you know, validate this one pivotal piece first and then, you know, we'll go back and build the like, you know, harness or whatever and like, you know, get this exploit testing accelerated. And he's like, nah, dude, I'm like, really confident we got to do it right now. And I was like, all right, like, I'll, I'll, I'll do it. And lo and behold, you know, like, it would have taken me probably hours of. I'm so close to just validating. I'm so close to validating it. I'm so close to validating it, you know, and I was so glad that I had it automated that whole time, you know, So I definitely think investing in that automation pays dividends. Yeah.
+
+[00:12:30.49] - Joseph Thacker
+Because your initial attempt that you thought was going to work one child, it had a little error and then you fix a little error, then you fix a little error and it just keeps going, right?
+
+[00:12:35.88] - Justin Gardner
+Yeah.
+
+[00:12:36.21] - Joseph Thacker
+And each, and each attempt takes so long. And I find that to be the case in this live event that we're in right now. Because the setup is so onerous for some of these things to test, you do have to set up like a big long thing or, you know, and with a lot of just AI related bugs. I know, oftentimes you're having to like clear the chat or delete all your messages in the queue, you know, and like a lot of these things are really difficult to do, so.
+
+[00:12:56.21] - Justin Gardner
+Yeah. All right, well, let's jump into it. Okay, dude, I'm just going to pick on you right off the bat. So your first one is even better. Auto decoding, right?
+
+[00:13:04.92] - Joseph Thacker
+Yes.
+
+[00:13:05.64] - Justin Gardner
+Okay, dude. But you know, right. By the time this episode airs, I think Kaido will have released the new convert feature. Have you seen that?
+
+[00:13:16.28] - Joseph Thacker
+I have seen you all talking about it. I haven't used it Yet.
+
+[00:13:19.00] - Justin Gardner
+Okay. Yeah. So it's like a little drawer at the bottom of Kaido that does like kind of what Inspector does in Burp, right? Yes, but it's got some additional nice, nice features in there, so. But yeah, I totally agree. Some sort of like auto decoding or something that allows you to see easier what you're working on in an encoded environment is like super essential.
+
+[00:13:38.13] - Joseph Thacker
+Well, so the reason why this came up, I was actually on a sales call with like with Kaito and we were like showing it to somebody and you know, they were like, you know, they asked if there was a plugin the equivalent to. Oh man, what's the one where you can use like custom tags in your actual request? Hackverter. Because obviously that's a really good thing. And it's like, wow, no, we don't have a hackverter equivalent yet. I'm sure we will pretty soon. But why have I not needed that? And it was like really frustrating to me why I've not needed hackverter. And I thought about it, I thought about it and I even opened up Burp and started using it. I know sometimes I have to edit inside of like URL encoding and it's like, oh, even better. Just has the thing here, I just edit it over there. It auto updates and then I resend the request. And so anytime I need to do like quick edits, that's way edits that way. That's how I always do it. And so anyways, I just wanted to mention that because I'm sure there are some people out there who are painstakingly copying and pasting out of replay.
+
+[00:14:28.69] - Justin Gardner
+Yeah, yeah. And I think for right now that is a good solution. Probably by the time this episode airs, the new convert drawer will be available in Kaido, which is going to have some really awesome features. So I think that'll be one of the things that are is near the top of my list. But actually I've got a different solution that I use for that.
+
+[00:14:46.50] - Joseph Thacker
+So this is actually what I was hoping we would do in this discussion was I was hoping you would point out things that I could do even more efficiently.
+
+[00:14:51.29] - Justin Gardner
+Oh, okay. So this is just a reso like Rezo's like, hey Justin, I've got an idea. What if we go on the POD and talk about you?
+
+[00:14:59.25] - Joseph Thacker
+Give me all your secrets. Yeah, exactly. Just teasing out your secrets here.
+
+[00:15:01.86] - Justin Gardner
+Well, dude, I think it's also really awesome that I don't know, you know, how much the community knows the history of your interactions with the pod. But like, you know, Reza was like every episode, as soon as it come out, he would listen to it, give us feedback, you know, send messages, like retweet and Right. Actually on. On the like deck that we have when we talk to sponsors, like on the first page is like a glowing review from Rezo.
+
+[00:15:27.30] - Joseph Thacker
+Like if you're not listening to the pod, you're doing it wrong or something.
+
+[00:15:30.23] - Justin Gardner
+Exactly, yeah, yeah. And I'm like. And we were working on updating the slides the other day and we're like, oh well, I guess we got to take this out because it just looks like our own co host.
+
+[00:15:38.19] - Joseph Thacker
+Right, Exactly. It just looks like you. Yeah, but it's great.
+
+[00:15:42.83] - Justin Gardner
+Anyway, what I was to say was that actually what I've started doing is using the Kaido command palette to do these encodings, which has been pretty solid. So I did a PR to Even better. When was this like back towards defcon, I think. And for those of you that don't know, even better is like just like couple UI customizations, that sort of thing to Kaido. And what the PR does is it adds all of the convert workflows to the command palette and allows you to use them inside of your repeater equivalent. For those of you using Burp, the Replay window so you can just highlight some stuff and then you just press Control K base 64 and then you press Enter and it basically fors encodes whatever you've got.
+
+[00:16:30.19] - Joseph Thacker
+Interesting.
+
+[00:16:31.71] - Justin Gardner
+And so that's been really solid for me. It's something that feels really right to use, you know. And like I don't really have to think about it, I just say, okay, Control K basics for Control K URL, you know, and it just does it, you know. Yeah, so that's been, that's been pretty solid for me, but I think that's. I'm also going to add in there. One of the things that I hope to make a PR for soon is also adding all of the named Replay tabs in there. So you can just do commit, you know, Control K or Command K. Interesting. And then just say like that one request and it. And press Enter and then it jumps to that Replay tab, you know.
+
+[00:17:09.19] - Joseph Thacker
+So yeah, I feel like it could get busy and big repo like, you know, it might get noisy, but that's still a good idea.
+
+[00:17:14.23] - Justin Gardner
+Oh for sure. Especially with the auto rename feature from Shift. Right. Like that's, that is, you know, all of them are renamed to something a little bit more reasonable now.
+
+[00:17:22.63] - Joseph Thacker
+Right.
+
+[00:17:23.43] - Justin Gardner
+But I think, I think that has increased the efficiency of my workflow a Good bit.
+
+[00:17:27.50] - Joseph Thacker
+Yeah, that's awesome. So yeah, you mentioned command palette from Kaido. One thing I wanted to mention, this is like kind of almost silly, but I think that it is going to probably help a lot of people who have like never had a way to do this in the past. In Chrome dev tools you can right click on a node in the DOM and do edit as HTML. I'm sure a lot of people already know that, but it has been really helping me in two ways. One way is there are oftentimes that you're setting up a project or a landing page or hacking together like some sort of like bug bounty tool and the like your AI assistant, like whether it's cloud code or Codex, just can't, like it doesn't know what's wrong or it's trying to fix some UI or CSS thing. And I've just realized that what I'll often do is go in there and just like select like the parent element, like a couple of parent elements up, edit HTML, copy and paste in there, complain about it, and it increases the odds of a fix like very significantly. Oh totally, because it has, it has all the HTML and then, and it's able to kind of correlate that with whatever code is generating the HTML at the time. And then the other thing I've used it for is actually in this live hacking event there are a lot of scoping and policy documents and setup documents, as I'll say it nicely. And some of them are in an app where you actually can't download. You know how sometimes with Google Drive, for example, you can set something where it's like not downloadable or copy and pasteable. And that was like pretty annoying to me because I wanted to give all that context to AI to like start asking things about the scope or whatever, just like help with like justifying certain bugs and stuff like that. I knew I would need it throughout this event and so I just right clicked edit HTML, copy and paste that into an HTML converter online. Like there's plenty of HTML to markdown converters. And then I saved that off into a markdown note so that AI could reference it very easily. And you know, that whole process took like three seconds. Whereas I can see some people struggling or not even being able to figure out how to do it without like doing a screenshot or printing the page.
+
+[00:19:20.05] - Justin Gardner
+And then yeah, yeah, it gets complicated for sure. I think, I think I definitely do that exact same thing. And I, and two, two things that I wanted to, to say on that, that I've Been thinking, oh, I should improve this in my own hacking workflow is apparently now cursor. You can hook your browser into cursor and it like has access to the page that you're on and can look at the dom, which is.
+
+[00:19:41.06] - Joseph Thacker
+I think it has its own browser as of yesterday.
+
+[00:19:43.34] - Justin Gardner
+Yeah, yeah, yeah, it has its own browser too. And, and that's just such a game changer for Kaido dev because like now literally you can just be like, okay, it's not centered, fix it and it.
+
+[00:19:54.95] - Joseph Thacker
+And it like I never thought about loading Kaido in there since Kaido's browser based.
+
+[00:19:58.71] - Justin Gardner
+Yeah, yeah, it can directly at Kaido which is awesome. So I'm definitely going to have a lot of fun with that. But the other one, dude, while I was investigating what you were saying just a second ago, I noticed this. So open up Dev Tools and select like a, you know, a field or whatever. Right click on it and there's this like thing that is debug with AI that has a little new thing next to it.
+
+[00:20:21.04] - Joseph Thacker
+Yeah.
+
+[00:20:21.36] - Justin Gardner
+And you hit Start chat and it just dumps it into Gemini in the dev tool.
+
+[00:20:25.60] - Joseph Thacker
+Nice. That's cool. So yeah, I knew there was AI in Dev Tool, but you would have to like ask it about the element. It would have to like go find it. That's cool that you can just right click on one.
+
+[00:20:34.06] - Justin Gardner
+Yeah, yeah, I think that could be really solid for like understanding, you know, why something is operating the way that it is or stuff like that. I always also use edit as HTML to check. I don't know why I always do it, but I always check whether like the less than sign is, is actually URL encoded or not or HTML encoded or not. Because I'll see it in there and I'm like, well, you know, less than space is not a valid tag name, so maybe it's not encoded, you know, but it's definitely encoded always.
+
+[00:21:04.96] - Joseph Thacker
+So yeah, that's actually interesting you brought that up because I've always curious how people did that who were like front end people since it shows up as a normal angle bracket there.
+
+[00:21:14.48] - Justin Gardner
+Yeah. Actually as we're talking about this, I'm going to go and do the thing that I was going to talk about next, which is the. I actually have a set of tools that I use for like client side stuff and I've got them on my, on my web server under like Quick Tools is what I've got it called. But essentially what it does is I have like a set of tools that will allow me to just get XSS on my own page, right. I've got a set of tools that will do window open. I've got one that will do a window open in a null null origin. I've got something that will iframe something. I've got something that will iframe and then apply some sandbox properties. I've got some redirect scripts. All of that stuff is bundled into a toolkit that I call Quick Tricks. And I think having those there, especially the window open ones where, okay, I know I need this window reference so I'm just going to hit it, throw it into my window open script. I know that it's, you know, the variable is always named J or whatever, so I can like send a post message easily through dev tools or whatever. Having those in place really minimizes the amount of time it takes for you to test something. And then I've also got like this, this test.HTML file that's got like a nice code mirror editor like in it and then renders whatever I type in a, you know, iframe right beneath it so that I can like very dynamically test how certain things are rendered or how JavaScript is affecting the DOM inside of that little, you know, debug environment.
+
+[00:22:50.11] - Joseph Thacker
+Yeah, dude, that's sick. Yeah, I'm sure the community's gonna beg you to release it now, but, well.
+
+[00:22:54.75] - Justin Gardner
+And, and it, I, I, I think I've released it to the critical thinkers. If not, I will, but it also takes it automatically. This is the other cool piece is it takes the script and it puts it automatically in the hash encoded. So I was like, if once I find the thing that I want, I can just copy it and be like, yo, Joseph, check this out. And then it loads everything up for you and you can see exactly what I saw.
+
+[00:23:16.43] - Joseph Thacker
+Yeah, Honestly, there are probably other places where that, what's that called? Where that like flow could be pretty helpful, you know, like places where like kind of like Cyber Chef or whatever. Like anything that puts the content of the thing in the, in the URL bar or in the hash so that.
+
+[00:23:31.30] - Justin Gardner
+You can automatically share ability really easily if it's not like a massive megascript, you know. Yeah, yeah.
+
+[00:23:37.88] - Joseph Thacker
+In fact I was going to mention that, so I'll go ahead and mention it now. But I still use Cyber Chef sometimes, like pretty frequently. Recently I've been using it for like some AI hacking. Not for this event, but just in general. There are often what are called, you know, Q params. I think I mentioned this last week on the pod, but yeah, and oftentimes if you have a query that's being passed in as a get parameter and you're wanting to like iterate on it a bunch or like load it as like a CSRF or like or like basically test it as like a one click as like a one click vulnerability. You're like very frequently having to do, you know, URL encoding on your prompt. And so I'll just have like a Cyber Chef, you know, tab up and I'll just like edit my prompt and then I'll have it automatically URL encode and appended to the, to the URL. And so then I can just copy and paste the thing at the bottom and it just allows me to work like really quickly. So anyways, if people haven't heard of Cyber Chef, it's definitely worth like playing with and using. It's almost always for me just like finder place. I often will also use it. I don't know if you have like a. That's a good question for you, Justin. If you have an HTTP response that is like JSON escaped where all of your quotes are all protected and maybe it's all on one line with slash n's or backslash N for new line characters. How do you then get it in a human readable view before you are able to test it or hack with it?
+
+[00:24:55.11] - Justin Gardner
+Dude, this is a, you know somebody hacks when they ask this question, right? Like this is the real shit question that, like that like only the guy that's like damn, this stupid like JSON encoding is exactly.
+
+[00:25:07.31] - Joseph Thacker
+It's so annoying to parse visually. I gotta go like put it in Cyber Chef and that's what I do. But I'm curious what other people do.
+
+[00:25:12.24] - Justin Gardner
+Yeah, so I've got a couple solutions for this. Sometimes I'll just like paste it into dev tools and have it render the object and then like you know, or do like a JSON, you know, parse on it.
+
+[00:25:23.07] - Joseph Thacker
+Oh, interesting.
+
+[00:25:23.79] - Justin Gardner
+Or JSON load from. From the dev tools. But actually I've also got another toolkit that actually integrates nicely into my next thing that I was going to talk about in Raycast. Okay, so Raycast is like the. I think I've ranted about it on the POD before, but it's like a really awesome command palette tool for your os. Right. So you pop it in there. I've got a custom script for it that I have bound to. Geez, I don't even know what do I have. What do I have it bound to? I've got it to Windows key space and then that drops me right into my, like my tool. And let me just read you some of these tools that I've got. So in here I've got the following commands. I've got CVSS which opens up CVSS Advisor for me to calculate that. I've got PYD which drops me into a Python console. I've got Checks, which opens up the clipboard content in a hex editor. I've got Cedit which opens it in a text editor. I've got C command, which pipes the current clipboard content into a command and then copies it back out. I've got Cookie, which takes the current HTTP request that I've got and redacts the cookies in the auth header.
+
+[00:26:33.98] - Joseph Thacker
+Oh, that's sick.
+
+[00:26:34.61] - Justin Gardner
+Right, which is helpful for pasting stuff into the, like a report or in.
+
+[00:26:38.33] - Joseph Thacker
+The AI or whatever.
+
+[00:26:39.77] - Justin Gardner
+Yeah. I've got JWT and then I paste in the token and it puts it in JWT IO. I've got URL encode all, which is different than URL encode because I often want that. Yeah, yeah, yeah. And it's very hard to find stuff that will actually do it. It's weird.
+
+[00:26:56.54] - Joseph Thacker
+It does.
+
+[00:26:57.43] - Justin Gardner
+I've got an OCR one and then these are the ones, dude. These are the ones that are hype. Okay, listen to this. So I've got one called Mr. Which is just match and replacing the clipboard. So I open up the command palette, I type Mr. Space, whatever I want to find. Space, whatever I want to replace.
+
+[00:27:13.95] - Joseph Thacker
+Right, so it's kind of like said.
+
+[00:27:15.50] - Justin Gardner
+Yeah, exactly. And. And. But it just does it.
+
+[00:27:18.03] - Joseph Thacker
+But it happens on the clipboard and it puts it back on the clipboard. Yeah.
+
+[00:27:21.35] - Justin Gardner
+Yes, it's great.
+
+[00:27:22.79] - Joseph Thacker
+I do this. I do that exact thing with one of the tools I was going to mention. If you have more, you can mention it. But yeah, I wanted to mention the audience if they didn't know. At least on Mac OS there is a command called PB paste and PB copy. And so I use that all the time. If I have something on the clipboard and I want to do a match place, I just like, we'll have. I'll open the terminal, do PB paste, pipe, then like my said command and then pipe and then PV copy. And so it just paste it in, you know, it pipes it to the replacement and then it pipes it out to the copy. But it's interesting, you have the same thing in Raycast.
+
+[00:27:51.32] - Justin Gardner
+Yeah, I've just got it built right into Raycast there. So I can just do Mr. Boom Boom. And you're good. Right. So I'll often use this for like getting rid of new line characters or something like that in like a. Like a GraphQL query or something like that. Right. Like, for example, if you grab a GraphQL query and it's got all the, you know, backslash ns or whatever.
+
+[00:28:08.69] - Joseph Thacker
+Yes.
+
+[00:28:09.04] - Justin Gardner
+And you want to actually, like, see it, you can use the Kaito plugin for that now. But if you want to actually just have it in a text file or whatever and see it how it is, then you can just use Mr. To replace the backslash ns with an actual backslash n. And that will do it.
+
+[00:28:27.10] - Joseph Thacker
+You can tell it's a GraphQL query by the way it is.
+
+[00:28:30.15] - Justin Gardner
+Exactly. Yeah. You can tell it's an Aspen by the way that it is. I love that. But one more thing on this Raycast thing that I had was I've actually also got. I've also got a sub command called text transforms and what it does is it looks directly at the string that I've entered into my custom command palette and if it's a Q, W, a S, Z, X, E, R, C or V, it will apply that transformation to it. So, for example, if I hit qq, that's going to double URL encode. Q is URL encode Q is URL encode. So it's going to double URL encode it. And then if I type qqw, then that's going to URL encode URL encode URL decode then if I add qqwa URL encode URL encode URL decode base64 encode nice. So you can create these muscle memoried, just strings that represent patterns of encoding and then the system will just do it and then pop it right back into your clipboard.
+
+[00:29:38.69] - Joseph Thacker
+That's really cool. Yeah. I like the way that you basically view your clipboard as like an object that can be modified.
+
+[00:29:45.76] - Justin Gardner
+Yeah, yeah. I think that's essential for being able to automate these things quickly.
+
+[00:29:51.76] - Joseph Thacker
+I think most people don't, though. I would say most people paste it somewhere, transform it and then put it back. But you're like just transforming it in place, which is really cool.
+
+[00:29:59.30] - Justin Gardner
+Yeah, I think that is a unique factor there. I also use Raycast, like native features like quick links and stuff like that for a lot of the CTVB stuff that I go to pretty often. And I'm really bummed that Gemini does not have a queue parameter because I would love to set up a custom Gemini command in Raycast where I could just open Raycast, query Gemini and then have it open up in a new tab. But it doesn't.
+
+[00:30:28.20] - Joseph Thacker
+I've got. I've got something for you.
+
+[00:30:29.88] - Justin Gardner
+Do you. Okay, what? What? Do you have a Q parameter for Gemini maybe? What are you dming me? No, that's somebody else. Okay. I was like, what the heck?
+
+[00:30:40.59] - Joseph Thacker
+I'll message after the pod.
+
+[00:30:41.96] - Justin Gardner
+Okay, yeah, that sounds good. Raycast does have AI built into it though, which I do use sometimes, but I just prefer pure Gemini.
+
+[00:30:48.79] - Joseph Thacker
+I'm going to rant for 30 seconds on this thing. There are so many command pallets right now on my computer. I have like, there's like an auto pop up one for Claude and an auto pop up one for Chat GPT Atlas and I have one for Raycast and then like when I'm in Shift it also has, you know, there's like. Or, sorry, when I'm in Kaido, there's like one for Shift and there's a regular command palette and Anyways, my brain is a little bit overstimulated with that kind of sort of. On that topic, actually it doesn't matter. I was going to mention that I installed Omarky on an old Linux thing and I was trying to. Anyways, it doesn't matter. I'm just going to stay on Mac, so.
+
+[00:31:23.97] - Justin Gardner
+Yeah, okay. No, no, no. Now you got it. You baited me. Tell me about Omarky because I've seen.
+
+[00:31:28.93] - Joseph Thacker
+It around, it's just like arc. It's like you say Arch or arc, I don't know. Okay, it's Arc Linux but in easy mode you don't have to actually configure all the things it puts you in like a default install that's like already kind of sort of pretty and DHH and kind of invented Omarky. It's really cool actually. I will spend another 30 seconds on this kind of cool story because I feel proud of myself. But basically I have a. My old Lenovo laptop is D um and the Linux side is Disk encrypted and I had Ubuntu on there and then I had Windows installed on the other partition that I used to play Minecraft with the kids because I just, you know, sometimes you need Windows.
+
+[00:32:06.75] - Justin Gardner
+Yeah.
+
+[00:32:07.23] - Joseph Thacker
+And so when I wanted to install Omarky I was like, oh, I'm sure I can just pick the, you know, the Ubuntu partition and it'll just install great. It did not. And so they say on their website like, oh, if the marquee default installer like you use like an ISO usb. Bootable usb. It's like if that doesn't work, then you have to install it manually and all you do is you install Arc Linux and then, then you run this script that then like customizes it to basically be like omarky. So then I tried to use the Arc Linux ISO bootable installer. It also doesn't work if you have partitions like that. So anyways, I ended up like manually running commands to like install it without the installer. I basically installed Arc Linux from scratch without an installer, like without even using the Arc Linux installer. And it took like two hours. But anyways, now I have a marquee on my Lenovo and I'm going to play with it sometime.
+
+[00:32:53.69] - Justin Gardner
+Dude. Yeah, you know, I had a season of like I'm going to customize all my stuff and you know, like it was. Was running that as well. And then I was like, actually I don't want to do this, you know, like all I want is everything to work so that I could focus on hacking, you know.
+
+[00:33:09.10] - Joseph Thacker
+Exactly. Reduce friction to hack.
+
+[00:33:11.26] - Justin Gardner
+Yeah, exactly. Just install, you know, freaking out of the box Ubuntu and just, you know. Yeah. Or Debian, you know, not something that no bloat and then just do it, you know.
+
+[00:33:21.56] - Joseph Thacker
+Exactly. Yeah.
+
+[00:33:23.00] - Justin Gardner
+All right, let's see. Dude, this one's a good one. Why don't you talk about that one?
+
+[00:33:28.36] - Joseph Thacker
+Sure, yeah. Can you. How do you strike out in Google Docs? You have it up there and it's so clean and I can't even find it in my ui.
+
+[00:33:33.65] - Justin Gardner
+I got you. It's format text and then strike there.
+
+[00:33:38.36] - Joseph Thacker
+Gotcha. They need to make it as a quick button, but anyway, they totally do.
+
+[00:33:41.17] - Justin Gardner
+Yeah.
+
+[00:33:41.56] - Joseph Thacker
+Okay. Yeah, I wanted to do it for these ones anyways. Okay guys. Yeah. The one thing I wanted to mention here because I still think there are probably not enough people using it, although I'm sure some people out there know about it, is the FFUF dash request flag. FFUF is probably still my favorite tool besides, you know, proxy and I still use it all the time. And I think that, you know, wide scale recon is a pretty busy place right now. Like it's hard to be the first person to find a domain and then to fuzz and all the things and not get banned by, you know, nearly every company has Cloudflare now or you know, something else akamai in front of it. So you're often going to get rate limited and banned anyways. But one thing that I feel like basically very few hackers are doing well is doing content discovery and fuzzing, especially of like APIs post authentication. And some people are right, they'll, they'll, they'll use Automate or they'll use Intruder, but it is not trivial. And often you'll like quickly get rate limited or banned. And when you're hacking on your own machine, on your own public WI fi, I feel like most people are just hesitant to do it because it's like if I get a WAF ban now it's going to affect my ability to watch Hulu or my kids ability. And so I feel like people probably aren't doing it as much as they could and should. But one thing that makes it really easy is the dash request flag in ffuf. So you can just copy and paste an entire raw HTTP request with your cookies or your auth token if it's an API request. And then I just like have my VPs up in a terminal, I paste the command in. I already have like a bash alias that uses the dash request flag with the file name like req, Txt or req. And so then I like, I just always save the request as that file name and then I can just use my bash alias to automatically use that file in the current folder. And so now I can just like fuzz with my personal quick hits list, you know, as quick and as easily as like oh, copy and paste out of Kaido, Bam, run it. Copy paste out of kaido. And I could probably just write a kaito plugin that would just do that right click ffuf this or whatever at some point. But it's already so fast. It's like it doesn't save me that much time to do that.
+
+[00:35:44.07] - Justin Gardner
+Yeah, you can actually do it with a, with a workflow as well. You know, you don't even have to do a plugin. You can just do an active workflow and that'd do it too. And you could launch that active workflow from the, from the command palette. But what I was going to say was with this new version of kaito as well, they've got the save to file, you know, built in now. So if you hit, if you right click save to file it'll drop it into the file and then you can run fuff from there. So that's another optimization to that. But I totally use the dash request thing all the time as well. That is like one of my most commonly used forms of buff, to be honest.
+
+[00:36:17.73] - Joseph Thacker
+You know, one thing I wanted just as like maybe a thing for the community or maybe this could be Built into Kaido sometimes I'll want to basically have a hackverter for ffuf. You know, like I want to like request with a file, like a raw HTTP file and then also have like, you know, the payload that it's inserting in for the word list be wrapped in like a hackverter tag. So anyways, be interesting.
+
+[00:36:42.59] - Justin Gardner
+Yeah, yeah, that would be interesting. I think, I think. Yeah. I'm wondering how.
+
+[00:36:48.78] - Joseph Thacker
+I mean the way that Kaito already automatically, what's it called, Processes payloads is probably already the ideal way to convert workflows. No, I'm just talking about by default, like you know, URL encoding is a pre processor.
+
+[00:37:01.78] - Justin Gardner
+Oh yeah, yeah. Pre processors. Yeah, yeah, yeah, yeah, you could definitely do that. But I mean at the end of the day it's, you know, I mean Kaido is rushed so you know, I don't know, maybe it is faster than, than buff, but Fluff I think, you know, has been very optimized for speed, right? And yeah, I don't know, I guess it's not within my workflow to like use automate to fuzz for something, you know, like, you know, do directory brute forcing. It is for fuzzing actually, but not for directory brute forcing. So maybe there's some, some integration there that would be good. Like you know, you set up like your FUF harness on the server and then like connect it back to Kaito and, and have it. You know, you might even be able to do. Have it generate word lists like it does where it processes the specific injection points like with a convert workflow or with a pre processor and then it goes from there.
+
+[00:37:50.80] - Joseph Thacker
+Yeah, I would be really neat if it came back and like dropped it in findings too. If it like had a hit or something it'd be like a cool flag.
+
+[00:37:57.21] - Justin Gardner
+It's such a process though for me. Like typically with fuf I'm. I'll run it and then I'll see like. Okay, you know, every. I'm not interested in anything that's size 92, you know, so then you do whatever FS92, you know, and then it.
+
+[00:38:10.61] - Joseph Thacker
+And well, it's AFS, right? It's like hit enter AFS because you can add file size or do you control C it and then change it?
+
+[00:38:16.61] - Justin Gardner
+Oh, I control C it. Do you stop it in the middle?
+
+[00:38:19.84] - Joseph Thacker
+Yeah, there's a new thing where you just hit enter. You just hit enter. It pauses it and then you just. And it like drops you into like a little fuff like input input shell and you do. And you do AFS for add file size.
+
+[00:38:32.55] - Justin Gardner
+Oh, dude, I don't have the new version of FUF because I'm pressing A and it's not doing it.
+
+[00:38:36.51] - Joseph Thacker
+Oh, it's like. It's like a year old you haven't installed.
+
+[00:38:38.76] - Justin Gardner
+Are you kidding me?
+
+[00:38:39.67] - Joseph Thacker
+No, it's. It's like at least. It's at least a year old.
+
+[00:38:41.96] - Justin Gardner
+Yeah, you just press A. Yeah. Do I have to, like, add some sort of interactive flag on it?
+
+[00:38:47.01] - Joseph Thacker
+No, you hit Enter deposit. Sorry.
+
+[00:38:49.28] - Justin Gardner
+Oh.
+
+[00:38:51.69] - Joseph Thacker
+You don't hit a deposit. Enter deposit. Yeah. Now you just hit AFS to add filter size.
+
+[00:38:57.53] - Justin Gardner
+If you do. If.
+
+[00:38:58.32] - Joseph Thacker
+If you do fs, it will just do like filter size.
+
+[00:39:03.53] - Justin Gardner
+And then enter to resume.
+
+[00:39:05.05] - Joseph Thacker
+Yeah, just resumed it.
+
+[00:39:08.25] - Justin Gardner
+How did I not know about this?
+
+[00:39:09.53] - Joseph Thacker
+Well, so this is why we're doing this episode, right? Even like. Like, you're obviously a top hacker. You've used FFUF a million times. You have a million hacker fun friends. But like, these little tips can be, like, super beneficial.
+
+[00:39:18.90] - Justin Gardner
+Yeah, dude. Damn. Okay. That's sick. Thanks for that. And you know what's crazy, dude, is I'm looking at this. Yeah, I mean, it definitely says, man, I should have seen that. I should have seen that. That's amazing. I've wasted so much time with that, though.
+
+[00:39:33.55] - Joseph Thacker
+Yeah, because you're like. You're probably like hitting control C and then like tacking it on at the end or something, aren't you?
+
+[00:39:37.59] - Justin Gardner
+I am.
+
+[00:39:37.94] - Joseph Thacker
+Oh, no, it's so much better. It's so much better. I just do. I'll do an auto calibrate, but then, you know, some will get through or something. I'll hit enter and then just do AFS because it'll. It'll add it to the filter. So anyways.
+
+[00:39:49.17] - Justin Gardner
+Yeah, but. And dude, sometimes like my SSH session buffers, if it's like, you know, 403 bajillion, four threes. And I'm like, press C. Control C, Control C, Control C, Control C. And.
+
+[00:39:57.30] - Joseph Thacker
+It'S like, well, and then sometimes you run out of the. Of the term history and you can't actually go back and see that one cool green hit. You saw. You know, I'm talking about you get like a greenhead, then you get 403. You control see it real fast and you can't get up to it.
+
+[00:40:08.82] - Justin Gardner
+What do you mean green hit? Hold up, hold up, hold up. Are you using, like, coloring too? Am I. Am I like, living?
+
+[00:40:13.59] - Joseph Thacker
+You never use color in ffuf. Oh, my gosh, dude, you're joking.
+
+[00:40:19.30] - Justin Gardner
+Rep color.
+
+[00:40:20.42] - Joseph Thacker
+No, it's just dash C. Just c. I can't. You use. Dude, do you visually parse for the. For the character 200 without just seeing green?
+
+[00:40:29.71] - Justin Gardner
+Yeah, I mean, I do. Like, I parse for bracket. Like, you know, I tee it and then I. Or like I pipe it to an outfit file and then I.
+
+[00:40:38.03] - Joseph Thacker
+No, no way, dude.
+
+[00:40:41.32] - Justin Gardner
+Apparently I'm not a bug power user.
+
+[00:40:43.40] - Joseph Thacker
+No, I mean, literally, like five years ago when I started Bug Bounty and I was using like, freshly made FFUF to fuzz, like, Verizon media stuff, just like waiting, just watching for the little green hits. It's like tick, tick, tick. Whenever it gets hits, it's like. That's gotta be such a dopamine rush for me.
+
+[00:40:59.63] - Justin Gardner
+Yeah, yeah.
+
+[00:41:00.76] - Joseph Thacker
+I'm so shocked you haven't, like, had that experience.
+
+[00:41:04.48] - Justin Gardner
+Wow, dude. All right, well, I've got. I'm gonna go read the. The man page for Fuff after this because apparently I need to up my game. To be. To be fair, though, I actually don't use Fu very often. Like, I mostly I'll use Automate for targeted fuzzing inside a Kaido. And then, you know, when I'm brute forcing, which is very rare, you know, maybe once or twice a week, then, you know, then I'll use Fuff. But yeah, still, man, once or twice a week. I should, I should. I should know how to use Fuff. Damn it. All right, fine. All right, well, hold on. Let me, Let me. Let me give a good one then. Since. Yeah, dude, I have to give it. Give a shout out to JX Scout. I mean, we've mentioned it a couple times on the pod, but I've started using it recently, especially in conjunction with Cursor, and it's pretty freaking great to have, like.
+
+[00:41:52.01] - Joseph Thacker
+Yeah, so tell me about it. I don't know much about it at all.
+
+[00:41:54.01] - Justin Gardner
+Yeah, so essentially what it does, is it.
+
+[00:41:56.05] - Joseph Thacker
+Is it a Chrome extension? Is it an app?
+
+[00:41:58.65] - Justin Gardner
+It's a plugin in Kaido, and the Kaido plugin kind of sucks. It's just like a hook for the command line utility. Definitely some improvements that could happen there. But it hooks into Kaido, watches your request history, looks at your scope, and downloads all of the JS files, beautifies them, puts them in a folder, and then we'll try to like, enhance a little bit too, you know, like with source maps and, you know, trying to find other files to download and stuff like that.
+
+[00:42:30.26] - Joseph Thacker
+So do you have VS code pulled up with that in it?
+
+[00:42:32.75] - Justin Gardner
+Yeah, I do. Yeah. And I know that there are. There's other. I know that there's J.S. weasel and I. And I think there's some newer versions of jackscout that I kind of need to up update to. But like, to be honest, it's, it's. So it's good enough for me to like just use it as is and then just hook cursor into it. Because all I really need is the JavaScript files there beautified and then ready for me to throw AI at it. Right. And so then I'll just query AI and I'll be like, okay, you know, identify the pads, you know, pull this stuff out, you know, like, and it'll just jump through and read everything. And, and especially with the massive context window AIs, it's. It's very good.
+
+[00:43:13.13] - Joseph Thacker
+That's awesome.
+
+[00:43:14.01] - Justin Gardner
+Yeah. And you, you just, you know your JS is there when you need it, right? You don't have to go download it and whatever it is, it's there, you know, so I think that's really nice. It does eat up disk space though, just FYI. Like, it'll eat this space. Like.
+
+[00:43:29.44] - Joseph Thacker
+What I say. Yeah, I think, like, so what do you do if the. Are they often too large? What's your go to if it's too large?
+
+[00:43:37.19] - Justin Gardner
+It's. It's not. I mean, this. I haven't run into that before with it being too, too large.
+
+[00:43:42.63] - Joseph Thacker
+I'm talking about for using AI.
+
+[00:43:43.84] - Justin Gardner
+Like, like using the AI.
+
+[00:43:45.19] - Joseph Thacker
+Yeah. Gemini Flash.
+
+[00:43:47.92] - Justin Gardner
+Yeah, I'm doing targeted stuff anyway. I mean, like, sometimes I'll switch the model specifically to Gemini or whatever, but you know, a lot of times I'm doing more targeted stuff. Like, okay, you know, look at this block. Or just the other day I was like, hey, there's like this super weird gts. What is it? Glitter or something? What is the GTS file? No, no, it's like there's There was some weird file that was embedded inside of these JavaScript files. Whereas, like, you know, calling functions with like bracket 40 comma, you know, I'm like, oh, this is so yucky. So I just handed it to AI and was like, reverse this and give me readable template js and it like plopped it out. I was like, oh, God, I love you so much. Nice. So, yeah, I use it for that sort of thing. I'll use it to say like, hey, you know, identify, you know, the local storage places or. But to be honest, man, I often just use it for VS code functions where I'm like, go to the function definition, please. You know, that's true.
+
+[00:44:54.57] - Joseph Thacker
+Just navigating around the file is huge.
+
+[00:44:56.57] - Justin Gardner
+Yeah. And then in cursor I've got bookmarks, you know, I've got like bookmarks extension that I can use to like bookmark certain parts of code and stuff like that to quickly navigate back and forth. So. So yeah, it's pretty solid.
+
+[00:45:08.73] - Joseph Thacker
+That's huge.
+
+[00:45:10.42] - Justin Gardner
+JS Scout plus Cursor plus the bookmarks extension. Really good stuff.
+
+[00:45:14.98] - Joseph Thacker
+Yeah, I'm definitely going to use it now. I just assumed it was like J.S. weasel or whatever. Like it was like something kind of complex or something you had to pay for or whatever.
+
+[00:45:23.30] - Justin Gardner
+Yeah, I think I want to say that. Yeah, there is, I think there's like a premium version of JS Scout and there's also a VS code extension that you can use that will like parse the AST tree and like identify paths and like pull a bunch of stuff out kind of like JS Weasel does. But to be honest man, like just having it downloaded and grabbing the source maps and like, you know, doing its thing I think is pretty solid. So there's like a command line component that downloads everything. There's a Kaido component for the plugin, then there's like a VS code extension if you want to as well. So there's lots of components. Components. Sweet.
+
+[00:46:03.36] - Joseph Thacker
+One thing I was going to mention which is this is a super dumb. But I'm sure there are some people out there who don't know about it. I often in the last couple life hacking events or whatever have seen or just had a really strong use for. Actually I want to talk to you about it afterwards for this school app that my kids use at their school. But anyways, I've just used the Mac system wide proxy. Um, so I was going to tell people how to use it real quick. If you have a Mac, you can probably tell them how to use it on Windows. But if you just go to WI FI settings, it's actually kind of annoying to find sometimes. But if you just like go to WI FI settings and then click Details next to the connected wifi, you can just set up like a system wide proxy. And so I'll just throw it, you know, you have to have installed you know, the Kaito cert into your keychain, but you can just proxy the entire system and so that's a lot of times that's useful if you're testing like a desktop app or just something that's more difficult to proxy.
+
+[00:46:55.80] - Justin Gardner
+Yeah, hopefully there's not cert pinning, man. Like, like freaking.
+
+[00:47:00.19] - Joseph Thacker
+Have you had that in like.
+
+[00:47:02.28] - Justin Gardner
+Yeah, I've had it. Yeah, it's super annoying. You know, like, like desktop apps. And yeah, it's bad. But yeah, system level proxies definitely helpful for hitting those, those desktop apps and, and it can be easy wins too. Everybody thinks, you know, hacking these desktop apps are really hard. If you can just proxy it and then get to the APIs, then you're just web hacking and again.
+
+[00:47:21.30] - Joseph Thacker
+Yep, exactly. So yeah, the thing actually I'll go ahead and mention on the pod because I'm sure some people might be able to give us good advice for it. The thing that I was going to ask you, the app that I want to test because it allows you to like see what your kids are browsing from their school, which is just kind of crazy is, is like a HTTP 2 GRPC and dude, it's nasty. It's really nasty. It's like because one kyo doesn't support http2 so I'm using like Burp free edition. But then the copy to curl from Kaido doesn't seem to work. Whenever I then try to pipe it into Burp and then at Burp you can't even really edit it very well because you know how like when you're trying to actually edit like the bytes for. Anyways, it's just a really weird protocol but I almost could guarantee it's going to be vulnerable. And I, you know, I feel like impact on seeing what kids are browsing to on their computers, like being able to see what all the students are browsing to is such high impact and I just care about, I care about securing it for my kids, so.
+
+[00:48:19.32] - Justin Gardner
+Exactly. Yeah, totally, man. I think HTTP 2, you know, right now. Did you try a downgrade? Like does it, does it support http1 if you downgrade it or it doesn't?
+
+[00:48:29.71] - Joseph Thacker
+Yeah, it doesn't.
+
+[00:48:31.23] - Justin Gardner
+Yeah. I mean then you're stuck using, using Burp there. But yeah, I think that one of the things that I have had success with though is, is getting a. Like if you, if you can get AI to poke at, you know, to like get their request.
+
+[00:48:46.21] - Joseph Thacker
+That's true. I should, I should have had a. I use Python to do it. It would probably be a lot cleaner. Like, hey, here's my token. You poke at this.
+
+[00:48:52.17] - Justin Gardner
+Yeah, exactly. Yeah, yeah. So might go after that. Okay, we've only got a couple more minutes. But I was going to mention. Dude, I know Matan pointed this out in his episode that we did and so a lot of the like Die Hard listeners have heard it, but I'm going to repeat it again for everybody. Conditional breakpoints in dev tools are massive. Like, one, you don't need to be pressing next, next, next, next, next, next, next, next, next every single time you're trying to set, like, a breakpoint and load into something. And you can use conditional breakpoints not only for their actual purpose, which is conditionally triggering a breakpoint, but you can use conditional breakpoint to run arbitrary JS code at a specific spot in the execution script without having to use match and replace and dealing with, like, you.
+
+[00:49:37.86] - Joseph Thacker
+Know, I know a guy that's been using that for testing feature flags.
+
+[00:49:41.46] - Justin Gardner
+Yeah, it's. It's. Yeah. Well, who's that guy? You know who, that guy. Who could that guy possibly be? But I use it all the time for testing feature flags. And it's just very helpful, right? Because feature flag stuff, there's always a function that's parsing the feature flags and being like, should I turn this on? Should I not? And you just say like, yes for everything. So the way that I do it is typically, like, you know, use parentheses or whatever, and then put whatever you want to do, comma, false, so it just returns false always, which is. Which will not trigger the conditional breakpoint, but it does run the JS code. And I just, you know, it's hacky, it's. It's messy, but that's the kind of shit we like, you know, like, and it gets the job done really quick when you need to run some JS code as specific point.
+
+[00:50:30.94] - Joseph Thacker
+Yeah. How do you. I still find dev tools breakpoint system to be, like, confusing and annoying. Like, sometimes they all disappear, sometimes they don't get triggered.
+
+[00:50:39.38] - Justin Gardner
+It's like, yeah, yeah, no, it's a pain. And then sometimes you. You use the little, like, disable all breakpoints button, and then it still does it. Like, it still breaks on them. I'm like, frick, stop. You know, and then I got to go in there and like, you know, delete all of or uncheck all of the breakpoints with the, like, uncheck all button. And then I disabled the one that I wanted. And it's like, that interface could really, really use a facelift, in my opinion.
+
+[00:51:03.76] - Joseph Thacker
+Yeah.
+
+[00:51:04.25] - Justin Gardner
+Cool.
+
+[00:51:04.61] - Joseph Thacker
+Would you want to rapid fire these last few?
+
+[00:51:06.73] - Justin Gardner
+Yeah. Okay, so rapid fire you next go. I just.
+
+[00:51:10.73] - Joseph Thacker
+All right, cool. I'll rapid fire both of mine and then you can clear out your list.
+
+[00:51:13.61] - Justin Gardner
+Okay.
+
+[00:51:14.05] - Joseph Thacker
+I, for this event, did something pretty cool Chat. GPT Atlas is like, good enough where it's, like, actually usable. And I've heard perplexity comment is actually, like, more than Usable, like pretty fast. Like, basically doing things in the browser. And so, like, for hacking, it's kind of useful, kind of not. But what I found it to be really useful for, and I think other hackers will too, is basically setting up things. So, like, let's say you're trying, you're trying to like, set up a new. I'm trying to think of like an example of stuff I haven't hacked. Or like things anyways, where you're trying to set up a new SaaS or like, let's say. Okay, actually here's a great example. You're inside of gcp, right? And you're trying to set up some new service and you're like, confused and you're annoyed, you don't really care and you know, whatever you like, open up Chat GP to Atlas and say, hey, here you're inside my GCP account. Don't do anything that's going to cost me a bunch of money, but go spin up a VM or whatever or go enable this service, right? And it's like, it'll. It'll do its own research, it'll browse around, it can click around, it can kind of figure it out for you, which is really cool and really useful. There probably are some implications for like, crawling a site more intelligently than just like using Katana that you could also use this for if you were proxying. But anyways, I thought that was. I thought that was really cool. Second thing is completely different tip, which is Terminal Notifier. There's probably an equivalent on Windows, but there's this Mac thing called Terminal Notifier and it gives you like a notification I in my system prompt for Codex and Claude code have it use a terminal notifier whenever it's done. So it like can ping me and let me know that it's done working. Because I find myself getting distracted and like an hour later I'm like, oh, crap. I had this thing writing code for me in the background and it now has asked me a question and I want to know about that question. I think there's also like, basically a way to, like, they're called hooks, where you can hook in, where it doesn't even have to choose to notify you. It just like always runs some snippet of code when it's at like a stopping point. I'm pretty sure they're called hooks if anybody wants to look into that. But anyways, those are two tips I wanted to bring up.
+
+[00:53:04.96] - Justin Gardner
+Yeah. Are you talking about when the command is done running or are you talking about when it hits like a pause point.
+
+[00:53:12.17] - Joseph Thacker
+Both but specifically a pause point.
+
+[00:53:14.80] - Justin Gardner
+Oh really? Yeah. The pause point is interesting. I haven't found anything that does that. I have used like something like Notify Sh or Project Discoveries Notify to like get like a, you know, discord ping or whatever when my done. Or I actually had an alias on one of my laptops. I don't think I transferred it over but it would go beep. You know I could just say like pipe it into beep or like and. And beep. And whenever it was done it would go beep.
+
+[00:53:39.13] - Joseph Thacker
+You know, Daniel Mesler has one that pipes it into another AI which summarized what it did and it immediately talked to him out loud at his DEs. So it'll just like. It'll be like I just completed the task that you gave me.
+
+[00:53:51.53] - Justin Gardner
+It appears as if this task has been completed. Here is the summary. So.
+
+[00:53:54.78] - Joseph Thacker
+Exactly.
+
+[00:53:55.30] - Justin Gardner
+Exactly. All right, thanks Jarvis. Yeah, Dan would have Jarvis. All right. Do you have a hard stop right now or can I rapid fire these?
+
+[00:54:02.42] - Joseph Thacker
+You can rapid fire yours.
+
+[00:54:03.61] - Justin Gardner
+Okay, I'm gonna rapid fire these. I talk about Kaido a lot. So this is mostly for the people in the Kaido ecosystem because I am in the Kaito ecosystem and that's what I hack with. So that's what you're going to get. But you can also think about how to do these things in burp if you are not using Kaido. Also JX app that I mentioned earlier does have a burp extension as well. Okay. So top level navigation highlighter. I cannot like say this enough. I know I've said it time and time again. You guys are probably sick of hearing me say it. If you're not using this, you are in the stone age like it is.
+
+[00:54:33.63] - Joseph Thacker
+It's on by default I think.
+
+[00:54:35.15] - Justin Gardner
+I don't know that they turned it on by default because people were like people.
+
+[00:54:39.07] - Joseph Thacker
+I think they turned it off. It was definitely on by default for a while. I use it.
+
+[00:54:42.28] - Justin Gardner
+Was it okay? Yeah. You gotta be using color navigations in Kaido as a password. That is just non negotiable at this point. Like it is just so much better. Okay, so you will be able to navigate so much quickly. So much more quickly.
+
+[00:54:55.19] - Joseph Thacker
+At the very, at the very least it is installed into Kaido. It might not be enabled but you just go to pass workflows and you enable it and then anytime there's a top level nav and your browser it'll get highlighted a specific color and it's. It helps just like bookmark what you're doing too. Even if you're just scrolling really fast through history and you're like, what was I doing? Your eyes will jump to those colors and you'll be able to find requests so much faster.
+
+[00:55:13.40] - Justin Gardner
+Yeah, that was, that was five top level navigations ago, you know, like, okay, I. It just gives you much more. You understand where things are in HTTP history much better. Next is Shift, which we've talked about before, but I went through my Shift queries and I identified what I most use them for and here they are. Um, adding quick and dirty match and replace rules is number one. I do that all the time with Shift. I never use the match and place interface anymore. I just tell Shift to do it. Generating quick word lists with specific things that I want in them. So you know, you know one to a hundred line word lists.
+
+[00:55:48.03] - Joseph Thacker
+When Justin was typing that out, he actually said quick workouts. So apparently he uses Shift to generate his workouts as well.
+
+[00:55:54.42] - Justin Gardner
+Dude, why are you watching me type in the doc, man? I'm like, listen, give me like, like, give me like Tabata, you know, like give me like a Tabata thing to. To do. Oh my gosh, dude, I sound like an. I just said Tabata in English and that sounded horrible. Oh gosh, I don't even know what it is. Anyway, it's. It's one of those like hit workouts, right? So you know, you can do like, you know, burpees, lunge, jacks, you know. Right, yeah. Tabata. Yeah. Oh, is that how you say it in English?
+
+[00:56:21.51] - Joseph Thacker
+I think that's how you say it in English. I've never heard it in any other language.
+
+[00:56:24.53] - Justin Gardner
+Yeah, well, anyways, that makes sense.
+
+[00:56:27.01] - Joseph Thacker
+More Shift tips.
+
+[00:56:28.05] - Justin Gardner
+Okay. I use it to mass modify JSON. So hey, you know, add some tags here, you know, modify the casing here, you know, do that. I use it to generate HTTPQL queries and I use it to update filters. So those are the main uses that I use. Chip for drop is super helpful and expedites the workflow a ton. If you are collaborating with people, super easy to set up, super clean, definitely use it. And then the last one that I'm going to do is because everyone, for.
+
+[00:57:00.01] - Joseph Thacker
+Literally everyone's still on the stone age. They're literally copying and pasting raw HTTP into discord. Then the person has to copy it. Then they have to send a natural request because otherwise, you know, in Burp and Kaido both, whenever you paste it in, you have to set the host header. And so it's like normally what I always do and I'm sure you do this too. You go find a similar request that you know is to the same host, which is sometimes annoying and also costing you time to send the replay so that when you paste it in, you don't have to edit the host. Edit. Right.
+
+[00:57:23.84] - Justin Gardner
+Exactly.
+
+[00:57:24.21] - Joseph Thacker
+And so now you can just right click drop it to Justin. So much easier.
+
+[00:57:27.84] - Justin Gardner
+So much frickin easier, dude. Drop is beautiful. Drop is really beautiful. And then last but not least, there's devtools. So for any in Kaido. Okay, so this is not the dev panel, you know, that you see in the browser. This is a hot reload script in Kaido that reinstalls your plugin every time you push code changes. If you're not using this when you're doing Kaito dev, I don't know how you're doing it because it's a pain to manually reinstall and uninstall the plugin every time. So those are our hacking workflow tips for you guys. Hope you enjoyed that. I know it was a little bit of a rapid fire episode with a little bit here, a little bit there, but yeah, and I guess these things have really made a difference in my hacking workflow. And I learned a ton as well from you, Rezo, today. I'm so excited for that. That pop stuff.
+
+[00:58:16.05] - Joseph Thacker
+Yep. Yeah, dude. Yeah. I'll have to show you later.
+
+[00:58:17.98] - Justin Gardner
+All right, sounds good.
+
+[00:58:18.90] - Joseph Thacker
+Thanks guys.
+
+[00:58:19.65] - Justin Gardner
+Ready to bounce? All right.
+
+[00:58:20.53] - Joseph Thacker
+Yep.
+
+[00:58:20.78] - Justin Gardner
+Peace.
+
+[00:58:21.01] - Joseph Thacker
+Peace, guys.
+
+[00:58:23.42] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'.
+
+[00:58:27.13] - Joseph Thacker
+All.
+
+[00:58:27.42] - Justin Gardner
+If you want more Critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there. On top of masterclasses, hack alongs, exclusive content, and a full time Hunters guild. If you're a full time hunter, it's a great time, trust me. I'll see you there.

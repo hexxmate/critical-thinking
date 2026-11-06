@@ -1,0 +1,332 @@
+Episode 86: The X-Correlation between Frans & RCE - Research Drop
+Source: https://www.youtube.com/watch?v=YLdqWZ_E-O4 (YouTube captions, auto-generated)
+Note: caption transcript — punctuation and speaker labels are not present.
+======================================================================
+
+[00:00:01] oh my gosh people are doing shanky stuff yeah I know I know I love it are you kidding what [Music] yo yo yo sup critical thinkers we have a little bit of a different type of episode for you guys today okay um and
+
+[00:00:43] it all starts with a story I was in Los Vegas and Mr fron Rosen himself comes up to me and says Justin I wish I could do a Swedish accent right now I can't do a Swedish accent but he says Justin I've got some amazing research that I want to
+
+[00:00:56] share with you and I want you to put out on the Pod um and when fron says that you say absolutely let's go record an episode right now and uh and so we did and it was awesome and it totally blew my mind I think you're really going to
+
+[00:01:08] enjoy it but it is a presentation um and it's typically typically on this pod we try to keep things audio medium friendly but this one might be the exception you might want to head over to YouTube for this one so that you can see what's
+
+[00:01:22] going on not to say that you won't be able to get the general concept from audio and I think the general concept is also very valuable um but if you're looking to see a little bit more the details of the explation that he had um
+
+[00:01:32] then you might see that better on YouTube so um you can go to the YouTube channel at ctbb doow it'll redirect you to the YouTube channel um and then you should be able to see all of that there really great research um definitely
+
+[00:01:45] recommend it's those uh it's about those request IDs like X request ID headers um or X correlation ID headers that you see in the HTTP requests um pretty much with every HTTP request to any major um and how those can allow you to inject
+
+[00:02:03] way deep into all the pipelines uh of an application because that request ID is used everywhere to correlate requests and actions that are be T being taken um so very interesting research kind of like a like a duh moment like why didn't I test for this um so definitely
+
+[00:02:20] definitely some great content there um trying to think if there's any other announcements for today oh um we did launch the swag store this past week all right so if you're if you're watching this which you should be cuz I already told you to be watching this then you
+
+[00:02:33] can see my ctbb t-shirt um got some ctbb stuff on the back too um there's a bunch of different designs on there so if you want to get your hands on some of that head over to ctbb do ctbb doow ctbb doow swag that's a little hard to say ctbb
+
+[00:02:50] doow swag there we go and uh you can check out that swag store that we got set up for you guys um all right I think that's it enjoy the episode with frons uh and yeah it's crazy research so get ready for your mind to be blown all
+
+[00:03:04] right peace cool we're here in Vegas uh fron fron told me yesterday that there's going to be some research that was going to blow my mind so we're going to cover that and I also want to cover a little bit of this uh crazy bug bash event that
+
+[00:03:18] we are uh that we've witnessed awesome this past Vegas so all right hit me so this cimer this might not blow your mind but rather like oh oh [ __ ] why did I not think of that that's so it's not like I
+
+[00:03:35] I think when I present the title so I did a I did a talk back in June on midnight sun which is like a CTF in Stockholm and when I presented there I mean it wasn't that many people it was mostly the CTF people that was just busy
+
+[00:03:49] but so I presented this H I hadn't presented it anywhere else and I haven't released the slides so I wanted to do it with you and see see your reaction just because I think I enjoy it so much and the impact is is quite nice as well all
+
+[00:04:04] right let's see it so so the title will give it away are you ready I'm ready boo boom boooom ex correlation in okay do you what the heck is this dude do do you know what that is I don't okay this is fun this is fun so so
+
+[00:04:23] the talk is called EXC correlation injections okay and the whole idea is to how to break service ey context um and what does that mean probably some form of inje injection okay so we the discussion here is going to be struggles of course request
+
+[00:04:38] correlation now maybe is and then service side Json injections and autoband the RC and blindes okay you ready oh my gosh dude first impression what you the mind is spinning okay no no hit with it hit okay okay this sounds super easy it's going to sound super
+
+[00:04:59] easy it's going to sounds super obvious and this is I'm going to talk about the happy path like we struggled with this for for a long time and but but this is like straight on to the to the actual you know vulnerabilities um and yeah hunting cide
+
+[00:05:14] bugs how to reach them deep okay very like how do I you know look at the front end as a a as a border or like the API that you're hitting how can I reach deeper into your into your infrastructure uh and one of those are
+
+[00:05:30] exporation okay dude I've seen these so many freaking times dude okay I it's a you know X request ID X correlation ID they're everywhere they're customized some of them are you know named by the company that has them Etc the whole idea with them is to correlate every single
+
+[00:05:50] action happening down to sometimes queries to the database uh and the the idea is to follow one thing so you can get like TR M you can get everything to to say that okay this request failed in our micros service world what type of
+
+[00:06:07] things happen going down so this is a so how I understood this was originally a essentially a introspection tool for the blue teams right where it's like okay uh here's this weird error that I'm seeing at the htgp layer yes got the correlation ID and that correlation ID
+
+[00:06:23] is is attached to everything yes along that full stack that occurs absolutely okay the thing is when you say everything that includes the front which means that you the front and see front you mean the front end of the Cent client side oh really yeah so the
+
+[00:06:40] client side see generated on the client side most of the time but what this means what it means is that it it is controllable by the by the by the okay let's see uh and there's no standard so there's like a [ __ ] ton of
+
+[00:06:57] of you know request different like different type of formats geez that's a lot of them is that is that across all the different yeah I mean this is just examples right so company name like they will have you know whatever whatever company so but yeah these are just some
+
+[00:07:11] of them that I that I've witnessed and looking at them from a you know blank perspective not knowing the company that you're targeting you need to like figure out what type of uh like hea it's actually being used for the correlation one one way to look at it is looking at
+
+[00:07:29] respon they might serve you a unique correlation ID just because you made a request another one is like you can see it in in the access control headers so you can see like okay we allow these certain headers and one of them being
+
+[00:07:43] the the or in this case transaction ID but they could be Nam that's typically in those scenarios where you're dealing with a cross origin API oh yeah absolutely yeah and so so these access low headers are perfect for like understanding what type of headers do
+
+[00:07:58] they actually need to work from the frontend side or client side that's solid yeah yeah another one is like this is the perfect thing like as soon as you see reflection especially when you don't have like a validated format in this case like whatever H this is like gold
+
+[00:08:14] okay H and it it doesn't necessarily mean that you will hit gold on every single request it means that this will follow at some you know if you find some obscure you're you're doing a lot of payment things yeah yeah oh yeah this
+
+[00:08:29] this is the because there will be SSH ke signing credit cards and there it's kind of I've definitely seen this sort of thing before and I'm not sure if we're going to release this on audio or whether we're just going to do it on YouTube
+
+[00:08:40] since there's visual comp but um the service transaction ID uh that he has included here on the request side right as a as an HTTP header is also being reflected in the response with the exact text so there's no uid validation there's nothing like that and this gives
+
+[00:08:57] you a lot of flexibility abolutely absolutely and this this this tells me that this has gone you know in the back end and behaved as this is our request ID and we will keep this request ID and we will also reflect it back to you um
+
+[00:09:11] yeah I know sh I've seen this I've seen this many times of course yeah now what so what I did is I start first I removed the existing one and then I just put in you know a lot of [ __ ] characters but we
+
+[00:09:24] don't know where we're going to end up right we don't know what context we could be in SQL we could be in file system we could be in you know a command we could be in you know whatever we don't know event Json what whatever so
+
+[00:09:38] we need multiple tactics we need to figure be smart when the fussing in the fussing so we can figure out some parts at least uh and one one way is trigger errors basically like you put in a lot of you know crazy characters all over
+
+[00:09:51] the place uh and then are you just doing like an asky fuzz list like I have like all of the asky characters encoded and then I'll like a URL or I do I yeah basically do this you literally just type in no no no
+
+[00:10:06] I do I do like single quote double quote percentage sign like all of these things where if that one like a percentage sign for example if that one triggers an ER it could be two things it could be like sprintf or it could be a URL yeah yeah
+
+[00:10:19] those those are basically and for example if an person breaks it could be an XML context and there could be also your um and similar things with like dollar sign parenthesis or or curly braces then then then you're this is this is one of the takeways for me from
+
+[00:10:38] this event just from some of the life hacking stuff in Vegas was like I need to do more fuzzing like this and and identification of what data is being passed through what context because there were a couple freaking bugs live this this time that were just literally
+
+[00:10:52] straight up back to command injection and I was like oh W no but figure out the context it's like what it's like so what I tend to do is like I tend to put this in the request ID and then I go on and do manual testing about you know
+
+[00:11:06] API paths I always make sure that burp has it inside you know keeping it there that's why you had it imagin place for okay great so then then I can this can happen so I can I can work for an hour or two hours or whatever and then I go
+
+[00:11:19] back and like I had a 500 what what what is the 500 why did that why are you doing this to me man this is this is of course this is what you got to do man of course and then this is the fun part
+
+[00:11:31] because there might be add like logging specific to some of these end yeah I mean I get excited about this because like I have I have not you know made this at all like this is this is this is we talked about before about
+
+[00:11:46] like I'm talking about things that I got bored with so then I presented this is not that yeah but the funny part is that like you can talk about I I'm leaving the crumbs but this is like [ __ ] huge go this is a [ __ ] pie on me this is
+
+[00:12:01] uh so it would actually be interesting Sor let you continue but it interesting also to have sort of like an um I'm thinking like an autorized sort of approach here where you have Auto repeating every one of the requests differentiate them AAL between the the
+
+[00:12:16] status codes then you know that that was caused by absolutely I agree really absolutely uh and like of course there's going to be false positives one of them like gcp for example U not all over the place I guess but most most of the time
+
+[00:12:30] on Google platform or Cloud platform they actually validate what you send in just just a pattern U making sure that it's like a uu ID strong Rex matching man it it solves a lot of problems for sure H another one is like I've seen
+
+[00:12:44] this a a lot like they actually made a border so the request ID is created on the first you know load balancer or whatever and then internally you can it can be you know sent over and stuff but on the first kind of you know entry
+
+[00:12:57] point no and so that is also common those are kind of false positives well but that's the interesting part so let's say you have as I showed you here like you have a bunch and then that one says no right and then that is still
+
+[00:13:11] interesting because then you know that there's another system not allowing that thing to be happening so it's still it's still these are still like super interesting yeah okay we had no idea what we were doing at first it was just breaking and we were like where are we
+
+[00:13:25] we're probably in a path or whatever uh but but then we kind of you know let's let's let's just go through what we found okay because these are let's get it okay first path Traverse Orit and this one I love this one so
+
+[00:13:41] yeah yeah continue go ahead go ahead so whole idea here there was H if you sent request ID 1 2 3 4 for blah blah blah it would write it to trace data in the temp file uh important part it would contain itself so the request ID was also the
+
+[00:13:58] file path also inside the Json that was written okay oh great so you got you've got control of the path and some of the content exactly it was the same it was the same the reest yeah or like it was a bunch of metrics in it but the request
+
+[00:14:13] ID that you sent in also work but path R basically wrote if you did like temp data slash and back to Temp data it would it would write the pthe obviously it just took the value and wrote it and did you just force this or and um or did
+
+[00:14:30] you have access errors we had access to errors okay so what we could do is like we could go down outside of the temp folder into the web folder put the PHP code as the fin 100% fine H it will then write to
+
+[00:14:46] trace data in TMP do the pass reverse uh which basically meant that inside this PHP file you would have the pth derse but you would have the PHP code meaning we when you went to this actually URL with the you actually got you got to be
+
+[00:15:02] kidding me this is I can't believe they're dumping everything into template that they afterwards like a race condition or something they they they have like workers that dump this data into the temp and then they have something picking it up from the temp
+
+[00:15:18] folder and then sending itly so they so the the script itself doesn't need to connect to a loging thing they just need to dump a file in the yeah so that's why so uh name too yeah yeah yeah exactly it's like perfect H another thing we found
+
+[00:15:34] was a hro injection okay which is basically you you provide they will URL the code the header when they actually did something with it so we had like a client side request added to our request ID it went into an API proxy we injected
+
+[00:15:49] a header there because the URL decoded the header and then the backet service basically so in this case we're supposed to see account one two three just because the request IDE was above uh it will always take the first Heather with that name if you get two of them so then
+
+[00:16:04] you can inject another account and then you're getting their data it's stuff that's nuts um did you try like uh request splitting there I guess uh it's kind of like response splitting but yeah did you try like smuggling in another request because I feel like you can
+
+[00:16:17] almost do D you can absolutely do DC uh but no because you you just got I mean you you got so yeah exactly but you're 100% right the the thing we could yeah we could probably go for it seriously getet afterwards absolutely another one
+
+[00:16:37] was Java so s made like one yeah made a per awesome Tweet back in like like four years ago and basically he says that like if you have Z1 z d in Java sometimes that will actually turn into you know z z the a
+
+[00:16:59] um and or or 010d turns 0d uh which basically means that you can send in c48 c48 a and it will be a new line pared by jva dude I I I've seen this also this came in handy really recently with um with a JavaScript
+
+[00:17:15] attack that I was doing because there's a similar weird uh Unicode sequence in in JavaScript it's a percent or it's Unicode Cod Point 2028 that will just drop a new line so I love separate or something what is it is it paragraph separator yeah something like that yeah
+
+[00:17:31] yeah and I love that these work in all these languages we need to create like a list of these because depending on the context there's a lot of weird there's a lot of them yeah and he he gives some other examples I yeah there right there
+
+[00:17:43] yeah yeah oh yeah drop it as well it's awesome um another thing is playing a simple did you where where are you finding all these oh my gosh people are doing janky stuff with yeah I know I know I love it are you
+
+[00:18:06] kidding what yeah dude this is like it's amazing oh my gosh this is like that that Ruby thing that happened a couple years ago with the user agent where you could just literally put a command injection payload in the user agent this was this
+
+[00:18:22] by the way so I'm not taking because I'm like who no no no F no freaking way insane yeah another one really interesting yeah this one I'm interested in I don't know where this one's going no and and this is a subject by itself
+
+[00:18:36] yeah this is like a Json injection is under appreciated undere explained and it's freaking everywhere yeah and for some reason I I've started to assume that like Java apps or platforms they have a really hard time you know creating Json properly without you know modeling like
+
+[00:18:58] if you just do a plain Json it's actually pretty tricky in Java to do like the easiest way to do it is to have like an object that you have like serialized version of being the Json yeah it's like go where they have to
+
+[00:19:11] have like the the actual Json project model structure yeah so if you just want to make like a simple Json it's actually like the easiest way is just string concatenate that [ __ ] no yeah absolutely like that it's it's like it's a you need
+
+[00:19:25] to do so much things if you just want to add a property you need to add it to the model you need to make sure it's you know getting but instead of like oh it's so easy just so specifically for job applications this I've just seen it more
+
+[00:19:36] I've seen it more but Json injection the whole concept of this is that we're actually sending in being a part of the Json escaping the property you're in adding our own property and then coming back so in this thing we're actually going down a level and then adding a new
+
+[00:19:52] property and going up a level again uh and every time you do that and you don't know the same property here you might get like this property doesn't exist so then you're getting an oracle of what property you were in from the start so
+
+[00:20:06] so and I mean I this is I I've been doing a lot with Jason and I'm I'm we're coming to it I'm so excited about it so the whole idea is basically client client request may add the request ID sometimes in the proxy in between or
+
+[00:20:21] whatever it inserts the request ID into a stream concatenation yeah I bet that would also be really common in the scenario where they're they're passing that as a Json blob from like the the proxy on the front okay wow absolutely and then back into the back service so
+
+[00:20:37] from for example one one example here is that we the regular is having a payload with an account and then having a side side property called context but we then go out of context put our own payload and then tries to figure out that it's
+
+[00:20:52] account in there and then you know in Json the last one is the one that's going to unless you're having you know know a property check you're making sure there there's a bunch of libraries that actually like oh you have double property but but in this sense they will
+
+[00:21:06] just overwrite it and payload will now be 456 instead of one two3 uh yeah you will see there as well JQ is just writing it over uh and yeah so a quick how to on this is super easy like difference between double quot back
+
+[00:21:22] double quote is a very good indicator just because in Json the backlash will always be like an escaper uh and you also need to figure out where you are in the context and the context could be literally like this is just one of my
+
+[00:21:34] example lists of figuring out like are you can you go two levels can you go one level up can you go like where can you go are properties allowed our properties not allow so in in my fussing this is not all of them but it it's a it's a
+
+[00:21:48] concept so here you can see like okay now I'm in a a property name that is oh oh that one should never work by the way but whatever uh so here I'm in the property name and I can add new properties and I can add shine
+
+[00:22:02] properties uh but yeah and then and then you're also in in so here here you're in a list here you're in a list of lists exct you can apply the property yeah and then I can go up to lists and make a string again and then then I can like so
+
+[00:22:16] it's all about like going down two levels and going up or going down one level and going up yeah and I guess you're mostly weaponizing okay okay I see cuz in this scenario I would think okay we want to try to comment out the
+
+[00:22:29] rest of it which you no you can't some of the you can have garbage after but then it's super easy so then you have you have some of them that is just closing it you know curly braces Square braces multiple of them because then
+
+[00:22:42] then you can do and remember remember flash xss back in the day uh dude barely that was before my face call yes yes so do you remember how to exploit the external interface yeah it was it was you're breaking out of an object say A J
+
+[00:22:57] and this this is like bringing back some some very fun memories of like is it a cur brace now or a square like really need to figure out and then it ends with like sometimes you've been so deep and you are allowed to have garbage so
+
+[00:23:11] Escape me like Curly curly curly square square curly Square cly square and then you're like t t I have an object and then you're getting an error like missing property XYZ and then you're trying to understand in what level you you want inject I I really the this
+
+[00:23:25] scenario is really it's important to have verose erors scenarios because otherwise you're really just but we've seen we've been you know completely blackboxing this and and word listed and then then cont because you context aware word list like curating it based on you know
+
+[00:23:44] documentation their API their JavaScript files all of these like creating these word and also the casing of the words so everything is camel case in you know the regular parameters keep it as camel casing or snake case or whatever so so like I've been I've been creating
+
+[00:24:01] curated word list that could be you know 200,000 rows just with like alternative options and spaces or is it account underscore ID or account ID or account typh like there's it's possible and you can do it step by step that's the beautiful thing because you might you
+
+[00:24:16] know see that one property is behaving differently and then you know that property is there it still won't work but that error doesn't show up anymore like dude this is this is one of those this is one of those things that I can
+
+[00:24:27] see you get so energized this is I toow aser blackbox really really really deep sort of scenarios and I know Sam Curry also has just sort of this sort of like six sense and I know remember when we were collabing together at the at the event
+
+[00:24:48] in Portugal just seeing you guess freaking pths like just from intuition it was like what is going on but it's similar yeah and and you need to understand like what what what are they doing like okay we're setting a request ID and we're
+
+[00:25:04] probably you know on the sides of the it's never going to be you know in the middle of the context request IDE is either something that you think is really important from start or something that you need to have just because of logging in the so it's like you're
+
+[00:25:17] always on the sides and you need to figure out can I I cannot believe that I didn't think to look into this earlier because of course logging is going to have a bunch of weird pipelines right yeah yeah and deep and deep deep deep
+
+[00:25:27] deep and um and yeah here are some examples there you can look at premature ending what you're talking about uh and if you know that premature ending works then you're able to like do fussing a lot easier yeah also but you know because it's you know JavaScript object
+
+[00:25:41] notation right it it also sometimes according to that research I want to say it was Bion Fox I released a while back you're able to actually use a Json or a JavaScript comment in some Json in Java Java has they have like loose parsing yeah H but so yeah
+
+[00:25:57] you're right uh of that is also loose there's there's that large condition and then there's also the large condition of um I need to to be able to not end that comment I need to just be able to leave it undone I think that's probably a pretty
+
+[00:26:12] rare scenario but definitely worth adding to the word absolutely n absolutely and also duplicate properties that could be one of the the hardest some of them freak out about that yeah absolutely and and you can see so uh but one one example is like if you have D
+
+[00:26:26] multiple injection points you can Shuffle the the first property depending on where you are you can Shuffle it one level down and then you can come back on the level that you were because it's in here that you want to override it so you
+
+[00:26:39] can go instead of going down and up you can go up and down this if they have a strict scheme L you're screwed anyway so this should always work pretty much yeah and if there have a strict schema you need to find a property putting in there
+
+[00:26:51] that you can actually you know but sometimes you're in a you're in an property object where you are loose where with whatever properties and then this is a perfect thing because then you can like Shuffle something depending on where you are in the in the H so yeah if
+
+[00:27:06] you have request ID and the ID is there and you have an yet number two you can you can literally push ID into its own object and then overwrite the ID afterwards yeah that's that's um have you have you seen multiple injections into the same object
+
+[00:27:21] like that yeah 100% um so that that is not a a rare appearence this is another man I'm glad you mention this now because uh I'm going to do at the talk I'm doing for for Defcon I'm going to mention some uses of uh match and
+
+[00:27:35] replace and this is a great one to like start essentially fuzz across all the functionality different uses of these sort of headers absolutely wow um and then we have est3 uploads policies maybe of course you're going back to upload policies funny thing was I I did I I I
+
+[00:27:52] talked with Matias about this like oh up close I did you know did you do the conditions with large and he was like I've done I've done a talk about it I did it on Airbnb 10 years ago and I'm like what so and he like sent me a link
+
+[00:28:06] like yeah we talked exactly about the same thing so small small here but here's a regular upload policy you have expiration conditions and yeah that's basically what you have H conditions is like an array with properties um and we basically injected uh in one of these
+
+[00:28:25] they were constructing this Json as a stram conation so we injected our own object in there and added our own properties the the funny thing with3 is that you can't add anything else than expiration and conditions but if you add a another conditions with capital c h it will
+
+[00:28:44] allow it but ignore it so you can you can push if you can inject into an S policy you can push everything into uh Capital C conditions Properties or array and they will ignore them write your own policy semi strongly typed but it it's
+
+[00:29:01] it's taking this wow that's a crazy find from it's I love that both M it was like we both tested it and I love that and Sweden for you JWT uh this is this is the fun I love this one basically if you're able to get the so now I'm not
+
+[00:29:21] talking about reest ID only I'm talking about ways of like this opens up so many other options absolutely yeah yeah or or like you're using it and like I'm not kidding it could be so there's so many things with Jason injection that is
+
+[00:29:35] still out there waiting to be found so this is this sounds like a you know uh going to OAS kind of what is but this actually works like this happens for sure um and yeah okay that that is JW over I feel like I feel like I haven't
+
+[00:29:53] seen as many well maybe I just haven't haven't run across them but uh scenarios where Json is being generated by a stringing Cat Nation you you you you're telling me that this is everywhere you will not believe how much and think about it you have a JWT you have like
+
+[00:30:10] ISS blah blah blah some people just want to you know sign their properties because there's another there's another system in their microarchitecture that wants these spe specified but you're may be writing in Java and it's validated by no so they're like okay I just want to
+
+[00:30:27] write these properties especially micos yeah exactly so it happens more than you think wow um and and also like systems where XML is like more common but they're moved over to Json they like you can see all those sort what's the read on the age of system that this is
+
+[00:30:48] occurring in like is it is it like yeah I wouldn't say it's like the newest systems absolutely not but that doesn't necessarily mean that new systems are still touched by the authorization system is you a JWT and that yeah that's even worse almost some of the times you
+
+[00:31:03] can have like I've had like if I sent back SLU in the request ID and and it showed up in the JWT that one has been like the escaped again because it's like that's parsed by something and so that is one scenario where where you just
+
+[00:31:18] passed it multiple levels and and at some point the backlash you will be coded yeah so in those scenarios I've seen it more yeah and actually this is interesting one of the things that I always do is I often end my payloads in
+
+[00:31:31] backslash just in case somewhere along the thing it's not it's not uh you know escaped specifically and will cause an escape um so that could also be a place you you can absolutely show and that's that's a perfect thing like SQL injection for example you will get an
+
+[00:31:45] nror just because you didn't escape the last or you sent the escape and it was and that doesn't always necessarily mean it's it's vulnerable because at the end of the day you you might not be able to actually do anything with it you might
+
+[00:31:57] actually Escape you know the the single quote might turn into you know those scenarios are super frustrating you can trigger an error an escaping error but then you can't actually do anything you can't do anything yeah yeah that's true okay so the other one is blindly F
+
+[00:32:10] basically I have I I can't see the errors it's happening you know way down the line so I won't see if the error is going to get triggered or not and it's out of bound triggers we need out of band triggers oh my go what do we have
+
+[00:32:24] forand Trigg you're clapping right in front of the mic sorry Rich sorry sorry so we have we have blind xss obviously right we have outo band RC blind RC what is blind RC you say we SEC and we have L for Shell or
+
+[00:32:42] make L forell yeah that that's probably last year with this like just on a payment flow just because the old payment system was you know nobody to touch it exactly make your own adventure as well um so what we found Lo yeah that's I say like literally you
+
+[00:33:01] know request ID here's the here's the and so on this one you probably just injected a uh this dollar sign open braces and then it aired out in some way or did you actually just put this payload in there I just put it put it
+
+[00:33:17] yeah no nothing I mean the payment went through but it still tried to do that it was some logging of the yeah I guess I guess in log forell it wouldn't actually trigger any exactly you got got try yeah okay uh and out ofrc and that was
+
+[00:33:31] basically like this was okay similar to what we showed before but it would never trigger you know it didn't trigger an error or whatever and and you of things man and it just tilts me scary it's scary that you have like you have 25 characters that you can type
+
+[00:33:48] on a request and you will have a shell on a you know large company that's [ __ ] that scares the [ __ ] out that's terrifying yeah know and you said this is 24 later though so there's like a like there's some sort of additional
+
+[00:34:01] processing it's probably a logging logging mechanism that is or a pipeline or whatever that just like takes all these and has the request ID as a part of the yeah man and blindex is going to be huge here too because of course is
+
+[00:34:13] going to be the thing that is showing up in these TR logs yeah exactly and they might have you know built their own kind of Trace logs Etc it's nuts course but here's the fun part this is fun okay so we need to optimize the blind RC because
+
+[00:34:29] he needs to support multiple contexts and we still want the request we still want you know we want to know where it happens and why Etc so we want as few special characters as possible we don't want you know very common things like for example
+
+[00:34:44] we we still want to support all these different like can we inject inside the these you know what's what do you call them uh the backck btic yeah and then you have single quote double quote and also plain you know being inside the
+
+[00:34:56] regular bashel where inside the shell and we need to collect data so we know where we are like the context so same same as plan xss we need to figure out where why did it happen where are we what can we do here and and here's a
+
+[00:35:12] perfect example of of w loock h one W loock is literally ifs you know the F field separator uh and you have current braces around it that will be blocked as hell but without current braces it won't I don't this is always how see it with
+
+[00:35:28] the curly braces I didn't even know that you could do it that way but of course that makes sense absolutely but the problem is you can't put uh the reason why you want curly braces because that's a separated saying this is the variable
+
+[00:35:38] so you can't you can't do the domain after because then it will be concatenated but I'm coming to it you need to avoid spaces as well here's one of my one of the one of the payLo that works best oh the sign the sign the AD
+
+[00:35:54] Sign basically these becomes a separator for the the field separator but then just sends it to your is it just an empty yeah empty user my gosh and and this this is just two example like I tend to concatenate these two because then you can escape
+
+[00:36:12] signal code you can be inside double quote the the back T will work uh if if you're you know straight into curl this one or St straight into into sh this this one will work so they they complement each other and then you you
+
+[00:36:28] get like a really good coverage of M that's a good payload that's a really nice that's really good payload so it's so good that I wanted to have like unique payloads every time I S collaborator B collaborator everywhere kind of thing so I made a pman generator
+
+[00:36:43] where it's like it saves payloads uh and just so you can have a prefix and it will just like incremental numbers save a date for that one so you can literally like I will payload for a wallet and it will wallet one and two and payload
+
+[00:36:57] wallet and three four and so you can just like have this and it puts it into your um clipboard so you can just like pay BM insert that's solid um and then yeah this was what it's just perfect so then you can go back to your purp and
+
+[00:37:12] correlate dates and stuff or whatever you useing kaido yeah there you go um and then I I'm wearing the shirt today so what you saw here also I'm paring it to to sh yeah so I need to have something on the side so I'm doing
+
+[00:37:27] a collection script uh so basically I look if the user rent is curl and then I provide like a very nice like who am I where am I trying to see if like well what's the P Etc password what's the environment and then it just posts
+
+[00:37:43] you're dumping in Van that's that's that's they trigger my code if they trigger my code internally they it's like we're Beyond it's scary because we [ __ ] made him run our that's true at Point yeah at this point it's just it's not it's not and also like I'm
+
+[00:38:01] making sure that you know if if the user agent is basically the curl they've used my payload to trigger this if someone is using curl and piping my output themselves for some other Reas like come on it has never happened yes um and then
+
+[00:38:17] I connected to saier and I get like an email like oh this is not the shell on this IP you want to you know oh my gosh dude and do do you think it worked I think it worked I think do you think it
+
+[00:38:27] worked do you think it worked yes it my God it was it was extremely it was so effective they like they like don't stop FR France please stop all testing on this issue [Music] immediately anyway dude this this is better than the Bounty right I know I
+
+[00:38:45] know 100% 100% so so it's like okay this is a this is a very nice pipeline of being able to it's almost like you know excess Hunter kind of idea but you're you're looking for uh a bug that has quite High severity yeah and or
+
+[00:39:04] always almost and I just I literally cannot believe that I haven't thought of attacking this flow before because i' I've spent especially after log forell came out right it's like clearly yeah everything that is being logged that whole pipeline need it's so important
+
+[00:39:21] it's the reest is so important actually I've seen some scenarios actually where um companies really care about the Integrity of their of their logging pipeline as well absolutely so if you if you have the ability to affect the Integrity you mentioned before like the
+
+[00:39:36] correlation ID um being attached at the proxy level some some don't care when they generate on the client side obviously that's trusted but when the request correlation ID is generated at the proxy level and you can find some way to smuggle it in and override it
+
+[00:39:49] some companies care about that because that screws their whole inet response i' I've gotten messages like hey France we saw your request coming in uh our tracing pipeline is completely broken you have the same payload for every single request and you've been you know
+
+[00:40:06] I've been brute forcing or running like like breath map or whatever running it on them and and they're like we can't open your Trace spots because everything is there so they're like it's useless to us can you please have it you know run you stop can you
+
+[00:40:23] please change it and I'm like isn't that a problem by itself you should get you should M for that yeah exactly H so uh yeah the conclusion is basically you're basically expanding your THX surface internally all over the place and also like blind and error there's going to be
+
+[00:40:39] multiple of them H Json injection this we need to talk about this more we need to talk about Jason injection and um yeah and I would love to know if there are multiple contexts I missed some context right sequin injection XML injection there's going to be it's going
+
+[00:40:54] to be way many that I haven't thought of I would love to hear about you know injections happening in context that I that I haven't talked about uh that's it yeah dude what do you mean that is so freaking I love that you're like I hate
+
+[00:41:09] that you are telling me about this right now after live that exactly thank you for waiting till after the live AC tell me about this I could have been running this on the target you weren't even in the same event you should look at that tet oh my
+
+[00:41:23] God yeah wow uh that is super awesome think um I think we'll go ahead and probably cut here and then we'll go do a some some uh pod stuff related to Vegas and stuff that but dude thank you for sharing this freaking sick this freaking
+
+[00:41:40] sick thank you all right and that's a wrap on this episode of critical thinking thanks so much for listening and if you want more critical thinking content head over to ctbb show/ Discord join the Discord there's lots of great conversations and chats going on
+
+[00:41:54] over there and if you want to support the show there's the Discord subscri subber tiers which give you access to master classes amas hack along alongs exclusive scripts and an exclusive chat Channel with us we'll see you there [Music]

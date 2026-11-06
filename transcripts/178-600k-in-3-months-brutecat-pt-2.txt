@@ -1,0 +1,1011 @@
+Episode 178: 600k in ~3 months - BruteCat pt 2
+Source: https://www.criticalthinkingpodcast.io/600k-in-3-months-brutecat-pt-2/
+======================================================================
+
+[00:00:00.65] - Arvin Shivram
+Like in 3 months it got like, okay, so I wrote the title of this blog post is Hacking Google for $500K, but it's actually $670K right now.
+
+[00:00:09.30] - Justin Gardner
+Oh my gosh.
+
+[00:00:10.51] - Arvin Shivram
+In basically 3, 4 months.
+
+[00:00:11.33] - Joseph Thacker
+Oh my gosh.
+
+[00:00:12.16] - Arvin Shivram
+From just running this.
+
+[00:00:14.22] - Justin Gardner
+That's crazy, man.
+
+[00:00:38.02] - Joseph Thacker
+I literally have done the exact same thing you did in this blog post, and I did it for like 3 weeks, and I had— and it was extremely structured. It was like, you know, consider all the types of auth, consider all the types of requests, consider all the types, you know, like all the different API keys we have, you know, like the 800 API keys we have. Like, let's test everything comprehensively from end to— from top to bottom with all the Discovery docs that we've had access to or that we've leaked through bugs or gadgets, using every form of auth and every API key. And like, I found some bugs, but I mean, I'm talking on the order of probably like 10% of what you found, right? Like, I think I probably made like $50K across all those bugs. So I mean, this is definitely downstream. I don't think that we should write this off as like you just using AI well. This is downstream of your expertise by a mile.
+
+[00:01:20.90] - Justin Gardner
+Oh yeah, I think. And, and taking that and then taking the leads from the AI and exploiting them further manually, I'm sure, You would say that that's true, correct, Brute Cat?
+
+[00:01:32.34] - Arvin Shivram
+Yeah, exactly. So I think a lot of the leads I get, I don't just leave it at that. I try to push the impact as much as possible. But I will also say in terms of the AI hunting, right, so you don't want to give too much to the AI because if the AI has access to do anything it wants, it's not going to— for example, I'll try to explain this in a simple way, but pretty much the authentication itself, I've kind of abstracted that out of the AI completely. So the AI doesn't even think of that. It just focuses on this one task of testing the API, right? And another thing is there's so much noise when it comes to these hackbots or whatever, you have to find a way to filter that out. So for me, that was like building this thing where I could sort of see the request and response and there's no way that AI could fake that because it's like every request AI does, I tie it to an operation, right? And that operation is then associated with the request and response. So I can just see what it did. If there's like a PII leak, I can see the PII leak. This is bullshit, right? Wow. Yeah. So Yeah. So
+
+[00:02:24.03] - Justin Gardner
+Yeah. So Yeah. So you're getting a really— one, you're abstracting away a lot of the complicated parts of hacking on Google, and then you're not giving the AI room to do much besides exactly what you need it for, which is sort of filling in these pieces of information and correlating them across, you know, different Google APIs. That's pretty sick, man.
+
+[00:02:43.84] - Arvin Shivram
+That's pretty sick.
+
+[00:02:45.96] - Justin Gardner
+All right. Well, okay, hold on. We, you know, we got rolling there. We're back with part 2 of, of BruteKat's saga here. Um, and today we're gonna talk about, uh, AI and how he has made over $500,000 hacking on Google, um, using AI, uh, over the past— it's not even like a year, it's like 8 months at this point, maybe. Um, so dude, I'm so excited for this. I think before we get into the, all the AI stuff, um, we also wanted to kind of go back and do a refresher on some of the Discovery Doc stuff. So let's, let's do a refresher on that and then we'll jump right into the AI component.
+
+[00:03:25.58] - Joseph Thacker
+So Arvin, you built a basically a system for this specifically, right?
+
+[00:03:31.28] - Arvin Shivram
+Yeah. So pretty much I built this whole thing where I can take a Discovery document, right? I can parse it out and have this whole UI where I can see each method and tap on it and inspect it. Right. So instead of doing an approach where converting the Swagger and trying to look at it that way, I had this one UI. I took a lot of inspiration from Google's. So do you know how every Google API that's a public API, they have this try it explorer or whatever? Yeah. So I really love that because you can just see the methods and test it right away. So I actually took a lot of inspiration from that. So it seemed to be open source at one point, but I guess they just made it not open source anymore. But it's fine. I made my own version of it. So my own version has all the auth and everything all configured. So all you have to do is upload your document. Tap on the endpoint, you can start testing right away. You don't even need Burp cuz it has like a Burp inside of it. Mm-hmm. Right. So I just focus my time on testing it. So this is not, this is just for like testing the leads in my AI reports. Right. So I can just test it directly. Hmm.
+
+[00:04:27.26] - Justin Gardner
+Yeah, dude, it's beautiful to have tools like that that reduce the friction so much, uh, that, that you can just, you know, that's when you know that your, your, your methodology is really streamlined when you have these super custom tools for this stuff. Yeah, exactly. Um, so, okay, so we've got the Discovery docs, we've got the, um, you know, sort of built-in Burp or Kaido or whatever, you know, replayer for these, uh, specific calls. How are you tying the AI into this and, uh, and getting it to give you these leads, uh, from the discovery doc structure that you've built out? So So
+
+[00:05:09.39] - Arvin Shivram
+So So let me back up a bit into explaining how I even got into this in the first place. Okay, so there was like this bug squad in Mexico last year, right? So the whole bug squad, I wasn't actually hacking. I was just thinking about, because I was looking at the source code. Like, Googlers, they let you see the source code to any app you want or anything. So I was completely fully abusing this, but that also kind of got me interested back in the hacking, right? So for this, around this time, I've been using Claude for around a year. So even my, like, React to Proto tool was completely written by Claude, like, back in the old days of Claude. So I would write it in the web chat and then copy it and paste it and then make the whole thing with that. So, yeah, I was doing all that, but I had an idea, like, why couldn't I use Claude or whatever AI? And why can't it test the Discovery documents? Because, you see, the thing about Discovery documents and testing the endpoints is just tedious, right? Yeah. If you're looking for access controls, I don't think it's like technically complicated. It's just more of like, do you have the time to look through every single API? Considering how many APIs there are, it's just too much, right? You have to settle on your scope or whatever. But in this case, if I can use AI to look through everything, it'll be so much faster. So I had this idea and I was telling Sriram and everybody, and they were listening to me, but I don't think they understood what I meant. I was fully engrossed in this. This is the only thing in my mind, how I can use AI to do this. So right after Buckswell ended, I was on a flight back. I did, like, one week later, I had a whole MVP working. So I had this web UI where I could sort of import a Discovery document and it would show all the methods on the side, show everything. And so Google has this auth called First Party Auth v2, right? So they actually ended up— so this is something funny, right? They actually ended up leaking the source code or whatever, like the client-side, like the TypeScript source of this First Party Auth in some random Google site because they had the source maps enabled. So you can get the whole specification of this first-party auth from there. So from there, I realized that first-party auth is not as simple as I originally thought. There's this well-known Stack Overflow post that's documenting this auth, right? But there's a bit of extra fields you can have for getting the full thing.
+
+[00:07:10.07] - Joseph Thacker
+Sorry, what did you say there was about the auth? A blog post?
+
+[00:07:15.24] - Arvin Shivram
+There's these extra fields that you can have in the first-party auth. For the authorization header. It's not just a SAPI SID hash. I mean, there is, it's a SAPI SID hash, but the way you compute it. So this is required for many APIs like drive.googleapis.com. You can't just use the normal one. You have to use this one. So I was able to figure out all this from that. And actually, yeah, so this was super useful. I combined this with the Discovery docs and the whole Discovery doc thing where I had a UI. And in the end, I could just go to my website, click on any method, it would have the full like Burp thing set up for me. I could just copy the request or play it in the thing itself with authentication, everything handled. So the only thing I had to do was like change the request parameters. So I built up this whole thing first, right? This whole UI. But then the next step was once I had this UI, I need to get API keys, right? If the test APIs, you can't just, you can't just use API, you need keys. So I had those like humble collection of like 100 keys or whatever, but that's not going to help me. I need way more than that. Right. So I did this effort with Michael Dalton. He's another researcher. I spent so long trying to find as many sources of keys as I could. So this meant I was trying— I took every single APK that Google has ever published. I scraped all that, 60,000 APKs. I went through all of them, extracted out as many keys as I could from that. Even for IPAs, we decrypted it, and we took all the keys from that. We set up like a, like this Chrome extension with Google like debugger API and we were able to sort of like look at every single request automatically and capture keys, right? Then we went through every single Google like domain and we were using as much functionality as possible and trying to get keys that way. So in total, right, this whole thing like ended up with like a few thousand keys from just a sole effort. But the problem was it wasn't, it wasn't over yet. See, many of these keys, they might be customer keys. They wouldn't be like Google's keys, right? And I want to keep the scope to just Google. I don't want to attack customers, right? So for this reason, I found a super interesting endpoint. I don't remember where I came across it, but it's in Cloud Marketplace. It's some endpoint where you can pass in a project number and it tells you which domain it's from. So you can get a project number from any key from just going to like, say, protos.googleapis.com. If I go to Discovery document, I try a key there. This key is not— this API for the project for this key is not enabled for this API. So it tells you, oh, this— it gives some error and it leaks the project number in that error. So you can then use that project number and check which domain this key is from, essentially. So I was able to filter out all non-Google ones.
+
+[00:09:45.61] - Justin Gardner
+Very cool. So this allows you to filter it down.
+
+[00:09:49.28] - Arvin Shivram
+Yeah, exactly. So there's also another way to get keys. Okay, so I wouldn't say— okay, I'm not going to say here publicly where I got keys from this or not, But if you're smart, you can figure out there's like Z handlers in Google, right? There's like these debug handlers. Sometimes they're leaked, right? And if you go to like certain debug handlers like flagz, right, you can find keys inside there, right? Or proxy is like an LFI as a service, right? You can just use any LFI you want and read any file you want. And this is on the broadcast, right? You can just dump like the classes of running processes and stuff. Oh my gosh. Then get the keys from those.
+
+[00:10:22.47] - Justin Gardner
+Dude, that is a crazy thing. I've not heard of that. That's gotta produce some crazy powerful keys.
+
+[00:10:30.61] - Arvin Shivram
+So, okay, on the topic of ZHandlers, something super funny, like this is quite recently, but Google accidentally leaked some random binary, right? So, okay, first of all, these ZHandlers are like, you're supposed to be in the corporate network to access them. You have to be connected to the intranet or whatever, otherwise you won't see them. They're like on www.google.com/proxy, right? But Google leaked some binary, right? And inside there they bundled all the ZHandlers with it. So I had ZHandlers running locally.
+
+[00:10:54.19] - Justin Gardner
+Really?
+
+[00:10:55.99] - Arvin Shivram
+Wow. Yeah, it was super cool. So I could see all the ZHandlers and inside there I found this one ZHandler. Like, I was just, okay, I was just for fun, I was just looking at reflected XSS. Like, is there some like XSS in this? Like, because it's all the main domain, like www.google.com slash whatever, or any domain has the ZHandlers for it. So I saw this like this one like path. I could just put like a super simple XSS payload and it would pop an alert. And I sent it to Ezekiel. I was like, hey, can you check this out? And it popped an alert for him. No No
+
+[00:11:24.72] - Justin Gardner
+No No way, dude. Oh my gosh. On www? Yeah. Oh Oh
+
+[00:11:29.27] - Arvin Shivram
+Oh Oh my gosh.
+
+[00:11:30.39] - Justin Gardner
+Dude, like the amount of crap I went through to get an XSS on www and you just find this z-handler with a simple— dang dang
+
+[00:11:40.08] - Arvin Shivram
+dang dang it, dude. Yeah, but this only works for Googlers, but I could argue that that's where the most impact is. Oh yeah, sure. Once you have access to that, you can start fetching all the internal stuff. And yeah, so this is pretty funny, but this binary also had the full stubby implementation, the server-side implementation, the client-side implementation. So I reverse engineered all of this. I have a working stubby client that I can just play around with.
+
+[00:12:05.87] - Justin Gardner
+Wow, dude, that's amazing.
+
+[00:12:09.38] - Arvin Shivram
+So you can get all this from ZHandlers essentially. But yeah, so, but the story doesn't end there because every API key has their own like restrictions to it. So like there's like web API keys, but there's like, there's a web restrictions or like Android restrictions or iOS restrictions. So depending on the restriction, you have to supply certain headers in order to make it work. So for web, that's referrer header, or like for Android, there's like some special like header you have to supply. So you have to like brute force the values for all of these, right? If you don't have the values for these,, it's basically useless. You can't really use the key, right? So I spent a whole effort like individually looking at each key and trying to brute force the values and storing that in my database. So I had a whole database, all the keys and all the values for each key. So this was super useful. I think I had like around 3,600 keys from all this. Dang.
+
+[00:12:52.94] - Justin Gardner
+3,600 keys that are Google's.
+
+[00:12:58.15] - Arvin Shivram
+Yeah.
+
+[00:12:58.62] - Justin Gardner
+Oh my gosh, dude, that is way bigger than my collection. I thought I was doing good with like 800. He's got 3,600 keys.
+
+[00:13:09.09] - Arvin Shivram
+Wow. Yeah, that was like, see, because you think, if you think about it, right, keys are the only thing that's preventing you from using the API, right? So this for AI scanning Google, like keys are the most critical thing. You have to get as many keys as you want if you want to access all the APIs or else you're just limited to whatever APIs that your keys can have, right? So then I had a brute force, like a list of all the Google APIs. So something interesting is if you send a GET request to any Google API and look at the server header, it tells you like If you see some server header there, you can tell if it's like a valid Google API or not. So you can kind of brute force and find all these various Google APIs. Then you can use various tricks to leak the Discovery document of this API. So then I had this whole collection of Discovery documents for all APIs. And then I put all this together. So I built this AI tool, which— okay, so, or even before that, okay, I had to find which keys are enabled for each API. I had to write a script that goes through each method, tries to get first-party auth working there, and then it tries to brute force like each key until it finds the keys working for each API. Then I had that whole thing in a database, right? So then I could go to any API. So my frontend would look like this. Now I could go to any API. I had all the keys there. I could select which key I wanted. I could play all the keys because some keys have different responses. So I click play all and everything works in the UI and I can see the responses and play around with parameters. I had all this going on, right? So then the next step was to actually use AI to scan everything, right? Because now I can just do this manually, but I don't have time for all that. So I implemented a basic wrap route like Wiggum. So this was back in the day. There was no concept of this control plane of Bash. So nowadays we're all using Cloud Code, which has access to Bash. But back then, this wasn't really a widely thing. MCP was just pretty new, I guess. And so I just used AISDK and I was writing some simple thing with that where I had MCP tools for each thing. Right. So I had like these three, I had like, okay, I had like a few MCP tools. First one was a probe API tool where I can probe an API. The second one was report vulnerability and the third one was complete testing. So if you look at this probe API at first, right, it wasn't optimized at all. I was sending so much extra stuff which wasn't needed in this probe API body, right? Maybe you want to show the document. I could sort of—
+
+[00:15:13.65] - Justin Gardner
+Yeah, I'll share it right now. Oh, actually, it's going to be a little bit challenging because I've got this behind— you've got this behind auth currently, right? Because the article that should be hopefully will be released in conjunction with this episode.
+
+[00:15:26.34] - Arvin Shivram
+We get—
+
+[00:15:26.67] - Justin Gardner
+we'll see pending approvals and stuff like that. But, um, the currently it's behind auth. So let me go ahead and see if I can share it.
+
+[00:15:35.55] - Arvin Shivram
+Um, yeah, here we go. I think just go to the simplifying probe API section.
+
+[00:15:43.29] - Justin Gardner
+Okay. Simplifying probe API. There it is right here.
+
+[00:15:47.51] - Arvin Shivram
+Yep.
+
+[00:15:48.44] - Justin Gardner
+Okay.
+
+[00:15:49.83] - Arvin Shivram
+Yeah, so it looks super ugly at first. I was sending all this method ID and path and all this stuff. I mean, path isn't needed, but there's a bunch of stuff like host that wasn't needed. Why does the AI need to send this every single time? And the AI is constructing this MTP itself, so it has to think of this and write it. So I wanted to extract as much as possible away from the AI. I want the AI to just focus on testing itself. So I simplified this a lot. So it's just now just supplies the endpoint, the path, because sometimes you have to supply path parameters, right? And for the accounts, right, I just gave it like include creds. So it can use include creds, supply the Gaia ID of the account I want to use, and it doesn't have to worry about auth itself. It just thinks of this body.
+
+[00:16:27.19] - Justin Gardner
+Okay. So this is a perfect example of how you're abstracting away things from the AI to make it simpler for it to test as well.
+
+[00:16:37.35] - Arvin Shivram
+Exactly. Because if you were to let it control auth itself, right, it's going to hallucinate more or have— issues with that. So I just want, I want to just focus on creating request bodies to test it, right? Cause that's the hard part. That's the part of these AI to think about, right? How do you like the application's context? How do you create like a right request body or something to test this API?
+
+[00:16:54.86] - Justin Gardner
+Hmm. Now I did want to push on something here. You said that you got all this hooked up via MCPs, and I know that you were architecting a lot of this in like, you know, 2024, 2025, that sort of thing. But the, the best practice that we've seen nowadays in the industry is to be using skills for these sort of things. Are you thinking about re-architecting, or do you think you're going to stick with your MCP structure?
+
+[00:17:17.14] - Joseph Thacker
+Well, I would, I would say, I would say in this case, for what he's doing here, actually, I would, I would think that the key point is actually the CLI piece, right? The skill might tell it how to use it, like the same way I'm sure he told it how to use this MCP, because there's always MCP docs as well. But the way that I would think about, like, doing this simplified, uh, thing he did here would actually be like a skill plus a command line utility, which is passing in a few of these parameters.
+
+[00:17:42.47] - Justin Gardner
+Yeah, that's kind of what I mean by skill.
+
+[00:17:44.15] - Arvin Shivram
+Precisely. Yeah. So that's actually the way I do it right now. I'm not doing— this was back in the day, maybe 2025 or whatever, when it wasn't too— we weren't using Bash that much. Right. But nowadays my system is all like a CLI. I just have a CLI and I don't use the skill. I just tell it the prompt or whatever the system instructions. I tell it how to use this CLI and yeah, that works very well for me. So I'm not actually using MCP at all.
+
+[00:18:06.65] - Justin Gardner
+Okay. So essentially nowadays it is essentially essentially a skill. It's just not in a skill. It's just in the, the system prompt, how you, how to use your, your CLI tool.
+
+[00:18:16.75] - Arvin Shivram
+Exactly. Okay. Yeah. So then the other issue I had was, you remember how I mentioned that different keys could have different responses? Yeah. So yeah, I had like a play all functionality, right? But how do I like give this to the AI? So sure, I could, I could like do every single request and then give it like every single response back, but it's like wasting responses because a lot of the time it's gonna be the same response. So instead of doing that, I kind of like group them together. So I basically made this like mapping where I have like a hash or whatever of the response body and then I can like map it together and the AI just sees like each result and it sees like, okay, like response body hash is response 1 and then it could look at response 1 to see what response 1 is. So you just have to send the same response every single time. So I'm just reducing the amount of like tokens. It's like being wasted in random stuff like this.
+
+[00:18:59.25] - Joseph Thacker
+That's a really good solution though because like, you know, like you said, you don't want it to have to look at every single one for like 100 keys. And I'm sure on a lot of these services it's enabled on like hundreds of keys, right? And so this basically condenses down all the ones that don't have data in them and then gives you unique responses for the ones that do have data.
+
+[00:19:17.20] - Arvin Shivram
+So then the other thing is I had to apply my knowledge of Google APIs. So Google APIs, they tend to give like super weird responses. For example, if you get a response saying method not found, it doesn't mean the method isn't found. It just means like you don't have the visibility label on your key when you're trying to fetch this method, right? So So the AI is not supposed— how's the AI supposed to know this, right? So the AI only knows so much in this context menu. So I basically simplified this out. So for all this generic error messages, I basically converted into like the sort of standard error. So it just says like standard error, missing required visibility label, or standard error, like invalid argument, no details, right?
+
+[00:19:50.96] - Joseph Thacker
+So instead of providing the whole thing for each request, you baked in your knowledge into an error for your local— for the model you're running.
+
+[00:19:58.74] - Justin Gardner
+That is That is really good. This is the correct way of implementing AI tools.
+
+[00:20:04.49] - Joseph Thacker
+Yeah, no, the way I would have done this, which is incorrect, is put in the skill, if you see param not found, that means missing required visibility label. But now it's having to like do this like extra leap of logic every time it sees that, whereas you just baked it straight into your tool.
+
+[00:20:18.34] - Justin Gardner
+Yeah, so cool. You know what, you know what's so beautiful about this too is this is very much how humans work as well, right? Like as, as little friction as you can have when testing these things, the better. And, uh, you know, in, obviously in our brains, we know, you know, okay, if it's 404, then it means I'm missing the visibility label and it's there. And, you know, eventually it just becomes like, you know, you don't really think about it, but honestly, as, as little friction as you can possibly have, uh, you know, between what you see and, and inhibiting your thought processes, right. That's better for testing, which is why you built out that whole environment in the front end, right. Where you're parsing Discovery docs, you just press play. In Go, and you're also applying that to the AI agent here in a really, really effective way. That's, that's freaking sick, dude.
+
+[00:21:05.74] - Arvin Shivram
+And not only did I provide like the standard error type, I would also provide like an explanation. So if you scroll down a bit, right, you can see standard error explanation: this request was rejected by the application due to invalid arguments, but no details are provided. So it kind of explains this error to it if it doesn't understand what the error is. So it doesn't have to like read the past knowledge, it just sees it right here. So Wow. This worked out really well for me. So in terms of the AI figuring out like these errors, because otherwise it would just keep reporting like these leads that they were nonsense, like, or like it would just think something wrong and like not attack something more when in reality that something could be done more here. So that pretty much like worked for this. But the problem was still validation. So I had this whole thing going and it was running and it was producing so much noise though. Like I would say like 90% of what it said was like complete noise. It was just nonsense report, right? So, and I had to go through each one and validate them, and it was super tiring for me. So I wanted to find a way, how can I cut down this, this 90% junk, right? How can I make it like super, like, like I want like super high signal. So in this case, I figured out it's like the solution where I could have like an operation ID. So every time the AI makes a tool call, right, I tie it to some sort of ID. And when it makes a lead, it has to reference this ID's that it made. So it knows which ID, it knows which operation ID it did. So it just has to reference that ID inside the report, and I'll reject the report if it doesn't have any IDs. So it can't make a false report. And the other thing was, a lot of the times in Google, there's a lot of things that you would think might look like a bug, but it's not really a bug. So I fixed the system problem a lot, and I basically had these testing rules where, oh, if you ID enumeration, sure, that's cool, but It's not a bug. I mean, sure, it's interesting. You can use this for testing, but if you can tell that ID 1 exists and ID 2 doesn't exist, I don't really care about that. I don't want to report this to the IRB. And also give it ideas for maybe testing IDORs. You can use a few values. If you notice there, if you scroll down a bit, you see don't know parameter value. Use 1 test me default. I wonder if that's how it found the client ID default.
+
+[00:23:08.68] - Joseph Thacker
+Or that it could have been another way because yeah, but should we also add a dash there? Because I feel like you've mentioned seeing dash in some fields too.
+
+[00:23:18.68] - Arvin Shivram
+I mean, if you add— what, sorry?
+
+[00:23:20.38] - Joseph Thacker
+I was gonna say, should we add a dash there for the don't know param value? Because I feel like sometimes in paths the, the project ID will just be dash.
+
+[00:23:29.00] - Arvin Shivram
+Yeah, definitely, definitely. Yeah, 100%. Yeah, so that's awesome. This whole like sort of this whole thing. And I wrote there even security levels. So I can have like a debug means, okay, it's internal debug info that's leaked, but it's not leaking some random Google type, right? Or a suspected IDOR, but you have no way to prove it. So that's another, that's like info. Or medium is these few things like a Gaia ID to email. But a critical or a high would be like an IDOR that's leaking people's PII, right? So I built up this whole thing and the signal was super high. I would say most reports I got were all valid. And they're all like, they're all real vulnerabilities. So at this point I ran this across the whole Google, like all 14,000 APIs on Google. I had like a whole session. Oh yeah, and not just this, I will also have to group it together in groups because you see a Discovery document is quite big. If I just have a whole testing session just for one Discovery document, it's going to like focus on one part and leave out another part. So instead of doing that, I sort of made them like, I had like this whole process beforehand where I would like group these endpoints into like prod groups, I guess you could say. And it would test each group for one, one whole session for each group. So that way, like everything is having attention given to it. It's not like just gonna focus on one area and ignore everything else.
+
+[00:24:42.24] - Justin Gardner
+And I guess if you're doing that, there needs to be decent documentation so that you can compare notes cross-groups though, right? Like if one primitive from one group needs to be used in another, you know, group. Is that something you've implemented or?
+
+[00:24:56.94] - Arvin Shivram
+Yes, I did. So I made some summary thing where at the very end of a testing session, it summarizes everything it learned from that and it passes that on to the context of the next testing group.
+
+[00:25:06.63] - Justin Gardner
+Nice. Yeah, that's really good.
+
+[00:25:10.56] - Joseph Thacker
+I need to audit that file. Can you hand me that file that gets passed from agent to agent? Yeah, we're going to Yeah, we're going to
+
+[00:25:15.47] - Justin Gardner
+Yeah, we're going to Yeah, we're going to need those just for journalistic purposes. No, that's great. I actually can't believe that you Like, are you sure you want to leak this whole, this part of the system prompt here?
+
+[00:25:27.17] - Arvin Shivram
+Like, yeah, sure. Everything is public.
+
+[00:25:28.73] - Justin Gardner
+Oh my gosh.
+
+[00:25:29.26] - Arvin Shivram
+I'm happy to give all this.
+
+[00:25:30.52] - Joseph Thacker
+You're so generous.
+
+[00:25:31.82] - Arvin Shivram
+Yeah.
+
+[00:25:32.43] - Justin Gardner
+I, I am, um, very, very blown away.
+
+[00:25:37.27] - Joseph Thacker
+Justin, you've got 2 weeks.
+
+[00:25:39.67] - Justin Gardner
+Yeah, seriously. I'm glad we have a 2-week heads up on this. This is crazy. Um, you just casually mentioned 14K APIs. That's a lot of APIs, dude. I think I've got somewhere to the tune of 2K. You mentioned some technique before for brute forcing and then being able to tell off of the server header. Is that anything you care to elaborate on there?
+
+[00:26:05.57] - Arvin Shivram
+Yeah, so that's pretty much how you can— I mean, you can find APIs throughout many places. You can see from the APKs or from the JS files. There's actually a super cool trick you can do in JS files where you can Okay, I don't remember exactly what it was, but you know how JS files have like module system?
+
+[00:26:19.91] - Joseph Thacker
+Yeah.
+
+[00:26:20.15] - Arvin Shivram
+Right. So you can actually dump the full JS file without just those modules, like everything. So you could choose like d equals to 1 or d equals to 0 or something like that. Right. And you can dump the whole JS file. So that's kind of how you can get more keys or more hostnames from there. So I collected hostnames from all these various parts. Right. And then I used those various tricks to leak the discovery document even though they tried blocking it. Right. So maybe you can hit it through like gRPC or something and it'll leak the discovery document. So there's a lot of like tricks you can do with this. So that's in total, I have like 14,000 discovery documents, like almost every single discovery document in Google.
+
+[00:26:52.31] - Justin Gardner
+14,000 discovery documents. Holy wow, dude. That is crazy. I didn't, I, I thought you were saying you had 14K APIs, not 14K discovery documents.
+
+[00:27:06.25] - Arvin Shivram
+That's insane, dude. Yeah. So holy, I had all of that. Yeah. So I had, I had this whole gold mine. I just need to like extract it now. So I have everything set up, it's time to roll. So I basically, I ran it across the whole Google. It found so many bugs, like in 3 months it got like, okay, so I wrote the title of this blog post is, is Hacking Google for $500K, but it's actually $670K right now.
+
+[00:27:29.92] - Justin Gardner
+Oh my gosh.
+
+[00:27:31.14] - Arvin Shivram
+In basically 3, 4 months. months.
+
+[00:27:31.94] - Joseph Thacker
+months. months. Oh my gosh.
+
+[00:27:32.81] - Arvin Shivram
+From just running this.
+
+[00:27:34.85] - Justin Gardner
+That's crazy. crazy.
+
+[00:27:35.33] - Joseph Thacker
+crazy. crazy. Well, we have our clip for the start of the episode.
+
+[00:27:37.92] - Justin Gardner
+Yeah, seriously. What the heck, dude? That is insane. So really, a couple comments here. One, I can clearly see your OSINT background coming in strong here, right? Like, you, you are really thinking about this almost like a big data project, right? Where you are, you know, doing a ton of recon, grabbing all this data from all sorts of areas, cross-correlating it, getting primitives, getting, you know, abstracting away things into modules, right? This is like, Classic OSINT behavior here. Um, and then you're tying it all together and then AI is the glue between all of these different pieces that is, uh, helping fill in the blanks. Um, that's sick for one. Um, for two, I wanted to ask specifically, you've done a lot of work getting different auth methods for Google. You mentioned first-party auth. Uh, you've also done some really excellent work on Android-related auth. Um, I, there's also some references in here to iOS related auth. Um, in your experience, what is the most, do you have off of vibes the auth method that is producing most access to the things that you want?
+
+[00:28:48.71] - Arvin Shivram
+Definitely like first-party auth, like that has so much access to almost all APIs as long as the API has a hostname of client6.google.com. So, okay, you have to take note of this. Mm-hmm. So not all APIs have this alias. Mm-hmm. Only some APIs have an internet exposed client6.google.com. And if it does, like 90% of the time you can use first-party auth for it.
+
+[00:29:06.45] - Justin Gardner
+Right. But this basically— You say 90% of the time?
+
+[00:29:07.91] - Arvin Shivram
+This doesn't work. Yeah, I'll say 90%.
+
+[00:29:10.10] - Justin Gardner
+Oh dude, I'm doing something wrong then. That is very high.
+
+[00:29:14.39] - Arvin Shivram
+Okay, interesting. Yeah, so pretty much it's super good. But I also implemented like a bearer token. So I have a bunch of like these Android clients and even web clients. So that's a whole different thing that I did. I don't think it's covered in this article, but I basically implemented all of this. So when you send a request, the play all thing, it's doing all of this. It's not just the keys with the first point out. It's doing bearer auth, it's doing Android auth, doing iOS auth, everything.
+
+[00:29:39.35] - Justin Gardner
+And have you found that sometimes you will, I saw, you know, you do multiple requests with multiple different keys there and give the response back, you know, in long form. Have you found that if you actually— if you're using the same API key but a different auth method, that sometimes you will get different results? Or is it mostly tied to the API key?
+
+[00:30:03.71] - Arvin Shivram
+So API key is only like a web concept. If you— you can't— you don't really use API keys with a bearer token because a bearer token usually contains like the authorization of a GCP product. Okay.
+
+[00:30:12.67] - Justin Gardner
+So well, what about—
+
+[00:30:14.13] - Arvin Shivram
+that makes sense.
+
+[00:30:14.58] - Justin Gardner
+What about, um, the situations— I guess there, there are some situations where you got first-party auth, or you've just got an API key, you know, that sort of thing, right? Uh, have you found, you know, a lot of, I guess, or maybe you've got a bearer token, right? That has a specific scope to it. And then you've also, is there never an overlap where you've got first-party auth and it works with the Android auth or whatever?
+
+[00:30:38.63] - Arvin Shivram
+Oh yeah. Like many, many times it works with both, but, but I would say like, yeah, but most of the time, like if you want, like the thing that works for most places. It's gonna be first-party auth.
+
+[00:30:47.66] - Justin Gardner
+Hmm. It's gonna be first-party auth. Okay.
+
+[00:30:49.92] - Arvin Shivram
+Gotcha. All All
+
+[00:30:50.81] - Justin Gardner
+All All right, man. Wow. Well, that is pretty sick. Um, I've got a lot of stuff to go back and review on my own, uh, infrastructure. I will say, you know, Joseph and I both have a similar system. Like Joseph said, uh, last week's episode, we have a similar system to this. We have, um, you know, gadgets that we're tying together to cross-correlate, you know, these API keys. Um, correlate project names, correlate all of this stuff. Uh, but we have done it much less successfully and it's still, it's still been good for me. I've enjoyed it. You know, I've found some good bounties out of it, but like not $670K worth of bounties.
+
+[00:31:26.26] - Arvin Shivram
+No.
+
+[00:31:26.52] - Joseph Thacker
+Um, I think it's mostly the auth thing. I don't think that I have really solved first-party auth or had like connected it to the client-side APIs in the way you did, BruteKatz.
+
+[00:31:35.97] - Justin Gardner
+Yeah. Yeah. I definitely did. And I still didn't have. Piece, I think the area where he's crushing it right now after reading through his article is actually enumeration of the referrer and origin header, which is massive. Right. So can you talk a little bit to how that integrates with first-party auth? Um, Um,
+
+[00:31:56.88] - Arvin Shivram
+Um, Um, here. Yeah. So if you wanna use an API key, right? Like I mentioned, they have, they all have like different restrictions, right? You can have like Android header restrictions or iOS header restrictions. If you're just skipping past this and not doing it properly, you're going to skip so many keys that could otherwise work. Oh, and another thing I would like to mention, right? So all these APIs, they have an origin whitelist. So with first-party auth, you can't just use any origin you want. You have to use a specific whitelist origin. If you don't use a whitelist origin, it's going to give you some error that just says session token invalid or something, session cookie invalid. But it's a fake error. It actually just means the origin is not whitelisted. So you can brute force all of the origins, like a bunch of lists of Google domains and find the working origin. And in fact, the key to this is if you find any, like, when any Google APIs only work on corp origins, that's a huge red flag. I found so many bugs on ones that just only work in corp origins. So you can, you can actually use corp origins there. And in fact, the origin doesn't even have to be like .google.com. It can be like withgoogle.com, even though the cookies obviously doesn't make sense for it to be there. But It works.
+
+[00:32:59.47] - Justin Gardner
+Wow. That's very interesting. I need to get a wider scope of these domains cataloged for my brute force, I think, because I, I mean, I've got a ton of APIs that I have working API keys for, but not a referrer that's correctly scoped. So I bet that's where— I bet that's one of the keys that I'm kind of falling off on here and missing access to a lot of auth.
+
+[00:33:23.34] - Joseph Thacker
+It feels like there's so many secret API versions in the path and also so many different secret labels as well.
+
+[00:33:32.03] - Arvin Shivram
+Yeah.
+
+[00:33:32.58] - Justin Gardner
+You really got to get all of these pieces together, man. And I, you know, I bet, I bet Broodcat has decent coverage, but not probably perfect coverage. So I wonder what's going to happen next, the next time Broodcat like figures out some little thing and then applies it across the scale of the whole system, how many more APIs and stuff he's going to get access to. Well, actually, that's a good question. Do you know what the percentage of APIs that you have where you, you don't have access to like either the correct origin or a key to access it? Or do you know any of those numbers?
+
+[00:34:07.57] - Arvin Shivram
+Okay. So one thing I will say is that, like I mentioned before how I had most of my success with cross-body auth, right? But to be honest, right, there's a whole untapped surface of using like the bearer auth, like better. Because like my system for the bearer auth is just kind of like taped together. It's not that good. Like my focus is mostly first-party auth. If you use bearer auth and try to find all these different various clients and find ways, or even, it doesn't have to be a client that way. It could be like, let's say I'm hacking GCP and I managed to get an access token of like a tenant project. Maybe that has access to some APIs that otherwise you wouldn't be able to access. And if it's an internal API, probably has some bugs in it. So that whole area is completely untapped and I haven't even extracted that yet.
+
+[00:34:46.94] - Justin Gardner
+Oh my gosh, dude. I don't— why are you saying that on the podcast? Oh my gosh, dude. That is, uh, yeah, people, dude. Well, you know, that's another thing that'd be interesting is I gotta get you to like, give me a, uh, an API endpoint or something that I can hit. And like, just tell me whether you've got like a certain API key. Like I give you an API key and you like, yes or no, I don't know about this. Right. Cause it'd be pretty fun if, if like. If, uh, you know, we could just do this game of like, can I give Brute Cat an API key that he doesn't have and will it unlock access to any scope for him? Uh, that would be pretty cool.
+
+[00:35:26.42] - Joseph Thacker
+Well, the same way I feel like people reach out to you for like, oh, I have this CSPT, can you help me turn it into a bug or whatever? I— and like, people do that to me with like prompt injection or Q parameter injection or whatever. Like, Brute Cat needs an endpoint where people can be like, hey, I have this functionality, I've got this primitive, is this a bug? Or like, can we— can we chain this other things to get a bug? Like, We need like a BruteCat escalation endpoint.
+
+[00:35:47.26] - Arvin Shivram
+Yeah, dude.
+
+[00:35:47.75] - Justin Gardner
+Oh my gosh. He's gonna start running like the freaking Google primitive black market over here.
+
+[00:35:52.75] - Joseph Thacker
+Yeah.
+
+[00:35:53.17] - Arvin Shivram
+Yes.
+
+[00:35:54.69] - Justin Gardner
+That's amazing.
+
+[00:35:56.61] - Arvin Shivram
+Um, that just sounds like a good idea. I could have like an endpoint where you can put your key there and, or like your project number there and it'll tell you if I have the key or not. And then if I don't have the key, maybe you can add it to this and we can split the bounty.
+
+[00:36:06.01] - Justin Gardner
+Yeah, exactly.
+
+[00:36:06.44] - Arvin Shivram
+That'd be pretty fun. Exactly, man. Ship it, dude.
+
+[00:36:08.23] - Justin Gardner
+Ship it. We'll, we'll put it on the pod and people can just throw API keys at you. And you can like check it and see if it's like a Google API key or whatever. Right. Um, yeah, that would be pretty sick. Um, okay. So man, we've covered so much here. Um, I'm trying to think about, I guess I will try to do— highlight.
+
+[00:36:27.42] - Arvin Shivram
+Yeah.
+
+[00:36:27.61] - Justin Gardner
+I will try to do a little bit of a summary here. So as far as all of this goes, the key components are one, identifying your, um, API target. This can be a googleapis.com or it could be a Client6. There could be an alias between the two, but there isn't always. Then you need to get auth to this thing, which you said largely is going to be done via first-party auth, which requires an API key. The, what is it, SAPI_SID cookie for you to create that hash that needs to go in the auth bearer and then your cookies and a correct origin and referrer.
+
+[00:37:04.90] - Arvin Shivram
+Is that correct? Yeah. And there's also the extra component I mentioned for the computing the authorization header. I actually provided the leaked like TS file or whatever, which I got from the source map. So it's in this blog.
+
+[00:37:16.38] - Justin Gardner
+Mm.
+
+[00:37:16.73] - Arvin Shivram
+So you can, you can just use that.
+
+[00:37:18.15] - Justin Gardner
+Okay.
+
+[00:37:18.51] - Arvin Shivram
+To compute the whole thing.
+
+[00:37:19.36] - Justin Gardner
+Gotcha.
+
+[00:37:19.94] - Arvin Shivram
+Yeah.
+
+[00:37:20.05] - Justin Gardner
+And there's also some like goated Stack Overflow, uh, like, uh, article that, that had some code for that too. That's what I used for my implementation, but yeah, actually using the actual TSX., from Google's implementation is way better. Um, and there are, correct me if I'm wrong here, but there, there are individual error messages that can tell us whether we are missing an origin header or a referrer header, or it doesn't support this specific type of auth and that sort of thing. And you have to be able to understand, you know, what is the situation for this given API key and API pair.
+
+[00:37:56.50] - Arvin Shivram
+Exactly. And so, so the errors are all documented in this blog post and not only that, I've also had a section in this where I show each layer of where things are checked, right? So for example, for proving keys in the past, right, you could find valid keys. You have to get first-party auth first working, and then you have to get the referrers all working. You know what I mean? There's different layers to this. You have to get authentication first, and only then you can start proving the keys. So if you want to build your program for proving the keys for each API, you should take note of all these different things. I even had a section here where Yeah, I showed each layer essentially. So you can feed that to your plot or whatever and build this whole thing.
+
+[00:38:33.26] - Justin Gardner
+Interesting. Okay. So I think I'm doing this the other way around. I think I am trying to determine if the API key gains access. Oh, you know, the, hmm, I, I'm doing this wrong because what I'm doing is I'm only using the API key to determine whether I can hit the Discovery docs or not.
+
+[00:38:52.84] - Arvin Shivram
+Right. So.
+
+[00:38:54.46] - Justin Gardner
+But there's actually, what you're saying is that I should be using, okay, so let me ask you this. How do you determine, how do you determine whether first-party auth is working for a given API without having an API endpoint to hit on that API?
+
+[00:39:10.71] - Joseph Thacker
+You mean like a docs endpoint?
+
+[00:39:13.11] - Arvin Shivram
+I mean, you need it, you need an API method in order to be able to check if you can do first-party auth, right? You just need one API method.
+
+[00:39:18.17] - Joseph Thacker
+Okay.
+
+[00:39:18.26] - Arvin Shivram
+And API methods, you don't have to necessarily have a doc. To test API methods, right? Why can't I, why can't I test an API method that's like leaked in some JavaScript file or something? So, okay. You for, so you can use that and sort of like test it that way. So you don't have to test it through the discovery document. And a lot of the times the discovery document goes down, but you have an older discovery document. So you still wanna test the, use the methods to test it. Does that make sense?
+
+[00:39:38.19] - Justin Gardner
+Yeah. Okay. Okay. So we do need a method. So we need a method and we need a host, and then we can, using that, we can check whether it supports first-party auth, even if we don't have an API key that's compatible with that host. Is that correct or not?
+
+[00:39:51.32] - Arvin Shivram
+Okay, no, I think I misspoke earlier. You need to have a valid API key first in order to even start using this API if you want to check first-party auth, right? So that key check happens first, and then after that, it checks for restrictions of the key. So does this key have the right referrer header or does it have the right iOS header, right? So that whole thing happens. And then at that point, I think the first-party auth origin check happens. So it checks whether you have the right origin for your first-party auth. If not, it just says session cookie invalid. If you have everything sorted so far, it checks the visibility label. Does your key have the— or does GCP project tied to your key have the label that's needed for this endpoint? If it doesn't, return method not found, which is like that bullshit response. But if it does, if it's true, then it checks, oh, is this method blocked for this GCP project? Or a salt or key or something. Like, some keys have, like, certain, like, methods, like, blocks for them. So you have to get through this whole thing, and only then you can get your request processed.
+
+[00:40:48.48] - Joseph Thacker
+Wow. And this is why it's so hard to test Google APIs. Goodness.
+
+[00:40:52.19] - Justin Gardner
+Yeah, and this is why Brute says, like, actually, you know, once you get through the security by obscurity, it's not that hardened of a target, right?
+
+[00:40:59.19] - Arvin Shivram
+Because nobody can get through the security by obscurity here, which is crazy.
+
+[00:41:03.98] - Justin Gardner
+Okay, so— we've, we go through, we go through all of that whole flow. We get an API, we get a method, we hit, we hit the, we correlate the API key. Then we determine first-party auth. We make sure that we have our referrer and our origin header that work with that for us to be able to generate that first-party auth. We establish an authenticated, you know, primitive to access the specific API. Then from there, we utilize some tricks or whatever to either, you know, get the discovery doc from, Um, you know, /discovery/rest, or we call methods that we found inside of JS files related to the specific host, which you have documented in your correlation, which I assume came from your Chrome extension that you're using to— yeah. Or, or the big data research that you've done that essentially correlates where you got that specific API key or host. Is that accurate?
+
+[00:41:56.67] - Arvin Shivram
+Yeah.
+
+[00:41:57.36] - Justin Gardner
+Okay.
+
+[00:41:57.69] - Arvin Shivram
+Yeah.
+
+[00:41:58.19] - Justin Gardner
+And then, and then you feed all of that into the AI. Then the AI tries to take that structure, you know, either with the Discovery docs or with the JS files or whatever, and then construct a valid Proto JSON request body and then send that to the API and then it will respond or not respond, you know, until you, and you tweak it, tweak it, tweak it, tweak it until you hit something you're not supposed to be hitting. Is that, is that a good summary of the flow?
+
+[00:42:25.03] - Arvin Shivram
+Yeah, but I think the key here is that everything's abstracted away. The AI is not thinking of this, right? The tooling is all doing this. The AI just thinks about the body, what to send. All this happens behind the scenes in the tool itself. All this research into which API has first-party auth enabled, what keys we have for this. These are all background tooling that I've done. And the AI itself is just testing the specific body, like body for the endpoint.
+
+[00:42:47.86] - Justin Gardner
+Yeah, that's essential. That's essential. You're perfectly exemplifying what, you know, we should not use AI for things that you can do without AI, right? Like if you can brute force all of these things, correlate all of this, establish your auth primitives, uh, you know, enumerate these specific endpoints or whatever. If you can do all of that outside of AI, then don't use AI for that. Only use AI for the very little tiny bit of, um, you know, intellectual magic that you need to correlate and construct these request bodies. Is that accurate?
+
+[00:43:22.94] - Arvin Shivram
+Yeah.
+
+[00:43:23.50] - Justin Gardner
+Nice, dude. Dang, that is pretty the, you know, it's starting to make sense, man. It's starting to make sense. You know why, why, uh, your, um, your method is producing such, uh, such fruitful results. Um, okay. So you, you mentioned in here, just kind of going into that AI implementation about the Ralph, the Ralph Wiggum loop and stuff like that. Are you still using that? Are you using the /loop primitives now? How do you train your AI on when to give up and be done testing an API versus when to keep pushing?
+
+[00:44:02.32] - Arvin Shivram
+Okay. So in this case, the whole thing I mentioned where I did those ASDK and I had like MCV tools set up, so that's all scrapped now. Instead, I have a whole container or whatever. Where Claude Code is running in the container. I think it's a similar setup to what you have. But in this, yeah, so I feed the AI or whatever, whatever it needs to do this. And in fact, the discovery documents, I'm not even providing it as a context. In the past, I used to provide as a context, but that's a horrible method. The better method is you can convert this to markdown files and the AI can read that, right? So the AI reads all of this and then according to that, it tests whatever it wants in terms of giving up. I would say that, okay, so this loop, I have this thing where it doesn't end until it finishes testing everything. If it tries ending and it hasn't tested everything, I'm not gonna let it end. I'm gonna poke it again and say, oh, you have not finished testing these endpoints. Mm-hmm. Yeah. So that's kind of a way I can ensure it doesn't just quit early and ensure it tests everything.
+
+[00:44:58.42] - Joseph Thacker
+Do you mean literally via code? Like if it hasn't seen, like if your opcodes don't show that it's hit every single endpoint for coverage, then it keeps going.
+
+[00:45:08.19] - Arvin Shivram
+Precisely. Oh Oh
+
+[00:45:08.73] - Joseph Thacker
+Oh Oh my gosh, dude, he's baked in like literally every hackbot type, uh, trick in the book just naturally.
+
+[00:45:17.01] - Justin Gardner
+Yeah, that's, that is, uh, that is amazing. Um, yeah, I'm, I'm, my brain is kind of spinning with that now because yeah, of course you can check what requests this thing has sent, right? Uh, Uh,
+
+[00:45:29.03] - Joseph Thacker
+Uh, Uh, through, you can just take a sitemap and be like, if you haven't hit every API key or every API path, then you're not allowed to be done.
+
+[00:45:35.17] - Justin Gardner
+Yeah, absolutely. Um, that's, that's really cool, man. Uh, codifying all of that is definitely gotta be what's, what's pushing this to the next level. I mean, obviously, uh, including, you know, your, your in-depth understanding of, of the Google APIs and all of that structure. But I think, you know, you, you're using AI better than I've seen almost anybody use AI to this point. And I think this is a really key component of that. Awesome, man. All right, well, let's, let's, uh, let's go from there and let's go a little bit further down in the write-up and then talk about some of the pawning Google, um, stories that you have from this result. Um, does that, does that sound good, or do you have any other comments to put in that whole, uh, infrastructure section?
+
+[00:46:20.15] - Arvin Shivram
+Okay, I think that sounds good. Yeah, we can, we can cover a few of these. This is the most fun part, like, so you can completely plot through, like, there's so many different bugs here. It's It's so cool. These are just a few of them, by the way. I couldn't fit all of them in the write-up because I had to get Sam to vet all of these and see which one. Poor Sam. But these are the ones that I finalized. Right. But the product team had to give feedback for each of them. But yeah, that all ended up happening. But yeah, I wish I could have included more, to be honest. There's a lot more cooler ones I could have included. included.
+
+[00:46:47.48] - Justin Gardner
+included. included. Yeah, you've got like 15 ATOs.
+
+[00:46:50.30] - Joseph Thacker
+ATO, ATO, ATO.
+
+[00:46:52.86] - Justin Gardner
+This is ridiculous, dude.
+
+[00:46:54.11] - Arvin Shivram
+Okay. All All
+
+[00:46:54.65] - Justin Gardner
+All All right, hit us.
+
+[00:46:57.09] - Arvin Shivram
+Okay, so the first one is Google Voice. So this is super funny. This is literally like a— you don't even need auth for this endpoint. Like this G-Fiber Voice PA, you can just hit this endpoint with like an unobfuscated GUID. Keep in mind, these are like incremental basically. You can increment this and it dumps like the Google account phone number, the Google Voice number, like the email, their PIN, like everything. And it just dumps everything. It didn't even end there. So there was this endpoint in this where you can assign a number. So I can add a phone number to your Google account and it would be like, literally, if you go to myaccount.google.com/phone, you'll see it there. Oh my God.
+
+[00:47:32.75] - Justin Gardner
+That was pretty funny. That is—
+
+[00:47:34.82] - Joseph Thacker
+I can't believe this had no auth.
+
+[00:47:37.51] - Arvin Shivram
+Oh my God. Yeah, you just needed a key. I guess nobody found the key, so that's why nobody found this.
+
+[00:47:41.69] - Justin Gardner
+Do you know off the top of your head where this key came from? Like what strategy you used to get this key?
+
+[00:47:47.82] - Arvin Shivram
+Okay. Honestly, I have no traction for that. I have legit no clue where the key came from.
+
+[00:47:51.75] - Justin Gardner
+Probably one of the various sources I had, but, but yeah, I feel like that would be a really interesting piece though, dude, is to like know, okay, hey, 80% of my keys that I get vulnerabilities in come from like old APKs or something like that.
+
+[00:48:04.15] - Arvin Shivram
+Right.
+
+[00:48:04.48] - Justin Gardner
+Yeah.
+
+[00:48:04.71] - Joseph Thacker
+I tracked where I found all of mine, so I can like always ask it where it found it.
+
+[00:48:08.11] - Arvin Shivram
+Yeah.
+
+[00:48:08.80] - Justin Gardner
+Yeah.
+
+[00:48:09.65] - Joseph Thacker
+That is, uh, but I'm also not BruteKasa.
+
+[00:48:11.61] - Justin Gardner
+Yeah. And I also only have like 700 keys or 800 keys versus like, yeah. Wow, dude, that is horrifying for one, and also very interesting scope. I think the, I think you said in the write-up that this was actually like some sort of provider API. Is that, is that what happened?
+
+[00:48:31.05] - Arvin Shivram
+So, okay, I'm not too sure what this, this, this whole like API is. Honestly, it looks like some admin management API, but the more interesting part of this API is not only could you do all this Google account stuff, it seemed to be like some sort of like Google Fiber stuff as well. So if you look at the bottom right, there's like some sort of seemingly endpoint you could do a SYN/STOP with. Like, I can just start a number port. I mean, I never got to testing this because I already reported it and I just didn't like go too much because I didn't want to like lose the bounty. But yeah, these are all like super interesting endpoints I wish I could have tested.
+
+[00:49:00.88] - Justin Gardner
+Dude, I'm peeved right now because I'm about to log into my freaking discovery tool that I use to track the— I think I have this. I think I have this key and this API. That is not what I wanted to see today, Brutkat. That is, oh man, that is frustrating.
+
+[00:49:23.57] - Arvin Shivram
+So what did you miss?
+
+[00:49:24.34] - Justin Gardner
+I don't know what I missed, man. I, because I actually, you know, what's interesting is I have just personally, I have Google Fi and, uh, and I was like, oh, this is such an interesting, you know, uh, attack surface because not very many people actually have Google Fi as their phone provider. Right. Um, so I found a bunch of bugs in Google Fi, um, and, and worked on that scope a lot. Um, and yeah. Hmm. Okay. All right. I'm gonna, I'm gonna not, I, I, I'm pretty sure I've seen this exact endpoint, which makes me very mad. Uh, especially since there's no auth, right? Like if it was, if there was some crazy shit you were doing, uh, okay.
+
+[00:50:05.53] - Arvin Shivram
+Anyway, is this your GET URL? I can just do a GET to this, like just, just this URL and you can see the phone number and everything. Oh my God. It's so stupid. And I think that maybe the reason you might have missed it is because it takes an unobfuscated guide ID. So this is actually one trick I did is I provided a context of all the different accounts it has access to as well as IDs for each account. So the unobfuscated ID, the focus obfuscated guide ID, all this for various things, a project number, project ID. So it has values to test with, if that makes sense.
+
+[00:50:31.36] - Justin Gardner
+Yeah, totally. Yeah, that's definitely necessary. And I don't have AI hooked up to mine, so I just I had to manually test all of them. Um, so wow. Yeah, this is a beautiful bug or, you know, I don't know. When did you find this bug? Do you know when this was?
+
+[00:50:48.44] - Arvin Shivram
+Probably maybe like January this year.
+
+[00:50:50.51] - Justin Gardner
+Of this year?
+
+[00:50:51.15] - Arvin Shivram
+Of 2026? Yeah.
+
+[00:50:52.86] - Joseph Thacker
+Damn it.
+
+[00:50:53.44] - Justin Gardner
+Yeah.
+
+[00:50:53.55] - Arvin Shivram
+All of this is 2026.
+
+[00:50:54.59] - Justin Gardner
+Oh man. All of this is '26.
+
+[00:50:57.11] - Arvin Shivram
+Man.
+
+[00:50:57.98] - Justin Gardner
+Heck me, man. All right. Whatever. All right. What's the next one? This is the— okay.
+
+[00:51:02.28] - Arvin Shivram
+So I mean, we can cover Ad Exchange or another one is Eldar. Okay, that's kind of interesting. So Eldar is actually eldar.corp.google.com. When you visit, this is a corporate domain, but for some reason the API wasn't on the corp.google.com. It was exposed publicly. So the API was public, but the domain itself was not public. So the frontend, I mean. So this is kind of funny. So Eldar essentially is this thing. I spoke to Eduardo. Do you know who Eduardo is? Yeah, he works for Google. Yeah, exactly. So I was talking to people about what LDAP is exactly. And it was quite interesting when you report like a bug, right? And they have to discuss with the product team in terms of like what is a bug and what's intended functionality. This all goes through LDAP. And not only that, it also has like, LDAP has like a bunch of like, if let's say I'm doing, okay, so what I'm pretty sure it works this way. If I'm doing some sort of investigation, I want to get like access to certain accounts or like log files, I have to go through LDAP. That's my understanding of this. So I mean, if you're a Googler, So Eldar was pretty funny because literally everything was exposed. I could start reading every assessment or everything. You could see logs, access requests, and I even made a little front end or something. You could see how the Eldar report looks like.
+
+[00:52:09.55] - Justin Gardner
+Oh my God. I I
+
+[00:52:10.65] - Arvin Shivram
+I I was able to get some CSS elements. And the way I found out I got this bug was because my AI made an Eldar report and it shared it with my email or some shit. And I checked my email and I started seeing all these emails from Eldar, like, @noreply@gmail.com, like, and had like G3 docs links everywhere and all these debugger links. So I already knew, like, I figured out something.
+
+[00:52:32.63] - Justin Gardner
+Wow, dude, that's crazy. So the AI submitted a report and then you got emails to your private Gmail account that was saying like, oh, linking to this Google 3 stuff. Oh my gosh. Yeah, I, I did— I will say I did have similar thing the other day with my hackbot where I just, I was hacking on something, I was writing a report actually. And I looked down at my phone and I see an email from this government target that I'm working on. And it, and it's like, uh, POC, you know, like in the title and the subject line. And I'm like, oh, okay. And it just, I mean, it wasn't a crazy bug. It just, it had full, like, you know, impersonation of this, you know, government entity or whatever. But, uh, yeah, well that's the only reason it emailed you or what? Yeah. It like pulled an email from my account or whatever and like emailed me with it. Uh, which was pretty funny. So yeah, dude. Wow. This is crazy. And you know, this one I'm just looking at the auth. It looks like you, you used origin www.google.com and you were able to get in with first-party auth.
+
+[00:53:35.34] - Arvin Shivram
+Yeah. So this one didn't have any like white or like the whitelist was a wildcard for start.google.com. So you could just use anything start.google.com.
+
+[00:53:42.98] - Justin Gardner
+Wow, dang, that's crazy, dude. Uh, look, look at this UI, dude. You're such a jerk. You made this UI, you're like, hey, I actually recreated Elder on the— oh my gosh.
+
+[00:53:56.17] - Arvin Shivram
+If you scroll through it, you can see a bunch of like internal stuff.
+
+[00:53:58.53] - Justin Gardner
+Oh my God, what is this?
+
+[00:54:00.46] - Arvin Shivram
+Yeah, I managed to get this approved through Google. How? I don't know how they—
+
+[00:54:05.76] - Justin Gardner
+oh, you've got some stuff blocked out.
+
+[00:54:07.73] - Arvin Shivram
+That's— yeah. Oh yeah, I had to bleep out the emails. That was like the one thing that I couldn't settle on.
+
+[00:54:13.59] - Justin Gardner
+Wow, dude, that's— oh dude, you've even got the like LLC thing at the bottom. That's hilarious, dude.
+
+[00:54:19.76] - Arvin Shivram
+I love it. And this is the official logo. Yeah, so I have everything. This is like— I think Sam told me this looks pretty accurate to the real one.
+
+[00:54:27.92] - Joseph Thacker
+Dude, if you don't mind me asking, how do you stay organized? So like even with myHackBot, like obviously it's hacking across a bunch of other companies, and I feel like it's still a lot of times kind kind of confusing to keep up with everything. And then when I'm doing these like full Google sweeps, like I basically, you know, attempted to do what you've done here, um, back before the live hacking event in Seoul. And I, you know, again, I had some success but not nearly as much as you did. But even just like thinking back on it, like I just cannot stay so organized. Like how do you manage all of this?
+
+[00:54:57.94] - Arvin Shivram
+I mean, look, when I'm working on this one target, that's all I'm going to be working on. Like that's all I'm thinking about. Like whenever I do anything, I'm just Like when I'm sleeping, I get dreams about this. Like that's the level of dedication I have for this. So I'll just keep focusing on this. So everything is like in my head, like whenever I find a gadget or I'll implement it like straight away or like write code it like that moment. So yeah, so that's why I'm just like focused on this one thing and do it as well as possible because I think Google like pays the most, right? So compared to other programs. So I just wanted to focus on this, especially given my domain knowledge in this.
+
+[00:55:28.44] - Justin Gardner
+Yeah, yeah, you definitely— I mean, the domain knowledge you have is a massive advantage. Before I got— going back to the last bug, the Fiber one, I got a little freaked out there at the end, but I do realize we missed a little bit about the zhandlers there. So are you catching zhandlers on googleapis.com domains?
+
+[00:55:55.42] - Arvin Shivram
+Yeah. So in fact, this one, I just noticed when they patched it out, because they patched— it was like a P0. They patched it super fast.. But they did some— I don't know what they were doing because I saw some super sus like Envoy proxy error or something when I go to the main domain. Then I sent it to Michael. I was showing him, look at this. And then we ran FFUP or whatever, and we were able to find a bunch of paths. And then we checked and some of them worked. Like, this is how a Z handler looks like. This is a /btc/z-handler.
+
+[00:56:21.98] - Joseph Thacker
+Wow, that's a dream. This is just like the type of— I don't know why, but this is like peak hacking for me. Like when I read this, I'm like, I'm going to find this on a Google API.
+
+[00:56:30.67] - Justin Gardner
+Yeah, dude, you, you gotta experience this.
+
+[00:56:32.65] - Joseph Thacker
+So this is, this is no auth.
+
+[00:56:35.44] - Arvin Shivram
+Yeah. This is, you could just use this. And in fact, right, if you're, if you're smart, you would be scanning for this on all APIs and all like domains. Of course.
+
+[00:56:41.38] - Joseph Thacker
+Yes. I'm doing that.
+
+[00:56:42.36] - Arvin Shivram
+They pop up randomly and they, and you can get so much useful information from them. Right. And that could be used for like later attacks as well.
+
+[00:56:49.01] - Justin Gardner
+Wow.
+
+[00:56:49.23] - Arvin Shivram
+Wow, dude.
+
+[00:56:49.98] - Justin Gardner
+Dang. That's crazy. Okay. Let's, uh, let's go to the ad exchange ATO now.
+
+[00:56:56.48] - Arvin Shivram
+Okay, Ad Exchange. Okay, this was like some, okay, I'm not too sure what Ad Exchange is. I think it's just some like ad management platform, but this was kind of funny. So first I was on the prod API, right?
+
+[00:57:05.53] - Justin Gardner
+Okay, hold on, pause, pause, pause, pause, pause. So Ad Exchange is extremely pivotal to Google's success as a company. It just, if you haven't heard of this product, I would tell you Go check out, um, do, have you ever listened to the Acquired pod—
+
+[00:57:24.57] - Arvin Shivram
+podcast? No, I don't think I have. Dude, have. Dude,
+
+[00:57:28.59] - Justin Gardner
+have. Dude, have. Dude, you, you gotta check this out. They, they do a, like a 3-part series. They're like, they do very, very, um, in-depth, uh, assessments of like very big successful companies. Um, you should go listen to their 3-part series on Google because, uh, it mentions this product a good bit and it's a good, uh, has a good bit to do with Google's success if I recall correctly. So anyway, I'm sorry, continue.
+
+[00:57:52.84] - Arvin Shivram
+Yeah. So I'm not too familiar with this product, but as you mentioned, I'm pretty sure this is quite an important, critical product for them. And it allows publishers or whatever to sell advertising space on their website, I guess. So this was quite impactful. But anyways, at the start, I found this cookie matching accounts. It just started dumping all the accounts. But this by itself, it was kind of interesting. It was showing all the different— it was literally one request and it was a completely massive response. And every single account that existed was on this, right? So I could see all the different companies like the PTE or whatever, like the private limited, all this kind of stuff. But I couldn't actually do anything more with this. So I was kind of stuck here at first. So I have the account IDs, but what can I do with that? But turns out, right, for whatever reason they have— okay, this is actually kind of funny. So the staging environment of this pointed to prod. So there's like a test-addexchangebuyer— the -googleapis, right? Yeah. So this endpoint had no access controls. You could freely do whatever you wanted and you can start referencing the prod identities and you can start seeing all the prod data.
+
+[00:58:57.11] - Justin Gardner
+You're kidding. No way. So I guess it's just in the backend it had access to the prod database. Okay.
+
+[00:59:04.15] - Arvin Shivram
+So one thing in Google, right? I don't think there's such a thing as staging. There's no such thing as staging. Everything is production. So this, this points to production. A lot of the times you might see some staging as like a different database. I mean, that could be, it's possible, but for most of the time it just points to prod. So this is actually a trick you can use to bypass it. So remember the LDA I was mentioning earlier? I actually bypassed the LDA initial fix by doing the same thing on Autopush. Autopush is like another like staging environment and they doubled the bounty. Wow. Because I could do it once again.
+
+[00:59:32.82] - Justin Gardner
+Dang. Yeah, dude, this has got to be Hmm, there's gotta be so many things that I need to go back and test after this episode. That's crazy. Oh, and I, yeah, so I'm just reading through this. I mean, it's literally just first-party auth and then you just start, I mean, it's like stuff you would see on, you know, a 3,000, you know, Crit Max bounty, you know, program, like just these numeric IDs in the, in the path, and then you're just doing whatever the heck you want. Um, this is crazy, dude. Wow. All right. Um, man, I'm just, I'm kind of blown away, like, because there's so, there's so Google is so, so I felt like Google is such a difficult target, but when you put it together, the pieces like this, you start to see it that yeah, there's, there's a lot of things that you can access that you shouldn't be able to access if you master. First-party auth and, um, you know, enumeration of all of the API keys, right? Very Very
+
+[01:00:38.90] - Arvin Shivram
+Very Very interesting. It's like an onion. If you peel away like the layers or whatever, and then finally you reach the gold mine that's inside where nobody touches the tech service. Yeah, dude.
+
+[01:00:45.42] - Justin Gardner
+Frick, that's beautiful. And there's like 20 years of, you know, 20 years plus of, uh, like data in there. It's crazy. All right. What is, uh, let's keep going. You want to do leaking YouTube videos or what?
+
+[01:00:59.71] - Arvin Shivram
+Yeah, this kind of relates to like, so the other thing I was mentioning, so pretty much every Google, every YouTube channel that's a partner has like this whatever hidden CMS account, a content manager. So content manager is like this tool, it's like a god mode for YouTube where you can strike any channel or banning channels. So this is meant for big enterprises, but YouTube partners have like a secret account that's like the same thing, but it's used for like content ID matching. It's like some tool in YouTube. But yeah, The interesting thing was that whenever a YouTuber uploaded a video, this was actually added as a Content-ID asset because that's how it does the Content-ID copyright matching tool. Right. So it turns out the name of this asset is literally just auto-generated asset dash the video ID. So if you search all assets for auto-generated asset dash, and then you can start leaking every single unlisted video and stuff that they thought was private.
+
+[01:01:52.42] - Justin Gardner
+Wait, wait, wait, what do you mean search for this?
+
+[01:01:55.30] - Arvin Shivram
+You're not like— 'Cause there's a YouTube Partner API. You can just search for all this.
+
+[01:01:59.57] - Justin Gardner
+Wow.
+
+[01:02:00.65] - Arvin Shivram
+Okay. And And
+
+[01:02:01.01] - Justin Gardner
+And And all you need to know is like this title or what?
+
+[01:02:05.44] - Joseph Thacker
+I think he's saying that these were originally like anyone who ever has ever found this API and tested it has just assumed probably that it was just like public assets because when you search it, it's like, oh yeah, these are just videos that exist on YouTube, right? It's no big deal. But what he's saying is that all the the private ones were still in there, but obviously people hadn't really noticed that. And the way you could find them is by searching for auto-generated asset dash, and then everything after that was like technically like the title of the private video.
+
+[01:02:30.73] - Justin Gardner
+Wow. Is Is
+
+[01:02:31.67] - Arvin Shivram
+Is Is that accurate? The interesting thing about this—
+
+[01:02:33.42] - Joseph Thacker
+yeah, did I say that right?
+
+[01:02:35.17] - Arvin Shivram
+Yeah, yeah, exactly. And you can use the filters, right? So it's theoretically possible, like you— I made a POC for this where I can have like a program that's running that's constantly getting new video IDs because I can filter by time. Right. So I keep fetching this every few seconds and I keep getting video IDs. So if I upload a video or any partner channel, you'll see it pop up there. So you can capture videos and stuff, or you can look at historic, you can scrape all the historic videos. There's so much stuff you can do here. And I think the impact for this is actually quite big because if you think about it, there's all this like Polymarket and these kind of prediction sites where I could, if let's say Google has like, they upload like the Gemini model, like video, like they set it as a premiere or something. If you could just leak it through this, you'll know the data that's gonna be released and then you can sort of make a polymarket bet on that.
+
+[01:03:19.44] - Justin Gardner
+Oh my gosh, dude. Yeah, this is one, and you got $12K for this. This is one of those bugs where if you were actually like a black hat, you could have just made so much more money off of it. Just like, oh my gosh.
+
+[01:03:32.78] - Arvin Shivram
+Hmm. Hmm.
+
+[01:03:34.25] - Joseph Thacker
+Yeah. Money. Money.
+
+[01:03:34.46] - Arvin Shivram
+Money. Money. Yeah. Is Is
+
+[01:03:34.69] - Joseph Thacker
+Is Is actually, wait, this, this is hitting me. Aren't some unlisted videos?, like capture the flags and like big CTFs. Like, wasn't that like the solution to MrBeast's CTF? And And
+
+[01:03:45.34] - Arvin Shivram
+And And not just that, not just that, they're even like POCs. If I, if I upload like a POC or something for exploit, like that's gonna be here.
+
+[01:03:52.86] - Justin Gardner
+Oh my gosh, dude.
+
+[01:03:55.69] - Arvin Shivram
+It was, it was a massive leak.
+
+[01:03:57.13] - Justin Gardner
+Yeah. Yeah. See, you know, and $12K for this.
+
+[01:04:00.65] - Arvin Shivram
+Hmm. More.
+
+[01:04:02.09] - Justin Gardner
+Were they considering this abuse? Cause is this $10K plus one?
+
+[01:04:05.05] - Arvin Shivram
+No, this is not abuse. Okay. Actually, you know, they, they tried doing this as abuse first, but I got it out of abuse. But, but it's still like a, yeah, I don't know. They just gave it 12K. I'm not sure.
+
+[01:04:14.84] - Joseph Thacker
+Wow.
+
+[01:04:14.88] - Arvin Shivram
+But I think that the impact is much more in my opinion.
+
+[01:04:17.23] - Justin Gardner
+Yeah, dude. Me too, man. Me too. Okay. We've got time for maybe one more of these, of your writeups and then I want to hit this Cloud Console GraphQL stuff. Which one do you think we should go with?
+
+[01:04:29.19] - Arvin Shivram
+Okay. So PLX is very interesting. Okay. So maybe we can do that. So PLX, if you know anything about Google, right, PLX is their, like, it's like their internal dashboard thing.
+
+[01:04:40.51] - Justin Gardner
+Yeah, if we know anything about Google, then you know that, right?
+
+[01:04:43.48] - Arvin Shivram
+Right, Reza? Yeah, of course.
+
+[01:04:44.71] - Joseph Thacker
+Yeah, exactly. I was like, yeah, of course, PLX.
+
+[01:04:46.88] - Justin Gardner
+Yeah, PLX, yeah, of course, yeah. Just hides Google bug hunter shirt underneath the hands. Okay, tell us about PLX, which of course I know about already.
+
+[01:04:56.48] - Arvin Shivram
+Okay, it's this tables thing where you can create like a table and you can put like data inside., right? So most any Googler you ask will know what PLX is because they use it every day. So this is very interesting. Anyways, this is so stupid. They had this API, like the Data Hub, like .client6.google.com. So this was like, Data Hub is kind of this API that's meant for access controls for PLX, right? So one of the endpoints, this was the very beginning, you could just use like suggest and then you could start suggesting like tables and stuff. So this started like leaking a bunch of like tables and stuff. But, and you could see like, like data is like need-to-know employee data or something. But yeah, that was kind of interesting. But like, this is just the table names. I wanted to get more than this. Right. So at first I was stuck here, but then it turns out, right, the staging environment for this, you could just set an IAM policy and then add yourself as the admin of the table. Then you take over the whole table. Oh Oh
+
+[01:05:47.23] - Justin Gardner
+Oh Oh my gosh. Look at this.
+
+[01:05:50.15] - Joseph Thacker
+No way. And then he dumped it and he was, and he was so stoked because his O-Center was like, I just got all the information.
+
+[01:05:55.78] - Justin Gardner
+Yeah. Right.
+
+[01:05:57.46] - Arvin Shivram
+Yeah. So if you scroll down, you can see some of the tables and stuff. I gave a bunch of internal information here, but if you scroll down, you can see that they're petabytes in size, like a lot of them. No No
+
+[01:06:06.53] - Joseph Thacker
+No No way. But the But the
+
+[01:06:06.75] - Arvin Shivram
+But the But the problem was you could— Holy moly. This is like a lot more challenging. But the issue here was you couldn't directly query the table itself. You have the ACL endpoint. You have the access control, but I have no way to query it. Right. But so, okay, something funny. I don't think I wrote it here, but just like maybe a month later, I was working with Strugg again and basically he found the same application integration had this one query you could do, like a run— I forgot what it was called. I think some sort of query you could do, some sort of task you could do. And even after all the RCE patches, this still worked and you could query these tables itself with that. So yeah, that was pretty funny.
+
+[01:06:46.65] - Joseph Thacker
+I just want to read this real quick. This is one of the descriptions of one of the, I guess, functions in here. Generate a dump of the YPP corpus of lower tier channels for purposes of capitalized conqueror.
+
+[01:07:00.55] - Justin Gardner
+What the heck?
+
+[01:07:01.59] - Joseph Thacker
+Oh man, I want to use all of these things. I want to play with all these things.
+
+[01:07:04.80] - Justin Gardner
+Goodness, this is crazy, dude. Wow. And $12K for that.
+
+[01:07:13.80] - Joseph Thacker
+Wait, this one, PLX, is $12K too?
+
+[01:07:15.73] - Arvin Shivram
+Yeah.
+
+[01:07:17.42] - Joseph Thacker
+Come on.
+
+[01:07:19.73] - Arvin Shivram
+Yeah. Yeah. I mean, it's whatever, I guess.
+
+[01:07:22.98] - Justin Gardner
+Yeah. Wow. Dude, this is really— this is really crazy research. And I think that it's really impressive how you pivot around staging and you, you and this other guy, I think Shrugged is his name from the first one that, you know, you guys do multi-step exploits like adding yourself as an IAM user. And then going back and hitting these tables, right? And I think, correct me if I'm wrong, probably AI isn't putting together these chains for you. It's giving you primitives and then you are putting it together yourself.
+
+[01:08:00.82] - Arvin Shivram
+100%. This is all not AI. AI just finds an initial lead or something, but the rest of the post-exploration is mostly just doing it manually. I don't think that AI is good enough to combine different primitives together think of stuff like that right now, maybe in the future, but, but yeah, this part of it is completely manual. Wow.
+
+[01:08:19.52] - Joseph Thacker
+It definitely can on like stuff that is more regular, but I think you're definitely right on programs like this where it's requiring so much like contextual knowledge that you have about Google that it just doesn't have.
+
+[01:08:31.05] - Arvin Shivram
+Hmm.
+
+[01:08:31.81] - Justin Gardner
+Totally. Yeah, man. So I definitely want to go and move over to this GraphQL stuff, but as soon as I clicked on this link, I see. Data batch execute. So maybe, maybe it'll all pull together, but I also really wanted to get your expertise on that because I see that everywhere and it's very opaque, and I wish that there was some primitive that I could use to get more information out of these, uh, batch execute requests. Do you have anything that you care to share on that?
+
+[01:09:00.61] - Arvin Shivram
+Okay, so the only thing is there's like this known method where in the JavaScript file, the RPC ID, you can kind of like find the real RPC, not the obfuscated ID. But that's the only real trick you have apart from that. I'm not aware of any other trick. You have to just use the JavaScript files and maybe your AI can figure out what's happening there from the JavaScript file and then sort of piece together that. But yeah, I built up this whole catalog of all the RPC IDs I could and brute force them on all the different domains and stuff. I have this tooling where I can sort of test that, but I haven't found too many bugs from bash execute directly. But I'm sure there's bugs here because this is just security by obscurity. I feel like Google, if you're listening, maybe have some grant or something where you give us all the Protobuf types and everything for all of these batching schemes.
+
+[01:09:44.14] - Justin Gardner
+I have begged them for that because that would be— I mean, there's so many bugs there, I'm positive.
+
+[01:09:51.19] - Arvin Shivram
+Yeah, exactly. It's just hidden away. I'm not sure that's what they really want. Do you really want security by obscurity? Yeah.
+
+[01:09:58.44] - Justin Gardner
+Yeah. Wow. Okay. So tell me about this Google Cloud Console GraphQL stuff that you have here, which apparently starts with Google Classroom in some way.
+
+[01:10:09.64] - Arvin Shivram
+Okay. No. So essentially I was just explaining in this way where Google Classroom is a good example of where you have a batch execute endpoint, but the reality is behind the batch execute, it's just a Google API, right? But you have to reach it through this batch execute because the RPC is not publicly exposed. So you have to go through this weird proxy and then you can hit the actual Google API behind the scenes. So in this case, this, this like batch execute, which is this RPC ID, is actually just homeroom.dataservices, like whatever API, right? So in the Classroom API, but you can't really, I don't think you can actually hit this directly. So this is a way you can get more attack surface, right? Through all these various proxies. But one of the most interesting proxies was this Cloud Console. So Cloud Console, as you know, it uses GraphQL. So if you browse around Cloud Console, you'll see these requests for Cloud Console PA or whatever. And it's all GraphQL requests. It looks giant. It looks intimidating. But the reality of it is it's actually quite funny. So whenever you send a request, it's just using Google APIs in the backend. And they screwed up big time. The staging endpoint for this allowed you to introspect everything because they didn't validate the signature on staging. Wow. So yeah, basically, my AI actually reported this as a lead. So it's saying, oh, you can just introspect this.. And I didn't realize it at first, and then I looked at it more. I was like, wait a second, this opens up a whole new world of attack surface because I wouldn't have been able to reach this from Google APIs directly. You You
+
+[01:11:31.56] - Joseph Thacker
+You You know what I mean?
+
+[01:11:32.31] - Justin Gardner
+Yeah, totally. Wow. That must have been— yeah, dude, that's a game changer.
+
+[01:11:38.47] - Arvin Shivram
+Wow. So a lot of this part of this write-up is just talking about how we basically— okay, I was working with Michael Dalton because he's really familiar with GraphQL. So he was handling most of the porting, my AI tool or whatever, for scanning this bugs, sorry, this GraphQL stuff instead. Right. So we use a lot of various tricks in this sort of because you see, if you look at this whole like get resource billing info, like some of these like map to RPCs, right. It's kind of complicated because some of these are, yeah, some of these are mapped to RPCs. It's hard to tell. So we have to kind of assume that some of them are RPCs. And in fact, they had comments as well. So that was very interesting. We had to package this all together and give it to the AI. And we started testing the whole thing. Oh yeah, another point I want to raise is that you have to— okay, this is one thing you have to be a bit careful of, because if you're testing GCP, you need a free trial account or you're not going to be able to reach most of the tech surface. But if you give it access to GraphQL or whatever, it can activate the free trial. So you have to be super careful here because if you— sorry, you can activate the full billing. So if you accidentally enable billing and it starts costing a lot of money, you're gonna, you're gonna get bled like dry or something. Yeah, Yeah,
+
+[01:12:44.93] - Joseph Thacker
+Yeah, Yeah, I literally got charged $3K. I literally got charged $3K like 2 weeks ago. No, and it was only, it was only able to do a, um, a refund for like $2K of it. I ended up eating the other $1,000. Um, yeah, and it's because like in the model was literally like, oh, I was able to enable 15 free seats on this service. It's like, no, it's not free. They charge you after the fact. They use, you know, you You spin it up and then they charge you later. Oh my gosh. But also it's so useful, right? Because like I was talking to another Google hacker, I know you know them, Brute Cat, um, named Pedroz. And Pedroz is like really smart and wrote like that Fireblazer tool, which, um, he's also just like Brute Cat, willing to share so much with the community when really if he had just used it only himself, he would have made way more money probably. And, um, and he doesn't use any billing accounts for any of his testing. And so even though he's a super talented Google hacker who's like, you know, made a lot of money and like he's not willing to use a billing account. And I'm sure there's so many bugs behind that because there's probably lots of people like him, you know, or people who are just like hesitant or scared. And so for me, I feel like I have to keep leaning into using things that are behind the billing account, but it's also like this huge risk at the same time. So So
+
+[01:13:49.63] - Arvin Shivram
+So So totally. Okay, so the way I solved this problem actually is, okay, I realized that I could create the free trial or whatever, so I could create a free trial on one Gaia, then I have a different Gaia which is the actual testing one, the testing account that AI has access. And in that I, so I temporarily give it, like give the project access of the testing guy to the free trial account one. I link the free trial to that one. Then I like remove it from the account or whatever so that it can never actually activate the free trial. Does that make sense? The, the billing account is different from the project owner.
+
+[01:14:18.68] - Justin Gardner
+Interesting. Okay, so you're using Google's own privilege system there to prevent— and, but I, guys, I bet we could also just go in there and put billing limits, couldn't we?
+
+[01:14:28.80] - Arvin Shivram
+I don't think that's possible.
+
+[01:14:30.72] - Joseph Thacker
+No, you, you set a billing limit, but it doesn't actually limit how much they charge you. It just— it like, they don't have anything for that. They just notify you.
+
+[01:14:38.53] - Arvin Shivram
+Yeah, yeah, exactly. It's, it's bullshit. Like, they'll just tell you, oh, just so you just lost like $5,000.
+
+[01:14:43.64] - Joseph Thacker
+Yeah. No, and, and Justin, you know, he's not wrong. And there's literally no way to like, uh, disable a lot of these services without reaching out to support, and then you're waiting days. That's exactly what happened to me. As soon as I saw the charge I immediately contacted support and I immediately told AI like, hey, go cancel this. And it like, it destroyed all the services. It even disabled the APIs at the API level, but they kept charging me because like the only way to turn on and off like Vertex for Enterprise or something is like buy support. And so your bootcat is exactly right there. You literally cannot get out of getting charged in those cases. And I kept emailing them every day and was like, hey, I just received another $800 charge, please go turn it off. I'm bleeding money. And then same thing, you apparently can close the billing account,, but I have like real services for my real apps running on the same billing account.
+
+[01:15:28.71] - Justin Gardner
+Yeah, we can't do that. We gotta, we gotta create separate accounts for that. Yeah. Oh my gosh.
+
+[01:15:32.60] - Arvin Shivram
+Exactly. Like never link that together and you have to have a different, if you use a trick I mentioned where you have a different, like two different Gaias, one that owns the free trial and the other one that, that doesn't have access to it, but it's the project owner. Like this has worked so far, but keep in mind it will also, the AI will also, it's like a, it's like a monkey with a machine gun. It's gonna bleed out the whole, like use the whole $300 in like 10 seconds. Like, so you have to keep having new free trials. So I have like, I have 10 free trials so far, like all the different, like using my mom's card, my, my dad's card. Oh my God. Every card I can get.
+
+[01:16:02.75] - Justin Gardner
+Hey mom, I'm gonna give your, your credit card to my AI and then, yeah, great.
+
+[01:16:07.97] - Joseph Thacker
+It, it has a habit of spending too much money. Sorry about that.
+
+[01:16:10.71] - Arvin Shivram
+Yeah.
+
+[01:16:11.59] - Justin Gardner
+Yeah, exactly.
+
+[01:16:12.59] - Arvin Shivram
+Oh, you're just gonna charge 10K? Yeah. My bad.
+
+[01:16:14.72] - Justin Gardner
+My bad. Um, wow, man, that's awesome. So you were able to also, you know, kind of hit some GraphQL. Stuff in combination with Google's RPC stuff, um, uh, across the scope. So I, I think that is, for me, I mean, I think GraphQL stuff is a little bit more approachable than a lot of this like Google RPC, ProtoJSON nonsense. But, um, yeah, that is, that is impressive that you were able to bridge that gap. Um, yeah, I, I think we've got about 5 more minutes left. There's like so much to cover in this, you know, blog post. So really, listeners, you have to go and read this, you know, blog post like it's gospel, really.
+
+[01:16:57.96] - Joseph Thacker
+So we'll link the, the blog post in the description or just don't just, just listen to the audio and go get BruteKat to follow and hire his pen test, but don't apply any of these learnings. Yeah, Yeah,
+
+[01:17:08.61] - Justin Gardner
+Yeah, Yeah, maybe, maybe don't. Yeah.
+
+[01:17:10.34] - Arvin Shivram
+You know, that would be great.
+
+[01:17:11.73] - Justin Gardner
+That's what I would recommend personally. For my own benefit. That's right. Did you have anything else that you wanted to add in here and shout out that you feel like the people really need to know from these last couple sections?
+
+[01:17:25.27] - Arvin Shivram
+Okay. Yeah. Maybe one thing I can mention is the Vertex Assistant. So this is a $30K bounty, but this is very interesting. So the way this one worked is it's actually a feature that wasn't even rolled out yet. So we were able to enable the experiment. Okay. So first the AI found it from introspection and if only. But we couldn't even find the functionality of this. We were looking through the whole UI. It just didn't exist. Right. But by using various tricks and changing the JavaScript or whatever and using the console and setting a debug point and a breakpoint and stuff like that, we were able to set the flag to enable it and then we could see the UI. So in this case, I think they paid for it because they spoke to the product team and they decided that while normally they don't pay for such things, in this case it was probably going to be released. So yeah, but they may not, they may not do this in the future. So, but I think that there's a lot of attack surface in terms of like experimental features that you may wanna look at.
+
+[01:18:14.48] - Justin Gardner
+Yeah, 100%. Man, I've had a lot of success with this. Actually, this is one of my top Google hacking tips is pay attention to the feature flags because Google's, you know, especially now with AI, the, the release cycle is so rapid. They've got this stuff pushed to prod way before it, it, you know, it gets released. Tons of, tons of vulnerabilities, and if not vulnerabilities, extra functionality that you could, you know, you can be testing and chaining, um, behind those feature flags. That's a great shout out.
+
+[01:18:43.73] - Arvin Shivram
+Maybe one last thing I can mention, just quickly talk about the App Engine one because it's pretty funny. Yeah, like this, this was so, this was so interesting. So for whatever reason, this, you know, the App Engine dashboard, if you go to just search App Engine and like GCP and go to there, it's probably one of the most like trafficked like GCP products. I'm pretty sure it's used everywhere, but The, the same dashboard loading endpoint was, it just worked unauthenticated and you could just supply any project ID there. It just dumps all the like stats and stuff. No way. The stats. You're joking.
+
+[01:19:08.77] - Joseph Thacker
+Yeah.
+
+[01:19:08.82] - Arvin Shivram
+The stats contained like the paths and stuff. So if you had like a password reset link, it would just be shown here. So those, those resets.
+
+[01:19:14.98] - Justin Gardner
+What? Oh my gosh, dude.
+
+[01:19:17.97] - Arvin Shivram
+Oh, okay.
+
+[01:19:18.59] - Justin Gardner
+So hey, also I noticed here you've got the key in the query parameter versus in the, the request body. Um, have you noticed any variance between passing the key in via the X-API_KEY header versus the key in the query parameter?
+
+[01:19:33.38] - Arvin Shivram
+No, there's no difference. If you use the X-Google-API_KEY, it's the exact same thing. Okay. Yeah. So there's, there's not any difference. Just whichever is preference, I guess.
+
+[01:19:40.27] - Justin Gardner
+Wow, dude, that's crazy.
+
+[01:19:42.26] - Arvin Shivram
+Yeah. But in this case, see a lot of Google products, they just run on App Engine itself. Like the Bug Hunter site was vulnerable to this. Mm-hmm. So if you go to any Bug Hunter's URL, And then I could, I could just query this and see which URL he went to. So that was pretty funny.
+
+[01:19:53.63] - Justin Gardner
+Oh my gosh, dude. That, that is nuts. The logs for all of this. Wow. Um, very, very good, uh, write-ups here on all of this. Thank you so much for sharing all of this, dude. This is, uh, very inspiring and also very informative. Uh, the combination of, of both of them. Um, I'm definitely itching to go back to this API scope now. Um, so hopefully, you know, I don't know. I, I'm a little bit on one hand, I'm like itching. On the other hand, I'm like, man, BruteCat is so far ahead on this, you know, it's like, uh, do I even give it a shot? But my, my, my experienced bug hunter within me says absolutely. You know, there's everyone's got to put everything here.
+
+[01:20:41.15] - Arvin Shivram
+Yeah. All the different gadgets and everything I can think of. I put it all in this one post. So if you want to get started in Google server-side hacking, you should just read this and understand every single primitive and all the gadgets and stuff and apply all of that and build out all the tooling we discussed here because you're definitely going to find bugs. I have no doubt about it. I did not get everything. There's no way, right? I've definitely missed it also. Wow.
+
+[01:21:04.27] - Justin Gardner
+Inspiring, man.
+
+[01:21:05.19] - Joseph Thacker
+I'm sure even based on all those leads and findings that it's reported to you. I mean, at 670K in bounties, like, you had to have overlooked or not found lots of stuff down a lot of those paths, right? Each lead it gives you is like a rabbit, a rabbit trail that you went down. And I'm sure you went— like, you probably haven't seen some of those trails, and then some of them you went down and then stopped and got stuck, and then other ones you turned into a ton of bounties, right?
+
+[01:21:28.31] - Arvin Shivram
+Yeah, no, definitely. Like, there's probably, there's probably some stuff in there that I haven't even reviewed it because it just got like washed away or something and the new leads came up and I never got to it. But so I still think there's probably still like bugs lying around, especially the thing I mentioned earlier where use a bearer token because I was using this whole research was all these bounties were mostly from the first-party auth, but I do not even use like bearer auth that much. But I think that you could probably use that and especially if you get access to some sort of like tenant account that's under like a google.com GCP project that you can use that and you'll have access to like tons of more APIs. I know some APIs that have a stubby RCE. I could just see it, but I can't hit it because it doesn't work with first-party auth. So it's super annoying. It just pisses me off every time I think of that API.
+
+[01:22:12.67] - Justin Gardner
+Yeah, man. Yeah, I totally feel that. That's how I feel about all of the APIs that I have access to as well. And you've got all these additional auth methods.
+
+[01:22:23.01] - Arvin Shivram
+Wow.
+
+[01:22:24.39] - Justin Gardner
+That's very inspiring, dude. Joseph, let's give him a little round of applause here, man. This This
+
+[01:22:29.32] - Arvin Shivram
+This This is—
+
+[01:22:30.06] - Justin Gardner
+Yeah, seriously. This is some of the best research I think I've ever seen on critical thinking. Um, so thank you so much for gracing us with, uh, the opportunity to disseminate this to the people and for coming on here and talking about it at length. Um, I'm gonna give this as much distribution as I possibly can because, uh, you know, you'd be goated forever if it was just the REC to PROTO, uh, you know, tip that you gave out. But this on top of that is just legendary, man.
+
+[01:22:58.06] - Arvin Shivram
+So thank you. you.
+
+[01:22:58.56] - Joseph Thacker
+you. you. This is literally going to be the Google hacking Bible going forward.
+
+[01:23:01.82] - Justin Gardner
+100%. Thank you so much, man.
+
+[01:23:04.85] - Arvin Shivram
+Yeah, sure, no worries. I think that more bug hunters should try to share research like this because I'll be honest, right? Like, I met so many people from that initial research I shared that I've been doing collabs with them that I would have never been able to find, like, so many bounties without them. So I think that sharing knowledge to everybody is actually a good thing in the community. Yeah.
+
+[01:23:22.63] - Justin Gardner
+Wow. Very inspiring. Thank you so much. That's the pod, y'all. Go hack Google.
+
+[01:23:28.32] - Arvin Shivram
+Peace.
+
+[01:23:29.93] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild if you're a full-time hunter. It's a great time, trust me. I'll see you there.

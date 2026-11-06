@@ -1,0 +1,456 @@
+Episode 144: Google’s Top AI Hackers: Busfactor and Monke
+Source: https://www.criticalthinkingpodcast.io/episode-144-googles-top-ai-hackers-busfactor-and-monke/
+======================================================================
+
+[00:00:01.19] - Vitor Falcão
+Also, it's very important to mention he never stops. Like, on Sunday, that event was over, we were, like, having breakfast. He sits on the table and starts thinking about a bug that he believes he just found with one of the Googlers, Sam. And Sam is like, dude, please chill. Everyone's like, chill, man. Just rest .
+
+[00:00:45.82] - Justin Gardner
+All right, hackers, we all know the value of a good misconfiguration, right? That's often how we're popping bugs and bug bounties. Well, unfortunately, threatlocker also knows about it, which is why they built DAC Defense Against Configurations. DAC scans all of the enterprise machines in your network for misconfigurations, ranks them by severity, and then shows them in nice graphics in a portal. It even emails your team weekly with updates, so nothing slips through the cracks. And the best part about dac, in my opinion, is that it actually maps all these misconfigurations onto security frameworks, and it also shows you how to fix them. That way, when you need ammo with leadership or with it, you can point to real specific compliance gaps and get actionable steps. Anyway, check out ThreatLocker DAC. It's an awesome way to stay ahead of these issues that we, as attackers love. All right, let's go back to the show.
+
+[00:01:30.73] - Ciarán Cotter
+what's up? So, this week in Bug Bounty, we've only got one thing to highlight, but I did want to share it because it's pretty awesome. You know, my heart is near and dear to AI, and my heart is near and dear to our boy Justin. So you all will like this one. Basically, there is a little talk slash webinar from HackerOne called Securing the Age of AI Autonomy Priorities for 2026. And it's kind of like a continuation of the really awesome report they put out called Rise of the Bionic Hacker, which you have, if you haven't seen it, some incredible stats around, like, how hackers are using AI, how many, like, what percentage of hackers are kind of, like, leveling up with it. What percent of companies are paying out bounties for AI? It's a really awesome report, but this specifically is for the webinar, which, when this go goes live, might have already happened, but if you register here, you'll go ahead and get a link to rewatch it. And they're going to be interviewing people like Justin, Luke, even James Kettle from Port Swigger Labs. So it's going to be an incredible webinar and you should definitely tune into it. What's up, guys? Welcome back to the Critical Thinking Bug Body podcast. We've got some incredible guests today. Kieran has been here before, but this is our boy's bus factor's first time. And so before I do intros, we'll have him tell us about a cool bug.
+
+[00:02:44.50] - Vitor Falcão
+Them already. That's how we started.
+
+[00:02:46.97] - Joseph Thacker
+Yeah, you got to jump straight into it, straight into the deep end.
+
+[00:02:50.18] - Vitor Falcão
+Okay, so guys, I have this very complex, yeah, quite complex client side heavy exploit chain because, yeah, you know, if that's me. So it's client side stuff.
+
+[00:03:01.99] - Joseph Thacker
+So I have this huge questions about that. So we'll come back to that.
+
+[00:03:05.75] - Vitor Falcão
+Okay, okay, yeah, we're going to do that. But yeah, we got this huge company and they have this support chat and they are not using intercom or whatever. They have it in house built. And I'm like, okay, that is not smart because that's more expensive than building it. But okay, let's take a look at that. And with some match and replace rules, I find out that the agent can access the customer, not opposite. Like the customer cannot access the agent. And I'm like, okay, how can I leverage this without agent credentials? And I'm very proud of this one because it was like everything you learn on the client side world, I'm going to use it right now because I start checking that and it has no origin checks on the post message. It uses post message for setting up the chat, but it's also not vulnerable at the first look. I'm digging through the minified JavaScript, which I love. It makes me good. It's like jumping you guys. It pumps your blood. And I'm looking into it. I'm digging through the JavaScript and I find nothing. It's been like four days, I'm finding nothing.
+
+[00:04:10.74] - Joseph Thacker
+Oh my goodness.
+
+[00:04:11.25] - Vitor Falcão
+There's no origin check. I'm like, I cannot believe it. That is like stupid. But then one day I wake up, I open the jest on a random point and I see that there is this very stupid thing they are doing, which is a JSON parse and object assign one after the other. And if you don't know that that's like textbook proto type pollution. It's one of the ways to get that. And I'm like, okay, how can I reach it? And after I feel like hours doing a lot of tests, I find out that there is a very on one of the post messages, there is a very, very deep config property that you can control. And there is an if check, a condition. If it is A string. It's going to do the JSON parse and the object that assigned. That's why no automation was fine in it, because that was inside a branch of the code. And I'm like, okay, let's do it. And I start doing a lot of tests. I cannot do much, I can't do the prototype pollution or prototype poison, whatever you call it, but I don't get anything. And then I find this weird location, whatever that is, version number in it, in this config, I change it and it actually changes the host that it's using to connect the websocket, the websocket of the chat. So instead of going to, I don't know, chat.company.com websocket, I can control it to go to my server and then I can control the messages, all the response. Yeah, everything. I set up this crazy malicious server that was very hard to do because I had to use everything they were using, I think was like socket js, something like that, a weird library. And I got it working. I do a lot of post messages, stuff set up, connected, and I get the xss and that's like almost the end. That's like one week, just on that one week. And then I'm very close. But XSS has no impact yet because I do a window open, I open the support chat domain, whatever that is, it's not inside an iframe, just a page. And I start testing it and I see there's no impact because it actually needs to connect to the real host to get some real data, like pii, whatever, the authentication token. So I have to use another technique, which is the iframe sandwich, and then I complete the chain with post message to prototype pollution to iframe sandwich. Because I do a window open, open the support chat, pop the xss, open the product page that has the support chat and make them communicate on the same origin. And I get a session takeover because I can get the authentication token. And that's like a bug I'm very proud of because they used it in every page they had on every product. So it was like, yeah, it was scope changed, it became a critical and they gave me a 50% bonus because they were like, that's crazy. They were like, since you have no social life and you've been doing that for like years and bones, that's what.
+
+[00:07:24.11] - Joseph Thacker
+I'm going to ask. Is this like an anchor program or a live hacking target? Like, how are you able to devote so many hours to this?
+
+[00:07:30.62] - Vitor Falcão
+I don't know what happened. It's like just normal hunting, normal day. I became like full time Pokemon hunter for three weeks now and I was like, you know what, I want to pop this. And it was not the best risk management ever.
+
+[00:07:45.99] - Ciarán Cotter
+Right.
+
+[00:07:46.26] - Joseph Thacker
+Because literally you would have ran into a wall and not been able to exploit it and it would have been so much sunk. Sunk time, right?
+
+[00:07:52.81] - Vitor Falcão
+Yeah. But the bounty they paid was like amazing. That paid for a few months, so that's all right.
+
+[00:07:59.20] - Joseph Thacker
+That's amazing, dude. Sweet. Well, thank you for the incredible bug. Yeah, that chain is absurd and I can't believe you had to set up your own custom WebSocket PoC server to even get it going. But this is the stuff I think that in the critical thinking discord you are now known for. So yeah, if anyone doesn't know Vitor, he goes by bus factor and he's been hanging out in the critical thinking bug bounty discord for a long time. I called him and some of the other guys the front end mafia. So if you've ever heard me say that bus factors are part of the the front end mafia. But he's been bug hunting for about a year and a half. Is that right? Total before you went full time?
+
+[00:08:40.58] - Vitor Falcão
+Yeah, total, that's it.
+
+[00:08:42.01] - Joseph Thacker
+But your first bounty was almost exactly a year ago.
+
+[00:08:45.70] - Vitor Falcão
+A year and two months kind of. Yeah.
+
+[00:08:48.48] - Joseph Thacker
+Cool. Yeah. And then as of three months ago, Vitor went full time, which is absurd at how successful he's been in such a short amount of time. But you know, I think it's just goes to speak to his, you know, his quality. He also leads hackalongs in the Discord and so, you know, if people are in the Discord, I'm sure they've seen him lead those hack alongs and if not, you got to get in there. Basically, he and some of his buddies were jumping in on Justin's hack alongs and often converting tons of bugs. And Justin's like, no, you guys have to do this. You have to do do it for us as well. So anyways, yeah, so I just would love to hear about your background. Like why, you know, how did you hear about bug bounty? What kind of got you interested in it initially?
+
+[00:09:26.37] - Vitor Falcão
+I don't actually remember how I got into Bug bounty. The first time I was like, oh, this is bug bounty. And then you start reading about it. I don't remember. Like, I have no idea. The only thing I know is that maybe five years ago, the first time I tried it, like I created an account on hack one, I Just wanted money. I was like, I need some extra cash. This has got to be easy. It turns out it is not and was quite frustrating. So I tried it for like a week or two. I was like, okay, no, that requires a decent amount of investment. And then I was like, okay, I'm going to do it later. And it took like four years to try it again. But I have no idea how I started it. But I was like a developer. And after being a developer, I became sre, which is a Google thing. Right. Software Reliability Engineer. It's kind of. I don't want to say that it was a mix of DevOps and SRE. If Google people hear me saying that SRE is DevOps, they're going to kill me and I'm not going to get invited to another bug swap, like, never again. But that's what I was doing. That's my background.
+
+[00:10:39.15] - Joseph Thacker
+Cool. Yeah. I was going to say it was very similar for me. I actually made an account on HackerOne and then didn't come back to it for years later. You know, I've been doing it for more like five or six years at this point, but I made my account like eight years ago. But it was the same as you.
+
+[00:10:51.84] - Vitor Falcão
+Right.
+
+[00:10:52.08] - Joseph Thacker
+Like, I got on there and then just hopped off and then came back to it later. Yeah, yeah. Well, one. One thing I think that Kieran wanted to ask you on this call, which we'll get to the. We'll get to why Kieran's on the call. Actually, I'll mention it now. Basically, Kieran and buzzfactor were a dynamic duo in the most recent Google Life hacking event in Mexico and did incredible. And so we've got them both on here to talk about that in a second. But he. Kieran actually put in the doc here. Why are you called Bus Factor? I'm also curious.
+
+[00:11:20.13] - Vitor Falcão
+It's funny that he could have asked that in person. So could you in Vegas, but you guys didn't. You waited for this moment.
+
+[00:11:27.50] - Joseph Thacker
+That's exactly right.
+
+[00:11:29.50] - Vitor Falcão
+It's a bit of a disappointing answer because if you don't know the bus factor, it's actually a measurement of the risk you get from keeping information and internal knowledge from being shared among members in the company. So think about it. If you report a bug right now to, I don't know, let's say Google, and two months ago you're going to test it, it is fixed plus two months, you test again and it is there. They have a regression. So why? Most of the times it's because they are not sharing Knowledge internally. And the developers have no idea why. The security team was like, hey, can you change that? It's critical. They have no idea. They do not share the knowledge. And that's one of the things that I think the buzzfactor is very critical to companies. Coming from the developer background. I actually hated the silos that were created inside the companies made a lot of issues with security bugs.
+
+[00:12:25.27] - Joseph Thacker
+Yeah.
+
+[00:12:25.63] - Vitor Falcão
+But also functional bugs. Like guys, very stupid stuff. If you just turn your head to the guy that's by your side and say, hey, I'm doing this, that already avoids a lot of issues. And they never do it. But knowing that I was with my team in London and buses there, they come from the wrong way. And I was very, very, very close to getting hit by one just because of that. I was looking to the right, they were coming from the left and that was like very close. And I was the leader of the SRE team and everyone was like, if you die right now, you know, that's like a huge buzz factor for us. And they just started making fun of that.
+
+[00:13:05.19] - Joseph Thacker
+That's cool.
+
+[00:13:05.87] - Vitor Falcão
+I was like. And then when I joined Hack the Box, we actually use our hacker names in there. Like, your email is not like vitorackthebox. No, it's perspective. Hack the Box, they were like, it's time for you to decide a name. I was like, I can change this later. Right. And then I put buzzfector. You cannot like stole your guys. Yeah, I would change it today, you know, but it's too late.
+
+[00:13:29.11] - Joseph Thacker
+Yeah, exactly. Once. Once you get a handle and it just sticks, it stays with you.
+
+[00:13:33.36] - Ciarán Cotter
+Yeah.
+
+[00:13:33.51] - Joseph Thacker
+I was, I started in software engineering as well and well, we never called it the bus factor, but we definitely always tried to mitigate that risk. Right. Like we were. We would even say things like, for example, if Corey was hit by a bus, you know, you know, you say things like that. So, you know, you can kind of like mitigate the downside of one of your, like, important team members getting something happening to them. Oh, some people also call it, I think like lottery something.
+
+[00:13:58.72] - Vitor Falcão
+Lottery factor.
+
+[00:13:59.67] - Joseph Thacker
+Yeah, like the lottery factor.
+
+[00:14:00.91] - Ciarán Cotter
+Yeah, that's a bit more positive, I think.
+
+[00:14:03.62] - Joseph Thacker
+Exactly.
+
+[00:14:04.75] - Ciarán Cotter
+Yeah.
+
+[00:14:06.02] - Joseph Thacker
+I'm going to circle back to kind of your interest in front end bugs because I want to jump straight to getting Kieran involved here. But yeah. So, Kieran, I think you have been to several Google Live hacking events. You and I won MBH with Justin and Lupin back in the beginning part of this year. And I think that probably led to these extra invites and everything Else. And you and buzzfactor did incredibly at the Google Life hacking event. So do you want to kind of just talk about your all's invitation and how you all decided to collab?
+
+[00:14:39.45] - Ciarán Cotter
+Well, I initially. So I got the invite from Mexico and I did like, because I worked with you guys, like Ronnie and Justin and you before. I was like, okay, let's see if any of the others are invited. And none of you guys were going. And I was like, I guess I'm soloing this one. And then in the Guild chat in the Critical Thinking server, I think it was the Guild chat or something, I saw Vitor saying like, oh, I'll be at Bug swats. I was like, this is perfect because I know Vitor, I've seen him around, I can just reach out to him and see if he wants to work with me. Thankfully he did and it's worked out. Yeah, that was kind of how the collaboration came about. But I could already trust him because I'd seen him so often in the space in the Critical Thinking server especially. So, you know, from the get go we were like working together really well.
+
+[00:15:28.59] - Joseph Thacker
+I think yeah, if you're not familiar or if you aren't hanging out in the Critical Thinkers chat, you got to hop in there because Vitor is like very active, very willing to help and you know, you know, come up with some complex chains or even even hop on different programs or collaborate. I was going to say, yeah, so the tart. So the primary, I guess kind of one of their main focuses for that event was their AI features, right?
+
+[00:15:55.52] - Vitor Falcão
+I would say yes. And I also want to say no, you're going to ask things about front end bugs, right? And I was like, you know what? I'm going to. And I'm going to do what I'm best at, which is client side stuff. And then I see Kieran, he's like, nope, that's not the best you can do. If you want to get the bounces, get the reports, you got to focus on AI. And I never ever touched AI before, but.
+
+[00:16:17.61] - Joseph Thacker
+Oh, so this is like your first foray into that thing?
+
+[00:16:21.54] - Vitor Falcão
+Yeah, it was like first site ever. And I saw one of the guys blacklist, the French guy, he's a legend. And he was like, on live hacking events, you have to focus on what, you know, what you feel comfortable and that from his client's side. But Kieran was like, no, you're not going to do that. You're going to lose your time doing that. We're doing AI. I was like, okay, he has the experience, I'm going to follow and see where it leads us. Turns out it went great.
+
+[00:16:51.11] - Joseph Thacker
+Yeah, yeah. Tell us how it went. How many reports you all get?
+
+[00:16:55.02] - Vitor Falcão
+So yeah, we actually got 16 reports. 14 of them are valid. The two that are not are actually self dupes that I could have reported more. And then I got to one of the Googlers and I was like, do I dare? No, that's going to be a dupe. And I'm like, okay, so yeah, 14, nice.
+
+[00:17:14.41] - Joseph Thacker
+That's insane. And then you all ended up winning second place overall and winning the most bugs or best bugs for the AI portion of the event, correct?
+
+[00:17:25.60] - Ciarán Cotter
+Yeah, we had two show and tells and we had the best AI VRP researchers and we had second place. So MVH was just out of reach this time, but we can try again.
+
+[00:17:38.56] - Joseph Thacker
+Well, you gave me a little insider baseball there and if we need to cut this out, we can. But yeah, you said that you all only really got second because someone found just something insane saying, right?
+
+[00:17:46.30] - Ciarán Cotter
+Yeah, yeah, yeah. I don't, I don't think you need to cut that out. As far as I know, someone did something crazy and, well, a few crazy. They just beat us to the, to the stuff. But yeah, I guess it's kind of interesting.
+
+[00:17:59.19] - Joseph Thacker
+It's kind of interesting to talk about. I know you all haven't been to a ton of Hacker One events. It does feel like at Hacker One events. Mvh. Well, I guess it's always whoever finds the most. Well, no, it's like the, the mix of criticality, collaboration and something else. But yeah, yeah, it does feel like at Google events they tend to err on the side of who has the most critical bug rather than has like the most reports or even the most, you know, payouts, for example, because I'd say across the last five or six bucks watts, it has felt like there's only been one or two where they paid out someone who had higher volume and all the rest went to whoever had like the most critical single bug.
+
+[00:18:42.85] - Ciarán Cotter
+Yeah, I think Google probably operates similarly, if I had to guess that it is probably the three Cs, but they.
+
+[00:18:52.90] - Joseph Thacker
+Weighted a little differently when they're actually thinking about it, I would say. Right. Or do you think that's just a byproduct of just like how it played out?
+
+[00:19:01.09] - Ciarán Cotter
+I don't know. But yeah, we're pretty happy anyway with the results.
+
+[00:19:06.94] - Joseph Thacker
+Yeah, yeah, 1,000%. Yeah. Yeah. Cool. Did you all have any other anecdotes or thoughts about that Google Live hacking event? You know, whether you recommend Google or just like cool stuff that happened or if you wanted to share a bug, you could. Or anything.
+
+[00:19:20.43] - Ciarán Cotter
+Yeah, no, like we became, we both became friends with Adnan Adnan Khan, who's very active on like, he does get up action stuff. Great guy. So we went to like the on site day in. I can't pronounce the name of the place. It's like the Mexican Aztec temple. And we were like wandering around the area because the tour guides were like, okay, you can wander around or whatever. And we were just talking with some of the other hackers and I realized one of them was Adnan. And I'd read his research before. So we were like, we were chatting and then we just started comparing all of our notes and all the stuff we found so far and where it could go and all of this ideation. And we, and we decided like, okay, you know, let's like think about this on the way back. We're like, we'll go and get back to the bus and we went to the wrong meeting point.
+
+[00:20:16.84] - Joseph Thacker
+Oh, no.
+
+[00:20:17.97] - Ciarán Cotter
+And so eventually we.
+
+[00:20:20.56] - Joseph Thacker
+So bus factor missed the bus.
+
+[00:20:24.13] - Ciarán Cotter
+Yeah. So the three of us did this like walk of shame back to the actual meeting point and just got like applauded the minute we. Because they were all waiting for you guys. Everyone's already there.
+
+[00:20:33.17] - Joseph Thacker
+Oh, no.
+
+[00:20:34.65] - Ciarán Cotter
+But after that, you know, we had a great time with Adnan just figuring out more bugs and stuff. We reported a bunch of stuff on site with Adnan as part of our collaboration as well. So it was really interesting to have that difference in approach. And the gadgets and stuff, he piled up as well.
+
+[00:20:52.00] - Joseph Thacker
+Yeah, yeah, yeah.
+
+[00:20:54.00] - Vitor Falcão
+Also, it's very important to mention he never stops. Like on Sunday, that event was over, we were like having breakfast. He sits on the table and starts thinking about a bug that he believes he just found with, with one of the Googlers, Sam. And Sam is like, dude, please chill. Everyone's like, chill, man. Just rest. And he keeps going. The guy, the guy is a beast.
+
+[00:21:14.71] - Joseph Thacker
+Honestly, that's not, that's not surprising. I feel like there's so many bug hunters that are that way. Several people come to mind from other events that do the same thing. Honestly, I feel like Ronnie's a little bit that way. Kieran a little bit. Yeah, yeah, yeah, yeah. Cool. Sweet. Well, so, yeah, let's just jump right back to the front end thing, right? I mean, I'm sure that your front end expertise did play, you know, factor into some of the bugs that you found there. But. Yeah. What, what drew you in? I mean, having Only been in bug bounty, you know, a year and a half and only being full time three months. Like what, what do you like about front end bugs? Why has that kind of pulled you in?
+
+[00:21:50.39] - Vitor Falcão
+So for a whole year I was only hunting for server side stuff, to be honest.
+
+[00:21:56.04] - Joseph Thacker
+Yeah.
+
+[00:21:56.28] - Vitor Falcão
+And I quite like it. I got like good criticals in there. But at some point I started hacking on which is an amazing program and seeing what Justin was doing at the critical thinking community, that's very client side heavy. Most of them at least people that are quite active in there. I started trying it more and more and then in my blog you can see that I found one of amazing bugs that was on a program bonus client site. And I was like, oh my God, that's amazing. I found CSPT to XSS and XSS to this one didn't become account takeover. And I was like, that's kind of things they find all the time. That's crazy. Now I understand why people don't find it. You need to lock in, you need to put a huge chain. And I'm like, you know what, I'm going to do that on Epic Games, on Amazon, everything. I start doing it and my development background comes in because it's just basically reading minified js, you know. And yeah, it's minified, but it doesn't make it a gray box review, it makes it white box. You can set debugger breakpoints and things like that. And I feel like I feel home when doing that. It's just easy for me. And it's very hard to hunt for server side stuff right now. When I start trying, immediately my head starts pointing me towards JavaScript and stuff. I'm like, oh my God. I feel like I'm stuck in here with this or is it stuck in here with me? I don't know, but that's it. I just think the white box reveal part of it is nice. I love it. I like to understand what is happening there.
+
+[00:23:36.50] - Joseph Thacker
+Yeah, it feels like, I think a lot of server side stuff is almost like panning for gold. You know, you're like, you're trying to like you're, you're kind of like punching in the dark. You know, you're, you're, you're fuzzing. You're trying a whole bunch of like weird payloads that might or might not work. You don't know, you don't always get verbose errors from like looking for like patch reversals or secondary context. You know, you don't know that they're there. You're just like looking for them. Whereas yeah, I think with client side, like you said, it's more code review. You have a lot of like breadcrumbs, you have a whole bunch of clues and a whole bunch of gadgets and you're kind of like assembling a puzzle rather than like, you know, you know, kind of like shooting in the dark.
+
+[00:24:13.09] - Ciarán Cotter
+From a problem solving standpoint. I think client side is a lot more satisfying when you pop a big chain, which isn't financially. Server side is probably better on average, but client side is more fun, I have to say.
+
+[00:24:25.42] - Joseph Thacker
+Yeah, I do think client side often has slightly more user interaction, doesn't it? You often need one click or you need some sort of watering hole attack.
+
+[00:24:36.85] - Ciarán Cotter
+It's kind of hard to affect many users at once. Like even with good post message chains, you're usually still hitting like a single user even for ato. So yeah, you like a step down in severity. It's hard to get crits. You get highs most of the time. Yeah, yeah.
+
+[00:24:51.23] - Joseph Thacker
+Luckily I think a lot of programs kind of respect the hustle these days. Right. You know, they, they understand the difficulty with it and they're willing to kind of bump it up. Especially the mature ones that people like you all kind of target or hack on specifically.
+
+[00:25:02.43] - Ciarán Cotter
+Yeah, yeah. Like there are definitely programs that treat them as good a server side which is really, really nice. But yeah, during the event Vitor was like getting distracted with some of the non AI stuff. But I was like, do you remember in, I think it was Vegas where we went down this rabbit hole of something and then Justin kind of turned around and he was like, guys, there is bonuses. It is like 100% bonus or something that can wait till after the event. Focus on the task.
+
+[00:25:31.17] - Joseph Thacker
+Yes.
+
+[00:25:31.56] - Ciarán Cotter
+So I, you heard the ghost of.
+
+[00:25:34.60] - Joseph Thacker
+Justin, the ghost of Obi Wan Justin in your ear saying focus on the event.
+
+[00:25:41.25] - Ciarán Cotter
+So I like channeled this ghost of Justin into getting Vitor away from like the rabbit hole and onto like, like dude, we've got bonuses to go for. Let's keep on track. And it was the right move in retrospect, like it paid off really well to do that.
+
+[00:25:56.28] - Joseph Thacker
+Yeah, he did that for us in Tokyo too, if you remember. At the table. He basically always helped us like reprioritize and that probably is a really underrated perspective of full time hunting. You know, it was like just that ability to prioritize.
+
+[00:26:09.50] - Ciarán Cotter
+No, absolutely. It's a, it's a core skill for bug bounty really that no one really talks about.
+
+[00:26:16.78] - Joseph Thacker
+Yeah, we've mentioned it A few times. But it's like there's not a lot of resources out there and it's honestly hard to build. It's, it's like, it's a mental model that you have to build for yourself because it really does vary depending on your skill set. And some people have a lot of success jumping around and some people have a lot of success, success going really deep, you know. And so even though I think there are often optimal decisions like the ones you're talking about, if you all had focused on the ass stuff and found no bugs, maybe it'd been better for Vitor to have like found two client side mediums or something, you know, like you can never, you can never know what the counterfactual is, but obviously it clearly paid off for you guys because you did really well.
+
+[00:26:51.86] - Ciarán Cotter
+And I think knowing the target, knowing from before what Google accept and what they look for, kind of helps to educate that decision as well.
+
+[00:26:59.33] - Joseph Thacker
+Yeah, sweet, dude. Yeah, Vitor, what do you think has been kind of like the biggest challenge of going full time over these last couple? Well, one, let me just reflect on the fact that it's absolutely ridiculous that he's been this successful in only three months of doing bug hunting. He literally was teaching the class in the critical thinking server within like a month of being a full time hunter. But anyways, yeah, what's been the hard part or what's been difficult for you?
+
+[00:27:24.84] - Vitor Falcão
+So before becoming full time, I actually did plan for that for like six months. I had like plan A, B, C, D, E, F. You know, I was like, I'm fine, I have the savings, I have everything I need. And then I jump into it. And you may know that I have Justin as my mentor, right? And Justin is like, man, you have to lock in, in one program, only one program, do at least 100 hours in it before jumping around. And that's, dude, that's very hard because it's so easy to get frustrated. And I have this thing that I get frustrated even easier because of adhd, which is something that a lot of people have. And I was not medicated by that time. Now I am again, which is way better. But at the same time you have to be careful. And now I can lock in more but not jumping around like program to program and getting that dopamine rush every time you start a new program and start fighting, finding low hanging fruits and things like that, that is so hard. So locking in one program, like not one program, to be honest, one app, sometimes one feature for hours is very hard. But at the same time, it pays off so well. Like, that's amazing. The other things that were like unexpected, they were not really unexpected. Like you report bounty, the company sometimes takes like three months to pay. Things happen on the program side, on the hunter side, that's like. It is unexpected. It is expected plans, but you don't want it and you get frustrated. It's not nice. You need to handle that somehow. But that's on the plans. That's Poke Bounty.
+
+[00:29:09.23] - Joseph Thacker
+Yeah. So that's one thing I was going to bring up is I think a lot of people right now with AI and also just the fact that Bug Bounty is now like 8 or 10 years old are probably scared to jump in. I think a lot of people have that fear that it's like they're going to try to do bug bounty and then there's going to be no bugs left or no money left or anything like that. What would you say to people who are like, you know, considering it, like, do you still think it's a good decision, that sort of thing?
+
+[00:29:35.14] - Vitor Falcão
+Well, it's like people saying the world will end tomorrow, next year, whatever. You got to have it every year, every like, people love it. People love the chaos, guys. That's the news that spread. If you say no bug bounty will be good, we're gonna get some good money for years. No one want to hear about it. They want that chaotic news, you know, which is a lie. Come on. The thing is you need to adapt. AI is coming. You need to adapt to that. Maybe find AI bugs, put AI into your workflow. It doesn't need to be fully automated. It's kind of sweet, but it's gonna be there now if I do recommend it or not. There are a lot of things you need to think about and before doing that. Right. Like where do you live? Is that in the U.S. or is that like me living in Brazil? Which if you make like $2,000 a month, you have a good salary for Brazil. You know, if you do like two a month in the U.S. dude, that's not good. I'm sorry. For you. So there are a lot of things to consider. I would say like do some research, critical thinking. Justin made that full time guide, right?
+
+[00:30:47.79] - Joseph Thacker
+Yeah, yeah. It's been huge, right. It's helped a lot of people, I think. And I think kind of like that whole like 100k in a year if I had to do it all again thread he posted that just keeps doing rounds and people reshare it. I think that's motivated a lot of people too.
+
+[00:31:02.35] - Vitor Falcão
+But I have one thing to say about it, guys. Justin has the superpower. He can lock in for hours and hours and do it over and over again. Be realistic with yourself. Yeah, okay.
+
+[00:31:16.89] - Joseph Thacker
+Yeah, no, I'm the same way. I think that I'm actually undiagnosed adhd and I, you know, I'm actually, I'll maybe I'll talk to you offline about like what your experience was, like kind of pre medication and, and having been medicated because. Yeah, I've never taken any medicine and clearly I do fine. But I do wonder what it's like to lock in like that because it's a huge struggle for me as well.
+
+[00:31:39.73] - Ciarán Cotter
+Cool.
+
+[00:31:40.00] - Joseph Thacker
+Sweet. Well, I'm glad we got the chance to talk about that. I know we had that listed. Yeah. Let's go ahead and jump straight over to the full time bug bounty section here. I think one, we were already talking about it, but two, it's something that I jumped in full time in January and Kieran, you did at the same time.
+
+[00:31:55.73] - Ciarán Cotter
+It was about last year, last April or something.
+
+[00:32:00.52] - Joseph Thacker
+Last April. Cool. Yeah. So I think, you know, I think there are lots of thoughts around that. Just listening to what Vitor said, what kind of jumped out to you, Kieran, about like, you know, what are your thoughts on full time bug bounty?
+
+[00:32:13.39] - Ciarán Cotter
+I think I almost always recommend keeping bug bounty as a hobby for most people because it is so many ups and downs. If you don't get paid well in a particular month because you focused on the wrong program, it's mentally very difficult. So I think keeping it as a hobby for as long as possible is wise. But for the people who want that extra bit of freedom in their life to do whatever they want, it is just amazing. And I wouldn't trade the freedom for anything. Like, there's no way I'll ever go back if I can help it. Yeah, that's my two cents on that.
+
+[00:32:46.86] - Joseph Thacker
+Yeah, yeah, I agree. I do think, like I will say the people that listen to this pod probably are in that like upper 10% or 5% of, you know, hackers because they're like consuming all the bug bunny content that is across every platform. So for them it might make more sense. But I think, yeah, you're right. For the vast majority of people, it's like a perfect side hustle because you can do as little or as much as you want all the time and it's just like extra money if it works out. And if it doesn't work out, you just learn some skills and built your resume and who Cares. Right. Like there's kind of like no downside to doing it when you have a full time job as like hobby time. But the downside to doing it when you don't have a job is that if you don't make any money, you don't get it. You know, you aren't, you aren't providing. So.
+
+[00:33:26.94] - Ciarán Cotter
+Yeah, yeah. Like I have friends who call it like beer money, but it's like they're quite successful bug bounty hunters. It's like what kind of beer are you drinking to call it beer money.
+
+[00:33:36.96] - Joseph Thacker
+Right. It's more like champagne money or something. Yeah, I always hear that phrase champagne problems for people who complain about something that like is like actually good or whatever. Um, cool. Well, let's do a round, let's do a round robin of all three of us with like what your hacking routine is because I think we're in three very different parts of the world, you know, being the, the US and the EU and then Brazil. I'm curious what your all's kind of like hacking routines are like and, and specifically maybe mention like how much you hack per week and then you know, maybe if you want to mention hours or whatever. I just think that'd be interesting for the audience.
+
+[00:34:10.55] - Vitor Falcão
+All right, I can start with that. That I try to keep as much as possible of a fixed routine, not change it a lot because I think your body gets used to like think well the same amount, same time every day. So I usually do that start like 9:00am, sometimes 10. It depends. Like there is a non negotiable. I need some kind of exercise every day, like either hitting the gym or fight bjj which is amazing. Get your body very tired and then you go do some mental stuff, you know, like working. So like 9, 10. I started and I tried to do pomodoro sessions because they are amazing for just keeping you focused and sometimes you want to like distract yourself thinking about something else and then you look at the timer and you're like, nah, I can do that in 10 minutes. In 10 minutes I'm going to have a break. Let's. That's locking. So that's what I've been doing. And also setting micro tasks, like things that I need to do all the time, things that I need to find out. So I just do that every day from like 9, 10 to 4, 5 at most. Some days, let's be honest, some days I do it for like 30 minutes. I get tired and I go watch Netflix. But that's why I do it full time. That's why I do bug bounce full time. That's the freedom I'm talking about. If I need to go take my dog on a walk on any time of the day I can, things like that. But my routine is it's basically that cool.
+
+[00:35:39.92] - Joseph Thacker
+Maybe. There you go.
+
+[00:35:41.00] - Ciarán Cotter
+You go ahead.
+
+[00:35:41.32] - Joseph Thacker
+Kieran?
+
+[00:35:42.71] - Ciarán Cotter
+Yeah. I have a question for Vitor actually, which is like, how often do you really stick to that routine? I also try and kind of keep. I don't do pomodoros, but I do have, I have like a morning session until lunchtime and so on. But I find it really hard to stick to it if that makes sense. That's the ideal for me. But do you succeed in sticking to that routine?
+
+[00:36:06.78] - Vitor Falcão
+Yeah, during the morning and on Mondays is a bit harder. But the thing that I found out is that if on Mondays instead of hacking I do something like, for example, today DEFCON dropped a lot of talks and videos on YouTube. That's what I'm gonna do for the Monday because that's inspiration. Reading blog posts that people have been releasing during the weekend or last week, things like that. So on Mondays I do that. Since it's a hard day. Instead of fighting back against it, I kind of accept and adapt. I think that's way better for someone that has ad stuff. And if it is not working, I'm like, I need to work, I need to work. It's not working, dude, go, I don't know, go to the gym, do something, go for a walk, whatever. But don't keep fighting. The only thing you're going to get is next day you're going to wake up frustrated, tired, you're not going to be able to hack. And that's something that is not very possible if you are working for huge companies and things like that. So if we can do that, being full time hunters, why not, why not use the freedom, why not use the idea of working less if that's what we really want? So that's basically what I do.
+
+[00:37:25.28] - Joseph Thacker
+Nice. Yeah. Kieran, what about you?
+
+[00:37:28.63] - Ciarán Cotter
+Yeah, I have like at the moment I'm jet lagged because of the Mexico. Like I'm still jet lagged. I have not recovered from the jet lag yet. But mostly I have like a morning session. If I'm awake in the morning, I work to lunch, work into the afternoon and then I work from the wework in Edinburgh. So I'll get home before dinner and make my dinner or whatever. But I don't use. I keep a checklist of my top priorities for the day and I try and Knock them out in order of, it's in order of priority. So I knock them out one by one. Sometimes I get none of them done, sometimes I get all of them done. I also really go with the flow most of the time. Sometimes there's stuff I really don't want to do and you can't just go with the flow to ignore it. So you have to kind of force yourself. But yeah, I definitely echo Vitor's sentiments that you need to use the freedom you have when you're doing full time bug bounty because otherwise why would you do it? You're just doing a 9 to 5. It makes no sense. So, yeah, pretty similar.
+
+[00:38:35.65] - Joseph Thacker
+Sweet. Yeah. And in fact, isn't there a series called Day in the Life of a Hacker or something that you're working with getting published or something?
+
+[00:38:43.73] - Ciarán Cotter
+Well, yeah, Bug crowd should have that out this month sometime.
+
+[00:38:48.61] - Joseph Thacker
+Okay, sweet.
+
+[00:38:49.40] - Ciarán Cotter
+Blog posts on that. Yes.
+
+[00:38:50.76] - Joseph Thacker
+So we'll have more on that from you. And also for me, but yeah, for me it's like, I definitely am like kind of treating it more like a full time job this first year to make sure that it's like ironed out and I'm providing enough for my family of five over here. But it is really nice, like you said, to be able to just be interrupted and not care. Right. If I have like kids appointments or kids that run in here or you know, need to, need to get out or like, like you said, Vitor, go on a run or go lift weights in the gym. It's really nice to not have to care or think or tell anyone that you're going to go do that. Right? Yeah. For my, my schedule I try to work like 8 to 4:30, but you know, lots and lots of interruptions with kids, lots of appointments, lots of sports, lots of taking off early to go take care of them. So sweet. And then. Yeah, so the last section that we really wanted to cover here was. Well, actually, any closing thoughts on full time bug bounty?
+
+[00:39:44.32] - Vitor Falcão
+Yeah, to be honest.
+
+[00:39:45.92] - Ciarán Cotter
+Go ahead, go ahead.
+
+[00:39:46.96] - Joseph Thacker
+Yeah.
+
+[00:39:47.51] - Vitor Falcão
+Okay, so go ahead, Kieran. Then I go.
+
+[00:39:50.32] - Ciarán Cotter
+Okay, sure. I think anyone on the fence about it should just go for it. Like if it's eating away at your mind, like, oh, should I go full time? That won't go away. That thought's always going to be there. So just jump into it. But Dave, off the deep end, give it a shot. Yeah.
+
+[00:40:04.92] - Joseph Thacker
+I will say for the people that are considering it, they probably know they're good enough to do it and they might struggle to take that leap. At least it was for me, every time I would go to leave, my employer would give me a raise or give me a promotion or whatever. And so I do think if you're going to do it, set yourself a hard date, assuming you have the money saved up for the Runway and all that. Set yourself a hard date and don't let anyone talk you out of it because it's so easy to be talked out of it. Just out of fear or out of another opportunity.
+
+[00:40:34.03] - Ciarán Cotter
+Yeah, and I'm meeting, you know, Green Jam, he's at the Google events sometimes. Yeah, he's coming to Edinburgh tomorrow, so I'll be getting dinner or whatever with him. I want to ask him about his full time experience because he's just gone full time.
+
+[00:40:45.23] - Joseph Thacker
+Oh, he did? When did he start?
+
+[00:40:49.07] - Ciarán Cotter
+I mean, I think it's been like a month or something since he's gone full time but you know, it's been a few years since he's doing part time Bug bounties. So yeah, really looking forward to hearing what his experience is so far.
+
+[00:41:00.61] - Joseph Thacker
+Yeah, that's awesome.
+
+[00:41:04.53] - Vitor Falcão
+Yeah, I was going to say that doing full time hunting or doing any kind of remote kind of work. Guys be careful with social connections. You know, do not like isolate yourself and forget to keep making friends and things like that because we are all humans. Don't run away from that. And when thinking about making Bug Bounty a full time thing or not, you're gonna slowly stop treating it as a hobby. To be honest, if you are making money, is it really a hobby like you're making money that is paying the beers or the bills? So I was already paying the bills instead of the beers. It was not a hobby anymore. By the end. That was a lie I was telling myself to. I don't know why. So be careful with that.
+
+[00:41:54.78] - Joseph Thacker
+Yeah, that last thing is super true. I definitely, when I was working a full time job and doing Bug Bounty on the side, I kind of like felt like it was like a game and so I would like justify doing it all the time in the evenings. And my wife is like, no, it's work, you're just doing work. I'm like, yeah, I know, but I love it. And she's like, yeah, but you're just working two jobs. Like you're working all day and then you're working all night. Like, you know, like as far as like impact on family, impact on your life, like you're just doing two jobs. And I was like, yeah, but it's so fun. So anyways, I made it the main thing so that I didn't have to work two jobs. You know, I think that a lot of people probably, that probably resonates with a lot of people.
+
+[00:42:31.01] - Ciarán Cotter
+I think I've gone full circle there. I'm doing pen tests to pay the bills at the base level. Now it's back to being a hobby for me. Especially with the life hacking events at this point.
+
+[00:42:39.98] - Joseph Thacker
+Listen, you've doubled what you expected this year, Kieran. So just everyone can root on Kieran and celebrate him as well. You've doubled your goal this year as a full time hunter. You've definitely giving yourself the leeway to not have to like do pen tests for your, your bills. Especially after this Google event. Come on. Before that I understand, but after the Google event, no complaining. All right. Yeah. So one thing, you know, I think that's interesting. I think Kieran, you may have put, put this in the document, but actually, let's just ask Vitor. This is your first time ever doing Google? Sorry, first time doing AI related bugs. You probably had a lot of the thoughts that me and Kieran have had over the last year or two with like, hey, these bugs are kind of weird. They're sometimes like higher user interaction. They're, they're usually targeting one user. So they're kind of similar to client side bugs but they're often a little bit social engineer y. And they're also kind of weird because they're non deterministic. Sometimes you gotta like trial multiple times. Did like just give me your thoughts on like AI kind of VR like AI hacking in general. Having really kind of dove in so recently for your first time.
+
+[00:43:50.65] - Vitor Falcão
+Okay. It was a weird feeling when I popped the first bug AI bug by myself because we and Monke, we were like covering each other. Like he was burning out. And I was like, okay, so you chill now. Today is your day off. He had, I don't know, anything to do. And I was like, I'm going to do some hacking. And the day I popped it by myself after learning a lot from Kieran, I was like, okay, that is weird. It feels like if I report this to the company I'm scamming then I don't know. It doesn't feel like that. Yeah, it doesn't feel like real bug. That is going to happen 100% of the time. Sometimes the prompt injection fails. Things happen. I don't know. I still wrap my head around it. But I got this very interesting question on Twitter. A guy asked like, should I learn AI hacking or web hacking? And I'm like, dude, it's a Mix of both. They do not exist without each other. Most of the exfiltrations we did used a lot of decent good old client side hacking, like images, things like that to exfiltrate information. If you don't learn that, you're not going to get there. Delivery also uses the same things. A lot of times before the event I was like, what is AI hacking? I don't know, making AI on a company page say something racist or anything like that, like proper injection. I had no idea it could be actually so impactful like leaking someone a company's data or someone's emails and things like that. And at least Google cares a lot about that. I don't know how other companies deal with all this, this kind of stuff. I've seen a few reports mostly on the hacker one and the companies are like, we don't care that much. We're going to pay as a medium at most high Google. No, Google is like critical, critical. If you can exfiltrate anything that's critical and it's crazy, you know, I don't know how I'm going to deal with AI hacks on other programs. We have another live hacking event in like two weeks, three weeks and I go into focus on the AI stuff because. Because whatever, that's what I want to do and I want to see what's going to happen. Like I want to see how the company is going to deal with that. So yeah, that's the point. I am right now.
+
+[00:46:11.11] - Joseph Thacker
+Yeah. Yeah. And that's why I wanted to ask you because I think it does feel kind of weird. It feels a little bit different like you said, partially because of the. Yeah, it feels like it's not that likely to be exploited. But it is really nice that there are companies at least like Google that do take it seriously, especially when it can control your IoT devices, you know, like when there are really weird things like that going on. And so. And so yeah. Yes, we.
+
+[00:46:38.61] - Vitor Falcão
+Yeah.
+
+[00:46:39.05] - Joseph Thacker
+Nice. Yeah.
+
+[00:46:39.69] - Ciarán Cotter
+This is the Google Cam that I bought to do some testing.
+
+[00:46:42.57] - Joseph Thacker
+But yeah, we may have made a run for a smart lock in Tokyo. Like there's all kinds of things you could potentially imagine.
+
+[00:46:53.96] - Ciarán Cotter
+I think we're at a very simple level of complexity for a lot of these systems. Like will begin to see a lot more like server side issues, maybe MCP specific issues or maybe it won't be mcp, whatever it'll be. And similarly client side issues coming out of the Systems built on LLMs in the next year or two as things get a lot more. The infrastructure and all the libraries get a lot more complex as well. So right now it feels kind of scammy because it's like, oh, what's the exploitability? But the minute you can do some real path traversal stuff through tool calls, I think it'll get really interesting.
+
+[00:47:30.09] - Joseph Thacker
+Yeah. And I mean, in that episode where me and Justin interviewed one of the Google staff, you know, they were talking just about how at their scale, when there's billions of users, it's like this is probably going to get exploited at some point. Right. And so it makes sense for them to take it seriously, I think.
+
+[00:47:44.88] - Ciarán Cotter
+Yeah, yeah, it does.
+
+[00:47:46.48] - Joseph Thacker
+Cool. Yeah. Did you all have a.
+
+[00:47:47.73] - Ciarán Cotter
+Or you go ahead, Vitor.
+
+[00:47:49.13] - Vitor Falcão
+Yeah, I just want to say that you also have to think about the non AI related stuff that is happening around AI. Like think about, I don't know, let's put it, Gemini, Gemini is getting huge and they have to build features around it, like non AI related, like having gems, sharing gems, creating chats, sharing chats, things like that. So we have this AI gold rush. Everyone wants to become the best, most sold AI product. Guys, that's amazing. That means developers making mistakes for a bug bounty hunter, like that is not amazing, but it is amazing. You guys get it, right?
+
+[00:48:24.05] - Joseph Thacker
+It's good for hackers. Yeah, yeah, you're right. They do have to move fast. Right. They feel this really strong pressure to move fast. And so not only do they want to incentivize bug hunters to look at them, I think that's why Google's paying well. I think that's why there's like really good AI safety payouts. Like I mentioned on a previous podcast, with both anthropic and OpenAI willing to pay 25 or $35,000 for jailbreaks. And I think it's because they really want our. They want our expertise and our attention and they want it right now because they have to release next week, so they can't wait. And so they have to put a really heavy incentive on our time. And so I think that you're right, Vitor. I think that's like very, very cool for us. Right.
+
+[00:49:08.32] - Ciarán Cotter
+And like Google have updated their AI VRP very recently. So that's just a sign that things are moving forward and they're restructuring. They restructured some of like what a P1 is and what a P2 is and stuff in the new. The new system.
+
+[00:49:23.73] - Joseph Thacker
+Yeah, exactly, yeah. So if anyone's been confused about why when Vitor was saying like, it was like critical, critical, critical, it's because of the attributes of their report and with their new reporting framework it's like very clear. So if people are confused or curious about how that's all set up, you can go to Google's. We might drop it in the show notes. But Google basically has a new like AI VRP table on their rewards and it explains exactly what would make it an S1 or what would make it a P1 or a P2, et cetera. And so you just go in there and see exactly what the impact would be and what the payout would be, depending on what bug you're looking for. So sweet. Do we have any other thoughts on AI VRPs that you all did not get to say yet? Cool. Sweet, sweet, sweet. I think the only other thing that I had for the pod was this is more of a little bit of just like fun actually. You know, we'll save that, we'll save that for. We'll do like a news episode. We'll make this just like a full blown guest episode and we'll, we'll do news next time. Where can people follow you or find you? I know you mentioned your blog, Vitor. Go ahead and tell. Spell that out for them so they can find your blog.
+
+[00:50:37.71] - Vitor Falcão
+Yeah. So it's okay. That's going to be hard because it's my, my name, it's vitorfalcon.com that's where I've been posting more and more stuff because it was. I forgot about my blog. Sometimes I forget about it. Guys, you have to do the hunting and actually if you do the hunting, money. Yeah, that's the point. Like it does, but it's very, it's a hidden, it's indirect money. You know, the self marketing stuff.
+
+[00:51:06.19] - Ciarán Cotter
+Yes.
+
+[00:51:06.71] - Vitor Falcão
+But the thing is you have to do the hunting and find cool stuff that you can actually write about because there is no point on writing. I don't know, I don't know what I would write about if I had nothing to talk about. Anything nice that I found during hunting or whatever. I know Kieran does that. He just like shares his accountability stuff every week. I know you do that but that's not my style, you know, so it's a bit harder for me.
+
+[00:51:33.57] - Joseph Thacker
+Yeah, sweet. Yeah, I'll spell that out real quick. So his blog is at Vitor V I T O R FALCOW F A L C A O dot com and yeah, he mentioned his like full time hunting journey from the last three months. It's a really great read. Sorry. Go ahead, Kieran.
+
+[00:51:52.15] - Ciarán Cotter
+Now I was just going to also shout out his first three months as a full time hunter blog post that he's done recently. So worth checking out for sure.
+
+[00:52:00.15] - Joseph Thacker
+Yeah. Yeah. And as far as Kieran, you can find him at Monkeyhack on X but he also has Monkey Hacks, the really nice newsletter so you should go subscribe to that.
+
+[00:52:10.07] - Ciarán Cotter
+And that's. That's Monkey ie M O N K E I E. Sweet.
+
+[00:52:14.65] - Joseph Thacker
+Cool. Well thank you guys and we'll call that the pod.
+
+[00:52:18.88] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end y'.
+
+[00:52:22.69] - Joseph Thacker
+All.
+
+[00:52:22.96] - Justin Gardner
+If you want more Critical Thinking content or if you want to support the show, head over to CTVB show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of Masterclasses, Hack alongs, exclusive content content and a full time Hunters guild if you're a full time hunter. It's a great time, trust me. All right, I'll see you there.

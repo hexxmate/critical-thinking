@@ -1,0 +1,832 @@
+Episode 79: The State of CSS Injection - Leaking Text Nodes & HTML Attributes
+Source: https://www.criticalthinkingpodcast.io/episode-79-the-state-of-css-injection-leaking-text-nodes-html-attributes/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:01.199)
+Alright dude, we're rolling. So, I have literally been that, what is that, Charlie conspiracy theory dude this week? That meme?
+
+Joel Margolis (teknogeek) (00:10.104)
+You're just like pointing, you got the string on the on the bolted board.
+
+Justin Gardner (@rhynorater) (00:14.927)
+That has been me this week with CSS Injection, man. There has been some really cool stuff popping up in CSS Injection, and actually, there's been some cool stuff that is like seven years old at this point that I'm just now finding out about that is absolutely amazing. So I'm excited to cover that today. But first, let's get to the news. Joel with the News Report.
+
+Joel Margolis (teknogeek) (00:37.208)
+the news. So Space Raccoon. Do you want to start with that one or should we start with? Yeah. Yeah. So Space Raccoon has a really cool blog post that he came out with talking about, well, universal code execution. I don't know. Should we talk about the wording of that?
+
+Justin Gardner (@rhynorater) (00:41.999)
+Alright. Yeah, yeah. Let's go into that one.
+
+Justin Gardner (@rhynorater) (00:59.695)
+So I think it's interesting. I think it's interesting. Because when I went into this, I was like, OK, that sounds real, real intense. And as you start reading through it, first of all, let me just say it's extraordinarily well done research, as always, classic space raccoon stuff. However, there are a lot of conditions for this actual exploit to be met. And essentially, what this
+
+Joel Margolis (teknogeek) (01:08.728)
+Yeah.
+
+Joel Margolis (teknogeek) (01:16.664)
+As always, yeah.
+
+Justin Gardner (@rhynorater) (01:28.527)
+article outlines is like some of the functionality surrounding Chrome extensions and how the developer documentation and some of the ways that you have to communicate with these extensions can be manipulated to result in code execution on the client, on the actual client running the Chrome extension in their browser. And I think I learned a lot about Chrome extension architecture from this one. And I think
+
+The way that he deals with essentially the massive amount of conditions required for this attack is pretty awesome. Essentially using large data sets to query Chrome extensions that fit a certain profile. But man, there are a lot of conditions.
+
+Joel Margolis (teknogeek) (02:16.568)
+Yeah, for sure. And I think it's like, it's a great example of one of those sort of niche areas of research where once you start to dig into how these things work, you find a lot of really interesting topic specific information about, you know, pitfalls or weird configurations or just like strange behavior and stuff like that. And I think this is really, really useful as a whole. I haven't seen a whole lot of research done about Chrome extensions. And I know that there's a lot of programs that
+
+Justin Gardner (@rhynorater) (02:24.527)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (02:32.847)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (02:46.04)
+own or have a Chrome extension that's in scope usually. And I think a lot of people don't really test it because it's not very easy to test. It kind of falls into that weird gray area of both web hacking but also code analysis type stuff. So there's definitely, it's very interesting. And I think.
+
+Justin Gardner (@rhynorater) (02:49.775)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (02:59.791)
+Mm -hmm.
+
+It's definitely fringe web hacking. There's JavaScript, obviously heavily involved in there, but it's using a bunch of Chrome APIs that's hooking. It's like a combination of desktop hacking and web hacking, which I think is a really cool area. And I don't know if you've seen the content calendar yet, Joel, but I added some stuff on there. And we do have an episode coming up soon on Chrome extension hacking, which is going to be super awesome.
+
+So I think this is a nice little intro into this. Do you want to do the TLDR for this one or should I?
+
+Joel Margolis (teknogeek) (03:29.944)
+Awesome.
+
+Joel Margolis (teknogeek) (03:36.856)
+Yeah, you go ahead, because, yeah.
+
+Justin Gardner (@rhynorater) (03:38.351)
+Yeah, I did look into it pretty well. And essentially what he does here is he explains Chrome extension architecture. And essentially there's this whole concept of a content script, which is essentially a script that gets added to each individual page that is within the scope for that Chrome extension so that you can run JavaScript. And that JS code has access to the DOM.
+
+but doesn't have access to JavaScript variables and stuff like that on the page. And so it's sort of living in its own little isolated world. I think that's actually the technical term, which is cool. And because of that, there are some limitations on what it can do. And essentially one of the most common ways for people to structure these content
+
+what are they called again? Content scripts, there we go. I was like, wait a second, what is going on here? These content strips is to be able to communicate with the front end via post message. Okay, so you're sending a post message from this content script up to the browser extension, sort of back end, the post message listener that's kind of sitting on the back end. And then you're passing through that data to other sort of Chrome extension.
+
+APIs like for example the, I can't get the name of it right here, it's the native send message, the one that allows you to actually send a message to a native application on the front end.
+
+Joel Margolis (teknogeek) (05:16.184)
+there's so many terms and stuff that we're just not used to. Again, this is one of those weird, it's such a niche area that has so many quirks that are specific to it.
+
+Justin Gardner (@rhynorater) (05:28.079)
+Yeah, yeah, and so there's this, I finally found the section of the app here. It's send native message, and essentially what that allows you to do from the Chrome extension backend is interface directly with a native application on the local device. So this is for stuff like using password managers and that sort of thing. And essentially it just does this via standard in and out, and the whole premise of his research is like, okay, if there's a way for us to,
+
+interact with these content scripts, and then that content script passes the message straight through to the backend, and then passes the message straight through to the native message API, right? Now we're passing this data directly through to a native application on the backend, and then that native application handles the user input in a bad way, then vulnerabilities can happen. So there's a set of one, two, three, four conditions
+
+that must happen for this attack chain to work. And then he's like, so it gets pretty complex, but here is this massive data set called the Chrome extension manifest data set that you can use to query. And then here's the sem -grep role. And it just shows how he takes these set of conditions, writes a program to detect these, and then sprays it across the whole data set, and actually ends up finding a vulnerability in a plugin with like,
+
+What was it, like two million? I think there's two million installs on it.
+
+Joel Margolis (teknogeek) (07:00.44)
+Yeah, I don't think he mentioned what the actual one was, but he said it had 2 million users, yeah.
+
+Justin Gardner (@rhynorater) (07:06.543)
+Yeah, one such extension is the extension B, quote unquote, with two million installs, which is awesome. So it's really cool to see him sort of have an idea on how this research should work and then programize it and then find things that are actually vulnerable to it across the whole extension data set and then pop some cool bugs with it. Very, very well done.
+
+Joel Margolis (teknogeek) (07:11.16)
+Yeah.
+
+Joel Margolis (teknogeek) (07:31.)
+Yeah, yeah, absolutely. I mean, it's really like that start to finish of finding a bug, figuring out how to do it en masse and then like doing it like at scale and then reporting all that stuff. And, you know, it's really awesome to see a great example of that, especially in a niche research like this.
+
+Justin Gardner (@rhynorater) (07:37.647)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (07:49.327)
+Yeah. Okay. So to try to be a little bit more concise and clear with my explanation here. Okay. The content script has a, has a post message listener. It takes data from that post message listener, sends it to the Chrome backend via send message. And then there's an insecure handling of send message. It passes it through to send native message, which is now hitting a native app on the, on the actual device. And then the native app incorrectly handles that data and introduces a vulnerability.
+
+in the system. The example that he has is like a path traversal to load us a DLL. And essentially he forced the download of a DLL because he's got control of JS, right, in the browser. You can force the download and then loads that URL or that DLL from the path traversal on the backend and gets RC. So pretty crazy chain. Definitely worth a read because it helps me understand a little bit better.
+
+how Chrome extensions work and what kind of functionality they have surrounding them. And I think, let me just add this one more thing. I think the fact that he talks about common patterns in Chrome extensions is like, that sort of stuff is really helpful to know because in order to get that intuition of like, what's a common pattern, what's not a common pattern, you have to read through a lot of Chrome extension code bases, which is gonna take a lot of time. And Eugene saved us that time with this writeup.
+
+Joel Margolis (teknogeek) (09:14.712)
+Yeah, it's that sort of like meta knowledge stuff. Like what's all the ways to open or to reference a window in a browser, right? Like that kind of research is, it's really valuable even when it's, I mean, as a whole, that's not really what the purpose of this blog is, but it's kind of just nested in there as a little treat, which is awesome.
+
+Justin Gardner (@rhynorater) (09:16.879)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (09:20.559)
+Yeah, exactly.
+
+Justin Gardner (@rhynorater) (09:25.071)
+Mm.
+
+Justin Gardner (@rhynorater) (09:30.422)
+Hmm. Yeah, a little bonus, a little bonus. All right, so actually kind of a thin week as far as news goes. The only one that I had otherwise here, besides obviously all of the CSS injection stuff that I'm gonna freak out about later on in this episode, literally I'm sleep deprived right now because I've just been so, I was laying in bed last night and I was trying to fall asleep and I was just like, my brain just kept on churning CSS injection stuff.
+
+Joel Margolis (teknogeek) (09:57.88)
+What is wrong with you?
+
+Justin Gardner (@rhynorater) (09:59.759)
+I don't know, it's not even that crazy of a vuln either. It's like very fringe vuln.
+
+Joel Margolis (teknogeek) (10:02.328)
+Just is like literally like like awake at night like restless thinking about CSS like
+
+Justin Gardner (@rhynorater) (10:11.023)
+I've got problems, man, I've got problems. Okay, so before we get to that, let's cover this next one. Okay, so this one was just kind of, this is a tweet from Isida Adithya, sorry, I don't know how to pronounce it, and I automatically put like a Japanese spin on it for some reason, if it fits to Japanese characters. But essentially what this person tweeted out was,
+
+a way to escalate client -side path traversals essentially in script tags using the built -in JSONP callback that's a part of WordPress websites, which we've talked about probably two or three times at this point on the podcast. So nothing super new there, but it did get my brain turning a little bit. And I wanted to shoot out a prediction really quickly and ask for the community to do some research or at least keep their eyes peeled.
+
+for a variant of this, which is essentially if we can find something in like WordPress or Drupal or like some of these big frames or like, for example, CloudFlare, CDN, CGI, right? If we could find something, right, you know, on these very widely used frameworks that allows us to arbitrarily control the response, the JSON formatted response, that would be extremely helpful.
+
+Joel Margolis (teknogeek) (11:23.16)
+Next, James.
+
+Justin Gardner (@rhynorater) (11:39.311)
+for exploiting client -side path traversals, okay? So essentially here, they have a JSONP callback. You're able to specify what JavaScript function is used to trigger the callback. That's great. We've talked about it a million times. What I want is an endpoint where I can specify arbitrary JSON in the query parameter, and it returns that JSON in the response. Just reflects it right down into the response. And the reason why that's extremely helpful.
+
+is that if you have a client -side path traversal, obviously you're controlling where that API request is being sent to. But it is expecting some data format back, because it thinks it's communicating with the same API endpoint that it's always communicated with. So what essentially needs to happen is we need to find a way to give it the data format that it expects in JSON as a response. And then we can use that to...
+
+trigger XSS, business logic bugs, open redirects. These are all cases that I've seen when you're able to actually control that arbitrary JSON response. And normally, my go -to way to do this, Joel, is I redirect off the domain to my domain, right? And then I control the JSON response. But that requires an open redirect. And if we can find a gadget in WordPress or something like that that allows us to do this, then we wouldn't have to redirect off domain.
+
+we would just be able to do it with like a semi -open redirect or even a closed redirect depending on the domain.
+
+Joel Margolis (teknogeek) (13:10.552)
+Yeah, or even some sort of browser specific feature. Like I know there's some really interesting research recently that I've seen about blobs, like those like ephemeral sort of file blob things that are in the browser. And you can like reference them. And technically the origin is actually wherever they came from. So like if you have a blob that was created on example .com and you're referencing, like you have an XSS in that blob.
+
+Justin Gardner (@rhynorater) (13:14.607)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (13:21.103)
+Mmm. Yeah.
+
+Justin Gardner (@rhynorater) (13:27.823)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (13:40.312)
+or for example, the origin or like, you know, domain, like window .domain or document .domain is going to be the host that the blob was created on. So I don't know if it has access to cookies and all that kind of stuff. I think there's some like weird limitations around that, but yeah, potentially also something like that where you have some sort of browser specific feature that would allow you to control the file contents would also be an interesting attack vector.
+
+Justin Gardner (@rhynorater) (13:40.335)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (13:45.647)
+Mm -hmm. Mm -hmm.
+
+Justin Gardner (@rhynorater) (13:50.671)
+really? Hmm.
+
+Justin Gardner (@rhynorater) (14:03.631)
+Yeah, that would be really cool. Blobs, I think, have a custom scheme that's associated with them, like blob colon, yeah. So I'm wondering whether in these clients I have path traversal -like scenarios, whether we could hit those. Maybe if there was a redirect that was doing some domain -level validation but wasn't checking the scheme or something like that, then you could definitely have something like that happen. But I like...
+
+Joel Margolis (teknogeek) (14:10.616)
+Yes, it's like blob colon HTTP, yeah.
+
+Justin Gardner (@rhynorater) (14:29.775)
+I like the way you're thinking, Joel. Thinking outside the box of critical thinking, thinking like a hacker, aren't you? Critical, critical, critical. I love how I'm obsessing over client -side path traversal, or not, CSS injection and client -side path traversal lately. And this is, you know, these almost are never critical, critical, criticals. We gotta start talking about critical, critical, criticals.
+
+Joel Margolis (teknogeek) (14:31.512)
+Yeah.
+
+I'm thinking like a hacker. Hey, where'd I get this shirt?
+
+Joel Margolis (teknogeek) (14:52.76)
+Yeah, almost never.
+
+Justin Gardner (@rhynorater) (14:58.223)
+Well, actually, I guess on that note, on that note, I will take a tangent on something that is not here in the doc, Joel, which is that I'm giving a talk at DEF CON this year that I was also frantically preparing last night for the deadline that was last night, surrounding some of the coolest critical reports that I've found over the past couple years of Bug Bounty. So there's 11 bugs in there, all of them are criticals.
+
+Joel Margolis (teknogeek) (15:15.447)
+You
+
+Justin Gardner (@rhynorater) (15:27.471)
+Critical Critical Criticals. And so if you're interested in hearing a bunch of bug stories about those, definitely check out Bug Downy Village talk that I'll be doing at DEF CON. I think it's entitled, I don't even know the title off the top of my head. I think it's like top war stories from a try hard Bug Downy Hunter or something like that. So be on the lookout for that. Selfless little self -promotion, shameless self -promotion there.
+
+Joel Margolis (teknogeek) (15:47.096)
+Awesome. Awesome.
+
+Joel Margolis (teknogeek) (15:51.512)
+Did you have to complete your slides like fully per view? Whoa.
+
+Justin Gardner (@rhynorater) (15:56.239)
+Yeah, dude. Yeah, I did. Yeah. Which is like a pain because it's like a month in advance and it makes sense because they've got a lot of stuff to recover or to, to cover and, and, you know, assess, but, man, it, it was a lot. Yeah. It was like 150 something slides.
+
+Joel Margolis (teknogeek) (16:09.56)
+That's a lot of work, especially this far in advance. That's a ton, yeah.
+
+Justin Gardner (@rhynorater) (16:16.015)
+I think we can make small modifications to it between now and then, but essentially they said it needs to be like as finalized as possible. And I'm like, okay, well that's pretty.
+
+Joel Margolis (teknogeek) (16:22.456)
+Wow, okay. No procrastinating allowed. Damn, cool. All right, let's, you wanna talk about your special critical thinkers release and then we'll, yeah.
+
+Justin Gardner (@rhynorater) (16:26.671)
+Yeah, apparently not.
+
+Justin Gardner (@rhynorater) (16:34.479)
+Yeah, okay, cool. So yesterday, very exciting, yesterday I dropped a passion project of mine that I've been working on for the past couple weeks that I just kind of bulldozed my whole schedule and worked on this because I had the motivation. And that is essentially a full -time Bug Bounty blueprint, how to go full -time on Bug Bounty. It's like a 15 page document describing...
+
+Essentially, if I were having a personal conversation with you and you were saying I want to go full -time book bounty, what should I do? This is what I would say to you at length. So it's very conversationally written. It covers a lot of topics sort of ranging from what kind of difficulties you're going to face as a full -time book bounty hunter, what kind of like personality traits or I guess like motivation deficits you might
+
+come up against that are gonna cause problems. We cover taxes, we cover, yeah, how to collaborate with other hackers, how to quit your job and transition into full -time bug bounty, how to make sure your finances are squared in advance, and then essentially how to build a pipeline surrounding your bug bounty skills and keep on driving that stuff in.
+
+Joel Margolis (teknogeek) (17:36.984)
+All the good stuff.
+
+Justin Gardner (@rhynorater) (17:55.503)
+to create a good consistent income stream for you that you can live off of. So, it's not to toot my own horn here. It's pretty good. I think it's really good. And the feedback has been positive. So, definitely check that out if you're interested, critical thinkers. If you're not a critical thinker, head over to Discord, check out the server subscriptions that we've got there. This book is only available to the critical thinkers. So even if you want.
+
+You know, go ahead, drop a sub. It's 25 bucks for one month. Grab the book and bounce. That's fine too. But in that one month, I think you'll find critical thinkers tier is something special, man. There's a lot of great conversations happening in that, in that, in that sort of exclusive discord channel and a lot of cool, a lot of cool scripts, a lot of cool techniques, good conversations happening in there. So check it out if you haven't already.
+
+Joel Margolis (teknogeek) (18:46.136)
+Absolutely, exclusive master glasses and stuff too. We do master glasses at least once a month or hack alongs too. And we record all of them. We put them all in there. So you have months of back content that you get access to. And so lots of really cool features if you want to go check it out.
+
+Justin Gardner (@rhynorater) (18:48.591)
+Yeah.
+
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (19:03.535)
+Yeah, absolutely. yeah, one other cool feature that is actually in the Critical Thinkers exclusive content channel that I wanted to just kind of shout out is the Client -side Path Traversal Browser extension that me and Busfactor wrote. Busfactor is a very valued member of the Critical Thinking community and we were just kind of discussing what it would look like to build a browser extension for Client -side Path Traversal.
+
+And I threw some junk code at him. I was like, this is roughly how it would work. And I come back the next day and he's converted it all to TypeScript and has a build flow and all these nice little buttons and stuff like that. And I'm like, man, this rocks. So I took it from there as well and did some additional modifications for it. But at this point, it's pretty good. It detects pretty consistently when you have data reflected from the query parameters, the hash, a couple other areas.
+
+into the path of a sub resource, you know, request, whether it be like an iframe or a fetch or something like that. Those are things that we all want to know about. So we have that extension available to the critical thinkers as well. And I think probably at some point we'll release it probably within the next year or so, but I definitely want to refine it a little bit and get it to a spot where, you know, some of the difficulties are ironed out. Some of the false positives are ironed out before I release it full time.
+
+Joel Margolis (teknogeek) (20:29.88)
+Yeah, definitely have a couple of really good plugin ideas in the pipeline, I think. I know we've talked about a variety of different things. Some of them we may have even cut out of the episode recording. So yeah, we'll definitely be creating those and releasing those eventually to the community as we go, just for our own purposes and also just to share the knowledge with the critical thinkers.
+
+Justin Gardner (@rhynorater) (20:39.535)
+Yeah. Alright man, the moment has come. CSS injection time.
+
+Joel Margolis (teknogeek) (26:47.736)
+Your moment. Unfold the conspiracy theory.
+
+Justin Gardner (@rhynorater) (26:49.328)
+My moment. All right, man, here's what I got, okay? So I didn't know until last week that CSS injection has been pretty much completely solved. Prior to this, I thought that essentially we had a really reliable way to leak the contents of attributes and that sort of thing, but actually it is possible to leak the content of a text node as well, right? Just the inner HTML or whatever of a specific element, if that's text.
+
+So I mean, of course the user has to navigate to the thing, but once they navigate, as long as you can do an import from a remote CSS page, I guess, then you're good to go. And so, yes you can. So if we're talking about remediation methods, CSP is pretty much the...
+
+Joel Margolis (teknogeek) (27:19.128)
+Does it require user interaction?
+
+Joel Margolis (teknogeek) (27:33.688)
+And you can block that with CSP, right? Yeah.
+
+Justin Gardner (@rhynorater) (27:41.199)
+the best way to do this, obviously, besides like not introducing the vulnerability in the first place, which I think is not too hard to do with CSS injection. Like you need a pretty niche scenario for CSS injection to happen in the first place, but I guess.
+
+Joel Margolis (teknogeek) (27:54.04)
+I mean, it should follow most of the same instances of any other type of XSS or HTML injection, right? Where you're just, some sort of content is making its way unsanitized into the response body. So in the same way that you would sanitize any of the rest of those, you'd probably fix that as well, right?
+
+Justin Gardner (@rhynorater) (28:10.671)
+Yeah, exactly, but we don't need to dwell on how to fix it, Joel. We need to dwell on how to exploit it, okay? Just put, take your program manager shit away from me, okay? Like, we don't need that right now. This is my moment. Okay, so there are two things that I kinda wanna talk about today and give the listeners a TLDR on essentially what CSP injection has to offer.
+
+Joel Margolis (teknogeek) (28:14.328)
+Hey! Some of us do, okay.
+
+Joel Margolis (teknogeek) (28:23.703)
+You
+
+Justin Gardner (@rhynorater) (28:35.503)
+and how to actually exploit it. So first one is of course the one that I think most people are familiar with. This is the one that I was using to exploit CSP injection up until this point, which is essentially the research done by Donut using sequential import chaining.
+
+Joel Margolis (teknogeek) (28:56.056)
+Was this back from like Singapore, right? Was that the, was it that event? Or Vegas or something? I remember it was a long, it was a while ago, pre -COVID.
+
+Justin Gardner (@rhynorater) (29:01.551)
+I don't know when he originally came out with it.
+
+Yeah, no, yeah, it absolutely was. And it's been out for a long time at this point, but essentially this is the whole concept of like, you have a CSS import statement, right? You've got that like at import feature with CSS and you import a remote style sheet and that style sheet includes another remote style sheet and does some CSS rule that will trigger a callback, right? And what will happen is you don't,
+
+on the server side, you don't respond to that second stylesheet import until you've gotten the callback from the first set of rules that you put in there to leak the first character or whatever, right? Once you've done that, once you've got that first character leaked, then you respond and you do the same thing recursively until you have leaked the whole content of like an HTML attribute. And the whole point, the whole reason why this is possible is because you can use the starts with
+
+selector for CSS stuff. So essentially you're doing a caret equal sign and then you know whatever value and you're able to specify okay if the attribute starts with this then you know trigger this HTTP request file like background image or whatever. And since you're able to do that you can just character by character by character by character just brute force out the value of these attributes which is super cool.
+
+and has been absolutely, very, very relevant and very much used in the, in the, in the community for CSS injection. And it was what I was using up until this point to prove most of my impact. so this, this was, and just to be clear, this was, released by Donut and, another guy, Pepe Villa at the exact same, same time around 2019 range. and so that is a well -established technique.
+
+Joel Margolis (teknogeek) (30:44.888)
+Yeah.
+
+Justin Gardner (@rhynorater) (31:01.103)
+You knew all that, right Joel? Of course. Yeah, because I know how much you love CSS injection and all these little fringe web vulnerabilities.
+
+Joel Margolis (teknogeek) (31:03.448)
+yeah, yeah, all that.
+
+You know, on the dark, they call me the CSS injection master.
+
+Justin Gardner (@rhynorater) (31:14.287)
+Thanks for that, thanks for that man. Okay, so cool, so I went in the rabbit hole this week because of some other things that I'll mention later, but while I was in that rabbit hole, I found a little bit more research on this specific technique that I didn't know about before, so I wanted to share it with the community, which is this technique, it's pretty fast. I think it only takes like a couple seconds to, maybe 10 seconds or so to leak a decent sized token.
+
+but you can double the speed of it by also simultaneously selecting from the backside of the attribute, the HTML attribute that you're trying to leak. So it's like, you're brute forcing the characters, you're coming in, you're coming in, and eventually you're converging somewhere. And I thought that was really interesting. It doubles the speed and it makes total sense why that would work. So cool little...
+
+Joel Margolis (teknogeek) (31:51.832)
+Mmm.
+
+Wow, this suddenly became a computer science leak code problem.
+
+Justin Gardner (@rhynorater) (32:13.679)
+little addition there. The other thing that I wanted to kind of shout out in the same like leaking attributes section is this repo by Portswigger Research called CSS exfiltration, which I think was a repo that was related to like some write up they did back in 2020, I believe. And
+
+Joel Margolis (teknogeek) (32:15.544)
+That's awesome.
+
+Joel Margolis (teknogeek) (32:36.824)
+This was like recent Gareth Hayes research, right? Or the blog, or the exfiltration thing was, I mean.
+
+Justin Gardner (@rhynorater) (32:39.215)
+So this was not recent. So recently, Gareth Hayes came out with a blog post on blind CSS exfiltration. And this was one of the things that kind of triggered me a while back, back into CSS injection. Very cool project. I think we've talked about it once or twice before in the pod. If not, just Google blind CSS exfiltration. It's literally the only article on it out there, because.
+
+Talk about a fringe piece of security research. That is the epitome of fringe. But this is actually something different, Joel. This is some research that he had done years before. And it's really interesting because this repo contains like one, two, three, four, five, six, like over 10 different techniques for leaking characters from different contexts via CSS injection. So he's got like steel and characters in Firefox.
+
+steal reverse Firefox, steal script contents, like all of these various, seriously man, it's like he's got a bunch of really cool ways of doing this and one of the ones that kind of stood out to me and I was like, man, I didn't know that was possible, was that you can steal the contents of an attribute by using the ATTR function in CSS, okay? Check this out Joel, I'm gonna link it to you in, because I don't think I put it like super clearly in the doc, I'm gonna.
+
+Joel Margolis (teknogeek) (33:39.928)
+I mean like I'm on Shazer.
+
+Joel Margolis (teknogeek) (34:02.136)
+TTR in CSS.
+
+Justin Gardner (@rhynorater) (34:03.887)
+Yeah, so click that link that I just sent you in Discord, okay? So, on line five, we'll drop this in the description. On line five, there is essentially a content CSS attribute that is defined, defining a property in CSS, and the value of that content, so the content is of course used to add like a prefix or a postfix to a specific div or whatever. The content of that is ATTR.
+
+Joel Margolis (teknogeek) (34:07.96)
+it.
+
+Joel Margolis (teknogeek) (34:12.28)
+Yeah.
+
+Joel Margolis (teknogeek) (34:28.504)
+huh.
+
+Justin Gardner (@rhynorater) (34:32.783)
+function call, and then the name of the attribute. And essentially what that will do is set the, in this scenario, the after content, so the content that comes after this div, to be this value of a specific attribute, right? And then you can style that after attribute with a specific font that will exfiltrate all the data from that. So this whole like ATTR function in CSS, I think is really fascinating that you can access HTML attributes.
+
+Joel Margolis (teknogeek) (34:54.648)
+Hmm.
+
+Justin Gardner (@rhynorater) (35:02.031)
+and stick their content into the content property in CSS. Pretty interesting.
+
+Joel Margolis (teknogeek) (35:06.872)
+Yeah, I'm curious how far that extends, because I know that there are certain weird things. Doesn't .value implicitly contain whatever you've put into a form input, for example? So would the value attribute from CSS on a form input contain that value, or would it have to be explicitly set? I don't know.
+
+Justin Gardner (@rhynorater) (35:20.463)
+It does.
+
+Justin Gardner (@rhynorater) (35:29.583)
+You know, it's funny you mentioned .value, because .value is a little weird, right? I feel like there are some frameworks that will automatically update the .value, or essentially the value HTML attribute. And I know that if you use, in JavaScript, if you use .value, that it just dumps the content of an input field or something like that. But I think sometimes it doesn't update it for things like HTML and CSS. It just does it in the JavaScript context.
+
+That's an interesting question. I'm not sure the answer to that.
+
+Joel Margolis (teknogeek) (36:01.4)
+Yeah, yeah, but I'd be curious to see if there's other, you know, weird cases like that or any implicit attributes or anything like that, like that exists, but isn't, you know, visible all the time, stuff like that. Yeah. Yeah, yeah. It's super weird. I mean, it makes you wonder like, why does something like that exist? I don't know. I'm sure there's some use case and there's probably some other weird edge case stuff that exists just like it.
+
+Justin Gardner (@rhynorater) (36:10.863)
+Yeah, you're starting to feel it, right? It's all like, this is interesting shit, right? Am I right?
+
+Justin Gardner (@rhynorater) (36:20.047)
+I - I - I -
+
+Well, CSS injection, or CSS in general, is just getting stronger and stronger and stronger, right, as they introduce new features. So that's one of the things that I really keep an eye out for in the browser change logs is like, what features are they adding to CSS and how does that affect our current understanding of CSS? And I was a lot more motivated to do this when I thought that text node content, so essentially if you have something like, let's say inside an h1 tag, you wanna leak like,
+
+you know, hi Joel, or something like that, you wanna leak the person's name. I thought that that was not solved, but that actually is solved, which is crazy to me. So now I'm a little bit less motivated, and to be honest, this has been a little bit demotivating, this whole research thing that I've been on, because it's like, well, they figured it all out. Yes, yes, now I know. And so, okay, before we get too far down that path, I'm gonna go ahead and paste this.
+
+Joel Margolis (teknogeek) (37:11.288)
+But now you know.
+
+Justin Gardner (@rhynorater) (37:20.879)
+this link, a link that I was talking about in the doc. See, you know, many other podcasts, other YouTubers even, they forget to put the links in the description. You have always a critical thinking. We don't forget. We don't forget to put the links in the description.
+
+Joel Margolis (teknogeek) (37:32.728)
+Not us. Unless it's a master class that I wrote or I ran and then it takes me a week of forgetting to. I did it though.
+
+Justin Gardner (@rhynorater) (37:40.559)
+Jill, what are you doing, man? man. All right, so CSS selectors to leak the contents of HTML attributes, boom, done. Of course, that's done. That's been done for a while. But the problem is nowadays, we have single page applications that are pretty much everywhere, right? And they don't often have input fields with pre -populated values like CSRF token or like API token or something like that.
+
+Oftentimes that gets stuck inside of a script text node, right? And just populated directly into JavaScript as a part of like those, I don't know, what are they called? It's like seed data almost for the page. It's like a JSON blob. Yeah, the state. Exactly, the state like JSON blob, right? That's where all the juicy stuff is nowadays. And that's why this research is so crazy.
+
+Joel Margolis (teknogeek) (38:23.032)
+Yeah, like the state or whatever. Yeah, that like state that, yeah.
+
+Joel Margolis (teknogeek) (38:35.032)
+Which by the way is so awesome when you find like a single XSS because then you just have one giant JSON that's included on every page that has the user token and all the config parameters. It's so nice. They make it so easy.
+
+Justin Gardner (@rhynorater) (38:41.775)
+Exactly, just like exfiltrate, yeah.
+
+Window .state, yeah, exactly. Exactly, love that. And we can now, we can do that also with CSS injection, okay? And the way we do this is via this crazy, absolutely nuts technique that I'm just, I love.
+
+Joel Margolis (teknogeek) (39:01.432)
+I always know when Justin puts a tweet in the doc that is just written entirely in Japanese and is like three days old. It's gotta be some crazy, crazy research that he's about to drop.
+
+Justin Gardner (@rhynorater) (39:10.543)
+Dude, so Masato Kinugawa does some amazing, amazing research, man. And so lately what he's been up to, which triggered this whole thing, was he tweeted out in Japanese about some of the research he's been doing on font ligatures and how he's been applying that to LavaMote, which is an absolutely, or LavaDome in particular, LavaMote I think is the company above it. So check out this product Joel, it's like a little bit further down in the dock, but like.
+
+Essentially this product, LavaDome, is a DOM element isolator. So essentially you can have a piece of the DOM that you just cannot get the value from JavaScript. You can have XSS and you just won't be able to get the value out of this piece of the DOM. Well, they isolate it out. They do a bunch of just crazy stuff to block it off. Yeah.
+
+Joel Margolis (teknogeek) (40:00.632)
+Why not?
+
+Joel Margolis (teknogeek) (40:06.648)
+in native JavaScript?
+
+Justin Gardner (@rhynorater) (40:08.559)
+Yeah, so like you literally can't get it. And there's a bunch of conditions to it, right? So if you go to the Lava Dome JavaScript or GitHub repo, yeah, pretty crazy, right? They think they can actually isolate a node from the rest of the DOM and you just can't touch it. And they call it like, you know, shadow DOM and it's like.
+
+Joel Margolis (teknogeek) (40:14.872)
+We believe this is a solvable problem.
+
+Joel Margolis (teknogeek) (40:26.232)
+What such use case is a feature for Metamask's show private key toggle which exposes the private key in plain text. Currently the sense of content is attached to the DOM once it's exported making it fully accessible to all on -cease running. But we believe this is a solved problem.
+
+Justin Gardner (@rhynorater) (40:38.671)
+Right, so they're saying, the whole concept of this project is quote, we live in a world where we can no longer trust the code in our own apps and same origin execution does not guarantee safety. And I'm like, okay, all right, let's go. And it's amazing because they're essentially trying to protect the value of some HTML inner text from themselves, which is like,
+
+a very difficult problem to solve. And I can just like, the moment that Masato Kinugawa started looking at this project, like, it's over, man. Because there's a bunch of like issues in this project that he has submitted, like leaking the values of, you know, Lava Dome via character height and font ligatures and mouse over and text fragments. And like, there's just a bunch of crazy ways that he's done it. But overall, I mean,
+
+very interesting project and I think most of the time the approach like they mention in their in their readme is to actually put that sensitive content in an isolated iframe. But apparently they say you know you could put in an isolated iframe but that doesn't feel as cool or something like that and why don't you put it in Lava Dome instead which is like okay.
+
+Joel Margolis (teknogeek) (41:54.04)
+Hahaha
+
+Joel Margolis (teknogeek) (42:01.624)
+Yeah! Okay.
+
+Justin Gardner (@rhynorater) (42:02.575)
+Yeah. And then, and then Masato Kinugawa is like, no, no, no, I will not allow for this. So essentially he's tweeting out about all of these different ways to steal it. And one of the ones that he tweeted out was very much related to CSS injection, which is essentially like, you can use font ligatures to leak the content of this sort of encapsulated DOM.
+
+Okay? Do you know what a font ligature is, Joel? Why do you know what a font ligature is?
+
+Joel Margolis (teknogeek) (42:32.568)
+Yeah.
+
+I do know what a font ligature is because I use font ligatures. Yeah. So, okay. So the TLDR here is that my, my, the, the terminal setup that I use, it uses a font that uses ligatures specifically in both the S code and I term to convert like
+
+Justin Gardner (@rhynorater) (42:40.751)
+What? Of course you do. Of course you know about this.
+
+Justin Gardner (@rhynorater) (42:49.903)
+You've got to be kidding me.
+
+Joel Margolis (teknogeek) (42:57.88)
+double equals into a fancy thing or triple equals into a fancy character or equals right arrow to a fancy arrow and that kind of stuff. So do you know, here what? I'll let you, I won't take, I won't stay a moment. I won't stay a moment. What are file look issues?
+
+Justin Gardner (@rhynorater) (43:09.327)
+Dude, okay, this is like the most, of course, this is Joel moment that I can possibly think of is like, there's some super awesome, you know, niche piece of technology that I'm ready to blow your mind about and you're like, yeah, I use that for my terminal. Exactly, like just like absolute tech enthusiast shit you could possibly think of.
+
+Joel Margolis (teknogeek) (43:29.848)
+The most random thing, yeah.
+
+Joel Margolis (teknogeek) (43:37.432)
+You
+
+Justin Gardner (@rhynorater) (43:38.319)
+That's hilarious dude. Okay, so font ligatures, essentially what this allows you to do is when you have a custom font, you can specify a sequence of characters that has a custom glyph. So glyph being the sort of actual visual representation of the character, yeah. So essentially what you can do is you can define any length of font ligature. So you can have.
+
+Joel Margolis (teknogeek) (43:54.296)
+The rendered character, yeah.
+
+Justin Gardner (@rhynorater) (44:04.911)
+a font ligature that's like 35 characters long or more, right? Where if it sees this 35 character sequence, it displays it with a separate GIF. GIF, it does not display a GIF. Glyph, thank you. All of a sudden you start typing and then all the conspiracy Charlie pops up or whatever. man, that's so good. So anyway, you can define these special ligatures.
+
+Joel Margolis (teknogeek) (44:15.64)
+Cliff.
+
+Justin Gardner (@rhynorater) (44:33.135)
+And this allows you to actually leak the content of a text node. So very similar to what you're doing with the CSS selectors, essentially you can have it, you can load up a custom font into this specific text node, and then that font has these ligatures. And if everything else, every other character, A through Z, zero through nine, that sort of thing.
+
+is set to a zero width character. You can control the width of the characters in the custom font creation process. But the ligature that you're trying to leak is massive. It's like 10 ,000 pixels or something like that wide. And then you style the container that this text is in such that if it's above a certain length, there is a, or above a certain width, there is a scroll bar that appears.
+
+So that can give you a binary yes or no on whether this ligature is actually created or not, right? Because when the scroll bar appears, you can style the scroll bar to have a background image that will reach back out to your server, right? Did you start to see what I'm, you see what I'm doing here with the, yeah, yeah.
+
+Joel Margolis (teknogeek) (45:36.695)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (45:43.448)
+Okay, I like how that works. Yeah, yeah, yeah, with the shadow C is the shadow Dom. Shadow Dom, by the way, that's a whole rabbit hole too. I'd never heard of that and it's just like, yeah.
+
+Justin Gardner (@rhynorater) (45:54.351)
+Is that what you've been doing for the past couple minutes while I've been explaining this, Joel?
+
+Joel Margolis (teknogeek) (45:56.792)
+I wasn't in the beginning but I'm paying attention, I'm paying attention.
+
+Justin Gardner (@rhynorater) (46:00.111)
+Okay, all right, I could see the classic moment when Joel says, hmm, Shadow DOM, that sounds either, that sounds interesting in so many ways. So anyway, font ligatures, super cool. Essentially, what you have to do to make this whole process work is you've got to set up a recursive CSS import like we were talking about in the beginning, a la donut and pepevila.
+
+Joel Margolis (teknogeek) (46:08.888)
+Hehehehehe
+
+Justin Gardner (@rhynorater) (46:29.679)
+and... what?
+
+Joel Margolis (teknogeek) (46:32.632)
+It just sounds like a meme. I don't know, like Pepe Vila. Like, I'm like, these sound like twitch emotes.
+
+Justin Gardner (@rhynorater) (46:36.527)
+I mean, am I saying the name right? It does sort of like, shit, because it's like, I am saying the name right, right? geez, that's gonna be, sorry Mr. Vila if I am not saying it right. No, I mean, yeah, I mean, that's the name, so. Wow, you just made fun of this guy's name and his amazing research on CSS injection, Joel. It is.
+
+Joel Margolis (teknogeek) (46:45.848)
+You
+
+Joel Margolis (teknogeek) (47:00.76)
+to call them I'm just it was the cadence I don't know
+
+Justin Gardner (@rhynorater) (47:04.527)
+Maybe it was the cadence. Okay. So anyway, you use the recursive import. I'm just gonna call it Donuts Research via Donuts Research there, right? And his name has been erased because of your tendencies, Joel. And so you're essentially recursively importing these style sheets. You're waiting for the callback before you respond to the next one. And essentially each time you're forcing the style sheet to load up a new font,
+
+Joel Margolis (teknogeek) (47:14.68)
+This is like, I'm not gonna risk trigger him again.
+
+Justin Gardner (@rhynorater) (47:34.127)
+which you are dynamically generating to have ligatures which are expanding with each character that has been leaked. And the way that the character is leaked is via essentially a boolean of has the scroll bar appeared or not. And so here's where...
+
+Joel Margolis (teknogeek) (47:52.088)
+which is detected by the background URL on that scroll bar.
+
+Justin Gardner (@rhynorater) (47:54.383)
+Exactly, exactly. But here's the thing that I'm thinking can be optimized a little bit, okay? We can use animations to change values of CSS over time. So we can say, all right, now it's this font, now it's this font, now it's this font, without having to do a network request, except for the font, of course. So I think that would be really interesting. And I think since it's sort of a Boolean yes or no, you kind of have to load each character until you get a hit, right? So is it an A? No, okay, next one.
+
+Is it a B? Yes, no. Is it a C? That sort of thing, right? And I'm wondering if essentially we could reduce the complexity of doing this search by creating fonts that have ligatures that essentially do a binary search on the possible character set. So it's gonna have a wide length if any of the following characters appear in the sequence.
+
+and it's gonna not if the other half, and then you're halving it each time, right? So if you're dealing with like a 256, you know, standard ASCII character set or whatever, which I think there's less displayable characters, but whatever, then you know, you need a maximum of like seven or eight requests to brute force a character, which is like not that bad. Yeah. Okay.
+
+Joel Margolis (teknogeek) (49:14.136)
+Okay, hear me out on this, hear me out. I've been brainstorming. Okay, I've been thinking, I've been thinking. Joel's using his brain, careful. Okay, so.
+
+Justin Gardner (@rhynorater) (49:22.895)
+I kinda need you to help me with this dude, cause I was trying to apply it yesterday and it's just kinda blowing my mind, so maybe, mm.
+
+Joel Margolis (teknogeek) (49:28.952)
+So I was just thinking like, I was thinking about fonts as a whole, because I know there's been like very niche research about like using fonts in this way as like basically kind of like a blind injection where like it's, you have some sort of other signal that you're reading as like a canary to figure out whether or not this is working or it's not working. And with custom,
+
+Justin Gardner (@rhynorater) (49:33.167)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (49:37.071)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (49:42.543)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (49:54.351)
+Sure. Are you talking about the Unicode code point stuff?
+
+Joel Margolis (teknogeek) (49:58.712)
+Well, if you define a custom font, I mean, you can make those characters larger or smaller. Like you can change how they render and like what they display as. So if you can get a custom font in the page at all, and you just change the font of everything, I'm wondering if there's some way where you could basically have each character be a different size so that you could just take the width of an entire element and then you start to subtract and you go, okay,
+
+Can I subtract 26 from this? All right, well, there's a Z in it. Can I subtract 25 from this? There's a Y in it or whatever, like something like that where you could basically do some binary math or some sort of derivation off of the total width based on the unique widths of each character within the character set and then figure out what's in it without having to also, yeah.
+
+Justin Gardner (@rhynorater) (50:30.607)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (50:47.919)
+See dude, see this is great. I need to nerd snipe you on this because I know that something like that is possible and that's what I was thinking about last night when I was sitting in bed staring at the ceiling. And essentially the problem then becomes how do you determine remotely what the width and height of a specific div is while still doing some semblance of word wrapping.
+
+so that you can control the number of characters that you're applying this to, which gets really tricky in the CSS world. It's like, okay, wrapping is highly correlated to the width of the element. And so, the CSS properties just don't like to work together in such a way that you can isolate the characters so that you can detect how wide the actual thing is, or the actual container is, and expand it in such a way that you're like, okay.
+
+there's three characters in here and now there's four. All right, now I can look at the, you know, the width and the difference in width or the difference in height like Masato Kinugawa does in other spots in this research. And it becomes a tricky problem. And the cool thing about the Lava Dome thing is essentially what he's able to do is check that height and width via JavaScript because you have JavaScript execution, right? So essentially he's using the style width and style height
+
+properties, this is in a different, bypass to lava dome than the one we're talking about or lava moat, lava dome, no lava dome.
+
+Joel Margolis (teknogeek) (52:20.664)
+All right, I've got you one. I've got you a potential thing here. Okay, so there's a, there's a, there's a, there's a, there's a, there's a CSS selector called first line. Are you aware of this one?
+
+Justin Gardner (@rhynorater) (52:23.951)
+my gosh, Joel, you're not listening to anything I'm saying and you're researching stuff.
+
+Justin Gardner (@rhynorater) (52:31.759)
+Yes, I'm aware of it. I've been using it all the time. That's exactly what I'm talking about. The problem is, is it's difficult to get the right amount of characters on the first line, right? And that first line selector is like absolutely revolutionary. You have to use that in a bunch of CSS selection techniques. But getting the correct characters to like bump under that first line and then be able to tell the width is tricky, man. It's tricky. We'll do some research together after this episode.
+
+and then maybe we can come back and present it, but I'm running into some difficulties getting all this stuff to work.
+
+Joel Margolis (teknogeek) (53:07.544)
+Yeah, I think, I think, I'll have to check.
+
+There, cause there are a lot of different CSS like measurement selectors. You know what I mean? Like P, PX. There's one C, there's one called CH. Yeah.
+
+Justin Gardner (@rhynorater) (53:21.359)
+Mm -hmm. Yeah.
+
+Yeah, that's the character. How many characters are on the line? Yes, yes, you're getting it, Joel. You're seeing the craziness that is the CSS injection world, right? So you can set a specific amount of characters to be on a line and then measure the length of that line, right? And you should be able to determine, and the change to the width of that line should be able to tell you the value that was added, right? But it's not that simple.
+
+Joel Margolis (teknogeek) (53:50.84)
+You can do math in CSS too. Like you can multiply and stuff. Did you know there's a calc function.
+
+Justin Gardner (@rhynorater) (53:55.663)
+Maybe it is that simple. I don't know. I mean, I've got like 17 ASTIF 1, ASTIF 2, ASTIF 3 .html files with lots of different CSS in them that I'd like to show you. Yes, okay, see, Joel, this is why you need to go and read the exploits that I put into the doc before the FSA, because all of these things that you're discovering are in the doc. Yeah, no, triggered, man.
+
+Joel Margolis (teknogeek) (54:07.8)
+What about break word too?
+
+Hehehehe...
+
+Hmm
+
+Justin Gardner (@rhynorater) (54:24.047)
+Okay, so let me get back and actually add some value to listener really quick. Okay, and instead of you and me just doing our exploitation flow like we always do. The thing that you need to know in order to do HTML attribute exfiltration, you use the sequential import training from Donut and you use the CSS selectors from the front and from the back to make it super fast, right? Or you can just use Donut's tool, does that very well established.
+
+battle tested, boom, easy peasy. To leak text nodes is a little bit more difficult. I don't know if I'm gonna get it done in time by the time that this episode airs, but I'm trying to get a pretty cool tool in place that will essentially be the equivalent of Donut's sequential import chaining tool, but for leaking the value of text nodes via dynamic ligature generation and that sort of thing. And there are some POC codes out there by
+
+Michael Bentowski, who's the guy that came up with this original research back in 2017. And very, like very sketchy POC code, you know, it's like just very, you know, he just finished it and put it up and it's great and it gets the details across. But I'm trying to get something that is, you know, battle tested, that it's pretty applicable. You just essentially import a CSS style sheet and you specify the query selector for the text node that you want.
+
+and it just dumps out the content of that text node. So I'm gonna work on it. I'm not sure if I'm gonna get there, but in the meantime, if you need to actually leak the contents of a text node, the research by Michael Bentowski, linked in the description, I got you, will be very helpful for that and does show a basic POC of how you can dynamically generate these ligatures over time to leak the full value of a text node.
+
+Joel Margolis (teknogeek) (56:20.76)
+You know, I'm thinking we might just have to start publishing some research blog posts on our website.
+
+Justin Gardner (@rhynorater) (56:27.375)
+You know, but see, here's the thing, man. We just get on the pod and then we yap about it, right? And that saves us the time of having to write it all up because I'll tell you, man, I've been writing these presentations for the past week. I don't know. And I wrote the 15 page. There are little pieces of time in which I enjoy writing, right? Like writing the blueprint on how to go full -time book bounty.
+
+Joel Margolis (teknogeek) (56:45.048)
+Don't you love writing? Isn't it great?
+
+Justin Gardner (@rhynorater) (56:56.207)
+Super enjoyed that busted it out pretty quickly. You know, really loved it, but actually taking the super brainy stuff that is CSS injection and trying to break it down and like put it into an article that has, that's easy for people to follow is tricky. And it's, I mean, it's tricky to even talk about it on the podcast. So, but yeah, I do agree though. I think there is definitely some merit to producing some sort of, you know, research papers or, or essentially write -ups.
+
+Joel Margolis (teknogeek) (57:15.128)
+It's really difficult.
+
+Justin Gardner (@rhynorater) (57:25.423)
+Having it in the text medium obviously Brandon is doing a good job of converting everything that we say in the podcast into the hacker notes and that sort of thing But I think if we're trying to get a little bit more in -depth on these sort of things Yeah, absolutely So anyway that that font literature piece the scroll bar generation that stuff is really cool Definitely check that out. But here here is the the thing that really sparked this whole thing again, right which is
+
+Joel Margolis (teknogeek) (57:33.496)
+Yeah. No, I mean just unique research more. Yeah. Yeah. Yeah.
+
+Justin Gardner (@rhynorater) (57:55.471)
+Masato Kinugawa essentially submitted a issue to LavaDome using a new CSS property that I hadn't seen before called descent override, which allows you to change the height of each individual character in a font face definition, right? So you're defining a custom font, you define a custom code point, right? You can do the Unicode code point for that specific font.
+
+and say, all right, this font only applies to like the A character or whatever, and then make the A character super big, right? Super massive. And whenever that character gets typed into the, or appears in the DOM, then the size inflates drastically. And so essentially he's able to do all of this definition without actually using a custom font. He uses, I think, just Comic Sans.
+
+And then this override for the height to leak the content of the Lava Dome value by changing or by detecting changes to the height like we were talking about. He has access to JavaScript, so he can do that. If you don't have access to JavaScript, it's really tricky to do that. But the revolutionary piece about this is that it doesn't require a custom font to be imported. So you can do this in a scenario where...
+
+font source is set to something strict in the CSP. Really cool technique. I love the fact that this descent override property exists and allows us to control the, there's another one for width as well, allows us to granularly control the width and the height for a specific character in a font face definition.
+
+Joel Margolis (teknogeek) (59:41.624)
+very interesting. And if you look through actually the font face docs for like the font face rule or whatever, like how it gets defined as a custom font face, there's a ton of different descriptors that exist and there's a lot more that I think also would be great candidates for this sort of, again, this canary behavior. There's font display, which determines how a font face is displayed and whether or not it gets downloaded and shown and it can behave as a fallback, for example. So
+
+Justin Gardner (@rhynorater) (59:45.551)
+Mm -hmm.
+
+Mm -hmm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (01:00:00.047)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:00:09.903)
+Mmm.
+
+Joel Margolis (teknogeek) (01:00:10.392)
+What I'm thinking here is like you have a default font face and then you have your custom font face that has characters that are either invisible or by default not visible or different widths. And then it would fall back if there's no character shown or something like that or have something that renders slowly. There's something like that. I don't know. I think there's definitely a lot of really interesting candidates in here. There's size adjust. That might be the width one you were talking about.
+
+Justin Gardner (@rhynorater) (01:00:38.543)
+Mm -hmm.
+
+Joel Margolis (teknogeek) (01:00:39.768)
+There's font stretch, there's descent and ascent as well. Yep.
+
+Justin Gardner (@rhynorater) (01:00:44.943)
+Yeah, that's the ones that those are the ones that that he uses to control the the height and width of the yeah. Very cool.
+
+Joel Margolis (teknogeek) (01:00:50.456)
+Yep, yep, size adjust. So yeah, there's a lot of different things and you know, we've talked about this so many times and we've gone through the like the web or whatever, HTML docs so many times that we found like weird consistencies or even inconsistency, things that are in the doc that do not behave that way at all in the browser, right? Thinking of the base tag. So.
+
+Justin Gardner (@rhynorater) (01:01:02.895)
+Mm -hmm.
+
+Justin Gardner (@rhynorater) (01:01:09.519)
+Mm.
+
+Joel Margolis (teknogeek) (01:01:14.072)
+Just because it says that this is how something works doesn't necessarily mean that this is how this works. But if it says that this is how it works, that's also a great starting point to be like, this is weird. Yeah, this is weird.
+
+Justin Gardner (@rhynorater) (01:01:21.839)
+A great indicator, yeah. Dude, you just nerds -fine -ed me with this. Now I'm looking through all of these different properties. There's gotta be stuff here, man. This is exactly why.
+
+Joel Margolis (teknogeek) (01:01:33.72)
+Maybe there's some way we can use Shazzer here too, by the way, like to fuzz this stuff in mass or like try all the possible options and figure out what the different permutations and possible selectors and descriptors and stuff that you can use here.
+
+Justin Gardner (@rhynorater) (01:01:36.463)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:01:48.815)
+Yeah, absolutely. Okay, so let me add one more thing to this, okay? So of course for us to leak the contents of a text node, it has to be displaying that text, right? For the font to be loaded and for it to trigger and for us to be able to do the whole ligature dance or whatever, right? Here's something crazy that I didn't know, Joel. You can apply display block to a script tag and then all of a sudden the script tag,
+
+the content, like the actual content of the script tag, the JavaScript, will just be displayed on the screen like it was like a p tag. Isn't that crazy?
+
+Joel Margolis (teknogeek) (01:02:27.576)
+It makes you wonder what other things you get. Like what happens if you put it on a video tag or an audio tag or a iframe or, or, geez, what was I just thinking of?
+
+Justin Gardner (@rhynorater) (01:02:28.847)
+I didn't know that I -
+
+Justin Gardner (@rhynorater) (01:02:34.319)
+Yeah.
+
+Well, I think a lot of those would just display the actual feature, but the crazy thing to me about this is like, I don't know, I just didn't think of the contents. Yeah, right? I just didn't think that the contents of a script tag, I didn't think of it as like a text node, but it is text. It's inside of a script tag. So if you just apply, hmm.
+
+Joel Margolis (teknogeek) (01:02:48.632)
+What if you put it on a style tag?
+
+Joel Margolis (teknogeek) (01:03:01.176)
+Well, it does make you wonder a little bit about the order of operations as well around like, it probably gets evaluated and then like CSS gets applied later, just sees it as like an element or something, but then does that apply to it? Like, can you do that to the head tag or like, you know, like what, where does that end, right?
+
+Justin Gardner (@rhynorater) (01:03:11.983)
+Mm.
+
+Justin Gardner (@rhynorater) (01:03:19.375)
+Yeah, yeah. And I'm sure there's lots of other weird niche cases with this, but the reason why the script tag is so big is just like we were talking about before, is like there are these blobs of JSON, the window .state or whatever, and they're normally prefixed by the same thing, right? Window .state equals, and then big massive blob, right? That is a dream come true for this sort of text -based data exfiltration piece, right?
+
+because essentially when you define a prefix, you eliminate a bunch of variants. If A, B appears in six different spots in the whole script blob, then you could have some problems. But if you have a prefix that only appears once, then that really helps. Setting display block to a specific script tag and then using these font ligatures to extract things like...
+
+PII, API tokens, CSRF tokens, all those sort of things. Really awesome way to exploit CSS injection and I'm kind of salty because I've had CSS injections and I put so much research into CSS injections and I totally did not know about this technique.
+
+Joel Margolis (teknogeek) (01:04:34.392)
+You're gonna hate me because I just found more stuff. But I'm not gonna derail you. I'll send it to you in DMs.
+
+Justin Gardner (@rhynorater) (01:04:37.583)
+All right, just send it to me, man. We'll review it and then maybe I can find... No, don't send it to me right now, Joel. What are you... I'm trying to podcast here, man. Okay, very interesting. So, display block can actually display a script tag and then you use the text node -based font ligature -based, recursive import -based.
+
+leak method to actually leak the contents of your text node, which will result in, hopefully, account takeover or at least CSRF, or I guess at minimal PII leakage in most applications. So very cool stuff there. I know I had one other thing that I wanted to talk about with this before we call it. Your cat is very distracting right now, though.
+
+Joel Margolis (teknogeek) (01:05:27.032)
+My cat, she wants attention.
+
+Justin Gardner (@rhynorater) (01:05:30.703)
+She does, she does. I did want to shout out two blogs, okay, that were kind of helpful with this. And I will shout those out right after I mention one other piece, okay? So the tweet that I saw that you mentioned that was just all in Japanese and was from Masatsu Kinugawa was essentially his research on font ligatures and how they are affected by the before pseudo attribute, what is it?
+
+pseudo pseudo class, essentially the thing that allows you to add text before a certain text blob, right? Or a certain text node. And essentially what he did is there's this Japanese word, Kabushiki Gaisa. And that's like a, like for if we were gonna put it in English, it's like limited liability company or something like that, right? And it's got, you know, it has to be at the end of like all of these like names and stuff like that.
+
+And it's got a specific ligature for it, right? Where they kind of put it in a square rather than to have it all typed out. And so what he shows in this tweet is that you can actually use the before attribute, the before and content CSS features to trigger these font ligature sequences. So let's say like you've got a font ligature that requires four characters and you have three of the characters, but then you put the first character in the CSS before.
+
+before content, you add it to the text node with before content. That will actually trigger the font ligature to occur and it will be converted into that single glyph. Even though it's broken up, even though the actual text node content only contains three of the four characters needed, you can add that character with the before content feature in CSS.
+
+Joel Margolis (teknogeek) (01:07:15.)
+even though it's broken up by elements.
+
+Joel Margolis (teknogeek) (01:07:27.992)
+interesting.
+
+Justin Gardner (@rhynorater) (01:07:29.103)
+And so I thought that was really interesting research and it only affects some browsers. So I'm gonna link this tweet in the description as well. Very, very interesting piece. And I think this could also be used in a scenario where you want to add sort of like, you want to start brute forcing from the very beginning of a text node. And there could be overlap with other things at other places in the
+
+in the actual text node itself. So you kind of got to figure out how to get it just at the beginning. And essentially you could use this before attribute to prepend something that's not actually in the character set, right? Like a squiggly line or something like that and say, okay, the font ligature is squiggly line A, squiggly line B. And since squiggly line isn't going to be anywhere else in that text node, then you know you're reinforcing right from the beginning.
+
+Joel Margolis (teknogeek) (01:08:10.168)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:08:21.807)
+and it can increase some reliability and consistency to the font ligature -based CSS exfiltration techniques. No, no, no, your cat is adorable. I'm laughing at myself saying like font ligature -based CSS injection, exfiltration, like it's just so mega niche, man. It's just like, man, this is the epitome of nerdiness.
+
+Joel Margolis (teknogeek) (01:08:29.592)
+Yeah, yeah, absolutely, absolutely. Are you laughing at my cat?
+
+Justin Gardner (@rhynorater) (01:08:51.215)
+All right, man, I think that, I mean, there's just so many other interesting pieces to talk about here, but I think that was mostly everything that you need to know about essentially how to exploit modern day CSS injections, right? You use the research from Donut on sequential import chaining plus the CSS selectors on attributes to leak attribute values, and then use this font ligature -based stuff to actually leak the value of text nodes, which is really good.
+
+And if all of this doesn't make sense via the audio medium, which I would be very surprised if it did because this is very complex stuff, I would encourage you to do additional research on how exactly all of this works by checking out these two blogs, okay? So let me just format my notes a little bit here so that we can know exactly what two blogs I'm talking about. The first one is, man, why do these have to be named so weird?
+
+One of them is x -c3ll .github .io and essentially this is a post on CSS injection primitives that goes back to 2019. And it essentially talks about all of the different techniques you can use in a CSS injection, talking about recursive imports, talking about text node exfiltration via ligatures, talking about HTML attribute exfiltration. This blog post kind of is similar to what I just described in this episode.
+
+Regarding all of these primitives that you can use to do CSS exfiltration So that's the first one definitely check that one out and then the other one is this blog that I haven't heard of before But I've never seen before and it's by this guy who is a Develop who who calls himself a developer with security interests, right? And essentially if you go and look at the blog He was a part of some writing competition in Taiwan or something where you had to write like a blog post every day for 30 days and so what he chooses is just like
+
+Joel Margolis (teknogeek) (01:10:39.672)
+You
+
+Justin Gardner (@rhynorater) (01:10:50.031)
+get to the most technical CSS injection, XSS breakdowns, CSS injection breakdowns, and it's really freaking quality stuff. So this blog post really made it a lot easier for me to understand the whole font height difference plus first line plus scroll bar technique, which Masato used in one of those things in conjunction with the descent override to actually leak the characters, character by character.
+
+Joel Margolis (teknogeek) (01:11:00.216)
+So random.
+
+Justin Gardner (@rhynorater) (01:11:19.919)
+and he's got a really great description of that whole technique. So if the whole height with difference thing doesn't make sense to you, then I'd recommend this blog, Beyond XSS, Exploring the Web Frontend Security Universe at ASX87410 .github .io. You're welcome for reading that out. Yes, just super memorable.
+
+Joel Margolis (teknogeek) (01:11:37.816)
+See?
+
+Joel Margolis (teknogeek) (01:11:42.52)
+so memorable.
+
+Justin Gardner (@rhynorater) (01:11:49.583)
+Yeah, that's where to get the additional research on CSS injection. And Joel, hopefully you and I can sit down after this episode and kind of hash out some of these things. Cause I would really like to put a server out there, ideally a server that we could actually just do it for everybody. But at minimal, a GitHub repo that essentially allows you to just do essentially what Portswigger research did with blind CSS exfiltration, where you essentially just have one URL that you import and it just dumps everything.
+
+For a given a query selector or something like that. I think that'd be really helpful so yeah, so keep an eye out in the critical thinking discord for me trying to drop that and And I'm not sure I'll get to it this week because I got a bunch of stuff I got a prep for Def Con and stuff like that, but I will get to it eventually or else I won't sleep so Alright man anything else you want to add here at the end?
+
+Joel Margolis (teknogeek) (01:12:23.736)
+Yeah, for sure. Yeah.
+
+Joel Margolis (teknogeek) (01:12:37.624)
+Eventually.
+
+Joel Margolis (teknogeek) (01:12:42.328)
+I think that's it, dude. This has been a really interesting one. I got a lot of follow -up ideas. Yeah, I got, God, I just deleted some thing from the doc. And on that note, before I delete the entire content of this episode,
+
+Justin Gardner (@rhynorater) (01:12:47.471)
+A lot of nerd sniping.
+
+Justin Gardner (@rhynorater) (01:12:53.167)
+you
+
+Justin Gardner (@rhynorater) (01:12:57.103)
+Yeah, on the episode where we're like, it will actually be in the description too. That's great. All right, man, that's the pod, right? All right, peace guys.
+
+Joel Margolis (teknogeek) (01:13:00.28)
+Just delete all the notes. That's the fun. Peace.

@@ -1,0 +1,2334 @@
+Episode 95: Attacking Chrome Extensions with MatanBer - Big Impact on the Client-Side
+Source: https://www.criticalthinkingpodcast.io/episode-95-attacking-chrome-extensions-with-matanber-big-impact-on-the-client-side/
+======================================================================
+
+Justin Gardner (00:00.78)
+Alrighty dude, we're rolling. Matan, welcome back man. Dude.
+
+Matanber (00:04.088)
+Good to be back. Very excited for this one. We have a banger episode coming up.
+
+Justin Gardner (00:08.304)
+We really do, man, and we have not a lot of things on the docket, which means we can go deep into them. Only three topics, one of which is browser extensions, which I feel is a super... We did get to six pages, so we'll see if we get through all of it. But I think browser extensions are kind of a really underserved attack surface in Bug Bounty, and I think that because you told me that.
+
+Matanber (00:13.749)
+Hahaha
+
+Matanber (00:19.714)
+but somehow we got to six pages.
+
+Matanber (00:35.95)
+Yeah, I've been kind of capitalizing on it, but I think I'm gonna have more competition after this episode, you know.
+
+Justin Gardner (00:43.15)
+Yeah, dude, thanks for agreeing to do it because I know when we were talking about prepping for this episode, you were like, maybe we'll push this episode out a little bit. Maybe I should milk this a little bit more.
+
+Matanber (00:49.486)
+Because I thought I stopped milking it but then in preparation for this episode I took another look at some of the extensions I tried to hack and I still found some bugs in there so definitely stuff to find
+
+Justin Gardner (01:02.616)
+Yeah. Okay, so I'm gonna say that this one is a browser extension hacking version one, because I know there are some things that you've discovered recently that you haven't fully had the time to milk and we're not gonna drop them completely yet, but maybe we can get those someday. That would be cool. Yeah. All right, let's get into it, man. Browser extensions, I guess the first thing that we need to understand is
+
+Matanber (01:13.876)
+Yeah.
+
+Justin Gardner (01:31.748)
+what is the structure of these browser extensions and what is the threat model?
+
+Matanber (01:33.774)
+Yeah, so before we get into that, I just want to say that this episode might be a little hard to follow, especially in audio form, you know, just because it's gonna be unfamiliar to a lot of people and the structure of a browser extension can be a little complicated. You really have to visualize it, which might be a little tough. So don't worry if you don't get it the first time. I think...
+
+Justin Gardner (01:55.632)
+Hmm.
+
+Matanber (01:59.87)
+you can just learn from experience, know, messing with an extension is gonna teach you a lot about how extensions are built, way more than I can sort of explain via audio. But anyways, the way extensions are built, first of all, just in general, we all know what extensions are, but their purpose can be either to extend the functionality of a set of sites, can be one site, multiple sites, or all sites.
+
+or of the browser itself, right? You can maybe change the theme of the browser or something like that. And in order to do that, if you sort of think about it, a lot of the time extensions need to have sort of a way to run code in the site that they want to extend, right? And on top of that, they need some sort of thing that coordinates all of this, you know, because you can have like many
+
+many tabs of the same site, say you're trying to extend youtube.com and you have like multiple scripts, it can get kind of messy, you need something to coordinate all of it. And so the browser developers sort of build like an extension component for each one of these roles. So in order to execute code in the sites that you're trying to extend, say it's like all sites,
+
+Justin Gardner (03:01.936)
+Mm.
+
+Justin Gardner (03:25.68)
+Mm.
+
+Matanber (03:26.302)
+One example that I had for like a simple extension that we can sort of keep in mind while we're talking about it is an extension that I will call like save my JPEGs, okay? And it's just gonna add a save button to every image on the page. So every image element in every page is just gonna add a save button that will save it to some site. So...
+
+Justin Gardner (03:43.46)
+Hmm.
+
+Matanber (03:51.36)
+In order to do that, we will need to inject some JS code into every site that's open in the victims in the victims browser in the users browser. Yeah. Yeah, I'm auto correcting constantly. So we're going to need to inject code into every page in the potential victims browser. Now.
+
+Justin Gardner (03:58.352)
+And you're already thinking about it from from the attackers perspective. I think that that's gold It's funny you say that because that's literally how I talk all the time with this
+
+Justin Gardner (04:18.896)
+Mm.
+
+Matanber (04:21.338)
+the sort of component that does that in browser extensions, it's called the content script. So you can have many content scripts in the browser extension and they can be injected in a few different ways. It's kind of, it gets a little complicated. But basically what you'll see in like most cases is the sort of config file of the extension, which is like a JSON file.
+
+it will just have like the content scripts that will be injected and a list of like which sites it will inject to. And actually, before we continue, it's important to note that the sort of structure and behavior is a bit different between the last version of extensions called manifest v3, you might have heard of it because there was some noise about it, and manifest v2.
+
+Justin Gardner (05:17.422)
+Yeah.
+
+Matanber (05:19.98)
+Right. And because Chrome is going in the direction of Manifest V3 and all of the big companies have already updated, I chose to focus just on Manifest V3. So that's what we're going to talk about. So anyways, when we want to make like the Save My JPEGs extension, we're going to have all of the content scripts each injected into a different tab or iframe or whatever, like every...
+
+page that renders, we're gonna have a content script in it. Now, we need like something to coordinate all of it. So sort of the brains of the extension, the like main script that runs and coordinates everything that has like the capability to inject content scripts and stuff like that. It used to be called the background script. Now it's called the service worker, which is very like confusing. Yeah.
+
+Justin Gardner (06:15.367)
+okay. That changed. Okay, that makes sense now. Because I was like, I heard both of those terminologies and I was like, I don't see where this fits into the structure, but they're actually just the same thing.
+
+Matanber (06:25.932)
+Yeah, so it's very confusing calling it the service worker. And it actually has some differences between it and like a regular service worker. So I'm not sure why they picked that term. Anyways, it's called the service worker and it sort of runs in the background and coordinates everything, right? So there's a little graphic here that you have. And it's taken from Space Raccoon's blog actually with.
+
+Justin Gardner (06:30.511)
+Yeah.
+
+Justin Gardner (06:35.973)
+Right.
+
+Justin Gardner (06:42.442)
+you
+
+Justin Gardner (06:48.854)
+Mmm. Yeah, I'll show it.
+
+Matanber (06:54.574)
+about browser extension hacking, which was pretty great. You can read it after the episode. But actually the little diagram isn't totally complete because you can see if you're looking at the pod on YouTube, there's sort of like a section about the webpage DOM, which is sort of the site that is getting extended basically.
+
+Justin Gardner (07:23.76)
+Mm, mm.
+
+Matanber (07:24.46)
+And it has like a content script, in this case, a few content scripts that were injected by the extension. And it has like the original JS code that's running inside the site. And what space raccoon chose to highlight here is that those two can communicate via post message. Yeah. So.
+
+Justin Gardner (07:44.56)
+We've got the Spatial Koon plushie right here man, ready to go, let's go!
+
+Matanber (07:50.478)
+Those two scripts can communicate via post message, but they can also communicate via other channels, like custom events, stuff like that. We're gonna get into it a bit further. Then that content script can communicate with the background script, the service worker, via a browser API called the message passing API.
+
+there's a bunch of functions that are pretty similar to post message and that's just how they communicate. So that's the basic structure. You can add some stuff on top of that. Like some extensions will have like another script that runs inside the actual context of the web page. But we're gonna get into that a little bit further because...
+
+Justin Gardner (08:23.92)
+Hmm.
+
+Justin Gardner (08:44.1)
+Yeah, so let me try to summarize this really quick, because there is a pretty complex structure here, okay? We have three main components, or really two main components that you've mentioned so far. Well, if we count manifest.json, it'll be three, right? So we've got the content script, right? Which is the script that the extension injects into the DOM of the actual page that the user is on. So depending on the configuration file, this could be, you know, any...
+
+Matanber (08:47.992)
+Yeah.
+
+Justin Gardner (09:12.428)
+any website, could be a certain set of websites, maybe like star.ctbb.show or whatever, or it could be just one, you know, specific website that it wants to modify. That's the content script. And that is affecting, that is sharing the DOM with the actual JS, but not sharing the content, the actual JS environment, right?
+
+Matanber (09:21.814)
+Right. Yeah.
+
+Matanber (09:28.022)
+Yeah, so I'm actually
+
+Yeah, well, I'm gonna, I was just gonna talk about it. So yeah, so basically if you sort of take the structure that we explained so far, injecting a content script straight into the page and implement it, there's a bit of a problem that comes up that the sort of Chrome developers or browser developers in general had to solve. So imagine you have like a site and say it's malicious, you know.
+
+Justin Gardner (09:36.164)
+Okay, alright, hit it, hit it, it.
+
+Matanber (10:01.108)
+and you inject that content script straight into the JS environment of that site. Now you want to give the content script a certain level of privilege. It has to have the ability to say communicate with the background script or read cookies from pages, stuff like that, whatever permissions the extension has. But you don't want the regular environment of the...
+
+a site that you're injecting into which can be malicious and to have that same level of privilege. So you need to have some way of separating the two. And once you do that, you also have to make sure that the sort of environments can't mess with each other. Mainly that the the malicious site can't mess with the content script. And because then it could manipulate it in and somehow take advantage of the privileges it has.
+
+Justin Gardner (10:44.023)
+Mm-hmm.
+
+Justin Gardner (10:50.928)
+Mm.
+
+Justin Gardner (10:54.458)
+right? And if you share that JS environment at all, you're just kind of opening up a can of worms, right? Like, you, because there's so much, so many things you have to think of from like prototype pollution and various variable hijacking or whatever. So they need to do something different. Yeah.
+
+Matanber (11:01.526)
+Right, yeah.
+
+Matanber (11:10.178)
+Yeah. Anyone who's tried to create a JavaScript sandbox, like the one that used to be in AngularJS before they give up, up, yeah, knows that it's a tough problem to solve. Yeah, there's a whole bunch of stuff that can go wrong there. So what the Chrome developers specifically chose to do, I think it works a little bit differently on Firefox, but I haven't looked at that.
+
+Justin Gardner (11:16.335)
+Yeah.
+
+Justin Gardner (11:20.964)
+Yeah, yeah.
+
+Right.
+
+Justin Gardner (11:37.455)
+Mm.
+
+Matanber (11:38.766)
+is they chose to make the code of the content script run in what's called an isolated world. So it's still, yeah, it's a badass name. Like I breached the isolated world today. Yeah. So what the isolated world sort of does,
+
+Justin Gardner (11:46.414)
+Such a cool name, no? Such a cool name. Yeah.
+
+my gosh dude that's like top tier hacker shit right there if you breached the isolated world.
+
+Matanber (12:07.668)
+is it makes the content script still kind of runs in the page because the extension has to have the ability to like modify the DOM, read the location, stuff like that. It has to sort of feel like it's in the page, but it sort of prevents the page from messing with the extension in the sense that if the page like sets a global variable.
+
+Justin Gardner (12:07.76)
+Mm.
+
+Justin Gardner (12:17.328)
+Mm. Mm.
+
+Matanber (12:34.358)
+say it overrides window.alert to be some bullshit function. Now, that will reflect in the actual context of the page that overrode it, but if you look at the isolated world, window.alert will remain the same. So you can't really influence that. There is a bit of a catch there, but I'm still milking it.
+
+Justin Gardner (12:38.455)
+Mm-hmm, mm-hmm.
+
+Justin Gardner (12:53.2)
+Mm, mm.
+
+Mm.
+
+Yeah. my god. I know what you're talking about too, man. It's a good one. I'm excited to release that in a little while. In a while. In a while. No rush. I'm not rushing you. I'm just saying. It'll be a good one. Yeah, sure, sure.
+
+Matanber (13:03.566)
+Sorry about that. Sorry about that.
+
+Matanber (13:09.324)
+In a while. Yeah, when I retire at 19. Anyways, yeah, in a few years. Anyways, the isolated world is sort of there to prevent the, as we talked about, a malicious page from messing with the...
+
+Justin Gardner (13:19.342)
+Yeah. Yeah. In two years. Yeah, that's great. Yeah.
+
+Justin Gardner (13:35.024)
+Mm.
+
+Matanber (13:37.606)
+content script, but in some cases extensions will want or have to run JS in the actual context of the page, in the actual world of the page. Say you want to make like a competitor extension to Franz Rosen's and PostMessage tracker, okay? You need to override the sort of ad event listener or I don't know
+
+Justin Gardner (13:50.37)
+Mmm. Mmm. Sure.
+
+Justin Gardner (13:59.471)
+Right, right?
+
+Matanber (14:06.688)
+a window.onMessageSetter, stuff like that, so that when a new postMessageListener gets added, you need to catch that. So in order to override it, if you try to override it in the content in the isolated world, it won't affect the actual page. So you need to actually inject JS into the actual page and then override that sort of actual like, addEventListener.
+
+Justin Gardner (14:08.762)
+Sure.
+
+Justin Gardner (14:14.8)
+Mm.
+
+Justin Gardner (14:34.596)
+Yeah, I think this gets tricky a little bit too. I was talking to Kevin Mizu, the author of DomLogger++ about this is, you know, with that structure that the Chrome developers have put into place, you know, you're having to either, you know, append a script to the page or use, I think one other route that there is to inject a script. And that has a delay to it, right? It's not instantaneous. And so there are some events that won't get caught by DomLogger++.
+
+Matanber (14:53.432)
+Yeah.
+
+Justin Gardner (15:04.496)
+for like the first like 20 milliseconds or whatever it is until it runs its overwrite script because of that delay.
+
+Matanber (15:08.405)
+Yeah.
+
+Matanber (15:12.14)
+No, the issue that Donblogger++ is trying to solve is hard to solve with an extension. It's a lot simpler than forking Chrome, but it's hard to solve with an extension. Yeah. Anyway. Yeah.
+
+Justin Gardner (15:19.408)
+Mm. Mm.
+
+Justin Gardner (15:24.58)
+Hmm. Hmm. Yeah, forking Chrome, that's, you're opening up a can of worms a little bit there if you do that. I mean, it would be really cool and I would love to see somebody approach the problem, right, where you fork Chrome and somehow you keep it up to date and consistent with Chrome and you have a good amount of updates and that sort of thing, but take out some of these things that hinder us to have introspection further into security.
+
+Yeah, but it would be much easier if the Chrome devs just did this. So if anybody at Google is listening and you have an in at the Chrome team, let me know because it would be really nice if we could just get a couple flags put into place that would allow us to overwrite things like document location or window location href and get introspection into those specific attributes.
+
+Matanber (16:15.788)
+Yeah, there's that and also if a reason to for Chrome is right now you can't sort of have a DOM logger equivalent for testing browser extensions because DOM logger as a browser extension doesn't have the privileges to mess with the JS of other extensions. So that would also be a reason. Yeah. Yeah, okay.
+
+Justin Gardner (16:29.386)
+Mm, mm.
+
+Justin Gardner (16:39.3)
+Yeah, yeah. Okay, all right, so we can get back to the structure, but let me review for a second, because we've covered a lot of ground, okay? So we've got the manifest.json file, that's the configuration file for the extension, right? And that defines a bunch of different things. Two of them are the content scripts, which get injected into the DOM of the page, but not in the same JS environment. They're in an isolated world, right? So if they want to...
+
+Matanber (17:04.142)
+Yeah, not exactly into the DOM, but like into the page, but in a separate world, yeah.
+
+Justin Gardner (17:09.838)
+Hmm They they they get injected into the to the the page in a separate JS world and have access to the DOM is that accurate Okay, all right, just glad we got got that squared away there. Okay, so they're in the isolated world No, no, no, no, no, I I need this is exactly what we need to understand it thoroughly and we can't hack it if we don't understand it thoroughly so this is great and and actually the plus of that is that
+
+Matanber (17:19.106)
+Yeah. Yeah.
+
+Matanber (17:25.622)
+Yeah. Sorry for being a little scattered here.
+
+Justin Gardner (17:39.662)
+the content script can affect the DOM and affect the JS execution in the normal execution world, the non-isolated world, by injecting a script into the DOM, which would trigger the script. Yeah.
+
+Matanber (17:51.843)
+Right.
+
+Matanber (17:56.866)
+Yeah, there are a few ways to do that. So basically right now we're talking about sort of a separate component of what an extension could look like. So we have like the two very standard components, the content script and the back-out script or service worker, whatever you want to call it. But some extensions will need to have a separate component. We can call it like the injected script.
+
+Justin Gardner (18:15.082)
+Mm. Mm.
+
+Matanber (18:24.302)
+And that's just how I was, I saw it referred to in one of the extensions I've looked at. And so the injected script, it has to be like a script that runs in the actual world of the page that is getting extended, right? So for the extensions that do need that functionality, which is not too many extensions, but it's pretty common.
+
+And a few ways to do that would be either to add an actual script element to the DOM, which is what I think DOM logger does and post message tracker does. Or there are a bunch of native ways to do that in the actual Chrome, the Chrome APIs. So the
+
+Justin Gardner (18:59.054)
+Mm.
+
+Justin Gardner (19:04.132)
+Mm-mm.
+
+Matanber (19:22.314)
+You have either you can set like, you can add another content script and set a special flag there to make sure that that script is injected into the actual world of the page, or you could use some other function. I forgot what's it called. Anyways, there are a few ways to do that.
+
+Justin Gardner (19:40.974)
+Yeah, I think it's provide a certain option execution world. Is that it when injecting the content script?
+
+Matanber (19:48.844)
+Yeah, yeah execution world main I think okay, so anyways Yeah
+
+Justin Gardner (19:52.624)
+Nice, nice. Okay, so you can define the world that this thing is executing in. I like that, that's good. Dude, I don't know what it is about the world, but it just sounds so like anime, right? Like it's like, in this world we'll be executing, anyway, okay. So we've got those execution worlds. Exactly, exactly. So we've got the content script. It's the thing that's injecting into the page.
+
+Matanber (20:01.88)
+So.
+
+Yeah
+
+Matanber (20:08.024)
+Yeah
+
+Matanber (20:13.122)
+We need to isolate our world from all the attackers.
+
+Justin Gardner (20:21.934)
+We can define scripts for the actual JS execution world that's normal, right? So that's where a lot of the functionality is happening. But then also in the manifest.json file, we also have the service worker, also known as the background script, that is not a part of, doesn't have access to the DOM, and is just sort of like a backend process for the extension that can communicate with the content script.
+
+Matanber (20:25.485)
+Yeah.
+
+Matanber (20:35.214)
+Yeah.
+
+Matanber (20:44.898)
+I'm not sure that it doesn't have because I think there are a lot of weird ways to do stuff like directly from the background script, but usually what you'll see is like it will communicate with the content script and the content script handles all of these tasks. Yeah.
+
+Justin Gardner (20:52.608)
+Mm. Yeah.
+
+Justin Gardner (21:01.961)
+So we should probably think of the background script as like, the, or the service worker as the, as like the backend code of sorts for, for the extension versus the front end code, which is the content script.
+
+Matanber (21:11.628)
+Yeah, and
+
+Matanber (21:16.32)
+It's actually where you're supposed to implement the most sensitive functionality because it's the part that is least exposed to the actual like 2M malicious attacker. In the actual Chrome docs, they mentioned that you shouldn't trust any communication between the background script and the content script because they assume the content script is compromised. Yeah, which I mean.
+
+Justin Gardner (21:20.537)
+Mm-mm.
+
+Justin Gardner (21:28.496)
+Mm.
+
+Justin Gardner (21:40.42)
+Really? Even in the isolated world? Even in the isolated world? Yeah.
+
+Matanber (21:43.85)
+I mean, it's theoretically I can understand where they come from, but you can't actually implement that if you have a complicated extension, you're always gonna have some sensitive stuff in the content script.
+
+Justin Gardner (21:58.158)
+Yeah, yeah, and I think in Spacer Coons, Spacer Coons, a write up, he sort of mentions a scenario where essentially they're just, they're using post message to communicate from the JS environment on the page, the normal JS environment, to the content script, and that content script is then passing that message straight through pretty much to the background script via the send message API, right?
+
+Matanber (22:02.626)
+Yeah
+
+Justin Gardner (22:24.628)
+And in that scenario, it's like, okay, well sure, if you code up the content script in such a way that you're just arbitrarily passing JSON messages through, then you do sort of violate that trust boundary. I can see that, yeah.
+
+Matanber (22:32.066)
+Yeah, you're sort of breaking a boundary. Yeah.
+
+So anyways, I was gonna talk about something a little similar to that. We mentioned the injected script component that an extension can have. Again, it's like not mandatory, it's optional. So the interesting thing is if you look at the communication between that little component and the content script, because it can't access the background script directly, if you look at that communication and think about it a little.
+
+Justin Gardner (22:41.168)
+Mm, mm.
+
+Justin Gardner (22:45.792)
+Mm. Mm.
+
+Matanber (23:04.896)
+whatever that communication is, however they implemented it, it can be hijacked. And that's because the injected script, it's in the actual environment of the attacker and attacker has like full control over it. And however you're gonna try to interact with that content script, whether it's via with that, sorry, injected script, whether it's via post message or custom events or something like that, an attacker can imitate that like very easily.
+
+Justin Gardner (23:09.071)
+Mm-hmm.
+
+Justin Gardner (23:17.537)
+Mm, mm.
+
+Justin Gardner (23:25.86)
+Mm-mm.
+
+Justin Gardner (23:34.64)
+Mmm.
+
+Matanber (23:34.816)
+And you can't do like an origin check because they're gonna have the same origin.
+
+Justin Gardner (23:38.36)
+Yeah, yeah, because it's the same JS execution environment even. Wow. Okay. So, so we've got that, that attack surface as well. You've got the attack surface of any scripts injected by the content script. You've got the content script attacking the content script itself. And then I guess trying to attack the backend script via proxy of sorts through the content script, as far as attack vectors go for these extensions.
+
+Matanber (23:42.104)
+Yeah. So.
+
+Matanber (23:49.88)
+right.
+
+Matanber (23:59.512)
+Yeah. So do you want to start getting into attack vectors?
+
+Justin Gardner (24:05.624)
+Yeah, mean, well, okay, let me just try to repeat back to you and you can validate my understanding of the structure, okay? So we've got the manifest JSON. I know we've already done this a couple of times, but it, yeah, it gets complicated. Actually, I'm gonna go ahead and just share the screen again for those of you that are on YouTube so you can see the graph and then hopefully this will make a little bit more sense, okay? So.
+
+Matanber (24:14.474)
+I know but it's very hard, that's why I had disclaimer at the start.
+
+Justin Gardner (24:31.96)
+Okay, so first we've got the manifest.json file, which is not actually displayed in that graph. So let me scroll up. Here's something that kind of looks like the manifest.json file, right? You're defining these content scripts. You define where they are. You describe a regex of sorts. It's not really a regex, but it's like a pattern on what pages these content scripts should be injected. And then now we've injected the content script. The content script is in the web page, but in an isolated world.
+
+So it doesn't share a JS execution environment with the original JS on that web page. And the content script is able to inject scripts into the page and affect the JS execution environment of the web page.
+
+the original JS does not have the ability to do the opposite of that, right? And like affect the content script because of the isolated, the isolated world. And then the primary ways for these things to communicate is via post message. So the original JS can send a post message to the content script and vice versa. And then we also have this other component, which we consider sort of like the backend of the extension.
+
+Matanber (25:19.266)
+Right, exactly.
+
+Hahaha
+
+Justin Gardner (25:42.628)
+which is the background script or the service worker. And the content script can communicate with the background script via the send message API. So that's sort of, it's kind of like post message, but for that backend to front end communication for the extensions. However, the front end JS, the original JS cannot communicate to the backend background script directly using the send message API. So if you're trying to attack the, the, the background script, you kind of have to do that via proxy through the content script.
+
+Did I get all that right? Alright, can I get round of applause for that please? Just from you, Matat? Thank you, thank you. Alright, very good. And I guess, I guess...
+
+Matanber (26:12.522)
+Exactly, well said. Yeah, yeah
+
+Justin Gardner (00:05.397)
+And I suppose I should probably give you a round of applause as well for actually explaining the thing. So great job. Yeah, no, it's great, man. All right, so now let's talk about how we can attack these Chrome extensions now that we sort of understand what they are and what the structure is. OK.
+
+Matanber (00:11.416)
+Trying to. Trying to. Okay.
+
+Matanber (00:19.414)
+Right, that's the fun part. Yeah. Okay, so I want to like do a few distinctions here between like different attack scenarios and attack surfaces. So I think the best attack scenario or like attack surface is the case where you have like the extension trying to extend the malicious page. So if it's like
+
+I will save my JPEG's extension. It will try to extend every page and like buttons to it. And so when the victim navigates to a malicious page, that's where you have that sort of attack scenario.
+
+Justin Gardner (01:03.553)
+Hmm. And is this, is this the extension extending the page with a content script or is it, it's injecting the script into it? Are we talking about the injected script? Are we talking about the content page? Okay. Just the content script. Okay. Okay. Sure.
+
+Matanber (01:09.397)
+Yeah, yeah, that's...
+
+And just a content script, just a content script, okay? And the Injector script is sort of like a sub case of that. So when you have that content script in there, even though they have like an isolated world, it still opens a whole bunch of attack surface that isn't very standard and you might not think about. For example, because they share the DOM,
+
+Justin Gardner (01:20.139)
+Sure, sure.
+
+Matanber (01:40.012)
+the two worlds they have like the bridge of the dome it's getting even more even more dramatic if the extension injects something into the into the dome like in our example a button then from the attackers js code in that page you could just like do button.click right or yeah right
+
+Justin Gardner (01:40.255)
+Mm. Yeah.
+
+Justin Gardner (02:00.845)
+Mmm.
+
+Justin Gardner (02:05.707)
+Right? Because it's a part of that Dom.
+
+Matanber (02:09.145)
+Or like if it injects a paragraph, you could just read the content of the paragraph, right?
+
+Justin Gardner (02:14.157)
+So let's say the extension makes a button on the page and then the extension itself registers an event handler to that button event, like a click or something like that. Then, okay. Sorry, I had to sneeze there for a second. So then you can actually simulate that by actually just on the JS side clicking that button, which is the equivalent of executing the function in the content script because of the event handler. Is that accurate?
+
+Matanber (02:22.519)
+Right.
+
+Yeah, so.
+
+Matanber (02:36.459)
+Yeah.
+
+Matanber (02:43.114)
+Yeah, there's a little caveat there because why wouldn't there be? Events have like a weird property, like the actual event object that gets like sent to the event listener when an event happens. They have the isTrusted property. And for click events, isTrusted is only set to true if
+
+Justin Gardner (02:43.785)
+Okay. Okay. Right. Of course.
+
+Justin Gardner (02:55.405)
+Mm.
+
+Justin Gardner (03:05.95)
+Mmm. Mmm.
+
+Matanber (03:12.416)
+the click was actually done by the user. So what, yeah.
+
+Justin Gardner (03:14.605)
+interesting. that's a sort of a defense in depth technique that they could use is check whether it's a trusted click or not.
+
+Matanber (03:20.714)
+Yeah. But what you can do as an attacker, if you have just like the button there, you can mess with its style, make it full screen, stuff like that. Get creative, basically. But it prevents you from just going click, click, click, click, click, doing everything.
+
+Justin Gardner (03:30.186)
+Mm-mm-mm-mm. Sure.
+
+Well, that makes sense, I think also, man, one of the crazy things to me about situations like this where you have control of CSS is how much we have programmed users to just click accept cookies or decline cookies, whatever you click, right? Like when you come to a page, do you even think about it anymore? Like, I just click accept cookies. Okay, well, you know, maybe I'm the sheep here or whatever, but like.
+
+Matanber (03:49.974)
+Hahaha! Yeah.
+
+Matanber (03:56.396)
+I mean, I click reject, but yeah.
+
+Matanber (04:02.613)
+You
+
+Justin Gardner (04:03.265)
+you're gonna harvest a click one way or the other, right, with that, every single time. And then, like, maybe you make the button depress, you know, it go down, and then come back up and then doesn't go away. What are you gonna do? You're gonna click it again, you know? And so I think we've programmed users to mindlessly click on something as soon as they go to the page, which, you know, maybe it's a win for privacy because you have an opt-in or an opt-out for cookies, but it's definitely an L for user interaction required bugs.
+
+Matanber (04:15.384)
+Right.
+
+Matanber (04:29.208)
+I mean, it's not really an L because you could always just make a victim click somewhere on your site. It's not supposed to be a security boundary, see.
+
+Justin Gardner (04:40.023)
+Yeah, but is it so frictionless though? Like, maybe it's not, I don't know. Maybe that's my hot take, but I just think it's like, it's almost like opening it, like I click a link and I don't even see that box and I still click it, you know? Yeah. Okay, so, I'm sorry, go ahead.
+
+Matanber (04:46.433)
+Yeah.
+
+Matanber (04:52.632)
+So yeah, anyways
+
+So when we talk about the case of a browser extension, specifically the content script, injecting UI into a malicious page, there are a bunch of ways to do that, right? So we just talked about injecting the elements directly, but if they are sort of aware of this attack scenario, they could sort of go around that a little bit. So they could try to instead,
+
+Justin Gardner (05:04.545)
+Hmm. Yeah.
+
+Matanber (05:26.804)
+inject what's called the closed shadow dome, okay? Yeah
+
+Justin Gardner (05:30.381)
+the Shadow Dom. Did they do that from, they did that from the isolated world, right? my gosh. I'm sorry. I'm tripping today. I'm tripping. Okay. So they're going to, they're going to put it in a closed Shadow Dom.
+
+Matanber (05:38.474)
+Yeah, they did it from the isolated world.
+
+Matanber (05:44.6)
+Yeah a closed shadow dome Luckily Masato Kinagawa the goat did some research on closed shadow domes and I should explain what it is and a shadow dome is sort of like another document inside the document so the same way you have like an iframe which is another document inside the document and but
+
+Justin Gardner (05:50.989)
+Yeah. Yep. Our boy, the goat.
+
+Justin Gardner (06:05.773)
+Mmm.
+
+Matanber (06:12.928)
+It's interesting because it sort of isolates what JavaScript can access a certain element. So say you have like JavaScript running in function A and JavaScript running in function B. Function A can like create an element, add a closed shadow DOM to it, and then append that element, like add some content to that closed shadow DOM.
+
+Justin Gardner (06:21.981)
+Mmm. Mmm.
+
+Justin Gardner (06:41.901)
+Mmm.
+
+Matanber (06:42.166)
+And then when it appends that element to the DOM, attaches it, function B can't access the content of the closed shadow DOM.
+
+Justin Gardner (06:51.213)
+Can function A though, because I was under the impression that once, really? Okay, that's interesting. I was under the impression that once the shadow dom hit the dom that it was sort of untouchable.
+
+Matanber (06:53.612)
+Yeah.
+
+Yeah, I think so.
+
+Matanber (07:01.824)
+So yeah, it's like the, I think the way it works and I haven't done a lot of testing with it, but I think the way it works is the sort of, you have like a reference to the variable when you created that. And when you're, yeah, right, right. It's interesting that you mentioned a message board because.
+
+Justin Gardner (07:07.511)
+Mm.
+
+Okay.
+
+Justin Gardner (07:18.802)
+okay, kind of like a message port of sorts.
+
+Matanber (07:30.616)
+Maybe there are some tricks where you can like override a bunch of prototypes to try to get a handle to that original Shadow DOM variable. Anyways, in this case we can do it because it's in the isolated world. So, yeah, theoretically. If they put it in a Shadow DOM, then you can't like mess with any styles.
+
+Justin Gardner (07:41.365)
+Hmm. Very interesting. I could see the wheels, the gears turning. That's great. Okay. So they're putting it in a Shadow DOM.
+
+Mm.
+
+Matanber (07:59.744)
+Or maybe I think you can actually, so you can mess with styles and you can like click jacket, you know, because you can overlay some UI on top of it. And now what Masato did is some research. You actually covered it on the pod and with yeah, with the font ligatures. So you can use that research to leak content from that closed shadow DOM. So we have like three separate levels of vulnerability here.
+
+Justin Gardner (08:01.357)
+Mm-mm.
+
+Justin Gardner (08:06.366)
+Mm, mm.
+
+Mm.
+
+Justin Gardner (08:14.987)
+Yeah, dude, I freaking love it. It's amazing. Yeah. Yeah.
+
+Justin Gardner (08:24.268)
+Mmm.
+
+Matanber (08:29.726)
+One is if they inject an element straight into the page, then you can do whatever you want with it. The second case is when they inject a closed shadow DOM or a shadow root, then you can leak stuff from it, but it's sort of using a technique that I don't know how intended it is. You can leak stuff from it and you can click check it.
+
+Justin Gardner (08:37.643)
+Mm-mm.
+
+Matanber (08:57.632)
+and I think mess with the size. Now the fourth level is if they inject it in an iframe. Okay, so they have an iframe either to the extensions origin, which looks like chrome-extension, colon slash slash the extensions ID and then some HTML page or to just some site of the Chrome extension developer. So if they inject that into the page,
+
+Justin Gardner (08:57.857)
+Hmm. Hmm.
+
+Justin Gardner (09:05.291)
+Mm.
+
+Justin Gardner (09:24.994)
+Mm.
+
+Matanber (09:27.596)
+then you can't mess with any styles or something because it's in an iframe, but you can still click check it. So whatever way you go, there's no really running away from the problem that UI that gets injected into a malicious page will always be click checkable.
+
+Justin Gardner (09:33.282)
+Mm, okay.
+
+Justin Gardner (09:45.121)
+Hmm. Hmm. And that has impact in these scenarios because it is tied directly to the functionality that is defined in the content script. Right? So, you know, click jacking a button that, that, you know, may not have any direct security impact isn't going to get you a bounty likely on these, on these scripts. But if you can model it. Yeah. Yeah. I always just feel like I have to disclose that scenario. Like click jacking gets a bad rap because people don't exploit it.
+
+Matanber (09:54.038)
+Yeah.
+
+Matanber (10:05.718)
+Yeah, don't just go reporting it right away.
+
+Justin Gardner (10:15.277)
+correctly. But if you, like, I think you mentioned somewhere in the doc here, Matan, like, Metamask had like a 120k bug, right, that was pretty much clickjacking, right? Yeah. So it's like, we gotta outline the full threat model, and then clickjacking can be a really, really serious bug, especially in this extension environment, right? Yeah.
+
+Matanber (10:20.525)
+MetaMask.
+
+Matanber (10:37.452)
+Right, right. And we're actually gonna talk about the MetaMask bug a little more. The technical details are very interesting. There's like a little caveat there that the MetaMask developers missed. It's fun.
+
+Justin Gardner (10:42.007)
+Mm-mm. Yeah.
+
+Justin Gardner (10:50.911)
+Okay, let me repeat this back to you real quick, okay? So we've got three levels of sort of attackability here. You've got, if the content script injects some UI into the attacker control DOM directly, then we can click it, we can modify it, we can do whatever, and then when the thing actually gets clicked, then it will trigger something in the content script, and we can, there is some caveat to that with the trusted sort of thing, right? Whether the event is trusted or not.
+
+Matanber (10:56.098)
+Yeah.
+
+Matanber (11:18.06)
+right.
+
+Justin Gardner (11:19.937)
+but we got some workarounds with that with clickjacking. And if we use the shadow DOM, then you can, it's sort of like read but no write, right? Like you can leak the contents of what is injected into the shadow DOM, but then, you can't actually like, you can't actually, you know, click it or trigger any events because it's isolated away. And then the third layer is just using an iframe.
+
+Matanber (11:25.079)
+Hahaha
+
+Justin Gardner (11:48.045)
+Right, which is just, you know, I feel like you've got that meme with like the galaxy rain, you know, that is just like, let's just use an iframe guys. And that one is, it doesn't allow you to do like CSS styling or anything like that, but you can still of course click jacket. Okay. Yeah. And you mentioned that there are like these pages that you can load up in the UI. This is another component.
+
+Matanber (11:50.038)
+Yeah, I shared the life with him.
+
+Matanber (11:55.872)
+Yeah
+
+Matanber (12:05.472)
+Yeah, vanilla clicks jacking basically.
+
+Justin Gardner (12:16.074)
+of the extension and those are extension pages, right?
+
+Matanber (12:19.955)
+yeah, I forgot to mention it, Yeah.
+
+Justin Gardner (12:21.741)
+No, you're good. So extension pages are like the third component of the whole extension that we created. We've got the background script, which is the service worker. You've got the content script, which gets injected into the page, but is in an isolated world. And then you've got this third component, which is the extension pages. And those can be HTML or just pretty much any attribute, like any file that's attached to the extension.
+
+Matanber (12:43.927)
+Yeah.
+
+Yeah, so an extension is just like a fancy bundle of files. It's a zip with a signature and there's just a bunch of files. So those files can be HTML files, right? And there are a few uses for it. For example, when you click on an extension icon, there's a little pop-up that goes up there, right? That's just one of the HTML files that's in the extension source.
+
+Justin Gardner (12:57.933)
+Hmm.
+
+Justin Gardner (13:15.149)
+Mm, mm.
+
+Matanber (13:16.528)
+or if you like right click and go to the options page and that's another HTML file. So those are like two standard pages but an extension page is just like an HTML file in that origin and because it's in the, like the extension can open normally, can put it in an iframe or something like that. There are a bit of caveats there but we'll get to it.
+
+Justin Gardner (13:46.581)
+Of course there are. Okay.
+
+Matanber (13:46.86)
+foreshadowing this episode. Yeah. Yeah. So those pages, because they're in the extensions origin, they have like special privileges. They can connect to the hive mind, the background script and, sorry, the service worker and communicate with it because they're in the extensions origin.
+
+Justin Gardner (14:04.643)
+Right.
+
+Justin Gardner (14:11.884)
+Nice.
+
+Justin Gardner (14:15.756)
+Mm.
+
+Matanber (14:16.692)
+And there's some very interesting attack surface there. Okay, so now that we're done covering the UI stuff, which to be clear is the case where malicious UI is injected into an attacker controlled page by a content script or whatever. Yeah, yeah.
+
+Justin Gardner (14:19.531)
+Yeah.
+
+Justin Gardner (14:23.17)
+Mm-hmm.
+
+Justin Gardner (14:33.434)
+Okay, so we're covering content script attack vectors right now and the segment of that was injecting into an attack controlled page. Okay, solid.
+
+Matanber (14:41.398)
+Yeah, so there's UI. A second attack scenario is any communication between that page or like an injected script and the content script. And so that can be custom event listeners, which will look like an event listener and then some name that you don't recognize or some name that you do recognize, you can still exploit those. So just like event listeners in general.
+
+Justin Gardner (15:06.381)
+Mm.
+
+Matanber (15:10.84)
+that the sort of content script adds because
+
+Justin Gardner (15:14.349)
+And so in this scenario, typically with post-message exploitation, if they're going to add an event listener for that, we need a window reference. So how do we get a window reference to these? it's the same window. So we just send it to ourselves?
+
+Matanber (15:26.53)
+Yeah. Yeah. So one, post messages specifically are interesting because you can either have the attack scenario where it's injected into the page and then you can send it to yourself. Or you can have the scenario where it's injected into a sort of a legitimate page. And in that case, have like, you can send a malicious message.
+
+Justin Gardner (15:29.516)
+Huh.
+
+Matanber (15:56.62)
+So you have a bit less control over the input, right? Because that message will have like a malicious origin. So they can verify that and like block you.
+
+Justin Gardner (15:59.533)
+Mmm.
+
+Justin Gardner (16:04.845)
+When you say legitimate page, this would be more like the traditional post message attack vector structure, right? So you've got two tabs open, one is the attacker page, one is the victim page with the extension loaded up and the content script injected into it, and you're sending a message from the attacker page to the legitimate page or the victim page in this scenario, and the content script is parsing that. Is that accurate though? Is that the accurate structure?
+
+Matanber (16:14.826)
+Yeah, right, right.
+
+Matanber (16:19.948)
+Yeah. Yeah.
+
+Matanber (16:27.074)
+Yeah, but I'm getting a bit ahead of myself. Yeah, yeah, right. It is accurate. Yeah, I'm getting a bit ahead of myself because I was gonna talk about it in a second. So the second attack scenario of injecting into a malicious page is as we mentioned, post-message listeners or event listeners in general, because if the,
+
+Justin Gardner (16:34.689)
+Okay.
+
+Justin Gardner (16:39.383)
+Okay.
+
+Justin Gardner (16:53.164)
+Mm.
+
+Matanber (16:57.048)
+A content script listens for whatever event on document.body. can do document.body.dispatch event and some event that you created, right? Yeah. You just have some functions that you can reach. And you can imagine if it's like, I don't know, a click event or another event that then the content script does something, does something with like send a message as a result of that to the background script that does something.
+
+Justin Gardner (17:05.074)
+okay, yeah, we have more flexibility there.
+
+Matanber (17:27.126)
+you can just sort of hijack that logic, basically, you can trigger that action with an event listener. And I've seen in some cases even like taking some input from the event. So you have like the event.detail property, which is attacker controllable and taking some input from that and doing stuff.
+
+Justin Gardner (17:30.739)
+Mm, mm. Yeah.
+
+Justin Gardner (17:44.973)
+Mmm.
+
+Justin Gardner (17:51.437)
+Is that like a data property from post message or does details contain something else?
+
+Matanber (17:55.892)
+Yeah, yeah. It's very similar. When you have like a custom event, you can initiate it with something in its detail. So you can have like a string in the details, an object, something like that. yeah, right. So I've seen, and in that case, I actually had to manipulate the extension a bit to...
+
+Justin Gardner (18:13.741)
+Data passed when initializing the event. see. Okay, interesting.
+
+Matanber (18:24.77)
+get it to listen to those events. But I managed to set up some scenario where it listened to those events and then I could do some interesting stuff because I trigger that event, then the content script paste that detail to the background script and it did something with it. Yeah. Yeah.
+
+Justin Gardner (18:27.245)
+Mm-mm.
+
+Justin Gardner (18:44.647)
+Okay, so we are, we are, we're pivoting even here from, from the, the, front end scenario, I guess, and then pivoting through the content script over to the background script with these custom events.
+
+Matanber (18:55.8)
+That's the closest I'm gonna get to hacking backends. Yeah.
+
+Justin Gardner (18:59.121)
+Yeah, exactly. Well, I mean, that's all you can do, right? Yeah. And I guess what is the goal in these scenarios? Like, are we trying to get the content script to like, yeah, like, are we trying to get, can we pop XSS in the extension pages or are we trying to like get malicious JS execution in the content script or what? Yeah.
+
+Matanber (19:08.984)
+It's very hard to define.
+
+Matanber (19:15.224)
+So in the case, okay, yeah, that's a great question. That's a great question. I forgot to mention that too. So in every scenario, every attack scenario, you can never get JS execution in the actual origin of the extension, right? So you can't actually get it to execute some JS and then use all the APIs that it has.
+
+Justin Gardner (19:41.121)
+Mmm.
+
+Matanber (19:41.49)
+And because in manifest v3 there's a mandatory CSP that they have to implement that doesn't allow any scripts other than the scripts that came bundled with the extension. So yeah, no eval, nothing. In that, yeah, that's bad. I'm sorry I got a bit too late into extension hacking a bit too late and I missed that but.
+
+Justin Gardner (19:52.845)
+Mmm, okay, so no no eval no no Yeah, okay rip That's bad Yeah
+
+Justin Gardner (20:07.404)
+and
+
+Matanber (20:10.902)
+It's fine. Because there's still plenty of stuff to exploit. Yeah, it must have been messy. Yeah. So you can't do that. But it's very possible to say the extension adds or I don't know, somehow does something insecure. You can.
+
+Justin Gardner (20:11.681)
+Yeah, dude, how cool would it have been if you had just been able to hijack the whole content script and have that arbitrary communication with the back end? Yeah. Yeah.
+
+Matanber (20:38.12)
+maybe theoretically get it to execute attacker controlled scripts in legitimate pages, right? Because there's nothing in the inherent structure that prevents that from happening.
+
+Justin Gardner (20:45.519)
+Mmm. Mmm.
+
+Justin Gardner (20:50.889)
+in the actual, in the pages of the website. Okay, I see what you're saying. So, legitimate page is the page of the victim website that you would be attacking, right? Okay. And so, like, let's say they're listening for a post message, they're not doing an origin check, and then they're concatenating a script to the DOM or whatever with that data, then that would be a scenario where we're attacking the legitimate page via the content script. Nice.
+
+Matanber (20:54.326)
+Yeah.
+
+Matanber (20:58.036)
+Yeah, right. Yeah.
+
+Matanber (21:04.17)
+Right.
+
+Right. Yeah. Right. So that's kind of not really what we're... I guess it is possible to... In every one of the attack scenarios that we're gonna mention, I think it's theoretically possible to get that to happen somehow. And you can, like in the best case scenario or worst case scenario, however you want to look at it.
+
+Justin Gardner (21:30.75)
+Mm, okay.
+
+Matanber (21:37.386)
+you can get universal XSS out of that. Which is very bad. yeah. If I have like an extension that millions of people installed and like people can just read their emails and yeah, that's bad. Yeah.
+
+Justin Gardner (21:40.011)
+Yeah, yeah.
+
+That's very bad, that is not good.
+
+Yeah.
+
+Justin Gardner (21:54.859)
+That is very bad indeed. Okay, so the holy grail in this sort of scenario for extension hacking is sort of this universal XSS scenario. Yeah, okay.
+
+Matanber (22:03.618)
+Yeah. So we're done covering the what happens when a content script is injected into a malicious page. Now let's talk about what happens when it's injected into a normal page, a legitimate page. And so that case is very interesting because you have like a bit less input as the attacker. But you have many more things or like much more potential for stuff to go wrong if you get input somewhere.
+
+Justin Gardner (22:15.541)
+Okay. Okay.
+
+Justin Gardner (22:23.085)
+Mm.
+
+Justin Gardner (22:32.62)
+Mm.
+
+Matanber (22:33.652)
+because the content script is injected into a normal page and the content script has like access to all of the DOM APIs like we mentioned. So if it does like document.write or something, you can just access the legitimate page, right? Which if that page is every page, then universal access like we just mentioned. So when you have a legitimate page, the things to look out for is one.
+
+Justin Gardner (22:42.828)
+Mm.
+
+Justin Gardner (22:48.237)
+Mm, mm, mm.
+
+Justin Gardner (22:54.807)
+Boom. Yeah.
+
+Matanber (23:03.766)
+Are there any post-message listeners? If not, can you get it to add a post-message listener in some specific scenario?
+
+Justin Gardner (23:08.679)
+Mm-hmm. Yeah, that's a great point, right? Oftentimes what we'll do is we'll load up a page and we'll look at whether the post message listeners are there or not. Yeah, but I think there's a lot of scenarios where you need to click a button on that page for that listener to be registered and then something happens. And that's where I've been seeing a lot of post message bugs lately.
+
+Matanber (23:19.264)
+I do that way too much,
+
+Matanber (23:29.804)
+Right? Yeah. So you can have that or sort of the attack surface here in the case of a content script injected into a regular page is very similar to just the normal attack surface that you would have when you try to act the legitimate page directly because the content script can like have, I don't know, take URL parameters, stuff like that because it has access to the location. So it's pretty much the same. You can have
+
+Justin Gardner (23:38.22)
+Mm.
+
+Justin Gardner (23:47.789)
+Mm.
+
+Justin Gardner (23:52.447)
+Mm-mm.
+
+Matanber (23:59.882)
+Like you have the same sort of what I call universal input sources, which is like location data and post message data, stuff like that. You could of course, yeah, yeah. You could of course have like target specific input sources depending on the functionality of the extension. But in general, that scenario is very similar to the
+
+Justin Gardner (24:05.389)
+Mm.
+
+Justin Gardner (24:11.585)
+hash, that sort of thing. Okay, gotcha.
+
+Matanber (24:30.32)
+this scenario of just trying to hack a page directly. And you can imagine that, yeah, you can imagine that if an extension is very big, suddenly that adds a ton of attack surface to every page the victim has, like every page in existence, basically, that the victim can open, which is a little scary. So if you have a lot of extensions installed, that's something to worry about.
+
+Justin Gardner (24:33.067)
+Yeah, yeah, just normal hacking. Yeah, okay, gotcha.
+
+Justin Gardner (24:42.573)
+Mm.
+
+Mm.
+
+Yeah.
+
+Justin Gardner (24:53.229)
+It's risky man, a lot of stuff is getting injected into every single page. It's kind of, I guess it makes a lot of sense that they needed to do this isolated world thing too because there's just gonna be so much collision across extensions and stuff like that as well if they were sharing the same JS environment. Yeah, yeah. Okay, so that makes sense. When it's getting injected into the legitimate page.
+
+Matanber (25:07.852)
+That's also a reason they do that.
+
+Justin Gardner (25:16.577)
+We're just mostly looking at the same sources in syncs and just considering these content scripts as like a JS file included on the page.
+
+Matanber (25:22.924)
+Right, yeah, you can totally abstract that away. Yeah.
+
+Justin Gardner (25:28.909)
+Yeah, so this is a question that I had then. So the legitimate page one is less exciting, like you said. It's more exciting when you can get the execution to actually trigger on an attacker-controlled page. So the question then becomes, how do we get the extension to trigger on an attacker-controlled page? And I know that this is defined in the manifest file. I'll go ahead and share my screen again so you guys can see what I'm talking about from Spacer Koon's nice article.
+
+where there's a graphic for this. But I know that there's an environment where you can define essentially the matches array, which defines a pattern of sorts that this extension will run on when it matches the current path, the current location. And I was looking at this and I was like, please God, let it be a regex. Because if it's a regex, you know what I'm thinking, right? It's on the dots. The dots would be amazing, but it's not a regex.
+
+Matanber (26:18.4)
+Yeah, the dots.
+
+Justin Gardner (26:26.413)
+It's like a custom syntax that makes it a little bit more difficult to get it to execute in an environment where it wasn't intended to execute. So have you poked around on that at all? Have you seen any weird tricks that might result in an attacker's page getting able to run the content scripts or interact with the content scripts?
+
+Matanber (26:41.869)
+And
+
+Matanber (26:45.484)
+So.
+
+Matanber (26:50.672)
+Yeah, when it comes to that, usually it's either like intended and you'll see like all URLs in the matches pattern, like the literal string all URLs. Yeah, that's a special case with like brackets around it. Or you will have like a page and a site that they inject into and you can access that site.
+
+Justin Gardner (26:54.603)
+Mmm.
+
+Mm-mm.
+
+Justin Gardner (27:01.373)
+Mm. Okay, that's like a special case. Mm.
+
+Matanber (27:17.408)
+And now it basically becomes an attacker control site. Yeah. And then the chain just gets way too long, you know, when then you're trying to pivot and stuff like that. Yeah.
+
+Justin Gardner (27:20.013)
+interesting.
+
+Justin Gardner (27:25.421)
+That is interesting though. you, because I know that there's like, wow, interesting, interesting stuff because then I know that some of these extensions also have a way for you to access cookie storage that are associated with other entities, right? So if there's a way that you can get an XSS on one of these trusted domains and then interact with the...
+
+Matanber (27:45.88)
+Mmm.
+
+Justin Gardner (27:54.007)
+The extension, do you know what I'm talking about or do you not know what I'm talking about?
+
+Matanber (27:56.526)
+Yeah, you mean like getting an XSS there then interacting with the extension to somehow leak data for other sites?
+
+Justin Gardner (28:03.489)
+You can do that, but actually I wanna say that there's specifically, yeah, so scroll down to, on the Space Recruit article, scroll down to, just go ahead and search for permissions as a string, right? And it says, in addition, the extension has permissions to access the cookies of multiple other origins, and then it shows like permissions, cookies. And then he describes in this scenario how the application actually defines an onMessage listener.
+
+Matanber (28:11.864)
+Mmm.
+
+Matanber (28:17.804)
+Yeah.
+
+Matanber (28:23.456)
+Yeah, right.
+
+Justin Gardner (28:31.853)
+that allows you to grab cookies for any specific origin. And so let's say there was a similar functionality with that. You can take the XSS that you have in a, you know, some obscure subdomain of whatever.com.
+
+Matanber (28:35.564)
+Yeah.
+
+Matanber (28:44.672)
+Yeah, or just like as intended functionality, having the extension inject into a legitimate page or an attacker control page, sorry.
+
+Justin Gardner (28:51.285)
+Yeah. Yeah. That right. Right. And then the, the, yeah, wow. That's, that is some very interesting, interesting attack scenarios then, because this becomes a really impactful way to escalate, XSS is in obscure sub domains. If there, if there's like a star dot site.com or whatever in the, in the matches for the, for the manifest.json.
+
+And now that's become an attacker controlled page via the XSS and you can interact with the extension to do bad things. Am I on track with that?
+
+Matanber (29:24.076)
+So.
+
+Yeah, so I'm looking at the different conditions for whether to inject the content script or not. So actually it's important to note that currently we're talking just about the manifest file, right? But that's not actually not the only way you can inject content scripts. You can have just the code in the service worker, just go like Chrome, tabs.
+
+Justin Gardner (29:35.18)
+Mm-mm.
+
+Justin Gardner (29:41.492)
+Mm. Mm.
+
+Justin Gardner (29:47.958)
+Really? Huh.
+
+Matanber (29:55.9)
+and just select a bunch of tabs and add the content script to them manually. Manually, yeah. Right. And yeah, and I think it's actually might be a bit of a common pattern because you can just go Chrome tabs query and then query for a certain thing. So say they have like query for a certain URL or something like that. And then...
+
+Justin Gardner (30:00.39)
+interesting. So you've got to read the whole service worker code base as well to make sure they're not dynamically doing that.
+
+Justin Gardner (30:20.139)
+Is that a query selector?
+
+Matanber (30:22.1)
+No, it's just a query. I wish it was a query selector somehow.
+
+Justin Gardner (30:23.757)
+So Chrome tabs query and then what are you passing into it? Are you searching for a URL?
+
+Matanber (30:30.122)
+some object with a bunch of options. I'm not sure what this syntax exactly is, but you can query by URL.
+
+Justin Gardner (30:35.149)
+Mmm.
+
+tabs query. you can query by URL. Okay, interesting. that, hmm.
+
+Matanber (30:40.738)
+Yeah. So that's just like another scenario where you can maybe get a content script injected into your page.
+
+Justin Gardner (30:49.293)
+yeah, active, true, last focus window. That's how you get access to the currently active tab. Interesting. Interesting. Okay, I'm getting a little nerd sniped here. Wow. Okay. Sorry, All right, let's get back to it. But I definitely want to look into that a little bit more. I didn't get a chance to fully investigate that before the show. But that's definitely something that is very interesting because if it's dynamically injecting those content scripts,
+
+Matanber (31:01.036)
+Yeah.
+
+Justin Gardner (31:19.213)
+and the logic is a little bit less defined because I think in this scenario like the match patterns for the manifest.json file make it pretty impossible for you to make a mistake. There's not like a lot of... Yeah, it's pretty well defined. But if they're just using something like, you know, chrome.tabs query or whatever, then it can be defined user logic and they could be using regex, they could be, you know...
+
+Matanber (31:30.614)
+Yeah, they're very strict.
+
+Matanber (31:46.615)
+Right.
+
+Justin Gardner (31:47.137)
+checking the page for a specific class, the existence of a specific class, and then injecting right into that. And so all you need to do is on your attacker controlled page, just build out that div that has a specific class and then boom, now the extension is in your page and you have the ability to mess with it like we talked about before. Very cool.
+
+Matanber (32:04.182)
+Yeah. And I mean, in some extensions I've seen like very long manifest files that have a whole bunch of pages in there or also URLs in there. So I'm sure in those cases, you can find like one really old site and just access it easily. But yeah, that's interesting in the case you want to look at the attack surface of having the content script injected into a malicious page.
+
+Justin Gardner (32:15.053)
+Mm-mm.
+
+Justin Gardner (32:21.899)
+Mmm. Yeah.
+
+Justin Gardner (32:31.81)
+Hmm.
+
+Matanber (32:33.132)
+We've covered that, we've covered having the extension injected into a normal page. And I should mention that the attack scenarios that we covered in both of these examples are only the sort of more general ones. Extensions are very flexible, you can have some dumb logic that they have there. As you mentioned, like getting cookies, just like some post-messages that get cookies.
+
+Justin Gardner (32:54.283)
+Mm, mm.
+
+Matanber (33:01.526)
+that gets cookies or something like that. Yeah, it's possible. Yeah.
+
+Justin Gardner (33:04.621)
+I love that dude. I love it. I love it. It's so good. So okay, so that makes a lot of sense for these for the content scripts attacks and we've got two other sections here attacking extension pages and attaching attacking service workers where you want to go next.
+
+Matanber (33:18.356)
+Yeah, let's go with extension pages, right?
+
+Justin Gardner (33:21.141)
+Okay. And well, hold on, let me refresh my memory. So extension pages, those are the things that you define that are just kind of like static assets on the page or on the extension, right? And they use the chrome-extension colon slash slash extension ID, which is going to be the same for everyone, right? The extension ID. Okay, cool. So that we can, you know, craft, but there are some limitations on how you can interact with those extension pages and those assets.
+
+Matanber (33:30.059)
+Yeah.
+
+Matanber (33:38.08)
+Right, yeah.
+
+Matanber (33:46.808)
+I think there might be a bit of a mitigation there. not sure. I mean, I haven't looked too deep into it and I'm not sure which context it's sort of implemented in, but there's some scenario where the Chrome extension URL will have like a unique ID in it that you can't guess, but I haven't actually encountered it. Just know that it's possible somehow, I'm not sure. Yeah.
+
+Justin Gardner (33:51.565)
+Mm.
+
+Mm.
+
+Justin Gardner (34:06.023)
+Mmm, interesting.
+
+Justin Gardner (34:11.742)
+Yeah, very cool.
+
+Matanber (34:16.916)
+extension pages, you can sort of look at them as regular pages with a very strict CSP that have a bunch of like extra permissions or features because they can communicate with the back-end script. So that can be like another sort of way to pivot, you know.
+
+you can go either through the content script or through an extension page. Yeah, so I'm gonna give the example. First of all, the extension pages by default, they're not gonna be accessible from a regular website. And what I mean by that is you can't open them with window.open, can't iframe them, you can't do anything with them. You can't even navigate to them, like with location equals.
+
+Justin Gardner (34:44.685)
+Mm.
+
+Justin Gardner (34:48.771)
+interesting. Okay.
+
+Justin Gardner (35:12.299)
+Wow. Like you can't even take your current page and kill your own reference and execution and no, wow, okay.
+
+Matanber (35:14.292)
+and
+
+No, you can't. Yeah. No. So...
+
+Justin Gardner (35:21.933)
+It's like coupon steroids there. It's like, never get a reference. They can't even open this page. OK? Solid. Solid. I see you, Chrome developers.
+
+Matanber (35:24.568)
+Yeah. Right. So.
+
+So if that's a feature that the extension developers need, what they can do is sort of whitelist that specific HTML file of a specific page, or they can have like a pattern. So what I'm talking about is there's a key in the manifest file, web accessible resources. Maybe there's also a dynamic way to define that, I'm not sure.
+
+Justin Gardner (35:57.399)
+Mmm.
+
+Justin Gardner (36:02.925)
+Hmm.
+
+Matanber (36:03.524)
+and just not like as a static thing. But you have the web accessible resources key. And that has a bunch of patterns where you can define which files included in the zip file of the extension are gonna be accessible by regular websites. And you can also define which website that is. So it can be the all websites or it can be like a specific origin that you trust.
+
+And now that set of websites will be able to open those sites, iframe them if they don't have any extra restrictions and stuff like that. Now, what's very interesting is, and now we're getting to the bug that was in the MetaMask extension. When you have one page that is web accessible and you sort of iframe it or open it or something like that. And so you have like,
+
+Page A that is web accessible and Page B that isn't web accessible. If you can somehow open Page A, either in an iframe or in a new tab and make it redirect to Page B, then you can access Page B. Yeah. Yeah, you can get a reference to it. You can put it in the iframe, anything.
+
+Justin Gardner (37:16.009)
+So you can get a reference to it?
+
+Justin Gardner (37:22.177)
+Wow, okay, so let's say we have an extension page that's like redirect.html or whatever, and that one is web accessible and it takes in a query.
+
+Matanber (37:29.612)
+Yeah. And we don't even have to be theoretically, we can actually talk about the MetaMask bug. So, because the details are public and there's a BBRE video about it if you want to learn more. But so the MetaMask add a specific page and that was, think like a phishing warning and it displayed like a whole bunch of text and then a link and the...
+
+Justin Gardner (37:35.909)
+okay, perfect, okay. Sure.
+
+Justin Gardner (37:41.941)
+Nice, we'll link that.
+
+Justin Gardner (37:51.885)
+Mm.
+
+Matanber (37:56.44)
+thing that it linked to was like the value of some URL parameter. So that's a page that they had that was actually web accessible by any origin. Yeah. Yeah. Right. And they had another page that was like the notification page it was called, but basically it allowed you to click accept transaction, right? The most sensitive click checking you can ever have. So the attack scenario was basically you open that
+
+Justin Gardner (38:00.333)
+Mmm.
+
+Justin Gardner (38:05.887)
+wow, this is like perfectly the scenario that we were, okay, solid.
+
+Justin Gardner (38:18.669)
+no!
+
+Matanber (38:26.462)
+In an attacker control page, you open that phishing notification phishing warning page with like and you put in the URL parameter the URL of the very sensitive page that we definitely don't want to get click checked. Now you make the victim click on the link that appears inside the phishing warning page.
+
+Justin Gardner (38:32.353)
+The phishing
+
+Justin Gardner (38:46.156)
+Yeah.
+
+Matanber (38:54.328)
+And now that page redirects itself to the page that isn't normally web accessible, but because it just got redirected from a page that is web accessible, you can now click check it. And that's what happens when they got like 120K. Good for them.
+
+Justin Gardner (39:07.713)
+Dude.
+
+That's such a crazy simple exploit too, man. my gosh. I love how they weaponized the phishing notification, the phishing warning page. They're like, don't get phished. Okay, cool. Now click here. Click the big red button. That definitely isn't the accept transaction button. That's great.
+
+Matanber (39:14.091)
+Yeah.
+
+Matanber (39:18.604)
+Yeah.
+
+thing is I've looked at that exact same page, but just like a different iteration of it. I think they changed it because of this bug. So yeah, it said that I was late to that too. But yeah.
+
+Justin Gardner (39:33.933)
+Mmm.
+
+Yeah.
+
+Yeah.
+
+Justin Gardner (39:42.763)
+Sad man, sad. That's how the game works sometimes though, Yeah.
+
+Matanber (39:47.81)
+So there's another trick that I wasn't sure if I was gonna disclose. I can see you smiling there. But yeah, yeah, I think so. Specifically because I don't think that's like very exploitable in the program that I like to work the extension of. Gonna keep it pretty vague. So I don't mind sharing it, but it's...
+
+Justin Gardner (39:53.949)
+Yes, I'm excited. I'm glad you decided to Are you going to disclose it or you're not going to disclose it? Okay
+
+Justin Gardner (40:08.341)
+Mm-hmm, mm-hmm. Mm.
+
+Justin Gardner (40:14.444)
+sweet.
+
+Matanber (40:16.728)
+I don't think it's intended, maybe, I hope Chrome doesn't get mad at me for disclosing this, but you can get a reference. This isn't like an iframe reference, but just like a reference to a window of a page that isn't normally web accessible if you can somehow create a scenario where the victim navigates to that page, right?
+
+and then in the same tab, maybe after a few navigations, navigates to an attacker controlled page. The reason is because if you have an attacker controlled page and somewhere back in the history of that same tab, you have a non accessible page, you can do history.back and then just go a bunch of steps until you navigate, until you reach that page. And it will actually let you go back to it.
+
+Justin Gardner (41:05.549)
+Hmm.
+
+Justin Gardner (41:12.759)
+I'm a little bit fuzzy on how history.back works. So if I run history.back, I don't maintain my JS execution.
+
+Matanber (41:15.465)
+Yeah.
+
+Matanber (41:22.304)
+Yeah, so, yeah, I should clarify that a little bit. And actually, it's, you can get a pretty good understanding of it because you interact with that concept all the time. The little arrows that you have in the URL bar, that just goes back one history step and forward one history step. So you can imitate that with JavaScript basically. And the attack scenario that I'm talking about here is you have a victim somehow.
+
+Justin Gardner (41:43.137)
+Mm.
+
+Matanber (41:50.602)
+landing the non-accessible page. Okay. Whether they right-click the extensions and went to options or something like that, or copy paste at the URL. Yeah.
+
+Justin Gardner (41:58.605)
+Here's a scenario, okay? So in our Save My JPEGs or whatever extension that we're talking about, it's kind of like Pinterest where you have a specific image you want to save. You click Save or whatever and it goes to, maybe it's displayed, all of your saved pictures are displayed in an extension page, right? So you click the URL at the top, you say, let's look at my... And it...
+
+Matanber (42:20.607)
+and it links to the profile of the photographer or something like that. Yeah.
+
+Justin Gardner (42:24.231)
+Exactly, and it links back to the page from which you yoinked the image, right? So then you're on that extension page, you click the image, it takes you to the page where you saved it from, right? And would that be... Yeah, so then how do we, from there, how do we get a reference to that other page?
+
+Matanber (42:29.527)
+Right, yeah.
+
+Matanber (42:34.422)
+Right, and now it's in the same history, yeah. Okay, now from the page that you had, okay, this is where it gets a little tricky, but I like those sorts of scenarios with opens and opener and stuff like that. So from that page that has the non-accessible page in the history, you open an attacker controlled page.
+
+Justin Gardner (42:45.889)
+Yeah. Yeah.
+
+Justin Gardner (42:54.605)
+Mm-mm.
+
+Matanber (43:02.006)
+Right? So, or same origin page, like because it's in the origin of the attacker. So you open a malicious page and now from that page, so you have like the page with the fancy history with the non-accessible page and you open a malicious page. Right? Now you have to have some way of making that page that you just opened the opener of the page with the history.
+
+Justin Gardner (43:18.221)
+Mm-hmm.
+
+Matanber (43:31.18)
+so that it has the ability to navigate it and stuff. So in order to do that, you can just have the first window have some name like A and then from the second page you go like window.open empty string, A. And that will just make it, it will both give you a window reference and it will make you the opener of the page. Now what you do.
+
+Justin Gardner (43:33.857)
+Mm-mm.
+
+Justin Gardner (43:41.581)
+Mm-hmm.
+
+Justin Gardner (43:48.173)
+Mm, mm.
+
+Matanber (43:58.784)
+We don't know how many steps back in the history the extension page was, right? But what you can do, I think, I haven't actually tested it, but it sounds like a valid attack. Extension pages are served locally, right? They're files on your computer, which means the response for them is gonna be very fast, as opposed to any other page. So what you can do, yeah, what you can do is,
+
+Justin Gardner (44:06.54)
+Mm.
+
+Justin Gardner (44:24.146)
+Hmm, interesting.
+
+Matanber (44:28.536)
+from the page that you, this sort of, you have the page with the history and you have this page where you have persistent JS execution because it doesn't get navigated or anything. From that page, you trigger like history.back in the original page and you measure how long it takes to navigate. And by that I mean how long it takes for that window to become cross origin.
+
+Justin Gardner (44:56.919)
+So obviously if it was directly in our scenario from the save JPEGs window, you can go ahead and go one step back, right? But say there was a sequence of steps going backwards. could, right, right. But if it was same origin, you could just do check and see if you have access to the DOM, check and see you have access to the DOM. I don't have access to the DOM. That's the extension page.
+
+Matanber (45:03.702)
+Right. Just go one step.
+
+Yeah, yeah, yeah, which is a bit more general.
+
+Justin Gardner (45:23.153)
+So if it was direct, attacker control website, attacker control website, attacker control website, Chrome extension page. But if there was some sort of middleman there, some sort of middleman that's not your attacker controlled page, then can you still do history.back from that because it's your opener?
+
+Matanber (45:26.515)
+Right, right, right, yeah.
+
+Matanber (45:41.844)
+No, what I'm trying to do is like, from the page where you have persistent execution, you go history.peg and measure the delay. If it's like over 30 milliseconds or something like that, or 50, I don't know how long, then you're like, this isn't the page I wanted. So you navigate it with .location, which you can do because we made it the opener.
+
+Justin Gardner (45:48.14)
+Mm-hmm.
+
+Justin Gardner (45:52.909)
+Hmm.
+
+Mm-hmm. Mm-hmm.
+
+Matanber (46:11.66)
+That's why we did that. You do win.location and navigate it to an attacker control page. And now you can do window.backlight and specify two steps. You can specify how many steps you want to take. And now, yeah, and now you skip back, right? And then you check that page again, see how long it takes to load. If it's not it, you navigate back and you go back two steps. You do that until you get to the...
+
+Justin Gardner (46:12.393)
+I see.
+
+Justin Gardner (46:17.847)
+Same origin again.
+
+Justin Gardner (46:26.721)
+Yeah, with the offsets and everything, okay.
+
+Justin Gardner (46:37.952)
+Okay, so...
+
+Matanber (46:40.619)
+Extension page? Yeah.
+
+Justin Gardner (46:42.447)
+So even if there's a middleman, even if there's a page that is not same origin with the attacker's origin that is in between the attacker's origin and the extension page, you can still have a methodical approach to stepping back through the history and getting a reference to that other extension page. Is that right? Okay.
+
+Matanber (47:00.918)
+Yeah, so one way to verify if you landed on the extension page is to see like the delay, as we mentioned. And the way you measure the delays, you sort of loop trying to access some same origin attribute like location.href, sorry, property. And as soon as you get an error, you stop the counter, the timer. So now you know how long it took to become cross origin after you started the navigation.
+
+Justin Gardner (47:08.822)
+Mm-hmm.
+
+Justin Gardner (47:24.269)
+Mm. Mm.
+
+Justin Gardner (47:28.811)
+Mm.
+
+Matanber (47:30.882)
+in this case, window.back. history.back. I haven't tried this sort of combination of cross origin timing with history.back. I think it will work though, because it's a navigation anyways. So you can identify it via timing or if you know, for example, that the extension page will have seven iframes, you can check frames.length to see.
+
+Justin Gardner (47:35.629)
+Mm.
+
+Justin Gardner (47:44.929)
+Yeah, it seems reasonable. Yeah. Yeah.
+
+Justin Gardner (47:59.251)
+use traditional cross-site leak sort of techniques to do that there.
+
+Matanber (47:59.382)
+whether it has seven iframes. Yeah. Okay. So now we have the window reference either because it was accessible or because we use the weird trick that I just disclosed. Yeah.
+
+Justin Gardner (48:14.925)
+We lost you. Move forward a little bit. The microphone, I can't hear you on the microphone anymore. Yeah, okay, there you go.
+
+Matanber (48:19.274)
+Okay, yeah, so we have a reference to the non-accessible, if you're not determined, extension page, right. Now that you have a reference, you can attack it sort of as a normal page that has a very strict CSP. And so,
+
+Justin Gardner (48:28.177)
+Mm. Sure. If you're not determined. Extension page. Yeah.
+
+Justin Gardner (48:43.213)
+Mm.
+
+Matanber (48:44.726)
+The default CSP doesn't mention styles anywhere. So if you can make it somehow inject HTML, you can inject a style and try to do stuff with that. Yeah, somehow try to exploit that. Yeah.
+
+Justin Gardner (49:00.289)
+Yeah, the CSP is gonna be strict though, right? So is that a strict CSP that's just for script execution? Okay, so we can still include external style sheets and maybe do like sequential import chaining. Yeah, I wonder, let's check into that really quick to see if we can do sequential import chaining, then you could, well, yeah, guess even without sequential import chaining, now with some of the research that came out recently, there's ways to do, to leak the actual,
+
+Matanber (49:06.082)
+Just for scripts, basically. Yeah.
+
+Yeah, actually let me get the actual...
+
+Matanber (49:30.07)
+Yeah, was that by, who was that by? I don't recall.
+
+Justin Gardner (49:30.519)
+contents of the, with,
+
+Justin Gardner (49:36.205)
+I'm drawing a blank on it right now, but man, that research was stunning. was...
+
+Matanber (49:38.508)
+Yeah. it was like by that guy from, yeah, yeah, PS Paul, right on Twitter. Yeah, great researcher. I liked his like mutation XSS stuff too. It was very interesting.
+
+Justin Gardner (49:43.533)
+Paul. Yeah. Yeah, PS Paul. Yeah, dude. my gosh.
+
+Yeah.
+
+Dude, this, this CS, I'll link this, I'm just gonna drop it into the doc now so we don't forget, this research with just the scroll bar and just a super in-depth understanding of key frames and animations and stuff like that, just absolutely a masterpiece. Yeah, same dude.
+
+Matanber (49:59.48)
+Wow
+
+Matanber (50:07.01)
+Yeah.
+
+Matanber (50:12.736)
+It was insane, I still don't understand it honestly I tried reading it like Pretty late in the evening On my phone and I gave up, tried the next day I have somewhat of an understanding of it but man What the fuck
+
+Justin Gardner (50:24.107)
+Yeah, I consider CSS injection like one of my things that I really enjoy and I like am pretty decent at and that just absolutely blew my mind and I still don't have a full understanding of it. I think for me where the mismatch occurs is like, I don't understand these key frames and these animations well enough when combined with variables inside of CSS. It's like, ugh.
+
+Matanber (50:29.282)
+Yeah.
+
+Matanber (50:47.81)
+Yeah. And they got like really deep into a bunch of like just tricks and hacks and yeah.
+
+Justin Gardner (50:56.299)
+Yeah, it's, yeah. But it is amazing to see that it's possible to leak text nodes with CSS without sequential import chaining. That's revolutionary. That is a massive dub, for sure.
+
+Matanber (51:04.193)
+Yeah.
+
+Matanber (51:08.353)
+Yeah, so anyways, once you have the window reference, the rest is like up to you. There isn't like a very defined way to go about exploiting it because all of the like eval, eval location, all of the normal things are not gonna be viable here because of the CSP that we mentioned.
+
+Justin Gardner (51:36.945)
+So just talking about that CSP value again, the default value for that is script source self, object source self. that is gonna be, yeah, okay, and then there's a minimum, the minimum content security policy for this is script source self, wasm unsafe eval, and object source self. So that's, mean.
+
+Matanber (51:38.167)
+Yeah.
+
+Matanber (51:44.439)
+Objects also.
+
+Matanber (51:59.956)
+Yeah, yeah.
+
+Justin Gardner (52:01.111)
+That's pretty intense, it doesn't, like you said, it doesn't require that you have some restrictions around CSS. So we can still get read on these pages via CSS injection. Yeah.
+
+Matanber (52:11.574)
+Right, and I mean, if that page somehow, like if it's an options page, right, and it, I don't know, it gets a post message that changes the option or something like that, you can get creative there, URL parameters, though I'm not sure if you can specify URL parameters, because unless it's web accessible though, yeah.
+
+Justin Gardner (52:23.819)
+Mm-hmm. Mm-hmm. Sure.
+
+Justin Gardner (52:31.533)
+Yeah, I wonder if you can change the hash because that doesn't trigger a refresh, right? If you know the path, then you should be able to do, but then I think you should be able to because that doesn't count as a navigation. That's something we need to test.
+
+Matanber (52:41.45)
+Yeah, yeah, maybe, Yeah. Yeah, right. And you're the opener of the page in this scenario that we described. So the attack scenarios for the extension pages are like one communication with the service worker, right?
+
+Justin Gardner (52:52.023)
+Yeah.
+
+Matanber (53:08.886)
+sort of the same thing that we had in the content script. Two, when you're talking about DOM stuff, HTML injection, exfiltration of stuff with CSS injection, and click checking, if it's web accessible, or if you can get it a web accessible page to redirect, which I love the fact that that's possible, yeah.
+
+Justin Gardner (53:28.077)
+to reference to it. Yeah, that's pretty great. if it's, the thing that's gonna make it really interesting is if it's web accessible, right? There are some weird scenarios where we can make it web accessible via this history.back thing that hopefully Chrome won't patch because you disclosed it. And some other flows, right, if we can get a page to redirect to it. But yeah, and then there's also just sort of the traditional HTML injection syncs.
+
+in this scenario where like, for example, on our save the JPEGs extension, right? Save the JPEGs, it sounds like a social justice cry. Save the JPEGs. Yeah. They're getting too big. That's good. It's true, man. It's true. 4K.
+
+Matanber (54:06.136)
+That's a good cause, yeah.
+
+Matanber (54:12.92)
+They're getting too big.
+
+Matanber (54:22.924)
+Hahaha
+
+Justin Gardner (54:23.115)
+But yeah, if you can, like for example, in the name of the JPEGs or something like that or the metadata, there's some attribute that contains HTML and the extension writes that to the DOM of the extension page, then you can trigger HTML injection there and CSS injection and do something with that. You just can't trigger XSS.
+
+Matanber (54:36.086)
+Yeah, also, yeah, that's a good example actually. That's something that I forgot to mention. Not all attacks are gonna require you to have a window reference, right? In that scenario where you can just have like a sort of stored HTML injection there, you can exploit that without the need for all the fancy stuff. Yeah.
+
+Justin Gardner (54:45.997)
+Mm, mm.
+
+Justin Gardner (54:57.079)
+Hmm, hmm, yeah. So window references are only necessary when we're doing, you know, post-request message related stuff or, or, you know, trying to affect the hash potentially and that sort of thing. But otherwise you should be looking at clicks. Yeah, yeah. Or you could, yeah, clicks. the, but the, probably the main attack scenario is just going to be to look at the business logic that, that surrounds that extension page. Yeah.
+
+Matanber (55:04.46)
+Yeah.
+
+Matanber (55:09.346)
+Cross-eyed leaks maybe, yeah.
+
+Matanber (55:22.504)
+Exactly. That's a theme across all of the extension handling stuff. Extensions are super flexible and pretty locked down by default. So you kind of have to look at how they sort of bent the extension and shaped it for their features. if you have like, I don't know, an account that's connected to the extension somehow, say we have like savemyjpegs.com,
+
+Justin Gardner (55:27.317)
+Mm-hmm.
+
+Matanber (55:52.544)
+and the extension sort of uses the cookies of say myjpegs.com to send like authenticated requests, right? So if you can somehow get it to send a malicious request, like stuff like that, know, the stuff that isn't standard.
+
+Justin Gardner (55:59.425)
+Mmm. Yeah.
+
+Justin Gardner (56:11.223)
+That's interesting. That is interesting because yeah, okay. So this would allow it to send authenticated requests with, even when you're on it, attacker controlled pay. Yeah, that's cool.
+
+Matanber (56:20.544)
+Yeah, and that's a very common pattern. mean, a lot of the big extensions that are like of some company, if they want a way to monetize the extension, they're gonna have to connect it to an account. And when they connect it to an account, there's gonna be some sort of authenticated fetch implementation, right? So if you can somehow get into that, either via, I don't know, some communication.
+
+to some extension page, content script, whatever, right? And somehow get into that authenticated fetch. But it's sort of an example of more custom stuff, you know.
+
+Justin Gardner (56:57.675)
+Yeah, yeah, that makes sense.
+
+Justin Gardner (57:03.435)
+Yeah, well, it maps, I mean, it maps pretty well also onto traditional web hacking, right? That in a strict CSP environment and maybe a Coop environment, a little bit extra. Yeah, yeah, so, so you know what we do when we see CSPs is we talk to Johan. Yeah, no, that makes a lot of sense. All right, so we've covered extension pages and we've covered content scripts.
+
+Matanber (57:11.863)
+Yeah.
+
+Matanber (57:16.984)
+Consult Johan, yeah. Yeah, that's my trick.
+
+Matanber (57:29.602)
+Yeah, I'm gonna take like one second and I'll be back. Yeah.
+
+Justin Gardner (57:33.067)
+Yeah, let's take a break. We'll come back to it. Yeah, same.
+
+Justin Gardner (01:02:38.452)
+already.
+
+Nice. I've got as much time as you have. Yeah, I'm good, I'm good. All day. I imagine so, Dude, this episode has been real good. Yeah, really good.
+
+Matanber (01:02:41.782)
+Hey, okay. How long do we have?
+
+Matanber (01:02:48.888)
+okay, nice. I can keep talking about this all day. Talking about this.
+
+Really? I felt like I was way too scattered in the beginning.
+
+Justin Gardner (01:03:04.557)
+Well, in the beginning it's very difficult. It was very difficult, but yeah, think I kept trying... No, no, no, no, not at all. was trying to get... The reason I kept on going back to the summarization is because...
+
+Matanber (01:03:08.79)
+Yeah. If you want to re-record that somehow we can.
+
+Matanber (01:03:20.138)
+Yeah, yeah, no, I was glad you did that because I caught myself getting like... yeah.
+
+Justin Gardner (01:03:24.235)
+Yeah, and I'll say, if you forgot some piece, my job is to bring it back up and get those things back on track. And that's not your fault. And you don't need to apologize for forgetting it or stepping ahead or whatever. Just jump right into that piece and roll with that. And I think that's probably the best way to go about it. Because at the end of the day, the listener doesn't know the structure that we've got here.
+
+Matanber (01:03:31.105)
+Yeah.
+
+Matanber (01:03:35.584)
+No, no, of course,
+
+Matanber (01:03:41.438)
+I see. Yeah. See ya.
+
+Matanber (01:03:46.783)
+It's model.
+
+Justin Gardner (01:03:52.173)
+To be honest, normally we don't have this amazing of a structure. Dude, it's so good. It's really, really, really good. And that's why I want you to work with critical thinking as well.
+
+Matanber (01:03:54.936)
+I spent so much time on it,
+
+Matanber (01:04:03.636)
+which is why it's a shame I'm sort of stumbling over some of the parts.
+
+Justin Gardner (01:04:07.731)
+No, I would say there's maybe two parts that it seemed like you're stumbling over and one of them was my fault because I was writing in the dock and I've had my freaking wife's friend walk in and get her clothes out of the laundry machine that's right there and my daughter threw mail under the door. it's like not been the cleanest episode. And I like clicked stop halfway through. but the content is like.
+
+Matanber (01:04:28.312)
+Total chaos. It's okay. It's okay. Yeah. Man, the trick with history.vec. man. I'm waiting for the day I'll be able to exploit that. Yeah.
+
+Justin Gardner (01:04:36.717)
+Really, 10 out of 10, really. So, yeah.
+
+It's fire dude, thank you so much for dropping that. Yeah, it's amazing. I and I think it's very practical if, especially in these scenarios, you should probably look at Pinterest's extension. Yeah, they do. Yeah, that's how they save their bug crowd. Yeah, and they pay good bounties.
+
+Matanber (01:04:55.628)
+Do they have one? Where are they?
+
+Matanber (01:05:01.654)
+By the way, totally unrelated, but Zoom is on HackerOne. Are they private?
+
+Justin Gardner (01:05:10.625)
+I don't think so.
+
+Matanber (01:05:12.384)
+I couldn't find them. Yeah. I had like, had, I'm still in school so I had like a class, like literature class or something, so I was looking at Zoom. I found the sick bug. Post message, yeah. Very cool stuff, like.
+
+Justin Gardner (01:05:13.88)
+really? Yeah, I can get you into Zoom for sure.
+
+Justin Gardner (01:05:21.122)
+Yeah.
+
+Justin Gardner (01:05:25.25)
+did you really? No way. my gosh, please don't do anything with it. I'll get you into the program.
+
+Matanber (01:05:30.946)
+Did you know that when you, the stringifier for an array, you know what it does, right? You have like all of the elements of an array and when you do to string, it like concatenates them with commas. It actually uses the join function to concatenate them, right? So if the join function is custom, it will do that. It will actually call it behind the scenes. Now, if join is overridden to be something that isn't a function,
+
+Justin Gardner (01:05:39.884)
+Yeah, yeah.
+
+Justin Gardner (01:05:47.516)
+Yeah.
+
+Justin Gardner (01:05:53.826)
+No way.
+
+Matanber (01:05:58.922)
+it will give up and just return object array.
+
+Justin Gardner (01:06:03.316)
+Interesting.
+
+Matanber (01:06:04.682)
+which is well documented and I just stumbled upon it. I was looking at that at one post-message listener that was sure I was gonna be able to exploit and yeah, it was very interesting. I actually used that specific like very niche.
+
+Justin Gardner (01:06:13.41)
+Yeah.
+
+Justin Gardner (01:06:21.067)
+That seems like such a weird thing that the toString uses join and join can be overwritten. You shouldn't be able to overwrite like that. doesn't seem, because that should be implemented in the C++ functions, right? Like.
+
+Matanber (01:06:24.065)
+Yeah.
+
+Matanber (01:06:34.218)
+I mean, all of the bridges between the C++ function and all of the like, I don't know, contingencies, I don't know what to call it actually, but like all of the different ways those two worlds influence each other is very interesting. Like in my Chrome bug, had like the C++ function, which I didn't read because I didn't want to get into all of that, but it actually checked whether the page doesn't have an opener and you could override opener.
+
+Justin Gardner (01:06:42.37)
+Yeah.
+
+Justin Gardner (01:06:46.636)
+Yeah.
+
+Justin Gardner (01:06:52.555)
+Yeah.
+
+Matanber (01:07:03.554)
+to be undefined and refresh the page, something like that, it was insane. Okay, let's keep going though with the episode. Okay, yeah, back to the show.
+
+Justin Gardner (01:07:07.963)
+my gosh, that's crazy, Okay, yeah, sorry, we got distracted. All right, back to the show here. Okay, so Richard cut out that last part. that bucket. Yeah, exactly. Okay, all right, so now hitting the ground running, back to attacking service workers, the last component of the extensions that we're gonna talk about.
+
+Matanber (01:07:17.824)
+Yeah, we're catching up while we're recording the pod.
+
+Matanber (01:07:26.486)
+Yeah, yeah, I think we'll go about, we'll go through that part a bit quickly because we just have a lot of interesting stuff to talk about after that. But yeah, so when we talk about service workers, they're the sort of crown jewel of the extension. You don't have direct access to it and you don't have direct access to communicate with it even. So you have to sort of pivot through.
+
+Justin Gardner (01:07:33.079)
+Okay.
+
+Justin Gardner (01:07:37.601)
+Sure, yeah.
+
+Matanber (01:07:54.816)
+either a content script or through an extension page. And all there's another possibility which we'll cover in a second. So many caveats in this episode. I'm sure there was at least one time where I said we're gonna get to that in a second and we never got to it. I'm gonna update the comments or something. Yeah. So those...
+
+Justin Gardner (01:07:57.324)
+extension pitch.
+
+Justin Gardner (01:08:06.518)
+Alright. Yeah.
+
+Justin Gardner (01:08:16.279)
+Sorry, sorry audience, sorry about that. Yeah.
+
+Matanber (01:08:24.906)
+how that actually looks like is in the code of the service worker, you're gonna have the sort of equivalent of a message listener for this sort of communication in extensions. It goes like chrome.runtime.connect, sorry, .onconnect or .onmessage. Those are two separate like listeners and you call that function.
+
+Justin Gardner (01:08:44.269)
+Hmm.
+
+Hmm. Okay.
+
+Matanber (01:08:54.072)
+with like a callback function as a parameter. And when that service worker gets a message, it will call the onMessageListener. Now, I mentioned onConnect too. What onConnect does is it's sort of a functionality to like from the content script, you can go Chrome runtime connect, and then that will give you back like a message port.
+
+that you can communicate with the extension. And the way that works is you have like the content scripts and of the message port. And I'm not sure message ports are common knowledge, so I'm just gonna cover what that is very quickly. You can imagine it like you know that can with the string. I like that analogy, I used it in some show and tell I think. So.
+
+Justin Gardner (01:09:24.941)
+okay.
+
+Justin Gardner (01:09:42.058)
+Yeah, yeah,
+
+Justin Gardner (01:09:48.033)
+Mm-hmm, mm-hmm. That's good, that's good, I like it.
+
+Matanber (01:09:52.716)
+you have like the can with the string. So you have like some, the way it usually works is you have some page, you have two pages communicating and one of the pages creates that whole channel it's called, which is a collection of two cans with a string attached. Now it sends a post message to the other page letting it know that I want to share like a channel with you or a port with you. And it's.
+
+Justin Gardner (01:10:08.212)
+Mm. Mm.
+
+Justin Gardner (01:10:18.849)
+Mmm. Mmm.
+
+Matanber (01:10:20.938)
+sort of transfers the port. So it just throws one of the cans and now you don't, the original page doesn't have access to the can, but the other page can catch it. And now whenever one of the pages sends a message through the end of the, of the channel, it's going to come out in the other port and vice versa. Right. So yeah.
+
+Justin Gardner (01:10:38.912)
+Hmm.
+
+Matanber (01:10:44.792)
+Yeah, exactly. Way too many analogies.
+
+Yeah, so in this case with extension specifically they have sort of a native way to do that so you don't have to do the whole exchange and that's called connect so what happens and I have to prefix that by saying I haven't actually looked at that and Like I've only tested it manually a little but I haven't actually seen it in action. I've read some code around that though, so
+
+Justin Gardner (01:11:16.589)
+Mm-hmm.
+
+Justin Gardner (01:11:20.461)
+Mm, mm.
+
+Matanber (01:11:24.94)
+The way it works is you from one of the ends that wants to initiate the connection, either the content script or the background script. Yeah, let's say just for simplicity that in this case, the content script wants to initiate the connection with the service worker. So from the content script, you go chrome.runtime.connect.
+
+Justin Gardner (01:11:37.088)
+Extension pitch.
+
+Matanber (01:11:54.824)
+And I think you don't have to pass any options, but you can pass a few configuration options to that function. Now, that's gonna trigger a sort of event in the service worker, trigger all of the callbacks for chrome.runtime.onconnect, right? And now all of those are gonna get a port in like
+
+and as one of the arguments to the function. And now they can save that port, right? And the return value of the Chrome.Runtime.connect is in the sort of content script side is gonna be the other end of the channel, right? So we just go Chrome.Runtime.connect that automatically creates the two cans, saves one of them as the sort of return value and the other one it passes to the arguments of the function.
+
+Justin Gardner (01:12:38.39)
+interesting. Well then, yeah.
+
+Matanber (01:12:52.352)
+of the callback.
+
+Justin Gardner (01:12:52.501)
+OK. OK, so that makes sense. And then the callback function can interact with that can and send messages through.
+
+Matanber (01:12:58.206)
+Yeah, and then both of them can just send messages. It's very, it's way easier. Yeah.
+
+Justin Gardner (01:13:01.493)
+Now, here's the question then. Is it like a normal port where you can say where the content script could pass that port through to the client side through the actual legitimate page environment?
+
+Matanber (01:13:08.682)
+I think. wait. Wow, I haven't thought of that. Yeah. Well, huh.
+
+Matanber (01:13:21.464)
+Let's see, cron.runtime.connect
+
+Justin Gardner (01:13:25.803)
+Yeah, I wonder if that's gonna happen.
+
+Matanber (01:13:30.796)
+Yeah, so.
+
+Justin Gardner (01:13:32.21)
+Let's investigate that for a second. Hold on.
+
+Matanber (01:13:34.934)
+Yeah, I think the return value.
+
+Justin Gardner (01:13:38.221)
+Matan, real quick, the dogs that are barking in the background are super loud. Do you... Are those your dogs or the other dogs? Okay, okay. Do you... Okay, all right.
+
+Matanber (01:13:43.668)
+sorry. They're mine. I'm gonna yell at them too, shut up.
+
+Justin Gardner (01:13:59.391)
+You
+
+Matanber (01:14:31.498)
+Yeah, that didn't go very well. I hope it's gonna be fine. Do want me to maybe lower the volume or nah? Yeah. Okay, sorry, Richard.
+
+Justin Gardner (01:14:33.549)
+That's okay.
+
+Justin Gardner (01:14:39.635)
+No, no, Richard will do his best to cut it out. then, yeah, okay, while we're away, let's go investigate that a little bit and see runtime connect, is that what it's called?
+
+Matanber (01:14:54.284)
+Yeah, yeah. So I'm actually gonna just call it manually and see what comes back.
+
+Justin Gardner (01:15:00.971)
+runtime.port, okay. I wonder if runtime.port. Yeah.
+
+Matanber (01:15:03.896)
+so it's sort of a... Okay, yeah, makes sense.
+
+Matanber (01:15:23.842)
+So I don't think it's transferable. Let's see.
+
+Justin Gardner (01:15:26.293)
+Yeah, it's not going to be because it's not serializable by post message.
+
+Matanber (01:15:31.393)
+Yeah.
+
+Matanber (01:15:37.94)
+No it isn't. Okay. That's a good point though. Okay, we're back.
+
+Justin Gardner (01:15:39.061)
+Okay, all right, cool. All right, all right, we're back. Okay, so run, we did investigate that, because that was gonna be crazy if that was possible, because that would lead to a lot of problems. But runtime.port is the type that is returned from the runtime.connect, right? It's not an actual message port, so it's not serializable to pass through as a transferable object. Yeah, and I think postMessage in particular has
+
+Matanber (01:15:46.837)
+Hahaha
+
+Matanber (01:15:54.37)
+It's not an actual port, regular port.
+
+Yeah, serializable means that you can send it in a message.
+
+Justin Gardner (01:16:08.053)
+like a set of transferable, yeah, and I think that's not one of them.
+
+Matanber (01:16:10.644)
+Yeah, anything that can be encoded using or serialized using like a deep clone algorithm. I'm not sure what it's called. Yeah.
+
+Justin Gardner (01:16:19.509)
+Yeah, so array buffer, message port, writable stream, audio data, image bitmap. Hey man, you know, that's what you get for coming on the pod. No, no.
+
+Matanber (01:16:23.756)
+Yeah, you're exposing some of my tricks, man. Yeah, that's one that I've been exploiting the world, the different types. Not gonna say more than that,
+
+Justin Gardner (01:16:35.615)
+yeah? snap, okay, alright, alright.
+
+Matanber (01:16:39.456)
+I'm sad to say that on the photo. No, no, no. Yeah.
+
+Justin Gardner (01:16:41.677)
+If it makes you feel any better, we already covered this in episodes in the past. It's already out there. Let me summarize to this point. When the content script connects to the backend script, also known as the service worker, it does disconnect and it gets a port and it can interact with that port and the backend also gets a port where it can interact.
+
+Matanber (01:16:48.832)
+Okay.
+
+Matanber (01:17:04.086)
+Yeah, so the yeah.
+
+So yeah, two ways to communicate. One is just sending messages. So just back and forth messages, not post messages, but sort of the equivalent in this case. Or if you want to make things easier, you can have a connection and then just trigger that like on connect, connect slash on connect sort of flow. And then you get like a channel where you can just send messages quickly, right?
+
+Justin Gardner (01:17:10.495)
+Mm. Mm.
+
+Matanber (01:17:38.196)
+And so that's like what the two handlers and functions do, right? Now, what's interesting is you have a separate set of functions named on message external and on connect external, right? Those two are sort of more exposed versions of the same concept.
+
+Justin Gardner (01:17:58.027)
+Hmm. Hmm.
+
+Matanber (01:18:04.408)
+And they allow messages and connections from more sources. So by default, the way it works is on connect and on message are only gonna be like accessible or you can only communicate with those listeners from either content scripts or extension pages. yeah, I forgot what we call them.
+
+Justin Gardner (01:18:28.257)
+The extension pages? Yeah, yeah, okay. Yeah.
+
+Matanber (01:18:34.712)
+Other than that, you can't like from a malicious site or something connect to it. Now, externally connectable, or sort of the, I'm getting ahead of myself, the external version of those two, by default allows other extensions to connect to it.
+
+Justin Gardner (01:18:51.149)
+Mmm.
+
+interesting. there's a way for its own content scripts and its own extension pages to communicate with it by default. And then there's also an external connection, which is a different whole flow. is that only for other extensions, or is that also for just like any website? Mm-hmm. Okay.
+
+Matanber (01:19:04.695)
+Yeah.
+
+Yeah, right. Yeah. So by default, by default, it's only for other extensions, but you can configure that behavior. So the default, there's like a key in the manifest called externally connectable, where you can specify the sort of what other things can connect to it. The default value is for it to be accessible by other extensions.
+
+Justin Gardner (01:19:22.477)
+Mm. Mm.
+
+Matanber (01:19:36.546)
+the like external versions of the dissenters. But an extension can specify another value. They can specify like all URLs I think and just make every URL be allowed to connect. They can specify a few origins that are trusted, right? And then that's like the only scenario. I sort of contradicted this before but that's the only scenario where you do actually have.
+
+Justin Gardner (01:19:48.715)
+Wow.
+
+Matanber (01:20:04.438)
+direct communication with the crown jewel, right?
+
+Justin Gardner (01:20:07.147)
+Very interesting. Okay, but then that's interesting because, okay, so the only problem is then that we don't have access to that runtime port. That can't be transferred from the content script to the... Well, but it is a separate thing, but here's the concept though, is like, if they have externally connectable, right? I imagine that same flow is using that same runtime.port object. If you're using a...
+
+Matanber (01:20:20.729)
+No, I mean, that's a separate thing, right?
+
+Matanber (01:20:35.989)
+Yeah, but I mean if
+
+Justin Gardner (01:20:36.521)
+So that object is instantiated on the client side. They have that type, right, within the JavaScript execution environment.
+
+Matanber (01:20:39.724)
+Yeah, no, but you can, if it's externally connectable and you somehow get JS execution in some origin that is in the externally connectable flag or property, then you can just buy like on your own, create a port object or send a message, stuff like that, just directly, right? You don't have to go through a content script through anything, right?
+
+Justin Gardner (01:20:47.5)
+Yeah.
+
+Justin Gardner (01:21:02.765)
+Mm-mm.
+
+Justin Gardner (01:21:07.649)
+Do we have access to runtime? How do you do that? Because there's no runtime object, right? That's not on window, window.runtime.
+
+Matanber (01:21:13.208)
+I think
+
+No, it's chrome.runtime. Or maybe, I'm not sure how you actually do that from... Let me check on some site that does have externally connectable.
+
+Justin Gardner (01:21:20.753)
+is Chrome?
+
+Justin Gardner (01:21:24.853)
+On the client side, yeah, that's a little weird.
+
+Justin Gardner (01:21:32.49)
+I'm so sorry Richard. We're spending so much time doing this. I hope that he doesn't have too much of a hard time editing this.
+
+Matanber (01:21:37.452)
+Yeah.
+
+Matanber (01:21:41.088)
+Okay, so let me actually check on, I'm gonna enable the Reducted extension and go to reducted.com.
+
+Justin Gardner (01:21:48.845)
+All right, great.
+
+Matanber (01:22:01.824)
+Okay, now if I go to runtime.
+
+Justin Gardner (01:22:05.681)
+so it exposes the API once that's defined. Yeah, you do, but not on any page. Okay, okay, so we're back. Okay, so, so yeah.
+
+Matanber (01:22:08.684)
+Yeah, you do have Chrome.runtime. So in, you have that on the page. Okay, so yeah, that's very interesting because there's an API that you didn't know exists on normal pages. It isn't even accessible. Like it's not like a function that doesn't return anything. It just doesn't exist. But on the page that is in the external, externally connectible flag, I keep calling flag property, whatever on some.
+
+Justin Gardner (01:22:23.361)
+Mmm.
+
+Justin Gardner (01:22:35.767)
+Yeah.
+
+Matanber (01:22:37.45)
+on some extension, then you have chrome.runtime. The API is exposed and you can go chrome.runtime.connect, Chrome.runtime.sendMessage, right? So, yeah.
+
+Justin Gardner (01:22:43.916)
+Mm.
+
+Justin Gardner (01:22:48.697)
+And you need the extension ID to pass through and then connect to that. then, so that's why when I just popped open my dev console there, because I don't have any extensions that have externally a connectable set for my specific origin that I was on, that's why I didn't see the chrome.runtime. But if I was on an origin that did have that, then I would have that Chrome API. Okay.
+
+Matanber (01:22:52.855)
+Yeah.
+
+Matanber (01:23:02.636)
+Yeah.
+
+Matanber (01:23:08.396)
+Yeah. And as you mentioned, when it's called from a web page, you need to specify a specific extension ID. Otherwise it doesn't know which extension you're trying to connect to. yeah. Yeah. So there are two ways to get to the externally or external listeners, right? The listeners that have external in the end. One.
+
+Justin Gardner (01:23:12.724)
+Mm. Yeah.
+
+Justin Gardner (01:23:18.753)
+That makes sense. Look at that. Yeah, I do. I went to a page that I have it on and it's there. That's really interesting.
+
+Matanber (01:23:36.64)
+and you go to an externally connectable and that's assuming that they have even an externally connectable option in their manifest you go to an externally connectable page and exploit it xss or something like that. Two is if they either don't have that config in there or they have a config that allows for extensions to connect
+
+Justin Gardner (01:23:50.685)
+Mm. Mm.
+
+Matanber (01:24:06.712)
+And then if the victim installs a malicious browser extension, which is a bit of a worse attack scenario. Because in that case, mean, sure, you can make them install a browser extension that has like very little privileges and then escalate to a browser extension that has a lot of privileges. But I don't think users actually check what level of privilege the extension actually asks for. But
+
+Justin Gardner (01:24:15.806)
+Yeah.
+
+Justin Gardner (01:24:24.333)
+Mm-hmm.
+
+Justin Gardner (01:24:33.013)
+Right. Yeah.
+
+Matanber (01:24:35.648)
+I think that's still a valid attack scenario.
+
+Justin Gardner (01:24:38.091)
+Well, the other thing about that is it's the same sort of thing you run across with mobile apps is that these, it's very easy to gain access to some mobile apps that are installed. Yeah, yeah, or do like a supply chain attack or you can buy Chrome. This is the thing that, you know, cause there's two sides of Justin, right? There's the hacker Justin, but there's also the business Justin and the business Justin loves.
+
+Matanber (01:24:47.84)
+Yeah, right. And an actual attacker will just ask them, right? Yeah.
+
+Matanber (01:24:59.234)
+So shady.
+
+Solo.
+
+Justin Gardner (01:25:06.125)
+investigating all sorts of weird businesses and stuff like that. And one of the ones I was just absolutely blown away by is Chrome extensions are freaking cheap, You can buy Chrome extensions for like one cent per install, like less than one cent per install. so you can, mean, it gets cheap, man, cheap, cheap. like,
+
+Matanber (01:25:16.339)
+really?
+
+Matanber (01:25:23.544)
+How much is that for a million installs? Like 10k?
+
+Matanber (01:25:30.785)
+Wow.
+
+Justin Gardner (01:25:31.981)
+it can be very easy to get a hook into a ton of users' browsers via Chrome extension.
+
+Matanber (01:25:38.86)
+Yeah. So if you have to argue for that, go for it. Yeah.
+
+Justin Gardner (01:25:42.081)
+Yeah, yeah, they're cheap, dude. But there's not a really great way to monetize them either. That's the problem is like from the business perspective. But this isn't a business podcast. This is a hacking podcast. So I won't spend too much time on that. Either way, this is really cool, dude. And I didn't expect for that object to not even exist in the JS execution environment if it didn't, if there wasn't a Chrome extension that exposed that.
+
+Matanber (01:25:50.154)
+Yeah.
+
+Matanber (01:25:59.576)
+It's super weird. Yeah.
+
+Matanber (01:26:05.901)
+also that's a caveat that I'm happy I just remembered to mention. You can have on connectors external and on message external listeners, not only on service workers, but also on extension pages. So extension pages can actually listen for external connections and messages.
+
+Justin Gardner (01:26:25.467)
+interesting, okay.
+
+Matanber (01:26:31.156)
+So from like a malicious extension, you can go and connect to the page. Yeah.
+
+Justin Gardner (01:26:37.651)
+I wonder, you wouldn't even need to be in the same, you wouldn't need a window reference or a tab group. That's interesting. Okay, so that's definitely something that we need to be on top of when we're reading the Chrome extension code is checking whether the onConnected onMessage, okay.
+
+Matanber (01:26:41.248)
+No, no, you can just connect with it.
+
+Yeah.
+
+Matanber (01:26:49.548)
+Yeah, I'm not sure. I'm not sure how you would even like CVSS that, CVSSify it, the requirement for another Chrome extension installed. I don't Yeah. Maybe develop an extension, have a bunch of people install it and they'll be like, it's not a requirement. I don't know if they have that, you know? Yeah.
+
+Justin Gardner (01:26:56.659)
+Mmm. Yeah.
+
+Justin Gardner (01:27:01.29)
+Another Chrome extension installed or?
+
+Yeah, I mean, it's definitely going to be attack complexity high, I think. Yeah, I think that would be a precondition. Yeah.
+
+Yeah, jokes on you, Triageur, it's in your browser right now.
+
+Matanber (01:27:19.512)
+Yeah Yeah, a month after this episode drops you hear about the crazy new CTBB extension that Justin just developed. Yeah fresh from the oven
+
+Justin Gardner (01:27:24.907)
+Yeah. jeez. install it, man. It's great. Okay, cool. So that's a lot of things to look at. One of the things that I wanted to swing back around to was, you know, we covered a lot about the structure. We covered a lot about the attack model surrounding these extensions. How do we get access to the source code that we are talking about reviewing here? Yeah.
+
+Matanber (01:27:36.973)
+Yeah.
+
+Matanber (01:27:49.804)
+Hmm, right. Also one little thing before we continue from the structure. I didn't mention one and it was intentional because I didn't want to get it to, for it to be too confusing, but extensions can have another component because three or four wasn't enough. They can have like a native component. So if you have like,
+
+Justin Gardner (01:27:54.305)
+Go for it, go for it. Mm. Mm.
+
+Justin Gardner (01:28:12.545)
+Mind blown.
+
+Mmm.
+
+Matanber (01:28:17.93)
+And that's what space raccoon, that's what he mentioned and goes deep into in his blog, exploiting that specific one. But I think like having an extension is already niche enough, having an extension that has a bug bounty program. So if you had another requirement on top of that, that's like way too niche. But I think he was able to monetize it at least a little bit.
+
+Justin Gardner (01:28:39.639)
+Mm-mm. Yeah.
+
+Justin Gardner (01:28:44.885)
+Yeah, yeah, I mean, he found a lot of crazy bugs because he was, there's a big query dataset that parses these manifest files.
+
+Matanber (01:28:51.672)
+Yeah, and it's and it's sort of an intersection of just like, it's sort of an intersection of just like JS hacking, which is pretty like rare and extension knowledge and native knowledge. So you get like very, very specific and you won't have a lot of competition there. Yeah.
+
+Justin Gardner (01:29:07.073)
+Mm.
+
+Justin Gardner (01:29:13.373)
+It is something you see with password managers though. And I think password managers are more likely to have a bug bounty program because of the sensitive nature of the content. There's often a native component and extension component because of that integration. So definitely some good attack scenarios there.
+
+Matanber (01:29:22.476)
+Yeah, I mean...
+
+Matanber (01:29:31.798)
+A lot of the password managers don't pay enough, which makes me very worried as one as, yeah, as a person that uses like stores basically his own digital life in a password manager. I wish they paid higher. Yeah.
+
+Justin Gardner (01:29:36.161)
+That's very sad, yeah.
+
+Justin Gardner (01:29:43.713)
+Same dude, same. Same dude, same. All right, so how do we get our hands on this code?
+
+Matanber (01:29:50.666)
+Okay, so this code, most of the time you're gonna have just minified code. And that's just the reality of the situation. You have to like being able to read minified code is a skill that if you don't already have, it's gonna be valuable to get it anyways. And it just takes a lot of practice. There isn't a shortcut to that. But in some cases, the extension is gonna be open source or something and you will be able to get it.
+
+In the normal case, the extension, the sort of file that Chrome downloads from the web store and installs is called like a CRX file. And you can unzip it with the regular unzip utility, sort of like an APK. It's just like a regular zip file with a whole bunch of other metadata on top of it in the beginning of the actual file. So one way to download a...
+
+Justin Gardner (01:30:32.813)
+Mmm.
+
+Matanber (01:30:49.538)
+Chrome extension is to go, is to download the CRX file. You can either go to one of the websites that have the CRX files, but I wouldn't go through a third party. can install it. You can download the CRX file straight from the web store. If you can, if you interact with the API that the web store uses. And there's one like URL that I wrote in the doc. You can maybe put it in the description or something.
+
+Justin Gardner (01:31:06.637)
+Mm.
+
+Justin Gardner (01:31:17.097)
+Mm. Yeah.
+
+Matanber (01:31:19.532)
+But there's one URL where you can just put the extension ID and you can double you get it and it will just download the extension. Another way, Yeah, and there isn't a way to download previous versions. So I'd recommend like downloading it once in a while and diffing it or something like that. So you can see the changes.
+
+Justin Gardner (01:31:29.869)
+Nice, and it'll just drop the whole CRX file. Okay, gotcha. That's nice.
+
+Matanber (01:31:48.522)
+Another thing that you can do, which is I think easier, you can just install the extension normally on your browser. If you don't want to clutter up your browser, you can open like a separate browser profile it's called. And what you can do is just install it and then Chrome will actually put the source code of it in a specific folder. Yeah. So.
+
+Justin Gardner (01:32:03.053)
+Mm, mm.
+
+Justin Gardner (01:32:11.563)
+Yeah, that's what I normally do, the app data folder for Windows.
+
+Matanber (01:32:15.928)
+In Windows it's app data, local, Chrome, whatever, yeah. But you can just find, yeah, you can find the path of it if you go to about column version. It will show you the path of it for the profile that you're currently using. Because for different profiles that have different extensions installed, you will have different folders. So we'll see the profile path and you just go to that path.
+
+Justin Gardner (01:32:19.787)
+local Google Chrome default extensions or something.
+
+Justin Gardner (01:32:28.557)
+Mm.
+
+Justin Gardner (01:32:35.92)
+that's nice.
+
+Matanber (01:32:44.128)
+and then to the extensions folder in there. And then you'll have to go to the extension with the ID. The way you figure out what the extension ID is, is you go to manage extensions, enable developer mode, and it will just show it there. Okay. Yeah. Yeah, beautify the code and then you have it.
+
+Justin Gardner (01:32:46.219)
+Nice.
+
+Justin Gardner (01:33:00.343)
+Sure, solid. So there's a couple ways to get access to the source code for that. And then you're off to the races finding these attack vectors.
+
+And so what is live debugging, what does dynamic debugging look like for these?
+
+Matanber (01:33:14.71)
+Yeah. Yeah. So, debugging them is very important because when you deal with minified source code, it makes your life way easier to actually debug stuff. So there's a bit of setup that you have to do with DevTools. I have the actual steps mentioned here. Let me find it real quick. So you have to go to the DevTools settings and that's sort of to make debugging available for content scripts.
+
+And so you go to the DevTools settings and then like to the little gear at the top right corner when you open DevTools. And then you go to preferences and under sources you have to enable search in anonymous and content scripts. And that will enable the search to match code that's in content scripts like the global search, control shift F. And you also have to remove content scripts from the ignore list.
+
+So you go to the ignore list sort of section on the left and you disable content scripts injected by extensions. Okay. Now you can, yeah.
+
+Justin Gardner (01:34:22.625)
+Hmm, I'm checking this now. I actually don't have, I don't have this set up in mind. So I need to click preferences, search, okay. Gotcha.
+
+Matanber (01:34:34.432)
+Yeah, preferences and in the ignore list, you have to disable content scripts and you can disable in the preferences or enable, yeah. It's the first preference under sources. Yeah. this one you have to disable the content scripts injected by extensions. Okay. Now you're good to debug content scripts. The way you actually do that, you can go to sources.
+
+Justin Gardner (01:34:50.901)
+Yeah, we want that unchecked. Okay. Gotcha. Cool.
+
+Matanber (01:35:01.75)
+And in the sources, you have a few sections where it normally says page. You can go and you can pick content scripts and it will show you all the content scripts and their sources. You can put like breakpoints in there. And if you want to evaluate code in the sort of context of the, content script, you go to the sort of where you pick the context, which can be like top or some iframe or something like that, and simply pick like the, extension that you want to debug. Yeah.
+
+Justin Gardner (01:35:10.541)
+Mm.
+
+Justin Gardner (01:35:24.265)
+Mmm. Sure. Yeah.
+
+extension. Nice. Okay, that makes it easier. In the isolated world. No, that's great. And actually, this tip just really helped me a lot because definitely I want to have this turned on for when I'm working with extensions. But dude, every single time I freaking open the dev console, for some reason, my, I go to sources, it defaults to content scripts.
+
+Matanber (01:35:31.968)
+and you'll be inside the isolated world. You've infiltrated it,
+
+Matanber (01:35:58.116)
+yeah, me too, it's so annoying. Yeah.
+
+Justin Gardner (01:35:59.021)
+And I hate it, dude, because then I've got to go to page and it just adds like another couple clicks when I just really should have just opened it up to the thing that I want. So actually, I'm going to go into my preferences and turn off. Yeah.
+
+Matanber (01:36:06.7)
+Yeah, I mean, DevTools, ironically, somebody at Google needs to debug DevTools because it's a bit buggy. Like sometimes when I try to see it, like the HTML code of the page, when I go to sources, it shows like a blank editor and I have to refresh for it to actually show me the code. It's a bit annoying. Yeah. Yeah.
+
+Justin Gardner (01:36:13.994)
+Yeah.
+
+Justin Gardner (01:36:21.869)
+Mm.
+
+Justin Gardner (01:36:27.766)
+Yeah.
+
+Yeah, it's buggy man, it's buggy. It's for devs though, so you know, we take what we can get. Okay.
+
+Matanber (01:36:36.264)
+So now that you can debug content scripts, you can do that, see all of the breakpoints, like variables, et cetera. If you want to debug the service worker part, you can go to when the service worker is sort of active, because they sort of get loaded and unloaded when needed. And you can go to about colon inspect.
+
+Justin Gardner (01:36:50.925)
+Mm.
+
+Justin Gardner (01:36:56.332)
+Mm.
+
+Justin Gardner (01:37:04.187)
+Mm. Okay.
+
+Matanber (01:37:04.632)
+And then you have a section for service worker service workers in the left the section for extensions to and Which inspects like a separate part, but just go to service workers. Okay. Yeah Yeah, and then you have a whole bunch of stuff. I hope you didn't leak anything important
+
+Justin Gardner (01:37:21.045)
+Okay, service workers, okay.
+
+Justin Gardner (01:37:28.169)
+Yeah, I might have the video editor guy blur those out so everybody doesn't see all these things. Yeah, yeah. Okay, cool. Well, that makes sense. we can go in there and click Inspect and then we can debug those service workers. those are all the components. We've got service workers, we've got the content scripts, we've got the extension pages. And I imagine the extension pages, they're just sort of like normal.
+
+Matanber (01:37:32.226)
+Yeah.
+
+Matanber (01:37:35.648)
+Yeah, I mean, it's only extension ideas, but yeah. Okay.
+
+Matanber (01:37:49.942)
+Yeah. Yeah.
+
+Justin Gardner (01:37:57.345)
+DevTools debugging for those.
+
+Matanber (01:38:00.608)
+I'm gonna mention that as much as we did talk about the structure and stuff, there are a whole bunch of concepts that we skipped because they aren't as relevant. Like I think they're called the background pages or off screen pages. That's what they're called. A whole bunch of stuff you can, yeah, you can look at that in the Chrome docs. They explain stuff pretty well if you want to. Now are we gonna move on from extensions?
+
+Justin Gardner (01:38:09.677)
+Mm.
+
+Justin Gardner (01:38:16.585)
+Mmm. my gosh.
+
+Justin Gardner (01:38:27.693)
+Wow, dude. Yeah, dude, I think that puts a wrap on the extensions. And I'll tell you what, Montan, this one, this one's, we've done a lot of stuff on this one. So actually, I think we'll cut it here for today. And then we'll actually go in and talk about this, this cookie. Dude, we are, man. But actually, what we'll do listeners is we'll actually just cut it here for my editor's sake.
+
+Matanber (01:38:30.717)
+yeah.
+
+Nice.
+
+Matanber (01:38:40.185)
+really? Yeah we're ending every episode on a cliffhanger.
+
+Justin Gardner (01:38:52.417)
+so I don't overwork them too much and we'll go record the next episode right away so we don't lose any momentum here and we'll have that up the week after that, okay? So Matan dude, thanks for the master class on browser extension hacking, dude. The structure, the attack vectors, this is exactly what we need to know to start poking at these, so great work, man.
+
+Matanber (01:38:53.132)
+Nice.
+
+Matanber (01:39:03.789)
+Yeah.
+
+Matanber (01:39:14.454)
+It was great being here, I always enjoy it as always. And yeah, thanks for having me.
+
+Justin Gardner (01:39:17.537)
+Sweet. All right, let's go get that cookie stuff. Let's go.

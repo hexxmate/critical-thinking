@@ -1,0 +1,797 @@
+Episode 156: Chill AMA from bugbounty.forum
+Source: https://www.criticalthinkingpodcast.io/episode-156-chill-ama-from-bugbountyforum/
+======================================================================
+
+Title: Transcript - Thu, 08 Jan 2026 13:59:47 GMT
+Date: Thu, 08 Jan 2026 13:59:47 GMT, Duration: [01:23:09.17]
+[00:00:01.12] - Justin Gardner
+All I've got to do is train Justin AI now and just have him show up on the podcast and be like, guys, look at this bug. You know, and then my hand is going to glitch out and, you know, it's going to, like, go through my face or something.
+
+[00:00:34.89] - Justin Gardner
+all right, man, let's roll. We'll see if my voice holds up today. Somehow I got a cold again. So, yeah, I'm gonna be, like, muting and, you know, hacking up along on the side. See what I did there? Hacking up along.
+
+[00:00:48.40] - Joseph Thacker
+Oh, I did not catch that.
+
+[00:00:49.96] - Justin Gardner
+That's awesome.
+
+[00:00:50.96] - Joseph Thacker
+I should have given you that. I did not even catch it. It's such a common expression. I never even thought it would have the word hacking in it.
+
+[00:00:56.72] - Justin Gardner
+Yeah, yeah. So it should be an interesting episode. But let's go ahead and jump into a couple announcements first. First thing was that we are updating our Crit Research Lab exclusivity agreement. So for any of you all that have been submitting awesome research to the Crit Research Lab, thank you guys so much for that. We are changing our agreement a little bit to be a little bit more liberal here, a little bit more in favor of the researcher. Where previously we requested that the researchers would not take the material and host it anywhere else, leave it on the research lab website, we are now giving the researchers the ability to host it on their own blog as well after 30 days is up. So if that exclusivity agreement was a deciding factor for you in not submitting research to the lab, then please go ahead and check out the new agreement, as I think this would help a little bit. And. And for those of you that aren't familiar with it, this is a essentially crowdsourced research lab that we're doing where we will pay researchers for their research and hosted on the lab, cover it on the pod, that sort of thing. So lots of extra distribution. And you also get, you know, we try to buy them dinner at least, you know, for. For the research that they do. So if that interests you, definitely check it out. Lab.ctb.show and there's been a lot of good research on there, hasn't there, man?
+
+[00:02:20.69] - Joseph Thacker
+Yeah, it's insane. And I. I think that Justin might be filling his own desires here because, like, I think that what has been lacking, well, not necessarily lacking, but one thing you see less of, and it's because people are a little bit insecure of, like, is this research worthy? Is this postworthy? Or whatever is you encouraging people to basically post like even just weird gadgets. Like, hey, if you have this weird functionality in this, in like in the browser or in this other thing, like just go ahead and post it and share it with us and then it ends up being like a cool core component of a chain later on.
+
+[00:02:51.97] - Justin Gardner
+Yeah, totally. And actually I'm glad you mentioned that, dude, because right before this episode, you and I were talking about an exploit sort of gadget that I'm going to use in a bug that I've got right now. And this came up in the Critical Thinkers chat, which is just yet another reason you guys should, should subscribe to the Critical Thinkers tier. Because there's just so much gold that goes into that chat. Um, but one of the guys in there dropped that. If, let's say you have like an open redirect and, but you only control the, you know, the protocol specific portion there, you can do some really interesting stuff with popping it into what is. Let me pull up the actual thing. It's X Dash or Safari HTTPs X, isn't it? Or did I get it mixed around?
+
+[00:03:41.28] - Joseph Thacker
+I don't know the syntax exactly, but I'd also use this for a vulnerability on an engagement a few months ago and it was awesome. It's really neat. You can use it for AI vulnerabilities, specifically if their protection is using SEC Fetch site.
+
+[00:03:55.21] - Justin Gardner
+So yeah, it's X Safari HTTPs. Okay. So what's interesting is that also ends in HTTPs, which is. Which is nice for gold.
+
+[00:04:05.09] - Joseph Thacker
+For regex. Yeah, exactly.
+
+[00:04:06.28] - Justin Gardner
+Yeah. So you can pop it open into a different browser, which is helpful for leaking stuff sometimes and also gets you into Safari, which may have different client side restrictions than you'll see in your other environments. So that, that's pretty cool. Little, little trick. That's a perfect example of something that, you know, we would love to have micro blogged on the Lab website. So if you guys are interested in checking out the Lab, please do that. Okay, so we do have a little bit of news to get into today. Before we get into the episode, I will like let the hunters know. You know, one of the, one of the core tenets of CTBB is that every episode we're trying to give S tier hunters, you know, at least one little tidbit of knowledge that will further their hacking skills. This episode is actually an AMA focused on bugbounty.forum, which is a new environment that we're trying to support and help hack, you know, hackers migrate to where we can talk about all things bug bounty. So we decided to do an AMA on it. A lot of the stuff we're going to be answering today is pretty basic stuff there, there is some more nuanced stuff in there as well. But I do like to give that little, you know, announcement in the beginning just in case any of you more advanced hunters would just like to stick around for the, for the new segment today. That being said, in the new segment, I'm going to cover a super sick technique that I think every, you know, top tier hunter should know about.
+
+[00:05:43.49] - Joseph Thacker
+So a minute ago, Justin was literally just staring off into space and I thought he was thinking about how to like, I don't know, get these AMA questions lined up, right? Or thinking about an answer to one of the AMA questions. I was like, Justin, what are you just thinking about? He's like, I'm thinking about how awesome this, this, this write up is.
+
+[00:06:00.49] - Justin Gardner
+Dude, it's so good man. I, I love cross site leaks so much. So anyway, there's your, there's your announcement beforehand to let you know we're going to jump, jump right into this write up. This is cross site ET or etag length leak. And this is by Arc Arc, who I believe is actually a Japanese researcher, which is cool. I see some of the Japanese in his, in his screenshots here. Yeah, I think that's, I want to say that's whole Go Saratenae Sushin. It's like unprotected. So yeah, HTTPs is not htps. But anyway, I wanted to cover this, this write up because I think this is a really cool cross site leak and it shows what is possible with just a little, little modification and being able to leak just one extra byte. So let me go ahead and jump into this. This was a CTF challenge for seccon and it was authored by arkarc and it takes a bunch of different primitives here on how to leak the flag cross origin. So the first thing that's interesting is the etag header length. And one of, one of the very cool pieces about the tag is that a lot of times it's implemented using a hex string. Okay. So sometimes depending on the size of the response. I'll read this here. This quote from the, from the article. It says because the size is encoded in hex, the number of hex digit changes at boundaries. For example 0xff boundaries goes to 0x1000, right? Which has four characters rather than three. This means the et or the etag length can differ by one depending on whether the response size crosses such a boundary. So in this specific Challenge, we control the response size by abusing CSRF to create many notes in the victim session. And this allows us to manipulate the total response size so that if you, if you create a search hit it, it has a, you know, it crosses that boundary and makes the tag one longer. And if you search, you know, and have the response, the miss response, then it will be a shorter length in the tag header here. And that is just freaking sick, man. And the way that this works is when you, when you send a search, the site will return the ETAG header, right? And then when you send that same search again, that value that's in the ETAG header will then be placed into the if none match header right here, right? So the value from that original ETAG response header which contains that byte, that could be one longer one, not longer, gets put into the request, right? And then what, what they use here is they use the 431 status code error, which is a part of Node JS, right, which says that. I know, dude, isn't this crazy? This is so.
+
+[00:09:30.24] - Joseph Thacker
+This is absurd, right?
+
+[00:09:31.63] - Justin Gardner
+So if you, if you nudge your request right up to this 16 kilobyte limit on the size of headers, which includes the request like query, so you can pad a bunch in the, in the, like an X square parameter or whatever, then that the, the differential between that one byte that gets put in the ETAG header will result in a 431 which would indicate a hit versus you know, a 200 which would indicate a miss, right? And this is, you know, a, a browser functionality here that, you know, obviously the server is returning the 431, but the browser functionality that we use to determine the difference is whether or not that, that 431 is actually placed into the browser history or not. Because the history API, right, has this function called should replace current entry and where it, it decides between pushing into the history versus replacing the current entry. And if it is a 431, then that's going to be replaced versus if it's an actual navigation of 200 then it will be added to the history. So if your history length is 1 shorter even cross origin, you can tell whether it was a 431 or a 200 which allows you to get a yes no answer on whether a search hit or didn't hit. And then using that, you can binary search and brute force all the characters of the flag cross origin with a cross site leak.
+
+[00:11:09.28] - Joseph Thacker
+That's ridiculous. Did anyone solve it?
+
+[00:11:10.92] - Justin Gardner
+How sick is that?
+
+[00:11:11.92] - Joseph Thacker
+Did it say it was solved one time.
+
+[00:11:14.25] - Justin Gardner
+Let me see. Hold on. Let's see.
+
+[00:11:15.92] - Joseph Thacker
+Like difficulty one of 5001 solve.
+
+[00:11:21.61] - Justin Gardner
+Crazy. Dude, I just, I just love that this uses just a 1 byte difference in the length of a header, right?
+
+[00:11:34.71] - Joseph Thacker
+To leak an entire flag.
+
+[00:11:36.47] - Justin Gardner
+To leak the flag. Frick. Dude, I love it. So anyway, I hope that explanation made sense. I'll go ahead and try to summarize it here. At the end, the etag header which is returned from the server will be one byte longer in some specific scenarios. Right? And that value will be reflected into your request the next time you try to hit that endpoint. Right. To see if there's a cache caching compatibility here. Right. Using that reflected value into the header, right, you can determine yes or no whether that extra byte was added by cushioning right up to that 16 kilobyte limit. That gives you a 431. Right? And if the 431 is returned, then that entry will replace the current entry in the History API versus adding to the History API, which then once you navigate back to an origin you control, you can check the length of the history and determine whether or not it was a 431 or not, which gives you a yes or no on whether.
+
+[00:12:48.91] - Joseph Thacker
+I didn't realize the history length thing was required too.
+
+[00:12:52.19] - Justin Gardner
+Yeah, that's a really nice. That's a really nice cross site leak primitive. Um, I've seen that used quite a bit. Um, so yeah, I guess just kind of taking this to a higher level dude, like paying attention to these really small details like that, you know, like just a one bite difference in the encoding of, of the, of the hex can result in some of these cross site leaks, which is astounding in my opinion.
+
+[00:13:16.80] - Joseph Thacker
+Absolutely astounding. Yeah, this is, I don't know, like the orange side of front end.
+
+[00:13:23.52] - Justin Gardner
+Yeah. Yeah. Seriously, these CTF guys are insane, man. Really?
+
+[00:13:27.37] - Joseph Thacker
+Yeah.
+
+[00:13:28.73] - Justin Gardner
+All right. What you got in the news?
+
+[00:13:30.88] - Joseph Thacker
+Yeah, something small and neat. It's called Claudis or maybe it's called Claude. I'm trying to find the notes. Yeah, Claude bot.
+
+[00:13:39.37] - Justin Gardner
+Clod bot Claude.
+
+[00:13:40.97] - Joseph Thacker
+Yeah, it's kind of confusing.
+
+[00:13:42.49] - Justin Gardner
+I'll.
+
+[00:13:42.76] - Joseph Thacker
+We'll put in the show notes, but there's basically like a guy on X was saying, hey, I saw that this other guy named Stypeat was building Claudis AI and that's C L A W D I S AI and I was intrigued. So I just told Claude Code to stand up Claudis for me and I call it Claw Crawdad. And it did, and it did it all for itself. And it's basically just like using Claude code, like using like an agent, but from WhatsApp. And so it feels much more natural. Like you're like messaging your friend or something like that. But then he wanted to send an audio message. So he was like literally in the car or something like waiting for his wife to go get groceries. And so he sent a WhatsApp audio message and was like, hey, you know, figure this out, you know. And so it basically installed Whisper CPP via and like then use that to listen to his audio message to then start doing that. But anyways, I just think that the being able to control your agents from WhatsApp seems really cool, especially if it's. And like, you know, people have built that before, but it's not been like cloud code under the hood. And I think cloud code under the hood is really where there's a lot of power. And I've been using cloud code from a VPS where it can basically play DevOps engineer for me to like reconfigure things or stand up POCs or whatever. And so when I want to mess with it, I always have to like open Termius and like type really small in a terminal on my phone. That just sounds really miserable. Whereas if I could just send it an audio message and be like, hey, like let's try a new design on this website, you know, that I'm pocing or playing with for just my family or whatever. And an audio message on like WhatsApp that feels like it would be much more fun and clean and good. And so I thought that was really cool. You guys can check out that it's just Claudis Claw D I S dot AI.
+
+[00:15:24.27] - Justin Gardner
+Nice. Yeah, I think that's, I think that's nice to have, you know, especially on your POC server, adding something to your POC or something like that, making it a little bit more convenient with text messages or, or, you know, WhatsApp or whatever. Also pretty smooth. I like it.
+
+[00:15:41.15] - Joseph Thacker
+Yeah. And I've been doing. Hopefully this is not leaking anything. I've been doing more hacking of those sort of things. Actually. I think I did tell you that basically Grok and Tesla is adding more features and so being able to just via voice test little payloads and stuff feels like. Feels like the future. You know, it's like I'm doing prompt injection hacking in my car while I'm driving and similar things for like Google's adding more and more like AI like Gemini to Google Maps and directions and stuff. And so I think that there's some, there's some really neat room for attacks there that people should try, so.
+
+[00:16:12.82] - Justin Gardner
+Totally. Totally. Yeah. I think that, I think also I've said in the past I'm using Gemini CLI more. I think it's gotta be Claude code, man. I think a lot of people are saying Claude code is like really, really doing wonderful stuff for them. And I have been running into some issues lately with Gemini. So I think even though I kind of, I kind of believe that Gemini will eventually win the whole like AI thing, you know, or, or be the leader, I think for the time being I gotta hop on the, the cloud code train.
+
+[00:16:40.21] - Joseph Thacker
+Yeah. When there's no spin up or when there's no like spin up friction and you just start, start using it, it's like, why not just try out the best one and then if you want to switch back to Gemini Cli in a month, it's like it'll take you an extra 10 minutes to copy and paste over a prompt or something. Right?
+
+[00:16:53.73] - Justin Gardner
+Exactly, Exactly. Yeah. I feel like the switching cost is not very high.
+
+[00:16:57.00] - Joseph Thacker
+Yep.
+
+[00:16:58.28] - Justin Gardner
+All right, man. Actually I'm going to cut this next news item so we can just jump right into the episode because that cross site E tag leak thing was like, was nuts. So let's jump right into it. So like I said before, bugbounty forum, awesome place. You guys should check it out. We really would like to support that environment. And let me tell people, let me.
+
+[00:17:20.18] - Joseph Thacker
+Tell people just really quickly what it is. So yeah, go for it. Basically it's an anonymous forum for bug bounty hunters where there's not like, it's almost like stateless in a way. You basically get given a you uuid number and you just use that to log in. You don't have to like even store credentials or anything like that. And you can't even really edit your profile at the moment. But one thing that's really neat is you can upload anonymously your bug bounty earnings. So you, and you know, that's also optional. You don't have to do it. But if you do do that, then you know, it's kind of proof of like validation that you know what you're talking about. You know, if you found a significant number of vulnerabilities or what have you. And so that's pretty, that's pretty neat. I think that's makes it kind of like fun, fun and exciting and you like, kind of like know who to listen to. Obviously bug bounty earnings are everything. We know plenty of people who have made Plenty of money from bug bounty that maybe aren't the, the wisest or the, you know, the people you want to necessarily listen to. But at the very least, it's like a really, like, hey, this person at least knows what they're talking about when it comes to like, technical skill or, you know, this person is worth listening to because they've at least dabbled enough and they've submitted enough bugs to have a good experience with plenty of programs or what have you.
+
+[00:18:25.55] - Justin Gardner
+Yeah, yeah, I think that's. I think that's a good representation of the situation. You know, I think at the end of the day, we're in a POC or GTFO industry and the proof is that you have earnings, you know, so.
+
+[00:18:40.08] - Joseph Thacker
+And it's like, it's like Reddit, I guess, is one other thing. Basically you upvote and downvote comments and posts. And so it seems like a nice place and a cool place to like, start discussing things from a bug bounty perspective. And there's been a lot of people that have migrated over there, so.
+
+[00:18:53.25] - Justin Gardner
+Yeah, yeah. And I think Palme is putting a lot of work into it and shipping new features quickly and it works well on mobile, which is nice. So, yeah, cool. Cool place. And we're going to do an AMA from there. So we selected a bunch of different questions. Now when we posted the, the AMA people got really wordy with their questions, which was not expected. But as you can see, a lot of these questions are like super long. So we took a couple of them and we took all of them and fed them into AI and kind of extracted the core question behind a lot of them. But we'll try to also jump back over and address the actual questions directly as we can. So I guess how we'll do that, Joseph, is if one person is, you know, answering it, we can kind of go back and make sure with the original question whether we're catching the nature of it. That sound good?
+
+[00:19:48.91] - Joseph Thacker
+Yeah, sounds good.
+
+[00:19:50.02] - Justin Gardner
+Okay, awesome. So the first one that came up was will bug hunting become obsolete due to AI agents in the next 5 or 10 years? By granite Glitcher. I'm gonna let you take that one, dude.
+
+[00:20:00.26] - Joseph Thacker
+Yeah, I mean, I think that the concern here, you know, the person later on in their question, Granite Glitcher, says, you know, if we're being honest, in their opinion, it's not a good idea for newbies to get into this industry. Howard Jr. Is supposed to stand a chance, you know, et cetera, et cetera. I. Yeah, I don't think that bug Bounty is going to be gone in five to 10 years. Like not even close. But I do think that it is going to be more competitive. So if you're going to get into it, I think you need to make sure that you are kind of supercharged. Right. And I think that's going to be true across a lot of industries. AI lowers the barrier to entry to get into, into new fields like or just into fields in general. And then it also lowers the barrier to entry of like going from hey, I know a little bit to I can do cool stuff. Right. Like if you just know a little bit now you can like work with code or whatever to build a cool tool or a cool thing. And you can also because of the Internet get really quick feedback on like how it's going. So I would say, you know, should beginners get into bug bounty? Yeah, I still think bug bounty is like the, like an overlap of you're gonna build real skills that are valuable to huge corporations. You are going to build your resume as well. You know, sometimes you can have skills but it won't necessarily translate to a resume. Bug bounty findings do like kind of directly translate to resumes. Even if all you did was go do all of portsmaker labs, right? Like being able to say you've done those like actual real validation of like real training that you've done, you obviously have the potential for money. And then it's in an industry where like if you are able to kind of succeed and it's freaking fun, like you get to go on like cool trips and stuff, live hacking events and the flexibility, like there's no sales, there's no like meeting of, you know, a lot of people I think don't love sales or they don't love you know, face to face interactions with customers or whatever. So if you're like that type of person and you really want that flexible free ability that or freedom and flexibility, then it also has that. So I would say go into it, but go into it knowing like, hey, I'm probably going to want to use AI to supercharge myself. I'm going to want to build my own tools. I'm going to want to eventually maybe transition to some like hardware hacking because I think that'll be more defensible long term as well.
+
+[00:22:09.73] - Justin Gardner
+Yeah, I agree, I agree with that and I think you answered the core of the question. I will, I will add, I think AI is just another layer of automation on top of it. And sure it, it targets a little bit more manual esque hunting more than other you Know, automation breakthroughs that we've had in the past, like cloud and, and you know, kubernetes and stuff like that. But at the end of the day it's still a, it's just like another hacker that has their own set of eyes, right. And it's going to miss stuff and sure, they can throw it at it a thousand times, right. And maybe the compute will get such that they can do that and you know, really tweak the temperature and stuff like that. But I think it's just going to be another hacker, you know, and there are so many hackers looking at the same scope. We find crit after crit after critical after live hacking event, you know, and, and so I, I really do think that it is. Bug bounty industry is going to be just fine, especially with all the crappy code written by AI to help balance out the, the table, you know.
+
+[00:23:13.25] - Joseph Thacker
+Yeah, the number of people who are developing apps these days is like way higher. So like you said, there's also going to be way more opportunities for vulnerabilities. And I would just, and I would just say this, like if bug bounty goes away, almost every industry is going away and at that point, you know, like we're just in like a different situation as a society. Right. It's like we need to sol UBI or whatever, you know, or maybe we'll be flourishing or maybe it will be some huge great depression. But it's not going to uniquely negatively impact bug bounty. It's going to impact a lot more if, if and when that does ever happen. But I think it'll be slow and gradual and I think that it'll be fine. So.
+
+[00:23:48.20] - Justin Gardner
+Yeah, I agree, man. Let's move on to some of these questions by Furious Beacon. Which ones you think is best to start here?
+
+[00:23:55.88] - Joseph Thacker
+Let me ask you, I think it's a good question. What are ways to get invited to a live hacking event if you're not a top tier hacker? Justin?
+
+[00:24:06.46] - Justin Gardner
+Well, the live hacking events are kind of for the top tier hackers there, There are some like, I don't know how HackerOne selects these, but I have seen like some mentees that get to come to the live hacking events. I think they're normally like local hackers. I guess the, the short answer to this would be specialize in one program that, that has live hacking events, you know, scour and that.
+
+[00:24:27.61] - Joseph Thacker
+That was a later question like what companies run live events? So we can tell them kind of.
+
+[00:24:32.40] - Justin Gardner
+Yeah.
+
+[00:24:32.72] - Joseph Thacker
+Which types of companies.
+
+[00:24:33.92] - Justin Gardner
+It's usually that as an exercise to the listener because Sometimes they don't want us to talk about them.
+
+[00:24:39.35] - Joseph Thacker
+No, no, no. I was gonna talk about it. As a category, it's basically large companies that are able to afford live hacking events. Like, you know, you're gonna be looking at more at like within the, within the Fortune 20, let's say there's gonna be, you know, five or 10 companies there that are running live hacking events. And so I think, you know, targeting these, like larger companies that can afford to buy live events and getting in their good grace is get invites.
+
+[00:25:06.70] - Justin Gardner
+I agree. Yeah, I think that's pretty much the only way. If you're not like a generally top tier hacker, the best way is going to be to specialize in one program and get invited as a specialist.
+
+[00:25:18.05] - Joseph Thacker
+I do think you can. And please don't blow people up, but if you're adding value to their life, that's different, I would say. I think another good way is to become good friends with somebody who gets invited a lot and ask for a plus one. Yeah, and, and the best way to do that is to send them high quality leads, high signal leads. Don't message them and say hey or say hi or say whatever. But if you have like a lead that you, you know, think could be either escalated from like a medium to a crit or whatever, or you have a, you know, a higher crit that's like almost a bug that, but that you can't get past like a specific thing or whatever. If you send that to bug hunters that you know are going to live events and you develop a relationship with them where you guys are collabing on the regular, then when they're invited, they would probably be open to giving you a plus one. And I have heard of, of hackers, including me and including Douglas, including others who basically were a plus one at an event. They did well and then they got more invites. So that's probably including me.
+
+[00:26:12.49] - Justin Gardner
+I was a plus one of a plus one. Yeah, yeah, yeah, totally, man. I agree. And, and I will echo what you said, like giving, you know, like coming to a more experienced hacker with an actual bug is like, you know, the best way for us to know that you're not playing around, you know, because we get so many dms, like, hey, is this vulnerable? Is this like, you know, HTML injection vulnerable or whatever? And I'm like, dude, come on. But if you're like, hey, here's this, you know, XSS with CSP bypass. I'm, you know, like, I need this one little thing to make it work, you know. Any idea how to do this, then I'm going to be a lot more likely to like, okay, yeah, this guy kind of knows what he's talking about, you know.
+
+[00:26:53.76] - Joseph Thacker
+Yeah. Or another thing is actually kind of saying, hey, I just found this new host which seems really vulnerable. Do you want to like look at it with me? Do you want to collab and hack on it with me or something like that? Like that's another interesting way to do that.
+
+[00:27:04.39] - Justin Gardner
+Sounds like a one that would get you. That wouldn't really get me quite as much.
+
+[00:27:07.67] - Joseph Thacker
+Oh, really?
+
+[00:27:08.71] - Justin Gardner
+Yeah, I don't think so. I like, oh, I clicked on the wrong thing here.
+
+[00:27:11.71] - Joseph Thacker
+A new domain on one of your anchor programs that you hadn't seen before.
+
+[00:27:15.99] - Justin Gardner
+Because I just mostly hacked the main apps, dude. Yeah, I really, really don't go after a lot of hosts unless I've got a reason, you know, like if I'm looking to get around, if I've got a bug, let's say this is one scenario, if I've got a bug and I'm looking to circumvent a WAF or something, then I'll, you know, I'll be able to do that. Right. And I'll, I'll go find the host and that sort of thing. I very rarely am I like scanning these extra domains. It's just not what I know what I found the most signal from, you know, in my opinion.
+
+[00:27:44.94] - Joseph Thacker
+Yeah, fair enough.
+
+[00:27:47.22] - Justin Gardner
+Okay, let's see next one.
+
+[00:27:49.40] - Joseph Thacker
+You could ask me number seven if you want.
+
+[00:27:51.72] - Justin Gardner
+Okay. Is it, let me ask you this, is it better to do bug bounty full time or treat it like a 9 to 5 job with fixed hours?
+
+[00:27:58.92] - Joseph Thacker
+Yeah, I would say as a, as a father or as a person with like other obligations, like maybe you're taking care of your parents or maybe you do have a full time job. I, I definitely think timeboxing it is the way to go from a lifestyle design perspective. But that's not going to get you the types of results if you're trying to level up. So when I was, you know, getting into bug bounty, it felt like it was all I thought about, it was all I worked on, it was like in the evening, it was all I did. It was like I was falling asleep at my computer, literally. Like I was laying in bed with my laptop on my thing and I would wake up with it in my lap because, you know, it required that kind of passion to get into for success. But you know, now because I'm a full time hunter, I do time box it to you know, basically 8 to 5 or 8 to 4:30. And that works for me.
+
+[00:28:44.45] - Justin Gardner
+And we do, we do that pretty aggressively, I think. Yeah. And, and I think that, you know, I guess remains to be seen for you. But for me, I think that is one of the things that's contributed to the longevity of my full time bug bounty hunting career is, is that you do have, you know, healthy boundaries and stuff like that. So yeah, I mean, I think this is traditional advice you see on like hustle Twitter. But you know, in the beginning you need to put in some fricking hours and you need to get good at something and you need to hustle. And then as you get good at something, the way that you stay in the game is you adopt something that gives you longevity. And I'll actually even call out, I'll call out a couple hunters that, that, that I know, like Franz is one of the guys that, that always really amazes me with this like, you know, he goes so hard, he goes so hard on hunting. But even now like I see him put up boundaries with his hunting, you know, even as one of the, one of the, the more like just go ham until you die, you know, hunters that I've ever met, you know, he, he does have to put up boundaries with his hunting to make sure that he, you know, has longevity. So I think it's a non negotiable for, for, for full time hunters to, to have some sort of like, I guess, structure to it. Yeah. And I'll add one more thing at the end here, which is that, that really golden nugget from the Franz episode that we did a while back, which was that, you know, he says, close the laptop right when you're about to find something. And I'm like, dude, what is wrong with you, man? Like, that is hectic. But oftentimes I do, I do find myself doing that nowadays where I'm like, okay, wow, I just found like this sick little like sub app on a website that's got a bunch of extra routes and I'm like really excited to hit it. And I'm like, you know what, I'm gonna do that tomorrow, you know, and I'm just like clawing at my desk to get back to it the next day, you know?
+
+[00:30:38.31] - Joseph Thacker
+Yeah, I think that's really smart. I don't know if I have the, I don't know if I have the self control to do it though.
+
+[00:30:44.24] - Justin Gardner
+Yeah, yeah, it does take some for sure. But I think you've done a good job of that this year in your, in your first year of full time book. Bounty.
+
+[00:30:52.16] - Joseph Thacker
+I appreciate it. I was surprised you highlighted this question. So I want to ask you this one says what's better, ten bugs at five grand or one bug at five grand?
+
+[00:31:01.79] - Justin Gardner
+Yeah, I mean I think, sorry, ten.
+
+[00:31:03.64] - Joseph Thacker
+Ten bugs at five grand total should clarify that.
+
+[00:31:05.92] - Justin Gardner
+Yes.
+
+[00:31:06.27] - Joseph Thacker
+Or finding one bug at five grand.
+
+[00:31:08.92] - Justin Gardner
+Yeah, yeah. I, I wanted to actually kind of debate this with you a little bit and see what, what you think. I mean, yeah, obviously I personally think the one bug at five grand is better. Right. Like I just cause one report, you know, obviously it's a more impactful bug, that sort of thing. But also like there's a momentum aspect, you know, like would I rather find ten bugs and get five, five grand out of it? You know, especially as a beginner, that might feel really good.
+
+[00:31:38.07] - Joseph Thacker
+Yeah.
+
+[00:31:38.51] - Justin Gardner
+You know, and it might suggest it might give you more intel on what this program is vulnerable to. Yeah, right. Like okay, I've got 10 bugs. I've got a pretty good profile of like okay, this program's vulnerable to this, to this, to this, to this, to this. Right.
+
+[00:31:53.98] - Joseph Thacker
+Yeah. I mean I think personally if you just think about it from like a business, like we, we. It's funny we use this word off air earlier, but it definitely de risk you to find more bugs at a lower value. Yeah, you have a smoother income earning curve, but there's no doubt that there's more prestige and skill required to find critical bugs. And there's no doubt that companies care more about those writ large in regards to invites, in regards to respect that you have from them, in regards to like kudos and thanks and all those things. So you know, I think if you had to answer that question, you knew you were going to get both, you would do one bug at 5k. But the thing is most people don't know they're going to necessarily do that. I'm a big fan of, you know, report all the bugs unless they're, unless that's a hundred dollar bug or you know, an open redirect or something. I think I'm a big fan of people, you know, submitting all the bugs.
+
+[00:32:47.67] - Justin Gardner
+Yeah, yeah, I agree with that. Overall, I think so. I think the answer to this, I mean at first glance you would look at this and be like, obviously the one bug at 5k. But I actually think it really depends. It depends on where you're at in your bug bounty journey. It depends on your relationship with this target. Right. Like if this, if this is a live hacking event, target per se, or for example, I might take the, the 10, 10 at 5, at 5K total. Because it gives me a better profile of what this company is vulnerable to. And I'm going to be like going ham on this company, you know, for, for the next like, you know, two weeks.
+
+[00:33:22.52] - Joseph Thacker
+Yeah. And it is hard to say what's more valuable in the minds of the people because like this is just like me talking about my heuristics a little bit. My heuristics say that at HackerOne live hacking events, volume matters and at Google AI life hacking events, criticality matters. When it comes to getting mvh, let's say. Yeah, like the last, the last, you know, couple Google events I heard like, like three out of four of them. The MVH is the person who found the most critical bug. Whereas it seems like a lot of times MVH at Google or Hacker1 events are often people who got the most bugs.
+
+[00:33:58.88] - Justin Gardner
+Yeah. It is interesting though because at these Google Live hacking events you'll often see like only one or two megacrities.
+
+[00:34:05.81] - Joseph Thacker
+Yep.
+
+[00:34:06.14] - Justin Gardner
+You know, like, like oh shit crits. You know, Whereas I feel like at a lot of hacker1life hacking events, like regardless of the target, there's a couple you're, you're seeing like, like, you know, most everybody's got one. You know, most everybody of the top performers has like one. Oh shit. You know, oh shit. You know, like it's funny in my.
+
+[00:34:25.34] - Joseph Thacker
+Head I think when people always act like Google is like super hardened, I'm always like, yeah, I agree with you. But yeah, there's bugs to be found there. But when you say something like that it's like, ooh, maybe, maybe, maybe Justin is right. Maybe these people are right that Google's pret.
+
+[00:34:37.48] - Justin Gardner
+Hardened. Yeah, I think it's hardened. I think it's hardened in a different way though. I think, I think they use a lot of measures that, that like prevent the megacrits. Right. And, and, and, but I do think there's still a decent amount of like mediums and, and stuff like mediums and highs to be found.
+
+[00:34:59.07] - Joseph Thacker
+So.
+
+[00:35:00.19] - Justin Gardner
+Yeah. Okay, let's jump back to this one. I'm going to answer this one. What is the background behind starting CTB and how profitable has it been and what is the long term plan? Interesting man, interesting.
+
+[00:35:16.28] - Joseph Thacker
+Yeah, I'm surprised you highlighted that one.
+
+[00:35:18.28] - Justin Gardner
+Yeah.
+
+[00:35:20.05] - Joseph Thacker
+Vulnerable here.
+
+[00:35:21.25] - Justin Gardner
+Yeah. The background behind starting CT BB was Joel and I, who is my original co host. We loved the conversations we were having at live hacking events with other top tier hunters and we wanted that all the time. And so we wanted to build a podcast where you can Tune in every week and hear top, top tier hunters talk about their day to day existence and the things they're passionate about in technology and, and the bugs that they find and share some of that like hype energy. So that's, that's the concept the North Star of critical thinking is to bring. And that's why I added that, you know, pre announcement at the beginning of this episode is to bring top tier hackers one like actionable takeaway that affects their methodology positively per, per episode. At least. At least. And we're going to continue to try to do that. As far as how profitable it has been, I'm not going to give you an exact number, but it was around 7 or 8% of my income for 2025. And this is the first year. No, I guess it was a little bit profitable last year. This is the first year that it has been like, you know, move the needle at all profitable.
+
+[00:36:41.69] - Joseph Thacker
+Yeah.
+
+[00:36:43.53] - Justin Gardner
+And then what is your long term plan? Yeah, it's an interesting question. I think. I really love ctb. One of the things that is interesting for me is that it does take away the 100% freedom that you have as being a full time hunter. Right. Like I've still got to ship a piece of content every single week to you guys, you know, and that is, that is a burden, I'm not going to lie. It really is. And, and I want it to be high quality and I want it to be, you know, to move the needle for top tier hunters. So as far as my long term plan, I think that's still up in the air for the time being. I'm, I'm definitely gonna keep doing the podcast. We're bringing on other top tier hunters like Rezo and Gretmi to co host. I think as long as I am actively involved in the, in the bug bounty world, I would like to be doing the podcast as well. We'll see. One of the things we have talked about is like adjusting the frequency or adjusting like the, you know, how often I particularly appear on the episodes. But for the time being we're locked and loaded. For the long term we're ready to roll and we're going to keep adding value to the, to the hackers every week.
+
+[00:37:57.88] - Joseph Thacker
+Maybe AI will come still all our jobs and then we don't have to do it anymore, you know.
+
+[00:38:02.28] - Justin Gardner
+Yeah, well, I mean, you know, I just, all I've got to do is train Justin AI now and just have him show up on the podcast and be like, guys, look at this bug. You know, and then My hand is going to glitch out and, you know, it's going to, like, go through my face or something. You know, we need somebody in the.
+
+[00:38:16.63] - Joseph Thacker
+Community to make an AI fully AI generated episode just for the lulls.
+
+[00:38:20.71] - Justin Gardner
+Dude, don't put it into Notebook LLM and that thing's going to be like, you know, it's going to be bad.
+
+[00:38:27.03] - Joseph Thacker
+That's funny. All right, you want to jump down to learning and getting started?
+
+[00:38:32.94] - Justin Gardner
+Yeah. Okay. This is interesting. I would like to ask you this one. Is it worth finding a mentor if you've already only earned 3 3k USD and don't have any shit?
+
+[00:38:42.07] - Joseph Thacker
+So, I mean, the mentor. I have always disliked the term mentor. I think you actually like it more than I do. You've had lots of mentees and a lot of people kind of view you as their mentor. I've always just felt like, just be my friend. Like, let's just. Let's just collab and be my friend. I like, I think that, like, you know, I hate being under authority and I don't love feeling like less than or more than anyone. And so, you know, for me it's like, hey, let's just be friends and let's just like, talk about this lead you have or talk about these bugs you have. And, you know, I'm not always available, so message other people with the same stuff and that's totally fine. That's what I did, basically. I never had like a formal mentor or anything, but I definitely reached out to lots of friends in the industry and made friends, you know, to kind of fill that gap for me. I will say, if you've found $3,000 in bugs, like, great job. There are so many people out there who have not gotten started or have never made any money from bug bounty. I would say look at what worked for you. Like, go back and look at how, you know, how did you find those bugs? What company was it on? What types of bugs are you looking for? You know, how did you know? Do you have a ton of other dupes? Because you're doing something different that doesn't work, and then you should focus on what does work in general. I think that that's kind of where my mind goes.
+
+[00:39:53.25] - Justin Gardner
+Yeah, yeah. I think just addressing the point about, like, feeling above or below someone, I think that's an interesting point that's not as compatible with, like, hacker culture than, you know, as a lot of things. I would say I do like that position because it does allow me to just like, give you a little bit of tough love. And really that is what I do with a lot of my mentees. I say like, look, here's the deal, man. My job, you know, as your mentor is to tell you how to win at this point. Okay. And what you need to do is this and you're not doing that. So you need to do it or you need to, you know, get real with yourself that you're not willing to do it, you know.
+
+[00:40:36.32] - Joseph Thacker
+Yeah. And whereas if someone hasn't asked to be your mentee or if that relationship is not established, you wouldn't say that to some like, random friend probably.
+
+[00:40:43.44] - Justin Gardner
+Right? You know, like, I mean, I don't know, maybe I would. You know, you're a unique breed.
+
+[00:40:49.36] - Joseph Thacker
+I think, I think you're right though, that most people probably, if they want that kind of tough love and like, really great advice, maybe they do need somebody who's in more of like a mentor role.
+
+[00:40:58.51] - Justin Gardner
+Yeah. That does get me in hot water with some of my friends sometimes is there are just people out there that are just not as, you know, ambitious or, you know, or, and, and I try to tell them like, hey, you know, the reason that you're not in a better spot and the reason you're frustrated is you're not doing xyz, you know, and then they are, they don't want to hear that, which is their right, you know, and maybe I, I shouldn't do that without asking. That's what my wife has told me. But also, you know, I've seen that produce really good fruit in people's lives.
+
+[00:41:29.94] - Joseph Thacker
+Yeah.
+
+[00:41:31.30] - Justin Gardner
+So I guess my yes or no on this is, is it worth finding a mentor? You know, a lot of the time what I say about mentoring in bug bounty is that it can be a double edged sword. Like you really need to learn how to learn on your own. To be a bug bounty hunter more than almost anything else, you know, almost any other industry, you can get a mentor and that will guide you, you know, that will help you and accelerate you in Bug bounty. It can really be a bad thing too, and make you not, you know, excel as fast as you would if you just learned how to learn on your own. So I think it's a personal choice if you already have found some success by yourself. I don't know that I would call 3.3k since mid 2023 a decent amount of success, but yeah, I mean, clearly you, you, you know, found at least one or two bugs.
+
+[00:42:22.86] - Joseph Thacker
+I didn't realize it was over three years. Yeah, I'm just looking at the reworded.
+
+[00:42:27.23] - Justin Gardner
+Questions yeah, yeah, you may want to, you may want to look at what you did right in those reports and try to reproduce that. And if you have somebody, you know, who's willing to mentor you, then maybe great. But I would say probably not.
+
+[00:42:44.80] - Joseph Thacker
+Yeah. And I do think, you know, we obviously use AI as a buzzword a lot. I do especially. But I do think that these new top models really do make great mentors. Like if, like, I mean, at least they fill the mentor role of like, hey, I'm looking at this, I don't know what to try next.
+
+[00:43:02.05] - Justin Gardner
+Right.
+
+[00:43:02.28] - Joseph Thacker
+Or I'm looking at this. If it's vulnerable. I'm looking at this and I'm curious if it like matches the rfc. I'm looking at this and like, I just, I just need your help to like figure out like breakthrough, like, give me some ideas for like, ways to bypass this regular expression. You know, think that like we now have like an unlimited brainstorming partner through ChatGPT or Claude or whatever.
+
+[00:43:21.11] - Justin Gardner
+So that's a really good point. I really like that. Yeah, thanks for that question. Solid Samurai. Best of luck on your journey. What you got next?
+
+[00:43:33.03] - Joseph Thacker
+I really, I really like this. How do you conquer a class? For some reason it evoked like the class of, in like video games. Like, how did you conquer this skill? How did you map this skill tree perfectly like it says, like Justin did with client side hacking. And so I think that's a good question. Yeah. How do you think that you conquer like a specific niche or, you know, category of vulnerabilities?
+
+[00:43:54.80] - Justin Gardner
+Okay, so that's the question here by Zen Apparition. Now my question is long and about how to conquer a class. Here's what he's been going through and doing. Yeah, I mean I'm, I'm looking at this and it looks pretty good.
+
+[00:44:11.76] - Joseph Thacker
+Yeah. If you're, if you're the type of person who's going to type out this long of a question and the list of your strategy, you're probably already on the right path.
+
+[00:44:20.65] - Justin Gardner
+Yeah. And it's, it's hitting a lot of the right areas. So I'll, I'll read a little bit out loud for the audio listeners. He's saying, here's what I did so far. Created a personal dashboard to get, you know, grasp of HTML, CSS JS, started learning about dynamic analysis, learning client side issues, CSP T, XSS, iFrames, sync sources, you know, all those sort of thing. Getting a good grasp by portswigger Labs in a playground. Pick a program, fail miserably, you know, Nothing like what I learned. Hardly able to make any other sense of anything and then repeat it. Right. And I'm like, yeah, that, that, that makes sense. You know, you got to do the repeat it part.
+
+[00:44:58.69] - Joseph Thacker
+I do think this person might be somebody who's falling into overlearning. Those first four, those first four points feel more like over learning. Like, I think that the, they need to just stick with the fail miserably. Just keep failing miserably as many hours as you can for the next month and you'll probably stop failing miserably and you'll probably start finding stuff.
+
+[00:45:18.88] - Justin Gardner
+Yeah, yeah, I think that's definitely a possibility. It's hard to know where to draw the line for these people, you know, and say like, hey, you're over learning or you're not over learning. But really, I would really leverage on the side of like, let me try to figure this website out that's right in front of me, you know, that's an actual target. Yeah, right.
+
+[00:45:38.09] - Joseph Thacker
+And it does. You do have to thread the needle with like hardened programs. Maybe it makes sense to try to go with like lower paying programs for this. For a person who's trying to build up their front end skills like that.
+
+[00:45:52.01] - Justin Gardner
+Yeah. I think this is, I think a good summary of that. Which is like you need to learn on the target that you're hacking on. Right. So like, if you, if you're looking at a target in front of you and you don't understand something or you feel like there could be the potential for a vulnerability, you can go learn about that vulnerability to supplement your attack of this specific target. Right. But it's gotta be goal oriented for this specific target. Right. So that's where you kind of mix the actual hacking and the learning together. Right. Does that make sense?
+
+[00:46:21.82] - Joseph Thacker
+Yep, it does.
+
+[00:46:23.26] - Justin Gardner
+Yeah. I like that question. Thank you. Zen apparition. Okay, this one's from Lunar Oracle.
+
+[00:46:32.15] - Joseph Thacker
+Feels a little funny reading the anonymized names.
+
+[00:46:34.55] - Justin Gardner
+Yeah, yeah, it is. You've covered a lot of different angles on the episodes. Some feel like real gold mines, while others less so. Do you actually use all of these angles in your own workflows? It seems exhausting to apply all of them.
+
+[00:46:45.75] - Joseph Thacker
+That's a great question. Yeah, I would say for me personally, definitely not. You know, I mean, it feels almost impossible. I do think though, having the tools in the tool set that, you know, to recall is something that Justin has mentioned before. It's like you don't need to necessarily be an expert in it, but when you see the thing, it should trigger your mind to be like, oh, I need to go look up that thing. Whether that be a cheat sheet, whether that be that video that you need to go rewatch that segment of, whether you just remember that it was Franz Rosen that did it and you need to DM him. Right. Like, I think those little associations in your mind with different parts of an app, or different types of vulnerabilities, or different headers or gadgets, like, just knowing enough and remembering enough from the episodes to be able to go reference them is like a huge part of the value.
+
+[00:47:34.40] - Justin Gardner
+Yeah, totally agree there. I certainly don't implement everything we've talked about on the podcast. I think with AI stuff, I will a little bit more now, you know, where I can just say to shift, you know, hey, try this, this, this, this, this, this, this. Right? And I don't have to manually go do it. Yeah, but it's in there, you know, it's in my, it's in my brain, you know, and, and just like you said, you know, being able to go grab that piece of information when you need it, I think is really helpful for a more advanced, you know, hackers.
+
+[00:48:11.55] - Joseph Thacker
+So, yeah, I do think there are some people, though, for whom, and for me, especially when I first got started, that following methodology really did help. Yeah, like, it was just like, what do I do next? Oh, just check the step. Just check, check the flow diagram, you know, or check, check the steps. It's like, oh, what do I do next?
+
+[00:48:27.19] - Justin Gardner
+Okay.
+
+[00:48:27.55] - Joseph Thacker
+Yeah, what do I do next?
+
+[00:48:28.38] - Justin Gardner
+Okay.
+
+[00:48:28.86] - Joseph Thacker
+And then it's like, now I have these interesting endpoints. What do I do on them? Okay, well, I check all of them in every parameter for idor, and then I check all of them and every parameter for xss. You know, it's like, it doesn't really make sense. Like, I'm checking an API response that's. That's application JSON for xss. And it doesn't, it would never fire, but it's like it's giving me something to do, right? And maybe if it, and maybe if, maybe if I did get a payload in, I would be like, oh, why isn't this working? And then I would learn that it's not going to fire because it's coming back as application JSON. Right. And so I do think sometimes when you're beginning, methodologies can actually be helpful. So, I mean, if you wanted to go through the episodes and come up with a methodology, especially if it was through all the episodes or use AI to do that, I think that'd be really cool. If listener created, like, a CTB methodology based on really cool techniques that have been mentioned by our community and on the episodes.
+
+[00:49:16.98] - Justin Gardner
+But yeah, yeah, yeah. We have so many transcripts on the website, so I'm sure that there's a lot of data out there to be. To be utilized.
+
+[00:49:26.75] - Joseph Thacker
+Yeah. All right, I can ask you the next one. So.
+
+[00:49:30.55] - Justin Gardner
+Yeah, what's the next one here?
+
+[00:49:32.19] - Joseph Thacker
+What's the best approach when starting on a new target? Generalism or looking for a specific vulnerability type?
+
+[00:49:38.21] - Justin Gardner
+Okay, we could fly over some of.
+
+[00:49:40.38] - Joseph Thacker
+These, like, easier ones. Like, we've answered that, you know, plenty of times in previous episodes.
+
+[00:49:44.46] - Justin Gardner
+Yeah, yeah. I mean, I'm just gonna give it really quickly. It's gonna be generalism, you know, in my opinion, because you need to understand what the target is. Is vulnerable to. And not every target's gonna have xss, you know.
+
+[00:49:59.34] - Joseph Thacker
+Yeah. So if you're gonna do a specific vulnerability type thing, I think you need to be open to looking at a lot of programs. And what you do is you just say, hey, I'm like, aggressively trying to learn SSRF this month. So what I'm going to do is I'm going to spend four hours every morning, I'm going to switch my targets one time per day, and I'm going to go look for these things. But you're going to be less successful that way. It's not going to work out that well for you, but you might learn more about that vulnerability type to then apply to programs later when you do run across them.
+
+[00:50:29.23] - Justin Gardner
+Yeah. And I think the telling thing here is what is their question? Their question is, what's the best approach when starting a new target? And actually, let's go. Let's go look at the. Yeah. What would you say is the best approach when starting a new target is what he actually says here rather than the AI summary.
+
+[00:50:42.82] - Joseph Thacker
+Yeah.
+
+[00:50:43.71] - Justin Gardner
+The answer to that is definitely generalism, you know, but. But if you're. If your question is what's the best way to make money, then, you know, then it gets a little bit different. Right. Well, you know, could be just check IDOR on every single program. Right.
+
+[00:50:57.07] - Joseph Thacker
+I mean, that work first. Wink, Clearly.
+
+[00:50:59.15] - Justin Gardner
+Yeah. Yeah, exactly. Right. So, yeah, I think that it really. You got to be careful with the question you're asking here. Yeah.
+
+[00:51:06.28] - Joseph Thacker
+If you want to own a specific target, you have to be a journalist because you don't know what's going to be vulnerable there.
+
+[00:51:11.21] - Justin Gardner
+Yeah. And if you want to be a beast. Right. Like, if you want to be able to hack anything, you know, then you got to know a lot of stuff. Right? Yeah, or, but you know, one of, one of we're going to have Zwingk on or what was he now, the Idor Minator or something? Yeah, yeah, we're going to have him on later this month. And you know, one of the, one of the big pieces of his presence on Twitter right now has been I'm not a great hacker. You know, he's like, all I do is just swap, you know, 1, 2, 3, 4, 5 into all of this stuff. Right. And that's how I, you know, print money. Obviously, you know, he's understanding it a little bit, but, you know, I think there's some truth to that where, you know, you follow patterns that work and you can get results in bug bounty. But if your goal is to be the web hacker that can destroy any target, that is a different, different goal than I want to print money in bug bounty.
+
+[00:52:03.38] - Joseph Thacker
+Yep. Yeah. And I think it really applies to the second question which I thought was interestingly asked, but had we, you know, we kind of reframed it, it was like tips for making half a million dollars from bug bounty in a year as an experienced hacker. And you know, the question I kind of reframed it to when we were talking before the pod was what would it require of a bug bounty Hunter to make 500k in a year?
+
+[00:52:28.48] - Justin Gardner
+Tricky.
+
+[00:52:29.36] - Joseph Thacker
+Yeah, yeah, I think that. Now that's a, that's a really good question because most bug hunters want to make more money, right? But as all things are in life, it's a trade off. Like maybe it would require of you to. To hack 12 hours a day. Maybe it would require of you to, I don't know, learn new things you haven't learned before, you know, or push into things you haven't learned before. Or maybe it would require you to interface with like, you know, go and like, ask other people to learn from them and ask them to collaborate and you know, like, there are a lot, there are a lot of opportunities today because we have access to people and information more than ever before. But it would require a ton of work.
+
+[00:53:10.23] - Justin Gardner
+Yeah, yeah, I think, I think. So this would put you in like the top, you know, point something percent of hunters, if you did this, definitely in the top 1%, I think it's not enough really to. Well, yeah, I think you gotta go. I think you have to have strong capabilities and at least a couple types of vulnerabilities and you either have to. Let me, let me give it a little bit nuance to this answer. Okay. I think first you need to go after programs that are going to pay you good money. So like. But see, that's not even true because look at Douglas. Right? You know, Douglas, Douglas goes after a bunch of little programs. You know, he makes good money.
+
+[00:53:59.90] - Joseph Thacker
+I think. Yeah, I think that that was true historically, but I still think if you looked at his average bounties, they would be significant, you know.
+
+[00:54:07.05] - Justin Gardner
+Yeah.
+
+[00:54:07.42] - Joseph Thacker
+Okay. You know, like we talked about our numbers last, last week or in the last couple weeks, you know, and you and I Both were around 100 bucks. I don't think that he's in like the 600 buck range. I think he's in like the 2 or 300 buck range. Right. So I still think that there's still a lot of, you know, quality that is still there. But there's no doubt that if you're making 500k a year, your average daily value, this is assuming you work weekends, is $1400. So you have to make $1000, $1400 in bounties every day on average. Right. And so if you actually want to do that, it's going to require a ton of work. You're going to be need to submitting like either crazy crits every couple days or one bug a day. That's a medium or a high. Right. And so it's a lot of work.
+
+[00:54:53.42] - Justin Gardner
+Yeah. Or. And here's the or there you got to go after some crazy, crazy bugs.
+
+[00:54:59.03] - Joseph Thacker
+Yeah.
+
+[00:54:59.42] - Justin Gardner
+You know, you got to find some high five, figure, six figure bugs, you know, to try to make up for those days when you can't hunt, man. You know, unfortunately, there's a lot of ways to do it. Here's, here's my recipe though. I would recommend hacking on programs that are going to pay you a decent amount of money, focusing really hard, going deep on those programs and focusing on the assets that are going to have, you know, obvious impact to the program. You need to be pretty effective in your hunting. You need to not be trying a lot of things that don't have possibilities of working. You need to be like churning out valid attack vectors that have a decent Lehigh chance of working. And you need to know how to follow these opportunities when you see them. You know, that might play out for these bigger bugs, I think.
+
+[00:55:55.01] - Joseph Thacker
+And you need to write good reports.
+
+[00:55:56.53] - Justin Gardner
+Yeah, yeah. So you don't lose yourself in, in the, the whole like arguing with triage thing. I agree. Good question. Quick seeker. Thank you. All right. Does AI and vibe coding introduce a new era of bug bounty hunting with more bugs to find? Dusk From Dusk Reader, give me a quick answer on this.
+
+[00:56:19.03] - Joseph Thacker
+Yeah, we. We kind of. We kind of talked about that. I definitely think that we're in the AI slop era of bugs. I think that in a year or two, AI systems are going to be writing way fewer bugs. Right? And right now we've got tons of people writing tons of apps using Adorite code. Nearly everyone I know who works at big companies is also using AI code. And it's not great at thinking about things like business logic, eyador, those sort of things. So I definitely think that it introduces a new era. And on top of that, me and lots of friends are finding vulnerabilities in new AI apps.
+
+[00:56:54.50] - Justin Gardner
+Right?
+
+[00:56:54.61] - Joseph Thacker
+There are. There are actually, like, new types of vulnerabilities. And then I think we have crazy people like arc. Arc, Was that their name?
+
+[00:57:02.98] - Justin Gardner
+Yeah, yeah.
+
+[00:57:05.21] - Joseph Thacker
+Finding insane vectors like that. And so it does feel like a little bit of a new era, in my opinion. And so I think there, you know, there will be lots of. Lots of vulnerabilities in that way.
+
+[00:57:14.82] - Justin Gardner
+Yeah, totally agree with you there. Let's move to this next one from Tenacious Outlaw. Yeah, our AI summary of that says, why are you in the human in the loop plus AI camp while Reso is in more of the AI will solve web security camp? Is this an accurate representation of your perspective?
+
+[00:57:34.42] - Joseph Thacker
+I mean, probably not, but I'm super happy to defend it. I do think that there is a tipping point at which it's cheaper to run, you know, a hack bot than the amount of vulnerability or, sorry, bug bounty payouts that come out of that system, and then you can scale it infinitely. And, you know, I always call that like the. Oh, I don't even remember what I.
+
+[00:57:52.82] - Justin Gardner
+Call it now, but AI apocalypse for bug bounty?
+
+[00:57:56.34] - Joseph Thacker
+No, no, no, no. But, you know, and that's going to happen a few different times, right? Because then you run it, and then once those bugs are found, then it doesn't. The tipping point's not there anymore. So you have to improve your hackbot and then you can run it again. And so I do think that that can happen kind of like at some point, but I do think that Human in the Loop is going to be huge, Right? Like, the reason why you're able to quickly find that bug that you talked about during Your presentation for NomCon was because you pointed it at something that you saw was potentially vulnerable. Right? Like your human intuition pointed it directly at the thing that was vulnerable when you could have. I mean, how many things could you have pointed at how many headers were in that request? How many requests did that app make? Right, you pointed it at that request with that header and asked it to vulnerable. So there's no doubt that it's both. And, but yeah, yeah, it's interesting because.
+
+[00:58:42.94] - Justin Gardner
+If it scales infinitely, right, like if, if compute just becomes like super duper duper dirt cheap, you can just run it on everything. You can just say every single cookie, like try to hack it, you know, with this, you know, and, and, and I think that will be a weird spot, you know, to be in. But overall, I think for the next 5, 10 years, Human in the Loop +AI is going to be massive, at least. Yeah. All right, let's look at some of these ones here. When you open a new program without tools, what exact questions are you asking yourself to mentally map the attack surface? This is from Silent Dragon. Let me see if I can find that one over here. I'm, I'm really trying to emulate the user.
+
+[00:59:32.82] - Joseph Thacker
+Yeah, it says when you open a new program and intentionally delay using any tools, it's like the actual question.
+
+[00:59:37.53] - Justin Gardner
+Yeah, yeah, yeah. I think, I think that I'm really trying to emulate the user, you know, Like, I'm really trying to put myself in their shoes. You know, it's funny, I did acting in musical theater in, in high school and I think a little bit of this helps, you know, Like, I think I'm like, all right now I am the user of this app, you know, embody that character. Let's go. You know, like, and you try to come up with, you know, what kind of stuff the end user would be doing and what goals they might have. And you try to use that to learn about the app. What about you? What do you think?
+
+[01:00:13.30] - Joseph Thacker
+Yeah, I mean, I think something similar. I do think I'm like, you know, less strong at that. Like, I have less discipline. A lot of times I'll get in there and just like get pigeonholed on like interesting requests and stuff rather than like going through the time to like fully use the app end to end in a way that a user would. And I think that does hinder me deeper into live events where, you know, you want to get to the functionality that only 10% of people are looking at, right, by doing that exact thing, right? Setting up this video game front store, including all of the assets and all of the uploads and the patches and all the things to really see that actual functionality. But yeah, it's a simple question. I think your answer was fantastic. Their follow up question is the interesting one though, we talked about that. Are there any specific mental anti patterns you learn to avoid that look smart but consistently waste time?
+
+[01:01:07.07] - Justin Gardner
+Yeah, that is a good question that, that might take. Question of the ama, Silent Dragon. I think that's a really good question. The one that we talk about all the time is eternal learning and eternal recon. Right. Like, you know, it seems to make sense for you to like, all right, I need to learn a lot of stuff about Bug Bounty, right. And I need to learn or I need to try to find the most vulnerable assets. So I'm going to spend a good amount of time on recruitment, recon. Really. It's not, it's not what you're. What you should do, you know, it's a pitfall. Really. What you should do is, is get in there, focus on the main app, focus on. In my opinion, this is my opinion. A lot of people have different opinions. But especially spending too much time on recon is. Is going to be really bad for hunters and it really poisons them too. I've got. I've got a couple people I've worked with that are just really stuck in the recon world and it's hard to pull them out, I think, because I've been there.
+
+[01:02:05.59] - Joseph Thacker
+I've been there and I actually made it work, you know, for a long time. I do more of both now. But I think the reason why it's so addicting is because it's like gambling. It's like panning for gold and when you find that gold, you know, and all hacking, all hacking kind of is, but there's like. It just feels like manual hacking is more of like the hard work. Like you've got to pick and you're like hitting the rock looking for gold. It feels like recon. It feels like you're just like, like it's more like panning. You know, you just shove it down the water and see if something's there. Shove it in the water and see if something. It's like not as hard. Yeah, yeah, it's like, it's like mining versus panning.
+
+[01:02:40.96] - Justin Gardner
+But all of Bug Bounty is kind of like gambling, you know. Like it is, you know, it really is. So, yeah, I think it's. I think it's just a pitfall, personally. And then the other one that I had was writing actually everything down, you know, like I've seen. I mean, obviously there are people like Brandon, you know, Gret me, who make a lot of progress in their hunting based off of taking good notes and, you know, that's how they integrates with their mind. I've seen a couple hackers that just literally write everything. I think that is not good. I think there's some way you need to try to trust your intuition and your vibe on the target to really be effective about it. And especially if you're taking a lot of time to actually write it out. I don't know if that's a good use of your time.
+
+[01:03:28.28] - Joseph Thacker
+I had another anti pattern that came to me whenever we were reading the question just now that I think that you're going to love to talk about because you're so good at doing the opposite. How would you define the anti pattern of pigeonholing? I think that you're ruthless in your prioritization of your time and I don't see that in other hackers and I think it hinders them, it hinders me sometimes. And so how would you like define that class of. Or that, that class of anti pattern? I think sometimes people can feel intellectual like trying a thousand payloads on a parameter sometimes when they just need to move on, you know.
+
+[01:04:06.69] - Justin Gardner
+Yeah, but I don't know. Yeah, I don't know, man. I mean a lot of that's hacker intuition and experience. Right. I don't know what to say beyond besides that. I feel like most people suffer from the inverse problem more than the pigeonholing problem.
+
+[01:04:21.63] - Joseph Thacker
+Okay, well here's the thing. We were sitting in Tokyo.
+
+[01:04:24.03] - Justin Gardner
+Yeah.
+
+[01:04:24.42] - Joseph Thacker
+We ended up, we ended up winning. Mvh.
+
+[01:04:26.26] - Justin Gardner
+Yeah.
+
+[01:04:26.63] - Joseph Thacker
+But you, you looked at me and Kieran, you were like stop working on that. Work on this. So what's, what's the answering pattern you were breaking there? Was it, was it like.
+
+[01:04:36.51] - Justin Gardner
+It's impact alignment too, man. I mean I think it's impact limit.
+
+[01:04:39.90] - Joseph Thacker
+Yeah. Don't focus on what's interesting or what's new. Focus on what is going to have the higher impact.
+
+[01:04:44.15] - Justin Gardner
+Yeah. Or something that's going to be vulnerable, you know, like, like, you know, you like you guys were looking at something that was likely going to be vulnerable. Right. But the impact in alignment with the goals of the lhe was not as on point.
+
+[01:04:58.07] - Joseph Thacker
+Yeah. And like it was going to come out as a medium and there wasn't something that it had the bonus on it or that they cared about or whatever.
+
+[01:05:05.36] - Justin Gardner
+Exactly. And we had leads in valid areas, you know. So that's why I kind of redirected you guys there.
+
+[01:05:11.94] - Joseph Thacker
+Yeah.
+
+[01:05:13.21] - Justin Gardner
+And yeah, I think ruthless alignment to impact, you know, what, what the target, what you need to accomplish with the target I think is, is a very high signal, like Trait, you know, maybe. And it can be in alignment with pigeonholing. Right. Just kind of going down, you know, super deep on something and hyper focusing on it.
+
+[01:05:39.57] - Joseph Thacker
+But yeah, I think the, the best way I found to do that in my life is ask myself like the question of if I do achieve what I'm trying to achieve here, what would the impact be? Because you can be trying things that even if it works, aren't going to be a bug, or trying things that if it does work, would be a medium. Right. Because like you're looking at something that's post auth and requires user interaction and you're just like spending hours on this thing. It's like, dude, even if you popped it, it's going to be a medium at most. Just move on.
+
+[01:06:07.15] - Justin Gardner
+Yeah. And, and if, and you know, you've got to be honest with yourself about it too because it's very easy to get googly eyes at these, you know, attack vectors sometimes and be like, no, no, this is a great bug. This is a great bug. All they've got to do is click 47 things, you know, like, yeah, you know, so definitely being honest with yourself about that is a big piece. Yeah, I think I had one more, one more thing on that. Oh yeah, the, the thing I was going to say about this is if you do find yourself maybe like rabbit holing or whatever, you may take a step forward in the chain and, and simulate, you know, this one piece being done if you can, and, and see if you actually do have valid buck, like, you know, you know, apply a match and replace rule or something, assuming you're able to bypass some. Yeah, you know, logic or whatever. Right. And see if you actually do have like a valid bug with the whole chain before you go all the way down on this one piece that you need to, to break, you know.
+
+[01:07:08.01] - Joseph Thacker
+Yeah. Because a lot of times you'll have that aha moment and you say, oh, it wouldn't have worked anyways. Now you just saved yourself so long.
+
+[01:07:14.73] - Justin Gardner
+Exactly. I think that's important.
+
+[01:07:16.34] - Joseph Thacker
+Yep.
+
+[01:07:16.78] - Justin Gardner
+Great question, Silent Dragon man. His next question here too is really good. What was one specific belief you had about bug bounty that turned out to be wrong? And once you dropped it, your results noticeably changed. Tricky. I really liked the Expo presentation where they outlined these for agents, you know, and I think it was their DEFCON talk that they didn't actually get to give, but they posted it on YouTube afterwards. They highlighted specific breakthroughs that they had with the product. I really like that. I'm trying to identify one in Particular.
+
+[01:07:58.11] - Joseph Thacker
+I think that one thing that's interesting is that I would have believed that there was more variation in mindset. But when you are at these lobby events and you're sitting with other top hackers and they are, they're thinking in the exact same terms as you. Like, I've had so many moments sitting there inside somebody's laptop and I'm starting to say, now try this. And they're typing that exact thing. Or you see two other people do that. One person's like, oh, you should try this, and the other person's already trying it.
+
+[01:08:27.28] - Justin Gardner
+Yeah.
+
+[01:08:27.72] - Joseph Thacker
+And that to me makes it feel more achievable. It's like, oh, I'm not so distantly removed from this person and they're just like epically way better than me and I can't do it. I think that kind of. So I think Imposter syndrome is a good, is a good answer to this question that they're asking. Yeah. It's like one thing that I believe was that I was not able to or, you know, whatever, but in fact, you actually can if you, if you try.
+
+[01:08:52.59] - Justin Gardner
+Yeah. I don't know if I have a specific belief that I felt like was near and dear to my heart, that once I dropped, you know, realized it was wrong, that I saw the results change noticeably. From like a technical perspective, I will say from a non technical perspective, I believed that I needed to be successful in bug bounty to respect myself as a, as a hacker. You know, I needed to be winning every live hacking event and stuff like that. And I think that's too much pressure. And I think once I put my self worth in something else. Right. You and I, you know, for you and I, it's our relationship with Jesus. But for a lot of other people, it's, it's their, you know, it's their religion or it's their, you know, relationships or their, you know, something more stable than bug bounty. Like, bug bounty is just such a crappy thing to put yourself worth in because it's so volatile, you know, and.
+
+[01:09:53.52] - Joseph Thacker
+There are incredible hackers that you don't see that don't find bugs at events.
+
+[01:09:57.68] - Justin Gardner
+Right.
+
+[01:09:57.85] - Joseph Thacker
+Like, it's not.
+
+[01:09:58.40] - Justin Gardner
+Yeah.
+
+[01:09:58.85] - Joseph Thacker
+It's not a game where just because you are skilled means you definitely will succeed. There is like a little bit of an element of, you know.
+
+[01:10:04.97] - Justin Gardner
+Yeah.
+
+[01:10:05.60] - Joseph Thacker
+Of like where you chose to spend your time.
+
+[01:10:08.32] - Justin Gardner
+Absolutely. Yeah. So check your self worth. I think that that's probably my best answer to that. All right, let's, let's take these last couple ones. Rapid fire and wrap up this episode so we don't give Richard too long of an episode to edit this week because it's, we're pushing it out last minute. How do you tackle small scope functionality?
+
+[01:10:26.68] - Joseph Thacker
+That one, I think you've taken some small scope before with me. With small scope, I move on. If I, if it's small scope and I don't feel like I'm an expert at it or I'm struggling, I, the, the actually that's kind of a tip for people too who are starting bug bounty. If something's not your cup of tea, like you don't have to stay on it. Like there's lots of other stuff. You know, Justin has this like goal and desire to do well at events even when the scope is crap. And you know, not everyone has to live by that same philosophy. I personally don't, but and I, I, that's an admirable trait in Justin. But so I would just say you don't have to, but if you're going to. How should they tackle it, Justin?
+
+[01:11:00.18] - Justin Gardner
+Yeah, I would say, I mean you've just got to grasp at straws is pretty much the only thing I can tell you. Like find every little little oddity or little like quirk that you can find and see what you can make out of it. And I think that's a little fun, you know, to prove to yourself. Right. I, I think sometimes, especially if you're a little bit like you're an intermediate, upper intermediate hacker and you've got something you really want to pone, like just banging your head into it until you pwn it feels pretty good.
+
+[01:11:30.80] - Joseph Thacker
+Yeah.
+
+[01:11:32.39] - Justin Gardner
+And as far as hitting critical, sometimes the criticals aren't going to be there. If the functionality is not there, the critic, the criticals may not be there, but definitely try things you don't normally try. Think outside the box, really put yourselves in the shoes of the developer and that's how you kind of work around these small scope targets. All right, let me ask you this one. How long do you stay on one program before moving to the new one? Joseph?
+
+[01:11:57.28] - Joseph Thacker
+If it's like an actual new program, like a new invite or something, I would say as short as a couple hours, as long as, you know, a couple days. I don't think that people should be whipping themselves into locking into a new program for a long time. I think that's a really bad idea because oftentimes the companies will end up skirting around the bugs or having like a really weird duping policy where all your stuff gets duped. If it's like an anchor program for other hackers that you know then I think going along and that's totally fine. But if it is a new program, I do not recommend that. In fact, I would say it's better to spend a few hours on it, submit a couple bugs if you have some, and then go back to an anchor program or another new one. And then if they treat you well, come back to it. Right. Or maybe it's worth your ROI if it's like pretty vulnerable to go ahead and farm it for two days or whatever. But I would not at that point stress out. I would then move on to something else until they've like kind of proven that they're going to treat you well.
+
+[01:12:55.61] - Justin Gardner
+Yeah, I agree. I think that's a good one.
+
+[01:12:57.93] - Joseph Thacker
+You do this one. Do you recommend using additional proxies besides Burp and Kaido?
+
+[01:13:04.26] - Justin Gardner
+No, I would recommend you use Burp or Kaido. I. I would say that there's a new one on the scene. I don't know that I like, consider this like an actual proxy or whatever. But Rep plus, I believe is the name of it. It's a, you know, Chrome extension that kind of tries to emulate what these proxies are doing, but you can't write arbitrary HTTP requests because of limitations on like the fetch stack that they're using to send the request. So it's a little tricky. But like, if you were in a pickle, you could try using that.
+
+[01:13:39.09] - Joseph Thacker
+I think that, you know, if you're doing system type proxying, like sometimes you just proxy the whole system because you're. I don't know, I've seen people use like other weird proxies for things like that. Like there are some proxies that make it slightly easier to proxy your whole system or if you're on mobile or something. But no, if you're doing web hacking, definitely use one of the mainstays. You know, we're big fans of Kaido these days. Yeah, I'm wearing T shirts today.
+
+[01:14:03.36] - Justin Gardner
+Nice, dude. Very good. Yeah, I think this one could be interesting. You know, replace could be interesting for like quick and dirty stuff when you don't have access to a full.
+
+[01:14:12.68] - Joseph Thacker
+A.
+
+[01:14:12.80] - Justin Gardner
+Full, you know, Kaido setup. But it's not going to have a lot of the more robust features that you might need. All right, next one is how many programs do you recommend focusing on at once? Joseph, how many programs do you recommend focusing on at once?
+
+[01:14:29.07] - Joseph Thacker
+It depends what you mean by at once, right? I mean only one at once. Actually, it's kind of frustrating whenever you get message leads for other programs and you've already got like Kaito or Bart pulled up and you don't want to like, at least in Kaido you can switch projects pretty easily. But it's still pretty annoying to me. I start like mixing my traffic and getting all this on. If it means like, you know, over the course of like a few, you know, days or weeks. This is like something we talked about in our end of year episode. My goal is to actually come up with some anchor programs this year rather than bouncing around. What do you think?
+
+[01:14:59.14] - Justin Gardner
+Yeah, I think mean pretty much exclusively. You got to focus on one program. Yeah. You know, there are exceptions when you're.
+
+[01:15:09.51] - Joseph Thacker
+Spraying a vulnerability, like there's no cv, it's like a one day and you know it's going to get paid out and you're going to spray it across all programs. That's different. Right.
+
+[01:15:15.59] - Justin Gardner
+But yeah, yeah, I agree, I agree. How do you pick up bug bounties after a long break?
+
+[01:15:21.98] - Joseph Thacker
+This is super relevant to me. Yeah, I'm back at work today.
+
+[01:15:26.31] - Justin Gardner
+Yeah, tricky. You get curious, you get hype, you trigger your love of Bug Bounty and you claw your computer desk, you know, like I don't know man, I just love this shit. Like I like if I've had a long break, I just try to focus on how passionate I am about all this. Yeah, I think that's my go to.
+
+[01:15:48.57] - Joseph Thacker
+I'm usually super anti to get back to it. I think Gret me or somebody else, maybe Kieran Monkey, somebody said that they will do a pen test to get back into it. I don't know if that necessarily worked for me, but yeah, usually I'm like so antsy to get back to it that I want to. That I'm curious though. I did hear a really cool thing. It was on the Chris Williamson podcast. He was, he was interviewing Huberman and he said if you're about to go into a period of learning, it's you want some boredom beforehand and afterwards you want the, you want the boredom beforehand because if you've been like scrolling TikTok reels, you're not going to find this like technical content interesting. And like, wow, that's a great point. Right. And so if you have some opportunity to go for a walk without your phone or whatever before you come to your desk to do some learning, I think that's great. And instead you want some dead space afterwards to really process it. I think those are both smart things. I think that it also could apply to Bug Bounty. Like if You've been starving yourself of dopamine for like 30 minutes or an hour or something. Then when you get to your computer and you start seeing like, you know, the potential for money and these like, HTTP requests, I think you're going to be more excited than if you've just been watching a YouTube video of like, you know, your favorite video game or whatever. So I think that that's like kind of like a fun little just like life hack there.
+
+[01:17:01.89] - Justin Gardner
+Yeah, that. That is good. I like that. Put a little bit of boredom adjacent to it. That's good. All right, I think the last one that we'll do is when should you give up on a bug that's been ignored by Triagers? Look, I've like, I'm gonna be honest with you guys. I've never had a bug that is actually valid be ignored by Triagers for a long time. So if the Triagers are eternally forever ignoring your bug, it's probably not a valid bug.
+
+[01:17:31.34] - Joseph Thacker
+Yeah, you have either done an extremely poor job of articulating it or you've over inflated the severity in your mind. And so it's actually a low. And so they're just not getting to it because all the other reports are much more important. Justin, I hate to do this. You did? We did. I only highlighted two questions that I really wanted to answer and we didn't answer one of them.
+
+[01:17:48.92] - Justin Gardner
+Oh no, dude, I'm sorry, I jumped over it. My bad.
+
+[01:17:52.27] - Joseph Thacker
+You're good.
+
+[01:17:52.76] - Justin Gardner
+Okay, let me ask you this then.
+
+[01:17:54.03] - Joseph Thacker
+Yes.
+
+[01:17:54.35] - Justin Gardner
+What invisible elements in a report usually make the difference between a 2k payout and a 20k payout.
+
+[01:18:00.35] - Joseph Thacker
+So I have a lot to say here. One, I think that you're uniquely good at it. I do think that it's something that worked well for me and my advantage of coming up in bug bounty. But I think that the number one thing that jumps to my mind is just try to reproduce it via your steps once. It's not that hard because you probably forgot something. The number of times that, you know, I've had to respond to an NMI or. And like, even if the triage only has to request more information you report one time, I think it honestly changes the way they view your report in their head for some reason. Yeah, it's like if they can very easily reproduce it instantly, I think that it will sometimes actually shade their opinion of the severity, even if it ends up being the exact same bug, but they just had to send it back to you once because you left such a good step.
+
+[01:18:44.93] - Justin Gardner
+Wow, dude, yeah, totally. That's, yeah, 100%.
+
+[01:18:49.89] - Joseph Thacker
+Like, if you just forgot to tell them to like go into the profile and then go click the edit button to get to that request that they needed, they almost, I think, will just subconsciously view that report as like less than because, like they had to send it back to you for some reason. And so I would just say always reproduce your bug via the steps alone. Like play ignorant, put yourself in the shoes of the Triager and Justin's acting advice and then go in and just do the bug one time, one make sure it still works. Because sometimes I know you've had this happen, you go back to reproduce and it doesn't reproduce and you swap the cookies incorrectly or whatever. So that's useful to do in general to make sure you don't get a. Not applicable. But when you're doing that, you'll be like, oh, I didn't tell them to click here before they clicked here in order to get that thing right.
+
+[01:19:32.43] - Justin Gardner
+Yeah, I think that's a great point. I think, I think doubling down also into your poc, you know, giving them a script where they run it and then it just outputs pii, you know, of other people like that. That just feels really bad, you know.
+
+[01:19:44.92] - Joseph Thacker
+It does, yeah, yeah. So add POC and video if it's critical enough that it's worth your time to do so.
+
+[01:19:49.64] - Justin Gardner
+Yeah. Try to make it look as simple as possible to exploit, you know, because that's the obvious, you know, best scenario is stupid, simple to exploit, very high impact. Right. And some of the time, you know, it's. It's complicated to exploit and high impact. Right. And in those scenarios you really want to automate the POC to make it look as simple as possible. So that could be a big, A big difference. The other thing that I can say is spending a good amount of time on your impact assessment, describing what kind of data you can get, what you can do with it. Don't just like pop up an auth token, you know, say, hey, this is the auth token, you know, here's how you set it in your browser and now you're off as the user or, you know, here's this token, I can swap it for this. And now I'm in this, you know, in this account. Right? Yeah, yeah.
+
+[01:20:35.97] - Joseph Thacker
+I remember the first time that I had that experience was I had found a vulnerability that I was like, I don't know, maybe this is a medium or something, and I sent it to Mayonnaise or Mayonnaise, depending how you want to pronounce it. And he was like, dude, this is obviously critical. Here's how you have to articulate it to their team. And he, like, wrote out, like, two paragraphs for me. That was like, you know, the impact that this has on the advertisers when they're going to advertise this.
+
+[01:21:00.07] - Justin Gardner
+If they.
+
+[01:21:00.47] - Joseph Thacker
+If this was disabled, it would actually, you know, reduce their earnings in the month by millions of dollars because these are the customers. You know, like, just getting into the nitty gritty details for the actual impact there, I think, is something that you do well and something that will result in much higher payouts.
+
+[01:21:16.19] - Justin Gardner
+Yeah, totally, man. Okay, cool. That's a wrap. I'm sorry for skipping that one. I did want to add at the end here. Viral element asks any good worship songs you can recommend. So for our Christian listeners, one of the ones that my church has been running is Alive Forever and Amen by Travis Cottrell, which is super good. That's a vibe. I don't know, man. It's hard when you're. When you're put on the spot. I saw it here, and I spent a second, like, thinking about it. Does anything come to mind off the top of your head?
+
+[01:21:45.27] - Joseph Thacker
+I honestly have never been a person who remembers song names.
+
+[01:21:48.64] - Justin Gardner
+Yeah.
+
+[01:21:49.35] - Joseph Thacker
+Or even artist names. But I will say that with me and the kids in the car, I've just been totally obsessed with Forest Frank for, like, weeks.
+
+[01:21:57.11] - Justin Gardner
+Oh, yeah.
+
+[01:21:57.76] - Joseph Thacker
+Like, the messages are so deeply biblical, but then it feels like a fun song that you can dance to or have fun to.
+
+[01:22:08.14] - Justin Gardner
+Yeah.
+
+[01:22:08.85] - Joseph Thacker
+And this is. Anyways, I also just love, like, big bass. All of my friends had cars with, like, big subsystems. And so in the. In the Tesla model, Y has a really good bass, and so I crank up the bass, and it just feels like I'm, like, you know, jamming around, zoom into worship music. So it's sick.
+
+[01:22:24.97] - Justin Gardner
+But that's awesome, man. That feels great. All right, man. I think that's a wrap on this episode. Thanks to everybody who submitted questions. I don't know who you. Your actual handles are, but we tried to call you out as much as we could. Appreciate you guys participating.
+
+[01:22:37.26] - Joseph Thacker
+Yeah, absolutely. Go check out bugbounty Dot forum.
+
+[01:22:39.65] - Justin Gardner
+Yeah, for sure. All right, peace.
+
+[01:22:41.34] - Joseph Thacker
+Peace.
+
+[01:22:42.85] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'.
+
+[01:22:46.57] - Joseph Thacker
+All.
+
+[01:22:46.85] - Justin Gardner
+If you want more critical thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of the master classes. Hack alongs exclusive content. Content And a full time hunters guild. If you're a full time hunter. It's a great time. Trust me. All right, I'll see you there.

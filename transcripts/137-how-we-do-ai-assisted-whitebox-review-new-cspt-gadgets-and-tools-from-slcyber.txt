@@ -1,0 +1,509 @@
+Episode 137: How We Do AI-Assisted Whitebox Review, New CSPT Gadgets, and Tools from SLCyber
+Source: https://www.criticalthinkingpodcast.io/episode-137-how-we-do-ai-assisted-whitebox-review-new-cspt-gadgets-and-tools-from-slcyber/
+======================================================================
+
+Title: Transcript - Thu, 28 Aug 2025 15:25:22 GMT
+Date: Thu, 28 Aug 2025 15:25:22 GMT, Duration: [00:49:10.79]
+[00:00:00.80] - Justin Gardner
+And they're paying pretty well. So you know, Anthropic will pay up to like 35,000 for a universal transferable jailbreak. OpenAI will now pay the same. But they what?
+
+[00:00:10.24] - Justin Gardner
+Say that again. 35,000 for what?
+
+[00:00:12.88] - Joseph Thacker
+A transferable jailbreak. So if you put in like any question and it will answer them, they'll pay $35,000. Best part of hacking when you can just, you know, critical thing, right? This week in Bug Bounty there are two major topics. One was from yes, we hack. They're doing a new series called Vulnerability Vectors and the first one is SQL Injection. So they're going to basically show you how to go from zero to hero to learn SQL injection for bug bounty hunters. Should be really cool. So go check that out. The last thing that I had is also part of this week in bug bounty from HackerOne. It is a Mozilla VPN client, RCE. The vulnerability is actually a path traversal, but because the patch reversal allows you to overwrite startup script files, it becomes rce. The Mac client is not vulnerable. It's only the Windows one. It's a really great write up. It's a high. It paid six grand. Go check that out at the link in the description. And now we're back to the show. Thanks, guys.
+
+[00:01:28.79] - Justin Gardner
+All right, dude, I've actually got a pretty cool thing to start off this episode with. Okay, so I messaged you the other day about hacking with these like assistants, right? Like, what is the best way for me to do AI assisted source code review. Yeah, and the reason I messaged you about that because I got a spot check from HackerOne for the specific program that had an SDK that it wanted us to like take a poke at. And I was like, okay, I definitely can't just do this the old fashioned way here.
+
+[00:01:56.70] - Joseph Thacker
+So read this line.
+
+[00:01:57.75] - Justin Gardner
+So what you told me. Yeah. Well, why don't you give a quick summary to listeners about what you told me I should do and then I'll tell you what I actually did and how it worked out.
+
+[00:02:08.28] - Joseph Thacker
+I don't remember this distinctly, but I assume I told you to use cloud code booted up. Ask it, ask it to like ingest it all line by line, create a whole profile. Which, by the way, I did that for. I'm wearing my Caido shirt today. I did that for Emil with the back end of Caido. Like, hey, if basically he's found AI completely lacking in his ability to help him, like, you know, develop.
+
+[00:02:26.52] - Justin Gardner
+Yeah.
+
+[00:02:27.00] - Joseph Thacker
+I was like, I guarantee you I can make it at least usable and like, pretty good for you. So I did the same thing. Probably I recommended to you. I basically handed it the code and was like, hey, read over this. Create a full structure of like how it works, why it works, which pieces are interconnected, what, what's like a good coding guideline based on like this code? Not just good rust code in general. Kind of merge those and here's how you can find more information about what Caido is and how it works and all those things. And so anyways, that's what I would have told you to do.
+
+[00:02:53.69] - Justin Gardner
+Yeah, that's what you told me to do. I don't know why you don't remember this message, but I was like, okay, great. It's probably because I didn't respond to it. I just went ahead and did the thing. I was like, yeah, yes, perfect, that's exactly what I need. And then I went and did the thing and I was looking, I was going to grab cloud code like you recommended.
+
+[00:03:08.43] - Joseph Thacker
+Yep.
+
+[00:03:08.87] - Justin Gardner
+But then I was like, I don't have a cloud code. Like I don't have like a cloud subscription active right now. Yeah. And I was like, wonder what alternatives there are. And I looked into it and you know, Gemini has a CLI client that came out recently and, and so I.
+
+[00:03:23.66] - Joseph Thacker
+Grabbed, when I used it when they launched, it was terrible. It literally got API errors. It was just down all the time. And I haven't even went back to it because it was so bad. So I'm curious what your experience is now that it's been improved.
+
+[00:03:32.62] - Justin Gardner
+Hopefully it has been improved to some degree. I have seen some videos per your recommendation of cloud code and it seems like cloud code is a far more refined product. But I still opted to use Gemini because of obviously the one reason that we all use Gemini, which is the freaking massive context window.
+
+[00:03:59.36] - Joseph Thacker
+Yeah.
+
+[00:04:00.31] - Justin Gardner
+And, and, and it actually has worked pretty well. So what, what I've got now is I've got like a Gemini MD file set up and I've got like. So actually I did it with the Gemini MD file for the specific thing that I'm talking about. But now I've got like custom commands and extensions built into Gemini CLI that will like perform the initial code base analysis. Right. Which is essentially doing exactly what you said, going through each file, you know, notating what? I had a couple of sections I do. Like, what is the business function of this file? You know, what are the primary functions in this, you know, specific file or class or whatever? What are the security boundaries? Like what is the security related functionality in this Specific. Right?
+
+[00:04:42.88] - Joseph Thacker
+Yeah.
+
+[00:04:43.29] - Justin Gardner
+And then, and then summarize all that and then have it go back and make a summary of all the summaries and pull it all together into like this code architecture file that describes not only like the functionality and the flow of data throughout the application, but also like the overall security architecture. Like what are the core security components? Well, the security for this specific app, you know, hinges on this one function. You know, that's the function that I want to know about like right away. Right, right. So I've got it sort of outputting that and I think it didn't do amazing. Like it did pretty good. Right? Like, like it, it, it identified a lot of the, the, I guess the core components that, that are necessary and, and some of the, the attack vectors. And also I had it notate like threat model and like why, you know, where people would be attacking from. Sort of like what, what the attacker would have to have in a specific situation to attack.
+
+[00:05:38.56] - Joseph Thacker
+Was it using Pro the whole time?
+
+[00:05:40.87] - Justin Gardner
+Yeah, it was using. Well, I had IT use Flash for a little while and then I had it switch back to Pro and it, and I think it's quite good with Pro. I mean it did a thorough analysis. It just didn't lead me right to the vulnerability. Right, right. Um, and, but it did call out the section of the app that had the vulnerability in it. So I was like, you know, it was like, definitely, this is one area that you're going to want to focus on if you're doing a security assessment. And lo and behold, I went there and looked at that and I, and I found a vulnerability. So this is target that. Yeah, this target that I was, I was working on was like pretty High is a very reputable company that has this, you know, SDK that they released and it took me less than six hours to find like a high, high crit impact vulnerability in this SDK.
+
+[00:06:22.94] - Joseph Thacker
+I mean, that's legit. That's awesome.
+
+[00:06:24.31] - Justin Gardner
+That's pretty good, right? Yeah, yeah. And it spun up POCs for me so quickly and stuff like that where I could just quickly validate correct. Dude, it's, it's amazing. So thank you for that recommendation and I'm sure, I'm sure you've got a similar workflow with Claude code in place or. Yeah, yeah.
+
+[00:06:41.68] - Joseph Thacker
+I'm actually really curious now that you've mentioned that you have like little extensions and stuff, kind of. I talk a lot with Daniel Mesler about this exact stuff. I think that cloud code and Gemini Cli, like, you know, honestly, it's just like an agentic wrapping where you can like expose it to different things, can be used for so many different jobs and industries and stuff. But for hackers specifically, I think it can be super beneficial because one, a lot of what we're doing is like, let me go get this data from this data source, like whether it's subdomains or, you know, whether it's kicking off a scam scan on a virtual server or whether it's whatever, go and grab a word list or generating a word list. And then a lot of times it's doing other things like Deobus gating, JavaScript, right, which we're going to talk about here in a little bit, a tool that can do that. And then, and then it's like synthesizing, like you said, where's the risk? And then it's very often, I think the most beneficial thing is just spinning up scripts. And so, yeah, like you said, with Claude code, I very frequently will have it. Like I'll just give it an HTTP request from Caido and say, hey, I'm trying to test this for these things. You know, go spin up some scripts that go do it for me. And so it just, it does it right. It can spin a bunch of scripts, it can do automation, it can write for loops and stuff. And so it's kind of able to automate just like a deeper level. It's almost like if you gave Turbo Intruder, like, if you gave access to like Turbo Intruder, like what could it do? It could do a lot of really cool stuff.
+
+[00:07:59.51] - Justin Gardner
+Yeah, yeah, yeah, dude, I think there's. So you hit the nail on the head there with like spinning up scripts being like the. One of the primary things that these things will help, especially if you're doing like a code review of an SDK or something. Super, super helpful. But the other thing that I came to appreciate this time was just how fast it allowed me to ingest the security controls in a specific repo, right? Like, like, you know, it can go through, assess the whole thing and be like, here's the security controls, here's the security controls. And then for me as a hacker, it just like, I think that's just how I think about code a little bit, right, Is like sort of surrounding these security controls. And so it just helps me feel like I have a much more comprehensive understanding of who might be attacking from what perspective in the repo and maybe like the whole threat model of the code base by just saying, hey, here's a security control, here's a security control. And then sort of reverse engineering from those security controls, saying, okay, well, why is the security control in place? Well, it's so this person doesn't do this. And now I've got, you know, your motivated actor and your target goal. Right. Sort of built out already.
+
+[00:09:16.71] - Joseph Thacker
+Yeah. It's like having a single interface for access to the data you need, which is like, what are like the sources and syncs and the security controls and also an ideation partner. And honestly, I think that sometimes for humans, like writing is thinking. So as you're typing out your question to it, you're actually clarifying your thinking. Like when you're, when you're typing out, like, how would an attacker go about, you know, getting into this function? Like you're clarifying your thinking and then obviously it's going to clean up things for you as it goes out and looks for, as it greps for like what actual places that function's called, for example. But it's like clarifying your thinking while also serving you data while also ideating with you.
+
+[00:09:56.36] - Justin Gardner
+Yeah, yeah. Pretty solid. Pretty solid.
+
+[00:09:58.84] - Joseph Thacker
+Yeah. I've been, I've been specifically two bugs.
+
+[00:10:02.39] - Justin Gardner
+Well, I was going to say two. Nice takeaway. One, one high crit. That. That's it on this repo, but I had two specific takeaways. You want to make a comment before I drop?
+
+[00:10:11.55] - Joseph Thacker
+No, I'm. Mine's on ice. Like next, next topic.
+
+[00:10:14.15] - Justin Gardner
+So transition. Okay.
+
+[00:10:15.15] - Joseph Thacker
+Yeah.
+
+[00:10:16.00] - Justin Gardner
+So here are my, my two takeaways that I'm going to make sure that I integrate into my prompting for future, you know, SDK or white box analysis. Okay. One, have it look at the tests, right? If you have a full code base and you're not just throwing it at like minified JavaScript, look at the test files that are in there and like have it look at all the test files and say, are there any tests that are validating a security control in here? Right.
+
+[00:10:40.64] - Joseph Thacker
+That's cool.
+
+[00:10:41.12] - Justin Gardner
+Yeah. And then, you know, then that points you directly to the single point of.
+
+[00:10:45.09] - Joseph Thacker
+View, what they care about. Yeah.
+
+[00:10:46.09] - Justin Gardner
+For the, for the security control. Right. So that's a good one. And then the other one that I had it do, which helped me uncover the vulnerability, was look at where security controls are implemented and then look at similar or adjacent functions that might be missing that same control. Right. And it got me very, very close to the vulnerability. So.
+
+[00:11:09.04] - Joseph Thacker
+Nice.
+
+[00:11:09.76] - Justin Gardner
+Cool stuff.
+
+[00:11:10.45] - Joseph Thacker
+Yeah, that's legit. Yeah. So basically I've been using for the Last few days Claude for Claude code for doing basically AI safety, kind of like research. OpenAI actually, this is a topic for the pod. So I'll just bring this up. I think AI safety programs are like kind of neat if you are into the AI stuff. And they're paying pretty well. So, you know, Anthropic will pay up to like 35,000 for a universal transferable jailbreak. OpenAI will now pay the same. But they. What?
+
+[00:11:40.16] - Justin Gardner
+Say that again? 35,000 for what?
+
+[00:11:42.88] - Joseph Thacker
+A transferable jailbreak. So if you put in like any question and it will answer them, they'll pay $35,000.
+
+[00:11:50.05] - Justin Gardner
+No way.
+
+[00:11:50.94] - Joseph Thacker
+Yeah.
+
+[00:11:52.05] - Justin Gardner
+What?
+
+[00:11:52.62] - Joseph Thacker
+Yeah, on their bug bunny program. I thought I'd mentioned this to you before.
+
+[00:11:55.50] - Justin Gardner
+Yeah, no, dude, I did not know that that was like that high station. I thought that this was still like an unsolved problem. Like you. You just.
+
+[00:12:02.86] - Joseph Thacker
+It is an unsolved problem. So they. So they put some parameters around, of course. Like they have very specific questions that they expect you to get an answer to. And they're like CBRN biowarfare related questions. So they're like, oh, really? And you have to put them in either word for word or like you can. You can technically have code that will do like a string transform for like synony, but you can't like completely change the question in like whatever way you want to. So the just you like slowly lead it to the answer by like complete happenstance. Like it still has to be like, you know, a user is like relatively asking a dangerous question.
+
+[00:12:35.24] - Justin Gardner
+My grandmother's dying and this is what I need to know to save her.
+
+[00:12:38.75] - Joseph Thacker
+Yeah, I mean, so everyone has tried all of those things. It's like getting very safe and very difficult to bypass it. I actually don't know if there have been any actually just shout out to their program. They're really amazing. I actually got a transferable full jailbreak and they. And they like. It turned out they had like turned off a part of their protection classifiers and not told any of the bug hunters. And so I just happened to test it during that perfect window. They still paid me.
+
+[00:13:04.49] - Justin Gardner
+No way. They still.
+
+[00:13:05.76] - Joseph Thacker
+But they still paid the full bounty. So like, that's amazing. Huge kudos to them. You should definitely go check out their program. So OpenAI historically has never paid for safety issues. I think maybe, hopefully Anthropic has put on that pressure through their program.
+
+[00:13:17.42] - Justin Gardner
+So.
+
+[00:13:17.89] - Joseph Thacker
+So you have to still go apply for both of these. But they accept most people. But OpenAI recently opened up their bio bounty and it's the same thing. I think they're only gonna pay the first full jailbreak at 35k and then the other ones pay less. So it's a little different. But I've been using cloud code.
+
+[00:13:33.82] - Justin Gardner
+30K is a freaking unbelievable bounty though.
+
+[00:13:36.22] - Joseph Thacker
+Yeah, I mean it allows you to invest a ton of time. Right. And resources and like effort and collaboration. Even like, you know, splitting that still makes it really worth it if multiple people are involved. Okay. And then third program here I'm going to mention they, they released a Kaggle bounty for their, their open source models, which is really cool because I'm sure that a lot of our listeners. So Kaggle.com is a website where like secure or AI researchers post like, I don't know, research competitions. And I think there are like, there's often like prompt injection stuff on there.
+
+[00:14:10.87] - Justin Gardner
+Okay, I see it.
+
+[00:14:12.15] - Joseph Thacker
+Yeah, it's like, it's just like an AI kind of like benchmark model data set. It's like a very data science website. And so then they have one if you google kaggle OpenAI open source red teaming challenge or something, it's a $500,000 challenge where they're picking 10 winners. Now the listeners are not going to get this in time. It ends in two days. So. But I do want to tell them about this because it's really cool because I've been using cloud code to basically do this testing with me and I think it applies to bug bounty and AI safety in the same way. So what I did was one, it's really cool to be able to run this open source model locally. And through my testing I've realized how good this thing is. So it's actually pretty dang safe. Like it's pretty hard to jailbreak or prompt inject and it's really good at tool calling.
+
+[00:14:59.66] - Justin Gardner
+And this is the one that they, this is their open source one that they released.
+
+[00:15:03.30] - Joseph Thacker
+Yeah. So they released two 120 billion parameter model and a 20 billion parameter model and, and they're both mixture of expert. So they use far less RAM than that. Right. They're only activating like a, you know, a sixth or an eighth of the total network. So like normally a 20B model would take like 20 gig of RAM, but where this 20B model uses mixture of experts and only uses a subset of those of the, of the model weights, it can run on like you know, 6 gig of RAM or 7 gig of RAM. So it's. So it's pretty nice. And so the 20B model is used for this challenge and the goal is to basically showcase some sort of like novel harm. And so like they're looking for all kinds of unique Stuff we can link it in the show notes but like they're looking for like biases or like prompt injection stuff or like can you get it to recommend like, like health things or therapist things that are harmful. Like could you convince, you know, could you have a prompt that. Where it would like suggest someone commit suicide? Like these.
+
+[00:15:58.25] - Justin Gardner
+Have you tried cocaine?
+
+[00:16:00.77] - Joseph Thacker
+Yeah, exactly, yeah. Anything like that that would be harmful. Anyways, so I've been using cloud code to both ideate, write the scripts, run it because it's literally running on my machine to test it and analyze the output. And so like I'm using, you know, this Igentic wrapper to do the full thing locally and it's working really well. It's really cool. Well, yeah, it just runs on my Apple silicon which is like quiet and fast and stuff, which is pretty neat. But I think people should. This is actually as I've been playing with it, I think if you can write a really strong system prompt, this is the first model that people could use locally for totally free. Basically, of course you're using your GPU or your, or your M series Mac, but and actually get like genuinely helpful results from a local model and actually have tool calling. It's not going to be perfect, it's not going to be amazing. But I think it's the first model that could potentially. Oh, actually Ronnie Lupin, everybody knows I was going to say, yeah, he's using it. He was able to go from like I'm going to look up our messages really quickly.
+
+[00:16:59.39] - Justin Gardner
+He sent something pretty crazy in our group chat. He was like saying he utilized this for some part of his product or something like that and was getting some really good results from it.
+
+[00:17:07.55] - Joseph Thacker
+Exactly, yes. That's what I was going to call out. He and I started DMing about it. He was able to go from Gemini 25 Pro. So he. So for anyone who doesn't know, obviously top hacker Lupin, he's been on the show many times but he, he has a product called Depi that does like, what's it called?
+
+[00:17:26.35] - Justin Gardner
+Supply Chain.
+
+[00:17:27.16] - Joseph Thacker
+Supply chain, yes. Supply. Supply chain attacks and he used AI in a bunch of different ways. He moved the auto fix feature From Gemini to 5 Pro, all the way down to GPT open source 20B and it works even better. He said. So anyways, if people are building cool stuff, they should definitely try it out.
+
+[00:17:44.80] - Justin Gardner
+That is, that is pretty exciting for security people because having an offline model is really important for stuff. So maybe we'll, we'll work on some integrating some of that stuff. Into Caido as well.
+
+[00:17:55.04] - Joseph Thacker
+Yep.
+
+[00:17:56.32] - Justin Gardner
+Yeah. Dude, crazy. I know we spend a lot of time talking about AI stuff nowadays, but, like, it is very important that we do that because there is a lot of crazy stuff happening and there's a massive shift going on. So, yeah, I think, I think it's important. But with that, I will jump to my. My next favorite topic, which is csp.
+
+[00:18:18.04] - Joseph Thacker
+Yep.
+
+[00:18:20.28] - Justin Gardner
+So let me go ahead and share this. Go ahead and share this article really quickly here. This is an article entitled Cash Deception plus csp, which actually should be CSP plus Cash Deception, but it is what it is. And this is by Ziri or Ziri. I don't know how to. How to pronounce that, but I've seen some great stuff coming out of this researcher and essentially this is just a nice little write up here explaining how he was able to exploit a cache deception that was seemingly impossible to exploit because it requires a token to using a cspt. Okay, so here's the little. Let's see, where's the actual little graph here? Okay, here it is right here. So the attacker sends to the victim, you know, a CSPT which forces the victim, you know, which hijacks a fetch request that it contains their, you know, session and their CSRF token automatically added by whatever, you know, JS middleware they had, you know, in the client side there. And then an authenticated request is sent to the backend the data. And this authenticated request now ends with dot css. Right. So because he was able to fully control the path, so he's able to invoke the cache deception utilizing the csp. And then when it comes back from the server that's getting cached at the CDN level because it's actually got the valid values now that the CSRF token is included cached at the CDN level, and then the attacker can go then retrieve that. So I just thought this was a really creative.
+
+[00:19:55.00] - Joseph Thacker
+Dude, that's amazing.
+
+[00:19:55.79] - Justin Gardner
+Cspt. Yeah.
+
+[00:19:56.92] - Joseph Thacker
+Yeah, that's really cool.
+
+[00:19:58.48] - Justin Gardner
+Yeah. And so you know, those cs, those cache deceptions that are out there where you can get values cached, but you have to have something in the request that you can't send. Those might be exploitable if you can chain it with csp. So really great, really great finding here by zero.
+
+[00:20:19.25] - Joseph Thacker
+That feels to me like kind of the next level of. I mean, you know, this is maybe a little bit of a hot take, but I feel like the fact that bugs get more and more esoteric over time means the industry is actually getting more secure over time. Right. Like you have to jump through more hoops, you know, Maybe you don't agree. I saw your skepticism, but like, I just feel like the fact that, you know, things like CSP are being like found and used and exploited by buck hunters, I think it like really shouts to the fact that, that like there's less low hanging fruit than there was in the past. And I think that it's neat, like just so cool that it ends up resulting in extreme creativity basically from researchers to come up with really cool stuff like this. Like you said, it was a cash deception that was not really that exploitable. And then now you found a way to make the victim cash it for you. It's just super cool.
+
+[00:21:09.23] - Justin Gardner
+Yeah, super, super solid finding. I do agree and I think CSPT is, I guess the. How common CSPT is becoming because of the need for, for this is largely born from the fact that same site cookies are messing up a bunch of other client side bugs and cspt, you know, allows you to trigger requests and get things like csurf from the same site. Right. So I think that, that you're right. I think it is an evolution in client side security that's pushing us to find these more, these more complex attack types. And to be honest, it's been great to see because I can love chains. So yeah, he also, he also calls out Jorge is the guy that wrote this. Jorge da Costa. And he, he also calls out three resources. Matan Bear's excellent introduction to CSP T, his CSP talk in Spanish, and a CSPT presentation by Max and Schmidt. So those are also some great resources if you're not already up to date on cspt. And cache deception is like pretty well documented. I think there's some good stuff out there for that.
+
+[00:22:18.40] - Joseph Thacker
+Yeah.
+
+[00:22:20.64] - Justin Gardner
+All right, where do we want to go next, man?
+
+[00:22:23.51] - Joseph Thacker
+The question is slice is a little AI related. Let's just mention fav real quick.
+
+[00:22:28.21] - Justin Gardner
+Oh my gosh, dude, this is such a funny thing. Go for it. Go for it.
+
+[00:22:31.60] - Joseph Thacker
+I'm trying to think about the best way to share it. Let me see if I can go to the pod.
+
+[00:22:34.84] - Justin Gardner
+Maybe they'll put it up on the screen.
+
+[00:22:37.25] - Joseph Thacker
+All right, cool. Yeah, so put it up on the screen. Basically, there is a researcher who has been doing lots of really cool stuff on Microsoft's bug bounty program. He's up and coming. He is very young, only has a few bugs under his belt. But me and Justin and a few other guys all get DMS from him because he gets so excited about it. He immediately messages us with cool Findings. But he sent me this message on Discord that just screams bug bounty passion. And it's like, if you could invest in this guy, you should invest a ton of money, because he's definitely gonna make it. He tweeted or. Sorry. He DMed me on Discord. Yo, man, I just figured out a sick method. Whenever my power goes out, I can still find tons of bugs from the JS files downloaded locally on my laptop. AKA, he's thinking whenever there's a hurricane that makes him unable to hack, he's not gonna stop hacking. He's just gonna get out of his computer and start analyzing the JavaScript and.
+
+[00:23:30.51] - Justin Gardner
+Start raw dogging the JS files that he has on his local system. Dude. Yeah. This guy has been finding some really, really awesome stuff, and I think there's. I think he sent. I think. I don't know if he's released the article yet that he sent me, but he's got some really good articles coming out. Yeah. So it's E, F, A, a V on X. Definitely give him a follow. But this. This, like you said, man, is like, very high signal. Like, bug bounty addict, for sure.
+
+[00:23:58.75] - Joseph Thacker
+Yeah. Yep. Completely addicted to bug hunting, which is. Exactly. Leads to success. So.
+
+[00:24:02.90] - Justin Gardner
+Yeah, man. Yeah. It's for you. Love to see it. This is the. This is why Bagnani gets so. So great results, in my opinion, is like, this is what it does to people, is it gets you like this, where you're just like, oh, well, you know, I could still read the. I. I have done this before. 100. Like, I was on a flight.
+
+[00:24:19.70] - Joseph Thacker
+You're on a plane.
+
+[00:24:20.74] - Justin Gardner
+Yeah, on a flight. Like, I've. You know, the Internet is crap. It keeps dropping. I'm not getting productive. And you know what? Screw it. I'm just gonna, you know, take these JS files, format them, and just, like, really dive deep on them.
+
+[00:24:33.22] - Joseph Thacker
+Speaking of things you can do on a flight. Oh, dude, I just shared this with Justin before the call, so I'll let him talk about it.
+
+[00:24:41.61] - Justin Gardner
+I lost my mind when you showed me this. This is so cool. Okay. All right, I'll take it. I'll take it. So, yeah, freaking rezo drops this in the doc right before this. This episode, and I just got totally nerd sniped by it and we starting, like 15 minutes late because I was like, this is amazing. This is a. Geez. Yeah, like, I guess I'll share this tweet on the screen. This is a service that I guess was put out by a AI company. Can you find the name of that AI company, while I'm yapping about it. Joseph. Yeah, but essentially you can communicate with an LLM via Digg. So you can do it on like a plane and just, you know, typically there's DNS pass through on a plane and so you can just dig at CH at, which is like also an S tier domain. I don't know how they're using this for that, but dig at C H at and then just put in double quotes, you know, what is whatever your query is. And then make sure you specify the TXT type, you know, DNS type. And then it will just over DNS kick back a. TXT record to your dig with the response from the LLM. Dude.
+
+[00:26:00.40] - Joseph Thacker
+So freaking cool. Yeah, so it's a company called Deepai. And in fact, if you go to CH at, apparently it's available via SSH and Curl as well. But the coolest one by far is Digg chatting over DNS text records.
+
+[00:26:14.11] - Justin Gardner
+Wow, dude, look at that. Curl, SSH and Digg. No logs, no accounts, free software. Yep.
+
+[00:26:22.88] - Joseph Thacker
+It feels like, it feels like something a hacker would build. Obviously these guys are, you know, AI or probably just devs, but it feels like something that somebody in the hacker community would build. So it's really cool.
+
+[00:26:32.44] - Justin Gardner
+Absolutely, man. Yeah, I'm totally going to use this on a plane. This is extremely, extremely cool. Thank you for showing me this. I really did lose it when you showed it to me.
+
+[00:26:40.85] - Joseph Thacker
+I was like, yeah, there are just some projects like Terminal SSH, where you can buy coffee over ssh. There are just some things that, the idea itself is so clever and cool that even if you don't use it or it's not that beneficial, it's just like, yes, hackers did that. It's like find some way to do that.
+
+[00:26:58.09] - Justin Gardner
+Yeah, I love Term Bin too. Have you ever used Term Bin? It's like Pastebin, but you can just do it directly from your terminal. Oh, that's cats, cat, something. Pipe it to term bin 999 and then it just, it like gives you a link where you can share it to your friends.
+
+[00:27:13.33] - Joseph Thacker
+Oh no, that's really cool. I need to start using that.
+
+[00:27:15.66] - Justin Gardner
+Yeah, it's very good.
+
+[00:27:17.50] - Joseph Thacker
+Decent transition into Tools if we want to look at. Talk about Search Cyber.
+
+[00:27:21.90] - Justin Gardner
+Oh yeah, yeah. This was awesome. They released this at. Okay, so let me, let me back up. This is Tools by Searchlight Cyber. Searchlight Cyber is the Asset Note Squad. Right. They got acquired and they released this Searchlight Cyber Tools. That is their website. That is a conglomerate of all the tools that AssetNote has sort of released over the past however long they've been absolutely crushing it. Yeah. And I think that there are a couple on here that are much better for beginners. Right. Like the subdomain Takeover Scanner and even, even surf. I feel like I would do what, what surf does there a little bit. I would do it more efficiently on a command line with like even just tools that I've got in a normal UNIX box. But NewTowner and NoWaf, please are two tools that are built into the Searchlight Cyber website now that they've got that are super helpful, specifically New Towner. So I don't have to like configure my AWS credentials, spin up a bunch of stuff in different regions of the world. I just give it a URL and it tries it from seven different regions or whatever. That is extremely helpful.
+
+[00:28:42.32] - Joseph Thacker
+Yeah. It's basically hosted versions of all their tools. And the website is Tools slcyber IO.
+
+[00:28:50.17] - Justin Gardner
+Yeah. The other one on here is no WAF please, which is the tool that they released I think at Hong Kong 2024 that allows you to bypass WAFs by inflating the request size. There is both a BURP and a Caido extension for noaf please. But if you want to just paste the raw HTTP request into the Searchlight Cyber website, it will automatically inflate the size of that request for you. And you could just paste it back into your proxy and resend it to see if that gets around the WAF as well. So kind of like a quick and dirty method if you're doing something where you're not access to your normal security tools.
+
+[00:29:28.82] - Joseph Thacker
+Yeah. And obviously their word lists are lots of other places, but you can get them here, which is kind of cool in case you just have this pulled up, for example, because you want to, you know, just have a bunch of tools in one place.
+
+[00:29:38.67] - Justin Gardner
+Yeah. I was actually watching Michael's presentation when he released this. I think they actually did a bunch of stuff to the word lists as well. It's not just like download their normal word list. They like, they created a way for you to like sync down the like new wordless changes. And I wish I, I just thought of it now when you mentioned words.
+
+[00:29:58.81] - Joseph Thacker
+Yeah, that's really cool. May open that back up.
+
+[00:30:00.81] - Justin Gardner
+But I didn't get to fully like check it out before the episode. So there's definitely some changes to the Asset Note word list that, that they now got on the Searchlight Cyber website. And I think that's probably. I think Michael said that that is one of their most used things is their word list because they're just like super S tier. Yeah, definitely worth investigating.
+
+[00:30:20.68] - Joseph Thacker
+That's awesome. Yeah, sweet, dude.
+
+[00:30:24.92] - Justin Gardner
+All right, let's. We have see what we got left here.
+
+[00:30:28.44] - Joseph Thacker
+Yeah, so we have the. What's it called? Slice. Yeah, we have Slice and then we have epka, which are both kind of AI related. And then you have your bug bounty hunters report, which is not AI related.
+
+[00:30:41.33] - Justin Gardner
+Okay, why don't you take Slice and I'll take a look at the bug bounty report real quick.
+
+[00:30:45.18] - Joseph Thacker
+Okay, sweet. So Caleb Gross, our friend who lives relatively close to our friend Justin and is a top hacker. He's like a legit guy. He is a good friend of ours and he released a tool called Slice, which is basically a tool that does like, has an LLM but also static analysis of code. So it does like SAS scanning. Honestly, we should have talked about it right after we talked about what you did with Gemini Cli, I guess.
+
+[00:31:15.32] - Justin Gardner
+Yeah, yeah, it's definitely relevant.
+
+[00:31:18.21] - Joseph Thacker
+Did you try this at all? Did you try to run any kind of CodeQL queries across your SDK?
+
+[00:31:23.49] - Justin Gardner
+So that's the situation with this. I think this is a super amazing tool. I am not as comfortable with CodeQL and like creating those patterns, and I think in the specific language that I was working with, there just wasn't as intuitive patterns for these sort of things. So I think this is really good for creating. I think the example that he used was like a C code base or something like that where there's like really nice patterns for specific types of vulnerabilities. But it essentially takes a CodeQL query, filters the results, and then ranks them by criticality. So it's got like those pieces of. I think there's four pieces, Parse, query, filter and rank. And it seems pretty built out in order to accomplish that. Exact workflow, CodeQL and then using LLM to sort of sort and evaluate them. Very high value, I think, for C code bases at least.
+
+[00:32:30.32] - Joseph Thacker
+Yeah. I think in general, the idea of what he basically did, in case anyone's curious, is AI had found this vulnerability based on this other write up, but it found it. Some guy used AI to find a vulnerability, but it found it like one in a hundred times or something. And I think he was curious, can we make this more reproducible? Can I make this better? And I think reverse engineering from that way is a really powerful mental model. And so then he was able to eventually, you know, get Slice to like find it much more consistently. You can see Here you can see here.
+
+[00:33:04.78] - Justin Gardner
+Across 10 times it found the bug every time right above the table.
+
+[00:33:09.10] - Joseph Thacker
+Yeah, yeah, exactly. I was thinking that it might show like 9 out of 10 or 10 out of 10 here, but I couldn't find it in that. Obviously different models are going to do better and worse but they're going to cost more and less and of course you know, obviously there's non determinism but I think that this is extremely cool and honestly I think like I'm sure there already something exists out there that is, that does. Oh, this is his blog by the way. So it's both on his blog and then of course it's on, it's on the tool is on GitHub. But I think that. Oh man, what's going to say.
+
+[00:33:39.89] - Justin Gardner
+I'm not sure but this, this vulnerability that it discovered was CVE 202537778 which is the Linux kernel SMB vulnerability that came out recently. So you know, it is attacking a lower level, a low, lower level code base here, which is really cool to see, you know. And yeah, he uses GPT5 in the write up and I think Expo also noted that they saw just a massive increase in functionality when they started using GPT5. So I think that could be something really big for a, you know, AI as applied to security is just making sure using GPT5 and just taking the cost that it takes right now.
+
+[00:34:25.13] - Joseph Thacker
+Yeah, I will say the thing I remembered. Well I'll come on GB5 then I'll go back to what I remembered. For GPT5 you do have to use thinking and then honestly obviously the higher cost of thinking like the more thinking is like even better and GPT5 Pro is insane but it gets pretty expensive. The thing that I remembered was I was going to say that I'm sure There are some CodeQL like text to CodeQL things out there already but something like this that's like more dynamic and more kind of security aware and intelligent with like really good system prompting I think has the ability to find like bugs kind of at scale if you run CodeQL across GitHub I don't ever, I don't know what happened to that old program. I don't think it exists anymore where they used to pay for like really good CodeQL queries and stuff. But yeah, kind of kind of a neat idea for finding bugs at scale especially if you don't even care about bug bound. You just want to find some cool CVEs or some cool vulnerabilities It's a.
+
+[00:35:10.38] - Justin Gardner
+Great path to take for sure. Yeah. I don't know what happened to that program that, that is.
+
+[00:35:16.05] - Joseph Thacker
+I think I remember it shutting down, but I don't know why.
+
+[00:35:18.38] - Justin Gardner
+Dude, they also shut down Google's mobile program. No, no, the. The mobile program where like every app above 100 million installs was in scope.
+
+[00:35:28.90] - Joseph Thacker
+Oh, they took that out?
+
+[00:35:29.90] - Justin Gardner
+Yeah. I was bummed because my girls had like this app that they were playing and it has a ton of installs and I was like, what if I just, you know, don't mind if I do take a look, you know, and, and you know, win some reputation points with the kiddos. Uh, but now I'm not allowed to do that, so.
+
+[00:35:49.75] - Joseph Thacker
+Sweet, dude.
+
+[00:35:50.86] - Justin Gardner
+Yeah, definitely. Definitely cool to see these tools pop up. I think Caleb's been working on this sort of thing for a while now, and I think he's got a good workflow going now and this is definitely gonna. I think he's got a cool niche here too, which is reverse engineering CVEs that come out very, very quickly. Very relevant to what he does, you know, but just a very awesome tool. And I think, I think a lot of, I think a lot of Recon boys could, could benefit from this or maybe like a Recon boy and a, you know, CVE reverser up, you know, and, and say, okay, you reverse the cv, you pass me the POC and then I'll spray it. And then I think you could really make a good amount of money off of just like for both of them. Right, Just that little combo there.
+
+[00:36:37.26] - Joseph Thacker
+Yeah.
+
+[00:36:39.19] - Justin Gardner
+All right, so the other thing that we had on here was Slonzer, who we talk about on the pod all the time, released a Caido plugin called Ebka, which is an AI plugin for Caido and it seems to have a ton of functionality. He was very thorough in implementing all of the different pieces of Caido and essentially what it, what it allows you to do is just control Caido from inside of cloud code or via. I think he also has like an interface built right in directly to Caido. Right?
+
+[00:37:16.21] - Joseph Thacker
+Yeah. So I'll share my screen. Well, if it'll let me go for it. Screen window.
+
+[00:37:23.01] - Justin Gardner
+We got it. We got it. I definitely think we should continue sharing screen, but we also got to make sure that we are still articulating it.
+
+[00:37:29.32] - Joseph Thacker
+That's true for the audio listening. So basically I'm sharing Caido. So there's like the little model selector up here and this may have improved. I haven't installed it in a few Days. But basically you have the tab for the, what's it called for the plugin and then you can basically say something like are there any analytics requests in my HTTP history? If so, make a filter for them. So like one like this is a bunch of different tool calling of course. Like right. It's like checking your history, finding things, doing some sort of search, coming back, then like you know, automatically making the filter and then doing all of that kind of one shot. So like right now, so the tool calls he's having it use are like list by httpQL and then view request by ID and then create filter preset. And so the way it kind of works in like a chaining way, like that's like pretty powerful. And so I think that it probably has a lot of cool use cases. I think we should, you know, try to integrate this or at least, you know, build something similar into Shift. But yeah, really neat.
+
+[00:38:34.71] - Justin Gardner
+Yeah, I think, I think Shift, you know, Shift was kind of like the, it has some of these, these features right, where you can utilize AI to interact with, with the Caido interface, but it's a lot less iterative like you said. Right. It's just kind of like, okay, you know, build a filter for this. Oh wow. That was actually, that was quite a filter that it generated there. That's very long.
+
+[00:38:59.55] - Joseph Thacker
+And these are all just like requests contained. So of course it's all about how you use the AI. This usually blocks way too much when I try this little poc and I haven't found another great use case, but I only use this for like an hour or something. I didn't spend a lot of time. I think there are probably some really great use cases like find requests that look like this and then send them replay for me or whatever. So like could you imagine it going and finding all the requests that you would have found interesting and putting them in replay for you so then you can go review them. Like there's probably some really cool stuff here like that, you know.
+
+[00:39:29.40] - Justin Gardner
+Yeah, I like, I like the, you know, nature, the more traditional MCP nature. Right. Like Shift was kind of right on the edge of like MCP when it was first coming out. So we didn't fully implement that, but he's got that in, in place here and you can kind of keep that same context and ask follow up questions and. And it's sort of built around that whole tool calling structure. So I know Slenzer is really committed to the code base as well. He's like. Well, I mean he's committed to the code base quite a few times, one might say. But he's committed to the code base, like he's making updates to it. He's using it actively himself. So I definitely expect for this to continue to improve. And I think he's using it not directly within Caido though. I think he's hooking it into cloud or cloud desktop. Right?
+
+[00:40:15.96] - Joseph Thacker
+Yep. Yeah. Because it's MCP based, you don't have to call it. Right. You don't have to use the plugin, which is really neat.
+
+[00:40:21.48] - Justin Gardner
+Yeah.
+
+[00:40:22.59] - Joseph Thacker
+Which actually means back to our idea earlier about like using kind of cloud. It's just like a general assistant, which I will do often. Yeah, we didn't really expand out that full section. Let me just circle back to that for just a second. So not only can use it for like researchy stuff and SDK stuff like you're talking about, because you have full control over these system prompts and commands, you can also have it like manage your to do list and like help you like prioritize what you're going to work on for the day. And it can also, you know, if you have like good context in files. So one thing that Daniel does and that I'm trying to add more of is like having like context files for like, hey, here's what I'm passionate about, here's what I'm working on, here's what my family's like, whatever, so that it can pull that in dynamically if it needs to as a part of like writing some content or writing a blog or whatever.
+
+[00:41:04.09] - Justin Gardner
+But yeah, exactly.
+
+[00:41:06.21] - Joseph Thacker
+But because it also has access to mcp, you could in that same interface basically just have a terminal up. And so if you are kind of like hacking on the command line and then you're like having it write scripts for you and then you can even say things like, yeah, there was a request in Caido had this kind of path, use the Kaito MCP to then like, you know, pull up that path and then incorporate it. And so that'd be pretty neat to like also give your assistant kind of access to Caido. So now you have like an AI assistant who's doing all of those things but. But also has access to Caido.
+
+[00:41:34.23] - Justin Gardner
+So. Wow. Yeah, there's, there's a lot of geez, it's hard for me to understand right now, you know, what is the right thing to modify my, my workflow with because I feel like I can get lost in AI land for a while, you know, And I think what, what is, what are the AI things that I can implement today that are going to give me the highest ROI on and make me a more efficient hacker right now. And I think from my experimentation lately it is offsourcing, you know, outsourcing these, these small tasks with like shift agents or whatever, like hey, fuzz this for, you know, open redirect or whatever. And then you know, this piece of essentially allowing cloud, cloud code or Gemini CLI or whatever to slurp up a whole repo and now let me like get a mental model of the security posture of that repo very quickly. I think just really, really helps me get into the meat of hacking a little bit more quickly. So I mean obviously there's always going to be hackbots that are like doing crazy things, but I think these are really helpful for me.
+
+[00:42:39.21] - Joseph Thacker
+Yeah, I think that the best mental model for how and where and when to use them. And obviously you can't always know this without experimentation, but it's just like don't invest a ton of time, like don't spend three weeks, you know, incorporating a bunch of stuff into this thing or whatever because like it might go obsolete or it might not be as beneficial to you or it might be too much of a time sink. Like anywhere that you can get kind of like quick wins to like just speed up your current workflow is where you should try to integrate it, I think.
+
+[00:43:06.51] - Justin Gardner
+And that's the thing I like about the source code review agent thing too is like I can spend a little bit of time in there investing in like prompts and refining my prompts for that. And I feel like that's not ever going to be sunk cost because even if it's not Gemini CLI that I'm using, I'm going to be using Claude or something. And those prompts themselves have value as I continue to refine them for what I want personally out of a, you know, an AI assistant. And then eventually these things are just going to get better and better and better at giving me what I'm looking for, which is what's described by the prompt. Right.
+
+[00:43:40.19] - Joseph Thacker
+But yeah, you're right, you can just copy and paste that like hey, do this research or do this scaffolding prompt over into a different system. And like, and like you said, I don't think it sunk cost for code review like with SDKs, because that is already such a time intensive task that you would have had to do. So you have the extra, you know, bandwidth there, the beginning to put a little bit of sunk cost into it because it's saving you so much time on the back end.
+
+[00:44:04.38] - Justin Gardner
+Yeah. Yeah. This code. This code base that I was reviewing was pretty small. And. And. But I, I'm very confident that I got.
+
+[00:44:12.78] - Joseph Thacker
+Would you. Would you have found it that like. Or how long like that. I feel like that's the real question is like, how long would it have taken you to found it? Would you have found it? Would you have not. Would you have not even been interested in the program if had you not had the ability to use AI to help with it?
+
+[00:44:25.51] - Justin Gardner
+I certainly would have found it. It would have taken a lot longer. I probably would have had to sync. I probably condensed my knowledge, like getting knowledge of the application, you know, into like 30 minutes to an hour and getting comfortable with the code base. Right. I still spent a good amount of time reading through documentation and stuff like that, but I will spend, you know, normally four or five hours kind of just feeling groovy with the code base.
+
+[00:44:52.98] - Joseph Thacker
+Yeah. Yeah.
+
+[00:44:55.71] - Justin Gardner
+Do not do anything with that little dance feeling groovy with the code.
+
+[00:44:59.82] - Joseph Thacker
+Dudes, you just love. You just love these relationship analogies. Salons are really committed to his thing, you know, we got to get intimate, get groovy, you know, snuggler.
+
+[00:45:11.86] - Justin Gardner
+But it takes time to get, you know, intimate with the code base. And I think this really expedite at that. Yep. So cool.
+
+[00:45:20.63] - Joseph Thacker
+Sweet.
+
+[00:45:21.67] - Justin Gardner
+Is that a wrap? Do we have anything else we wanted to hit here?
+
+[00:45:23.92] - Joseph Thacker
+I mean, you've mentioned Jim like 15 times. You got to talk about this post. Message, target, origin, bypass.
+
+[00:45:28.48] - Justin Gardner
+Okay, all right. Okay. This is. This is not specifically. I will. I will talk about this. This is for code assist for Google. This is a Google VRP write up. That was. That was publicized. That was, what am I trying to say? Disclosed. There we go. And it was paid 20k researcher is Jacob Domarocki. And I just thought. I just wanted to like put this out there for any of you guys that are intimidated by hacking Google, because I just don't feel like this was that super insane of a bug like this. And you know, there you go, Jacob.
+
+[00:46:07.78] - Joseph Thacker
+That'S what Justin thinks about your bug.
+
+[00:46:08.98] - Justin Gardner
+No, no, no, Jacob, Jacob, Jacob, Jacob. Dude, that's not what I'm trying to say. Like, is an amazing bug. I'm so like, you. You crushed it. But this is not like some of the other crazy shit.
+
+[00:46:18.19] - Joseph Thacker
+Orange, Orange size research, right?
+
+[00:46:19.86] - Justin Gardner
+Yeah, yeah. I mean it's. It's a he and, and I. One of the things I like about this write up Jacob did an excellent job with is he. He shows the train of thought too. He's like okay, so here's how you link GitLab to Gemini codices tools. Okay? And then here's the oauth flow. And you'll notice in the state parameter there's like this JSON block. Very reasonable thought, right? That's not like a super crazy, you know, mega Google client side hacker necessary thought, right? It's like, yeah, okay, let's see what that does. And he says, as it turns out, the redirect URI page for this uses the value of the origin key passed in from that state parameter to verify the post message target origin. And so it, it shows the code snippet and essentially it just parses the state, grabs the origin and then does origin endsWith.
+
+[00:47:10.78] - Joseph Thacker
+Is that JavaScript? Like he can just see that right on straight on the slash, direct page, right?
+
+[00:47:18.46] - Justin Gardner
+Say it again.
+
+[00:47:20.30] - Joseph Thacker
+That's like client side code that you can go find. That's not like a service I check.
+
+[00:47:24.30] - Justin Gardner
+No, no, no. He just found it on the client side. Cool. And so essentially this allows him to bypass the whole flow here and with just using attacker.com codesys.google.com and. And so yeah, he's able to do some really awesome stuff with this. And. But I just wanted to encourage you guys and leak the OAuth code because this is like the kind of stuff that is there. You just gotta look for it. And it's a lot more common even in Google right now because of how fast everything is going. And, and Jacob did an excellent job of, you know, having that requisite knowledge and then jumping right on this as. As code assist is, is getting released and as being devped on constantly and snagging up a super nice 20k bug from Google for this, for this report. So. Pretty sick.
+
+[00:48:19.23] - Joseph Thacker
+Sweet, dude. I think that is mostly it. We'll talk, we'll. We'll save some of these other little smaller ones for next week maybe.
+
+[00:48:26.28] - Justin Gardner
+Sweet. Yeah, sounds good, dude. It feels good to be back on the. On the pod. It's been like, like, it's been like three weeks for us, right, because we recorded a ton before defcon.
+
+[00:48:34.05] - Joseph Thacker
+Yeah, we recorded a lot. We did a whole bunch of solo episodes. So it's the first time we've been on the call together for a while.
+
+[00:48:39.57] - Justin Gardner
+Good. Good to talk with you, man. All right, that's a wrap. Peace. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'.
+
+[00:48:47.84] - Joseph Thacker
+All.
+
+[00:48:48.05] - Justin Gardner
+If you want more Critical Thinking content or if you want to support the show, head over to CTV show Discord. You can hop in the community. There's lots of of great high level hacking discussion happening there. On top of the master classes, hack alongs, exclusive content and a full time hunters guild. If you're a full time hunter, it's a great time. Trust me. I'll see you there.

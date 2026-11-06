@@ -1,0 +1,2424 @@
+Episode 30: Recon Legend Shubs - From Burgers to Bounties
+Source: https://www.criticalthinkingpodcast.io/episode-30-recon-legend-shubs-from-burgers-to-bounties/
+======================================================================
+
+Joel Margolis (teknogeek):
+I have it open, yes.
+
+Justin Gardner (@rhynorater):
+Okay, awesome. All right. Shubs, dude. Welcome to the show, man.
+
+Shubs:
+Thanks for having me on here.
+
+Justin Gardner (@rhynorater):
+Of course, I'm really excited for this episode because I feel like I have looked up to you forever as a Bug Bounty Hunter, and now to have you on the podcast, be able to pick your brain and talked about stuff at a high level is gonna be really awesome. And I'm also excited for the fact that you are the most well-prepared guest that we've ever had on Critical Thinking. I always send out a... a doc, you know, hey, here's some of the things we're going to talk about. Please add anything you think would be interesting. And people are like, all right, sure, whatever. And then I come back to the doc today and there's like a whole, you know, section here. So thanks for putting so much work into prepping.
+
+Shubs:
+No, no problem. And like Justin, you know, over the years, and you as well, Joel, like you guys have both been legendary in the Bug Bounty community. I should be looking up to you guys as much as you guys look up to me. So I really appreciate you having me on here. And I've been following
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+along this whole journey with your podcast. And yeah, it's honestly one of the best things in our industry so far.
+
+Justin Gardner (@rhynorater):
+Dude, that just warms the heart, man. And I have to say, I remember, I just have such a clear memory of sitting at my desk at an internship that I was working at back in college. And I remember reading write-ups from you, looking at the original asset note, the one before you actually
+
+Shubs:
+Mmm.
+
+Justin Gardner (@rhynorater):
+started
+
+Shubs:
+Ha
+
+Justin Gardner (@rhynorater):
+as a
+
+Shubs:
+ha
+
+Justin Gardner (@rhynorater):
+company, right? And just getting so
+
+Shubs:
+ha. Yeah.
+
+Justin Gardner (@rhynorater):
+inspired to build a reconnaissance framework. And
+
+Shubs:
+Yeah.
+
+Justin Gardner (@rhynorater):
+then that sort of reconnaissance framework that I built that came out of that was the thing that actually resulted in me getting my first bug, which I
+
+Shubs:
+Ha ha.
+
+Justin Gardner (@rhynorater):
+used to pay for my honeymoon. So you
+
+Shubs:
+Oh
+
+Justin Gardner (@rhynorater):
+know
+
+Shubs:
+wow,
+
+Justin Gardner (@rhynorater):
+what, Shubs? You
+
+Shubs:
+that's
+
+Justin Gardner (@rhynorater):
+have
+
+Shubs:
+awesome.
+
+Justin Gardner (@rhynorater):
+very, very far-reaching effects. For those of you that haven't heard of Shubs, one, you're doing something wrong. Go to Twitter and do any, or X, excuse me, and look at anything. Shubz is one of the most well-known book bounty hunters out there. And one of the things that I had on my list for today that I wanted to talk to you about Shubz was this piece that I think is really unique to you in that you have a very deep expertise in reconnaissance, but you are also one of the most talented deep dive hackers that I've ever met as well. Right, I see you nodding there, Joel. You with me on that?
+
+Joel Margolis (teknogeek):
+Yeah, yes. I mean, there are so many times I can think back just like even in our like literal own experience, me and you working together, Shubs, where we've done some insane deep dives on some really, really cool bugs. And I think like that's one of the best things that you do. I think
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Joel Margolis (teknogeek):
+it's really relevant and you see it a lot with the asset network, especially in the blog post,
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Joel Margolis (teknogeek):
+but you can see like there's an insane amount of depth and breadth at the same time that goes into finding these types of bugs.
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Joel Margolis (teknogeek):
+And the write-ups really show that mind process that goes on when you're looking into a bug and you're exploring a system for the first time and figuring out, how does this work? What are the moving pieces?
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Joel Margolis (teknogeek):
+How do I become almost on the level of an engineer when I'm looking at this tool to figure out where the holes are that I can poke and start to pull things together and build a bug out?
+
+Justin Gardner (@rhynorater):
+Yeah, so I want to pick your brain on that, Chubbs, because that's really unique. So I want to get a sort of a personal history of you as a hacker. And then also I want to ask you, you know, what parts of that personal history do you think have led you to be able to do both reconnaissance and deep dive testing so well? Because it's normally, in my experience, what I've seen is one or the other.
+
+Shubs:
+Mm-hmm. Yeah, no, for sure. I mean, the history basically is like I was just working at Hungry Jacks making like $6.50 an hour. Hungry Jacks is the equivalent of Burger King in the US, right? And like the first bug I got from PayPal was like 1.5 grand. It was enough for me to quit Hungry Jacks. The eight months I worked at Hungry Jacks, I made like $800, right? So at
+
+Joel Margolis (teknogeek):
+Ugh.
+
+Justin Gardner (@rhynorater):
+Oh.
+
+Shubs:
+that point, bug bounties were like ultimately going to be life-changing and something that I wanted
+
+Justin Gardner (@rhynorater):
+Oh
+
+Shubs:
+to
+
+Justin Gardner (@rhynorater):
+yeah
+
+Shubs:
+do.
+
+Justin Gardner (@rhynorater):
+for
+
+Shubs:
+But...
+
+Justin Gardner (@rhynorater):
+sure.
+
+Shubs:
+But the reconnaissance aspect really comes from when I was competing with Naffy. Out of all people, when we were growing
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+up, we were hacking together. And I was competing a lot with Naffy with reconnaissance. And he often had data sets that I didn't have access to, or
+
+Justin Gardner (@rhynorater):
+share.
+
+Shubs:
+he had certain data that I couldn't get. And this is where the whole idea of Asset Note came out, where it was like, you know what? I can use all these open source data sets or data sets that are public and just get a notification as soon as possible. And hopefully, that beats the overpowered data sets that he has access to. So
+
+Justin Gardner (@rhynorater):
+Right, right.
+
+Shubs:
+that was the original idea for Asset Note. And reconnaissance really became a passion when working on the Riot Games bounty. The Riot Games bounty was something that was just incredible when it came to payouts and resolution time. It's no longer really like that, unfortunately. But
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+back then, they would pay eight grand for a subdomain takeover. And that is
+
+Justin Gardner (@rhynorater):
+Oh my
+
+Shubs:
+a
+
+Justin Gardner (@rhynorater):
+god, and
+
+Shubs:
+really
+
+Justin Gardner (@rhynorater):
+that's back
+
+Shubs:
+ridiculous
+
+Justin Gardner (@rhynorater):
+then too.
+
+Shubs:
+That's back then, that's
+
+Justin Gardner (@rhynorater):
+Oh
+
+Shubs:
+honestly
+
+Justin Gardner (@rhynorater):
+my gosh.
+
+Shubs:
+the most I've seen a company at that point in time pay for a sub-min takeover. And the amount of money they were paying for critical bugs was incredible, 20, 30 grand, it was really good. I think today
+
+Justin Gardner (@rhynorater):
+Dude.
+
+Shubs:
+an equivalent bug bounty program would be something like Epic Games,
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+but back then Riot Games was really the forefront of this. And
+
+Justin Gardner (@rhynorater):
+Way to really stick it to them, Shubs. Not
+
+Shubs:
+Hi.
+
+Justin Gardner (@rhynorater):
+only do you say they're not good anymore, but you also say, you know what, instead hack on their competitor.
+
+Shubs:
+It's, it's, I mean, unfortunately
+
+Joel Margolis (teknogeek):
+I'm out.
+
+Shubs:
+it's true. Like, I mean, I love Riot Games and I still
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+want to submit vulnerabilities to them, but they don't have the resolution time and the bug bounty amounts that they used to have back then. And I
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+think there's, you know, various reasons people move on. There was an amazing manager that worked back then on the bug bounty program. His name is David Rook. I don't think he's necessarily managing the bug bounty program anymore. I think there's been internal changes and things like that, but just from a Bug Bounty Hunter perspective, these days I don't spend as much time on Riot Games as a Bug Bounty program.
+
+Justin Gardner (@rhynorater):
+Mm-mm.
+
+Shubs:
+But yeah, I mean, that's where the reconnaissance kicked off. That was the incentive to be good at reconnaissance was so high. At
+
+Justin Gardner (@rhynorater):
+Hmm.
+
+Shubs:
+eight grand for a subterranean takeover, that's something that really changes your perspective on reconnaissance.
+
+Justin Gardner (@rhynorater):
+Mm-hmm. Oh, yeah, absolutely. I'd imagine so.
+
+Joel Margolis (teknogeek):
+It's really funny that you mentioned the whole aspect of competing with Naffy because I had to check because I was pretty sure that you changed your name, but your hacker one name now is Shubz. But when you started,
+
+Shubs:
+That's right.
+
+Joel Margolis (teknogeek):
+when I first knew you, your username was not Naffy.
+
+Shubs:
+Yeah, and it was a funny inside joke for a while, but I recently
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+changed it to Shubs because, you know, I think times changed and stuff. We had a lot of fun back then competing.
+
+Justin Gardner (@rhynorater):
+Sure, sure.
+
+Shubs:
+And yeah, I mean, to answer your question a bit more, Justin, about, you know,
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+how am I doing the reconnaissance side and also deep diving, I guess
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+all of this deep dive experience really came when Uber as a program got established.
+
+Justin Gardner (@rhynorater):
+Okay,
+
+Shubs:
+And
+
+Justin Gardner (@rhynorater):
+so
+
+Shubs:
+when
+
+Justin Gardner (@rhynorater):
+that's
+
+Shubs:
+Uber got
+
+Justin Gardner (@rhynorater):
+great.
+
+Shubs:
+established,
+
+Justin Gardner (@rhynorater):
+I had that
+
+Shubs:
+yeah.
+
+Justin Gardner (@rhynorater):
+in the notes. I was like, you know, I've seen you deep dive the heck out of Uber and I've seen you, you know, do recon stuff on Uber, but a lot of that is deep dive. And then, you know, you did the recon in Riot Games. So look, you know, I did my OS int. That's the, I'm feeling good about that.
+
+Shubs:
+You're very accurate about that. And I guess the thing that maybe people might not know is the reason why I even bothered targeting
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+Uber so much and why I spent so much time on Uber. The reality is I had an ex-colleague of mine, his name is Matthew Bryant, and he
+
+Justin Gardner (@rhynorater):
+Ah,
+
+Shubs:
+moved
+
+Justin Gardner (@rhynorater):
+dude,
+
+Shubs:
+from
+
+Justin Gardner (@rhynorater):
+what a guy.
+
+Shubs:
+Bishop Fox to Uber. Yeah, he's an amazing individual, one of the best hackers I know. And he moved from Bishop Fox to Uber and I was like, well, how can I stay in touch with you know, let's just submit bug reports to Uber and he can respond to them. That's a great way to stay in touch.
+
+Justin Gardner (@rhynorater):
+That's
+
+Shubs:
+So
+
+Justin Gardner (@rhynorater):
+great. That's
+
+Shubs:
+I really
+
+Justin Gardner (@rhynorater):
+freaking
+
+Shubs:
+had this,
+
+Justin Gardner (@rhynorater):
+great.
+
+Shubs:
+yeah, I had this personal connection where I enjoyed finding vulnerabilities in Uber at the, and seeing Matt's reaction and seeing what he thought of these vulnerabilities. So that was how I initially got into Uber, but what I found was the more time I spent in Uber, the more necessary it was to get deeper and deeper into the application
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+stack. And If I wanted to find more vulnerabilities, I had to get comfortable with things that most people can sometimes be uncomfortable with, which is really deep JavaScript analysis work, basically,
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+which a lot of people can shy away from because they feel like it's just like a three megabyte blob that they have no idea what's going on, and it's so complex and they don't know what the variables, what reference is what, and how to find the API endpoints and so on and so forth. So... That's really where it was. And then suddenly at some point Joel started working at Uber. So
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+at that point, I was like, that's even more of an incentive to start submitting more vulnerabilities to Uber.
+
+Justin Gardner (@rhynorater):
+There
+
+Shubs:
+So
+
+Justin Gardner (@rhynorater):
+we go.
+
+Shubs:
+it's kind of been that common theme along the way.
+
+Justin Gardner (@rhynorater):
+Yeah, pull
+
+Joel Margolis (teknogeek):
+It's
+
+Justin Gardner (@rhynorater):
+a,
+
+Joel Margolis (teknogeek):
+really
+
+Justin Gardner (@rhynorater):
+pull
+
+Joel Margolis (teknogeek):
+funny you
+
+Justin Gardner (@rhynorater):
+a,
+
+Joel Margolis (teknogeek):
+say that.
+
+Justin Gardner (@rhynorater):
+go ahead.
+
+Joel Margolis (teknogeek):
+No, well, it's really funny that you say that because usually when I have friends who work in a company, that is like number one reason why I won't hack on their bug bounty program,
+
+Shubs:
+Hahaha
+
+Joel Margolis (teknogeek):
+because I just assume that they found everything.
+
+Justin Gardner (@rhynorater):
+No dude, the inverse is true man. You gotta pull a Tanner and Pete Jaworski and submit a bug on Christmas Eve, that makes him get off
+
+Joel Margolis (teknogeek):
+Yeah.
+
+Justin Gardner (@rhynorater):
+and go to the office. That's the real friendship thing
+
+Shubs:
+Ha
+
+Justin Gardner (@rhynorater):
+right
+
+Shubs:
+ha.
+
+Justin Gardner (@rhynorater):
+there.
+
+Joel Margolis (teknogeek):
+That's
+
+Justin Gardner (@rhynorater):
+No,
+
+Joel Margolis (teknogeek):
+awesome.
+
+Justin Gardner (@rhynorater):
+there's so much to unpack from what you just said there, Shubs. One, I would love to go in the direction of talking about, you know. your competition with NAFI and the way that you guys have helped each other grow as hackers. And I also just wanna talk about, and maybe I'll just, I think we'll go the first route, but I just wanna acknowledge that one of the other amazing factors that makes you so different than a lot of other hackers is that your ability to stay in touch with people. and be involved in all these various hacking efforts. I feel like every person I talk to, they're like, yeah, and then I was just popping these crits with shubs, and then, ah, I was building this tool with shubs, but while you're running a company, that's the other amazing thing. I'm like, how the heck do you even do that? And I think that ties back into the naffy thing too, because I think bug bounty has probably always been a pretty social thing for you, right?
+
+Shubs:
+Yeah, for sure. I mean, collaboration is beautiful and I love it and
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+I actually I prefer collaborating over working by myself.
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+Even if it's at the cost of half the bounty or whatever it may be, at this point,
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+I don't even really look at the amount of the bounty. I look at how much fun I'm having from the
+
+Justin Gardner (@rhynorater):
+Right.
+
+Shubs:
+process and with the friends and whatever, so on and so forth. So, I mean, the first part that you mentioned around competing with Naffy, I think
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+that was really successful because we both really motivated each other becoming better
+
+Justin Gardner (@rhynorater):
+Right.
+
+Shubs:
+versions of hackers. And there were many elements of reconnaissance that Naffy has been, you know, extraordinary at as a hacker. And I've definitely been able to, I guess, one up each other each time when
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+it came to Riot Games specifically. So that was something that we definitely spent a lot of time on. But when it comes to being in touch with all these people and collaborating with people, I think that, honestly, we just have such a great. group of hackers in our industry. Like, you know, you've got the Sam Curry, the Bretts, the Justins,
+
+Justin Gardner (@rhynorater):
+Amen to that. We do.
+
+Shubs:
+the Joles. We've just got so many great people that you wanna spend time with, you wanna hack with. And there's not enough time in the day. So it's one of those things where, you know, it's not been so difficult to stay in touch with these people because most of the time, they're doing some really cool stuff. Like if
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+I just ask them, like, what are you working on? Like, what are you looking at? And they'll be like, I'm looking at airlines today. I'm looking at the point system. I'm looking at, you know, whatever. I'm like, oh, that's really cool. I want to hack that as well. So
+
+Justin Gardner (@rhynorater):
+Mm-hmm. Wonder
+
+Shubs:
+I feel
+
+Justin Gardner (@rhynorater):
+who you've
+
+Shubs:
+that
+
+Justin Gardner (@rhynorater):
+been talking
+
+Shubs:
+a lot of these.
+
+Justin Gardner (@rhynorater):
+to.
+
+Joel Margolis (teknogeek):
+Yeah,
+
+Shubs:
+Yeah.
+
+Joel Margolis (teknogeek):
+yeah, I have no idea who that could be.
+
+Justin Gardner (@rhynorater):
+Yeah...
+
+Shubs:
+Yeah, for
+
+Justin Gardner (@rhynorater):
+No.
+
+Shubs:
+sure. And it's just, it's yeah. Um,
+
+Justin Gardner (@rhynorater):
+That's great, man. And I think your mutual admiration for all the other hackers shows, and that's why everyone really wants to collaborate with you too. So that's, yeah, that's really awesome.
+
+Joel Margolis (teknogeek):
+I think
+
+Justin Gardner (@rhynorater):
+So,
+
+Joel Margolis (teknogeek):
+one of the other things that
+
+Justin Gardner (@rhynorater):
+yeah,
+
+Joel Margolis (teknogeek):
+I've
+
+Justin Gardner (@rhynorater):
+go
+
+Joel Margolis (teknogeek):
+noticed
+
+Justin Gardner (@rhynorater):
+ahead, Joel.
+
+Joel Margolis (teknogeek):
+is like, because your recon game is so, so good,
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Joel Margolis (teknogeek):
+like, you know, you spent literal years like building out reconnaissance tools and that gives you this really unique ability to find like weird stuff or like, you know, just stuff that like really sets off that like Spidey sense, your hacker Spidey sense and that like, oftentimes I find that I'll be having a discussion with you that's like, hey, what are you hacking? And you'd be like, oh, I just found this weird thing. Maybe we can figure out a way to get the source code or something. And
+
+Shubs:
+Yeah.
+
+Joel Margolis (teknogeek):
+then it just spirals off into this whole big tangent where we end up finding some crazy bug. And that just really speaks to the quality of Recon and the amount of time that's gone into building these systems to find these things, because the signal is insanely high.
+
+Shubs:
+That's right. And it's really weird because I often struggle with this myself where it's like, should I go deep into an application or should I spend all my time on reconnaissance? And nine times out of 10, I usually find that if you go deep into reconnaissance, there's something out there
+
+Justin Gardner (@rhynorater):
+Hmm.
+
+Shubs:
+on some server. And like. Dallas or something, some random
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+place in the US or whatever, or in like some random country that's just sitting there, that's vulnerable, that's connected to their internal network that you had no idea, or it's within like four directories deep or something, or there's something just crazy out there. And that stuff sometimes is really fun to find. And it's great. But I also understand what sometimes on live hacking events, there's no other option than going deep. Like for example, we
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+had that PayPal event in Barcelona. Like
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+as much reconnaissance as I did on Venmo, I was not finding anything like that. I had to go deep into Venmo and I still didn't find
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+anything deep into Venmo. But like Joel, like what you mentioned about finding one of these really obscure assets and going deep, that's really one of the best ways to get it critical in any company. Like we did this for Facebook. And I remember we found this random sub domain. It was like supernova.something. whatever, and it was running Teradiscy PCOIP Manager. And I remember when Joel was, because one of the problems with this was we obtained the jar file by spinning up an AWS image of this in the marketplace. But when we decompile the jar file, there's going to be a lot of inconsistencies such that we can't compile the project. And I remember
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+going to Joel, being like, hey, man, you're an expert at Android and Java and all this stuff. And I need help. Like. being able to debug this, I have no idea if these vulnerabilities are going to lead to anything, but I need some help. And Joel whips out his IDE. He starts fixing all of the problems inside this Java code one by one, fixing all the inconsistencies to the point where he starts getting it to compile, sets up a debugger port, gets it debugging, and we just step through the code step by step until we find all these vulnerabilities. So I remember these memories where we've got all of this rich research that's been done as a result. You know, back then, when I hit up Joel, I couldn't do any of what Joel did at that point in time.
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+The debugging, the fixing of Java, all of that stuff, I didn't have the experience, to be frank. And without Joel, there was no way that we would have been able to confidently say to Facebook that we had all of these vulnerabilities. So
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+definitely situations like that. And I think the only reason why today I feel a bit more comfortable with this stuff is because of the work we do at Asset Note with finding zero days, and we've had to become really good at this process.
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+Um, yeah.
+
+Justin Gardner (@rhynorater):
+Yeah, so that's great, and it actually segues perfectly into a section that I wanted to talk to you about, which is you guys have done so much. so much quality research at Asset Note. I feel like every month or every two months there's a blog post coming out where you guys have done something really amazing, finding zero days in enterprise software mostly. And I know that you do a lot of that, and I also know that Dylan does a lot of this. Dylan Pinder, I'm not sure if I'm pronouncing his last name correctly, but
+
+Shubs:
+Yeah, it's.
+
+Justin Gardner (@rhynorater):
+it seems like you guys have really found some amazing bones together. And one of the common threads that I noted this because I'm not proficient in this specific area, is the use of dynamic analysis, of hooking up a debugger to it, and stepping through the code, and breaking at certain points, and stuff like that. So, can you talk to me a little bit more about that process, and how that's changed your approach to enterprise software?
+
+Shubs:
+Yeah, for sure. I mean, debugging is almost necessary
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+when we're looking at complex enterprise software. Sometimes, unfortunately, it's just not possible. And
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+we don't have the installation file, or we can't install it like some of the Oracle software that's out there. And it's just too tricky to get up and running.
+
+Justin Gardner (@rhynorater):
+Right.
+
+Shubs:
+But nine times out of 10, we're looking to get a debugger going, because most of the vulnerabilities that we find, they can be really complex. And without a debugger, we can't. figure out exactly what are the variables at a certain breakpoint, how do we manipulate them to get what we want, and things like that. So these days, most of the projects that we debug from a, I guess, just from a dynamic analysis perspective is mostly Java and.NET projects.
+
+Justin Gardner (@rhynorater):
+Mm-mm.
+
+Shubs:
+For Java, we use IntelliJ, which is, you know, you can get the community edition, it works fine out of the box, and you can start debugging things. For.NET, we use Rider, and that's also from JetBrains. And that's beautiful. Like honestly, Rider, you can attach directly to a process. It starts decompiling everything for you, and you can start setting breakpoints quite easily. So for those two languages, that's what we use. And I think when it comes to binary analysis, obviously we use things like GDB and things like that to
+
+Justin Gardner (@rhynorater):
+Mm-hmm,
+
+Shubs:
+do our dynamic
+
+Justin Gardner (@rhynorater):
+sure.
+
+Shubs:
+analysis. But yeah, Dylan, he's honestly one of the best researchers that I've ever worked with.
+
+Justin Gardner (@rhynorater):
+Yeah,
+
+Shubs:
+We hired
+
+Justin Gardner (@rhynorater):
+he seems
+
+Shubs:
+him.
+
+Justin Gardner (@rhynorater):
+phenomenal.
+
+Shubs:
+He's great. He's so great that like sometimes he's very quiet. So sometimes he'll be quiet for six hours or something and I'll ask him like, what's the progress? And he'll be like, yeah, I got an auth bypass or a shell
+
+Justin Gardner (@rhynorater):
+I'm sorry.
+
+Shubs:
+or an RC. I'm like, dude, you could have told me earlier. I've been like on the edge of my seat this whole time. You know what I mean? So Dylan's sometimes quiet, but he's very, very good. I mean, his
+
+Justin Gardner (@rhynorater):
+He's
+
+Shubs:
+background
+
+Justin Gardner (@rhynorater):
+like the kids
+
+Shubs:
+is very
+
+Justin Gardner (@rhynorater):
+in
+
+Shubs:
+interesting.
+
+Justin Gardner (@rhynorater):
+the other room, you know? If you're not hearing them, they're getting into something, you know?
+
+Shubs:
+Yeah, yeah, and he's just so multidisciplinary.
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+He has such good skills in Java and.NET, but he's able to get his hands quite dirty with binary exploitation and analysis as well, which is
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+something that's incredibly valuable for us. As you guys have seen, recently the Citrix vulnerabilities have come out, and it was like a race to patch diff them and find the
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+RCE. So without Dylan, we wouldn't have been able to do that work, basically.
+
+Justin Gardner (@rhynorater):
+Yeah, no, he seems like a really valuable addition to the team. And, and yeah, I'm always watching that, that blog very, uh, you know, hopeful for the next one to come out. Do you have any, any teasers for us? Any, anything you want to tell us about coming up soon?
+
+Shubs:
+Yeah, yeah, for sure. There was a Metabase pre-auth RCE that was announced around a week ago. So that's the next thing coming up. It's done by myself and an ex-colleague of mine. And we'll be releasing that on August 20. That's the slated
+
+Justin Gardner (@rhynorater):
+Nice.
+
+Joel Margolis (teknogeek):
+I saw
+
+Shubs:
+release
+
+Joel Margolis (teknogeek):
+you mentioning
+
+Shubs:
+date.
+
+Joel Margolis (teknogeek):
+that in bug bounty form.
+
+Shubs:
+For sure, but
+
+Joel Margolis (teknogeek):
+Somebody
+
+Shubs:
+the one
+
+Joel Margolis (teknogeek):
+was like,
+
+Shubs:
+thing
+
+Joel Margolis (teknogeek):
+hey,
+
+Shubs:
+is I'm...
+
+Joel Margolis (teknogeek):
+has anybody, somebody posted, they were like, hey, does anybody know anything about this Metabase RCE? And Shubz's replies, yeah, Asset note found that.
+
+Justin Gardner (@rhynorater):
+Ha ha.
+
+Shubs:
+Yeah, it was a really fun bug and I think people are going to really enjoy the chain because it was not straightforward and our final exploit payload has like maybe five or six different tricks in one payload. So
+
+Justin Gardner (@rhynorater):
+Dude.
+
+Shubs:
+it's really fun to see but you know we'll see there's already Chinese researchers that have reproduced the issue and they've posted tweets of a blurred burp window of the issue. So if it drops before August 20 we'll drop our blog post.
+
+Justin Gardner (@rhynorater):
+Gotcha, wow, dude, that's awesome. I love to get the little sneak peek here, so thanks for sharing that, that's great. So I guess. Asset note, so going to asset note, right? Just for those of you that aren't familiar, asset note is the, I guess, enterprise security software that I guess, I'll let you describe it, Shubz. It started off as a reconnaissance software in order to help you do asset management, but it's evolved to so much more.
+
+Shubs:
+That's right. So originally, it was an open source project that was just to discover assets as quickly as possible. But
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+now, basically, what Asset Note does is it discovers all the assets that belong to your organization on the external attack surface, and it
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+continuously monitors it for exposure. So it finds security vulnerabilities
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+and indicators that organizations can use. But the difference between a indie, homegrown, open source bug bounty tool and an enterprise product that we sell to
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+the largest enterprises in the world, there's just so much in between.
+
+Justin Gardner (@rhynorater):
+It's so,
+
+Shubs:
+So
+
+Justin Gardner (@rhynorater):
+so different. Ha ha ha.
+
+Shubs:
+it's just so different. And I mean, I see a lot of the frameworks out there that get released and all that sort of stuff and they're excellent, but I just think that like to sell to enterprises, there's just so many demands that aren't even things that are on people's minds when it comes to building software necessarily that has been very interesting to work through.
+
+Justin Gardner (@rhynorater):
+Yeah, yeah, for sure. So this product has evolved from recon to asset management to asset management plus vulnerabilities. And then also it seems like this research branch has sort of come out of it. Now, is that a supplement to the product? Is that kind of how you're seeing it? Or why did you guys decide to start this research side of the company?
+
+Shubs:
+Yeah, we just identified, like we, because we have access to all of this reconnaissance data for all of our customers,
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+including the technologies, we
+
+Justin Gardner (@rhynorater):
+Right,
+
+Shubs:
+identified
+
+Justin Gardner (@rhynorater):
+right.
+
+Shubs:
+that we have this really unique opportunity to do security research in a way that's targeted towards our customers. And
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+basically, our security research team has maybe like two or three functions. I'd say that the main function is satisfying the needs of our customers when it comes to when a new vulnerability comes out, like the Citrix RCE. Like we've got plenty of customers that hit us up being like, do you have a check for this? And
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+like for a very long time, I was the single person on the security research team doing this sort of work. But after a certain point, there's just so many different new vulnerabilities that are getting released that we need to stay on top of.
+
+Justin Gardner (@rhynorater):
+Right.
+
+Shubs:
+We needed a research team. It was a natural progression inside the product. Like we can't offer a great like exposure scanning service if we aren't staying on top of the new patches being released, new vulnerabilities being released. Even in nuclear releases, for example, we need to stay on top
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+of because there might be something in there that might affect our customers. But the research branch also has a second purpose, which is marketing. And you might've
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+noticed that, like at Asset Note, we don't actually invest that much money into traditional marketing. Like we don't have like crazy campaigns for traditional marketing.
+
+Justin Gardner (@rhynorater):
+Right.
+
+Shubs:
+We don't have banners at Black Hat
+
+Justin Gardner (@rhynorater):
+Haven't seen
+
+Shubs:
+or
+
+Justin Gardner (@rhynorater):
+any billboards.
+
+Shubs:
+a booth
+
+Joel Margolis (teknogeek):
+Oh, you don't
+
+Justin Gardner (@rhynorater):
+Haven't
+
+Shubs:
+at RSA.
+
+Justin Gardner (@rhynorater):
+seen...
+
+Joel Margolis (teknogeek):
+get private
+
+Shubs:
+No,
+
+Joel Margolis (teknogeek):
+rooms? Yeah.
+
+Justin Gardner (@rhynorater):
+Yeah,
+
+Shubs:
+no,
+
+Justin Gardner (@rhynorater):
+no
+
+Shubs:
+none of
+
+Justin Gardner (@rhynorater):
+airport
+
+Shubs:
+that sort of stuff.
+
+Justin Gardner (@rhynorater):
+posters.
+
+Shubs:
+So. And I mean, guys, like there might be a time in the future where we have to do that sort of stuff as the company progresses. But until now, which is a five year journey till now, we've relied on our technical content to be the biggest marketing that we do. And
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+I can say it's been incredibly successful. I think
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+from our technical marketing, we get probably the most inbound leads, I think, if we could attribute them all,
+
+Justin Gardner (@rhynorater):
+Wow.
+
+Shubs:
+which is just, you know, as a business, it's not a bad.
+
+Justin Gardner (@rhynorater):
+Yeah, no,
+
+Joel Margolis (teknogeek):
+So,
+
+Justin Gardner (@rhynorater):
+that's amazing. Go ahead,
+
+Joel Margolis (teknogeek):
+yeah,
+
+Justin Gardner (@rhynorater):
+Joel.
+
+Joel Margolis (teknogeek):
+so which one would you say sort of drives the other one? Would you say that your research team is more like finding new things, reversing patches, providing those vulnerabilities, like as soon as possible to your customers, or your customers prompting you with, hey, we heard about this vulnerability, or we're affected by this vulnerability, can you guys check for it? And then you, the research team goes and looks into it.
+
+Shubs:
+So we split up our research stream into two different things, which is reactive and proactive. And the reactive stream is obviously like when customers reach out or anything gets released on the internet, things like that. We prioritize reactive over proactive, but we do definitely still have a lot of time left for proactive
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+research. So I mean, for us, the number one priority is our customers and what their requests are. So we often even work with customers to get access to software that we may not typically have access to. But
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+that's where we spend most of our time, is for customer concerns. Like, you know, if the Citrix project, for example, we had our largest customer reach out to us and say, you know, we really need some comfort in this situation.
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+There's no POC on the internet. There's no information about whether or not we're vulnerable. And, you know, we just work nonstop to a resolution. And, you know, often our research also leads to, for example, our largest customer again, our research on Aspera Fast Specs. led to 40 RCEs across every single division of their company. And that was pre-auth RCEs on every
+
+Justin Gardner (@rhynorater):
+Oh
+
+Shubs:
+division
+
+Justin Gardner (@rhynorater):
+my
+
+Shubs:
+of
+
+Justin Gardner (@rhynorater):
+gosh
+
+Shubs:
+their company. And they, so this team that we work with for our largest customer, they're also running the internal red team. So the internal red team had a field day with this. They were able to use this to basically break into every division of the company and achieve all of their goals. And you know, this was a We notified them almost three months before any public disclosure. So they had this advance notification and advanced time to deal with this. That sort of stuff is the reason why we continue renewing this really large company again and again,
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+and they pay us so much money because it's kind of like we're their research arm as well.
+
+Justin Gardner (@rhynorater):
+Dude, that's just, what an amazing service, what an amazing product you guys have developed there. And I love that its roots, its origins are in. security research and a thorough understanding from a technical level of what kind of stuff gets you pwned, you know, and, and going after that, like these CVE reversing, um, you know, sprees that you guys have gone on. And I loved that piece as well about you breaking it up into reactive and proactive. I think that's really, um, awesome. And I imagine on the proactive side, you know, what, what you're doing for that is, is you're looking, you know, you're looking at all of your, your customers. You alluded to this before, but you're looking at all of your customers, And I mean, do you just pick the one with the, you know, greatest number or are you looking for specific things like, okay, this is Java or this is.NET. So I know I can hook up a debugger to it and have a better chance of finding a vault.
+
+Shubs:
+we'll be ready to target anything that has enough exposure for our customers. But like, for example, we looked at cPanel, and that's written
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+in Perl.
+
+Justin Gardner (@rhynorater):
+Yeah, that was crazy.
+
+Shubs:
+And that's like crazy. And written in Perl and like all these C binaries and stuff is honestly a mess. Like as a security researcher, you go into that project and you're like, I really don't like working with this project. But ultimately, we'll do anything. But the proactive side, just to note on that. While we look at our customers' technologies, we're also not afraid to look at technologies that our customers may not be running now, but we might see it on a prospective customer, or we might see it
+
+Justin Gardner (@rhynorater):
+Mmm.
+
+Shubs:
+on the attack surface in the future. And this is often just popular software. So if there's any really popular enterprise software, that's usually a good enough target for us.
+
+Justin Gardner (@rhynorater):
+Mm. That's, that's awesome, man. So, so I guess that's, that's for you guys. You guys have a great, and we can sort of apply these principles to Bug Bounty as well. You know, we can look at the programs we're in, we can fingerprint the technologies and we can do the same thing. Um, but specifically from the CVE, you know, reversing perspective, can you speak to how that could help a bug bounty hunter and what kind of skills they would develop as well as what kind of results they might see if they invest more time into zero-day research or more specifically CVE reversing.
+
+Shubs:
+Yeah.
+
+Joel Margolis (teknogeek):
+And just to tag onto that a little bit, can you also maybe talk about the amount of time it takes and sort
+
+Justin Gardner (@rhynorater):
+Oh
+
+Joel Margolis (teknogeek):
+of
+
+Justin Gardner (@rhynorater):
+yeah.
+
+Joel Margolis (teknogeek):
+what the input versus output looks like on these types of things?
+
+Shubs:
+Yeah, I would say that most CVE reversing work doesn't usually lead to an immense amount of bounties if there's a lot of patching going on, but
+
+Justin Gardner (@rhynorater):
+Sure.
+
+Shubs:
+for example, if you were to take the meta-based research, for example, then I think you could potentially get a few bounties out of that. When it comes to inputs and outputs, I mean, it really just depends on every project. Every project can be, you know, like, for example, for Citrix, there was no information that they provided in their advisory that would even hint
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+to us where this may be located. It wasn't until we had other people in the industry publish more things like Bishop Fox that we
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+saw, okay, there's some more information here, we can work with this and find potentially what they're referring to. And there's always the problem of silent patches. which is probably the most frustrating part of this
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+whole
+
+Justin Gardner (@rhynorater):
+Oh my gosh,
+
+Shubs:
+CVE
+
+Justin Gardner (@rhynorater):
+yeah.
+
+Shubs:
+reversing game, where they'll release an advisory for an RCE that's critical, but they'll patch like five other things in that same release that they don't talk about. So I mean, there's a lot of variability when it comes to whether or not we'll find what we're looking for in the CVE reversing project. Certainly, it's much easier on Java-based and.NET projects. when it comes to binary-based projects, that's where it gets really difficult, because suddenly
+
+Justin Gardner (@rhynorater):
+Right.
+
+Shubs:
+now you're diffing the bins and there's just so much to go through that's very esoteric and very difficult to understand at a glance. So it's easy to miss things in binary projects, but there's this intersection with web and binary when it comes to appliances, like VPNs and firewalls and things like that. And we have to spend more time on this sort of work because... Ultimately, these products are exposed on the internet and can lead to a shell on their
+
+Justin Gardner (@rhynorater):
+Right.
+
+Shubs:
+network. So
+
+Justin Gardner (@rhynorater):
+By nature,
+
+Shubs:
+yeah.
+
+Justin Gardner (@rhynorater):
+yeah.
+
+Shubs:
+Yeah. From a bug bounty perspective, I think the most profitable thing to do is find zero days and report them to programs. But there is a lot of controversy around that, as you guys all know.
+
+Justin Gardner (@rhynorater):
+Yeah,
+
+Shubs:
+And
+
+Justin Gardner (@rhynorater):
+yeah,
+
+Shubs:
+yeah.
+
+Justin Gardner (@rhynorater):
+let's start that conversation.
+
+Joel Margolis (teknogeek):
+Yeah, yeah, yeah.
+
+Shubs:
+Yeah.
+
+Justin Gardner (@rhynorater):
+I mean, I personally think there's a lot of value, almost like what AssetNote does, right? But from the bookbounding perspective of... getting your hands on a vulnerability with advanced notice, right? Because the patch cycles, especially for some of these bigger companies, they're gonna be a little bit longer. And it's hard to track down all your assets as the asset list grows and grows and grows. And so, by nature, if you get a couple months head start on, oh, this bone is gonna be released, and just a heads up, you're vulnerable. I think that adds a lot of value and I think that's something that companies should pay for whether it should be you know Their full max crit or whether it should be you know some bonus or some lower amount That's you know to be determined. I guess by the by the company, but That's my position on it. Do you guys what do you guys think?
+
+Shubs:
+Can you see what Joel thinks?
+
+Joel Margolis (teknogeek):
+I
+
+Justin Gardner (@rhynorater):
+Yeah, yeah,
+
+Joel Margolis (teknogeek):
+mean,
+
+Justin Gardner (@rhynorater):
+let's
+
+Joel Margolis (teknogeek):
+okay,
+
+Justin Gardner (@rhynorater):
+hear Joel.
+
+Joel Margolis (teknogeek):
+so from a company perspective,
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Joel Margolis (teknogeek):
+it's definitely a tricky situation, right? Like
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Joel Margolis (teknogeek):
+I see both sides a lot better than I think some other people in the industry do, mainly because I'm both a bug bounty hunter and like a AppSec engineer.
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Joel Margolis (teknogeek):
+So from like the company perspective, it's very tricky when you're using a vendor product and you get that reported as a vulnerability, because the reality
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Joel Margolis (teknogeek):
+is that all you can do is wait for the vendor to fix it, especially if it's a zero day. So there's no actual, I mean, you can like turn it off or there are like certain preventative measures you can do, but you can't actually fix it until the company fixes it. And all that you would be kind of expected to do is tell the company, hey, we got this zero day, do you know about this? And if the company says, no, we don't know about that, then it's like, you're in a weird spot where you've kind of ruined the researchers. spoils and also alerted the company. And now the company's like, hey, why don't we know about this? But if you don't report it, then you're kind of missing your ethical boundaries. So it's very, very tricky. From a researcher perspective, I think you should just report it to the company and then go ham. That kind of sets your ethical liability a little bit lower, because you've told the company, now it's up to the company to fix it. If they fix it really fast the customer's updated really fast, then good job. But you've notified and now it's kind of fair game for you at least, I think. And then whatever happens, right? If companies start telling the vendor that their product is vulnerable and they've been receiving this zero day, then that's kind of on the vendor now because the vendor hasn't fixed it fast enough or now the customer is hearing about it. So I think... It all kind of goes back on the vendor, but as a researcher, the main thing that I would want to do is make sure that I've at least told the company and then spray and pray, you know?
+
+Justin Gardner (@rhynorater):
+Yeah, for sure. I've got so many things I want to say about that, Joel, but I want to hear Shubbs' opinion first.
+
+Shubs:
+Joel, I agree with you. You report it to the company first, and then you report it to the bug bounty programs. But man, like in the last few weeks, I've even had a situation where, you know, it's been really gut wrenching because I had this pre-auth RCE, reported it to the vendor, then reported it to a handful of bug bounty programs. And the mistake that was made was I didn't tell this vendor that I had reported it to these bug bounty programs specifically. And as a result, they wrote this email to me where it was gut wrenching and they were like, Asset Note became the best people we knew to just those guys. And I was like, ah, shit, I didn't really mean for that relationship with the vendor. But this is the game, this is the zero-day game. And at the end of the day, what I find surprising is, I mean, their perspective on this, they're welcome to have their perspective, but the vulnerability in question, if I went to an exploit broker, I think I could have sold it for... 50 to $100,000 probably for
+
+Justin Gardner (@rhynorater):
+Oh
+
+Shubs:
+that
+
+Justin Gardner (@rhynorater):
+yeah.
+
+Shubs:
+vulnerability. Now, in this case, it's really, really surprising because in the bug bounties, I must have made like two or four grand. That's like a very small amount
+
+Justin Gardner (@rhynorater):
+Mm-hmm,
+
+Shubs:
+of money
+
+Justin Gardner (@rhynorater):
+sure.
+
+Shubs:
+to be making from this. At the end of the day, we reported the zero day to the vendor for no cost. And this was zero day research that we did that definitely cost us money. So it was
+
+Justin Gardner (@rhynorater):
+Absolutely.
+
+Shubs:
+our vulnerability that cost us money to find and we report it to the vendor for free. and then we report it to bug bounty programs after we've reported it to the vendor. At that point,
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+I'm really struggling to understand where we've gone so wrong in this equation, when ultimately we've just tried to report it to programs that have this issue on their attack surface. I think there are a few nuances also, just quickly on what Joel has mentioned about this, is where you should try your best not to report zero days in cloud products, like SaaS products onto other companies, because there's... really no resolution at all that a company can do. Like you talked about the preventative measures, that's possible. You can add a WAF rule, you can shut it down, you can segregate the network, things like that. When it's like an XSS on a Salesforce site, that's a zero day in Salesforce sites, there's like very little that a customer can do to prevent that from being exploited on their attack surface. So that's
+
+Justin Gardner (@rhynorater):
+Yeah,
+
+Shubs:
+where it
+
+Justin Gardner (@rhynorater):
+yeah,
+
+Shubs:
+gets trickier.
+
+Justin Gardner (@rhynorater):
+so, so...
+
+Joel Margolis (teknogeek):
+It's really funny
+
+Justin Gardner (@rhynorater):
+All right,
+
+Joel Margolis (teknogeek):
+that you say
+
+Justin Gardner (@rhynorater):
+fine.
+
+Joel Margolis (teknogeek):
+that because I can think of one or two instances, actually more than that, where a researcher has reported something and they say, hey, we've been doing a lot of research and we have the zero day in Cloud product. Here's a giant link that just pops an exorcist or something. And you're like, okay,
+
+Justin Gardner (@rhynorater):
+Uh, uh,
+
+Joel Margolis (teknogeek):
+now what?
+
+Justin Gardner (@rhynorater):
+uh.
+
+Joel Margolis (teknogeek):
+What do I do?
+
+Justin Gardner (@rhynorater):
+Oh man, yeah, so I mean, like on one hand I feel that and I understand what you're coming from as well, you know, Joel with like, okay, there's not really a lot the company can do, but wouldn't you still want to know? Like, you know, that's where I kind of say, like, when people put in their policy that they don't want zero day reports, I'm like, that's really silly, you know? Maybe define something that's like, all right, we'll pay a medium for, or maybe we'll, you know, decrease the severity by one. So if it's a crit, you know, we'll drop it to a, you know, a medium or, you know, but something like that. But even in cloud services, you know, with the way that same site cookies are working nowadays. subdomain within a company's domain, then you are able to do so many more different attacks than you would be able to do before. It's a real problem. And so that's kind of why I'm an advocate for doing something like, yes, we'll take the zero day reports, but we're gonna maybe lower the bounty, maybe not lower the bounty, depending on the impact. And if we do have to pull it offline, if it's an RCE on a VPN appliance, right, you better pull that shit offline and just tell your
+
+Shubs:
+Yeah.
+
+Justin Gardner (@rhynorater):
+employees to get a different way into the company for that time being because if you get popped there, that's very, very high value. And we all know,
+
+Joel Margolis (teknogeek):
+Yeah.
+
+Justin Gardner (@rhynorater):
+anyone who's ever conducted an external pen test knows, as soon as you get in and you get to the external to internal pen test, as soon as you get in, that's it. It's almost never segmented in such a way that you cannot just get literal keys to the kingdom once you get inside. So I don't know. That's my thought on it.
+
+Joel Margolis (teknogeek):
+Yeah, so Shubs, I'm curious if you have any experience like on both sides of like the delivery, I guess, of these types of things, especially with like zero day reports, because I think one of the important things is that if you're reporting something in like a cloud software or even, you know, an on-prem software that is a zero day, that you're also giving them almost like a security team would. Recommendations for how to fix it since it's a zero day, like how can you prevent it or protect yourself and all that kind of stuff to sort of ease that delivery. Have you found that doing stuff like that helps?
+
+Shubs:
+Yeah, it definitely helps, but I've also found that if you explicitly say that something is a zero day in your report, you're less likely to be paid. That's just like, if you include somewhere in your report that says this is a zero day, they're just going to tell you, we don't accept zero days. If you don't include those words, 90% of the time, they pay you, surprisingly. So like,
+
+Joel Margolis (teknogeek):
+Like I
+
+Shubs:
+it's
+
+Joel Margolis (teknogeek):
+just found an RCE in this.
+
+Justin Gardner (@rhynorater):
+Ha ha!
+
+Shubs:
+found in RZ. It just happens to be there in this product. And
+
+Justin Gardner (@rhynorater):
+Who owns it?
+
+Shubs:
+they
+
+Justin Gardner (@rhynorater):
+Who
+
+Shubs:
+tend
+
+Justin Gardner (@rhynorater):
+knows?
+
+Shubs:
+to pay you. Who knows
+
+Joel Margolis (teknogeek):
+I don't know.
+
+Shubs:
+how this happened? And this is more about the bounty economic side of things and the strategy side of things. But generally, when it comes to reporting zero days, we like to have some sort of remediation option without the official vendor patch. One of the things for
+
+Justin Gardner (@rhynorater):
+Mm,
+
+Shubs:
+us at Asset Note,
+
+Justin Gardner (@rhynorater):
+yeah.
+
+Shubs:
+we don't put any zero day in the platform unless we've come up with a workaround. So for a lot of things, we can come up with workarounds. But when it's things like VPN appliances, Nah, we cannot come up with a workaround that's that good at least. Like we can come up with sometimes firewall rules, things like that, but many cases we'll actually write like the patch diff for the fix and we'll provide the patch diff to say, this is how you fix it. If it's like something in PHP or something in Java or whatever else, but many cases we can't provide any good remediation other than like modifying web.config rules, modifying your HTTP server reverse proxy config. things like that to prevent access to endpoints and things like that.
+
+Justin Gardner (@rhynorater):
+Yeah,
+
+Joel Margolis (teknogeek):
+Yeah,
+
+Justin Gardner (@rhynorater):
+man.
+
+Joel Margolis (teknogeek):
+that's really interesting. So you mentioned bug bounty economics, and I wanted to dive into that a little bit actually, because we had a really interesting discussion recently in a Discord server with some other bug bounty hunters about how there is definitely sort of an aspect of meta-gaming to bug bounty. And I'm curious sort of what your take is on that and about sort of some of the bug bounty economics that exists around how to, I don't know how to say this nicely, but how to make the most money up with
+
+Shubs:
+Yeah.
+
+Joel Margolis (teknogeek):
+your reports and do you spam or do you go for only hyzing crits or like how do you what how do you view sort of the bug bounty economics?
+
+Shubs:
+Yeah, this is a really tricky one. I mean, there are some things that... align quite well for the program owners and bug bounty economics for the bug hunters. The number one thing is writing a fucking good report. Like that's the number one thing where both the program owners are going to appreciate it and from an economic perspective you're going to make the most money. So I definitely focus a lot on that but there are definitely times where look like I haven't figured out the magic solution yet because every program is different but like I'll find like 20 xxes right and I'll be like how do I report these? Do I report these one by one, do I report them in one report? Or do
+
+Joel Margolis (teknogeek):
+Ha!
+
+Shubs:
+I report one, wait, see if it gets patched,
+
+Joel Margolis (teknogeek):
+Ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha
+
+Shubs:
+see if they patch all other 19, and then report another one? So this is the hardest part of this strategy in bug bounties, because you never know which direction it's gonna go in. Because on one hand, if you report all 20 as separate reports, there's a slim chance that they might pay all 20 reports. If
+
+Justin Gardner (@rhynorater):
+Right.
+
+Shubs:
+you report all of them in one report, they're probably just gonna pay for that one report. If you report... one, wait, report another after they've patched the first one, there's a pretty big chance you're going to get the second one, third one, fourth one until they figure out there's a systemic problem with their software. So, and this is really tricky because this is where ethics come in as well. It's like, it's not just about bug bounty economics anymore, it's about ethics because it's like, do you actually want to secure the company? Are you actually trying to improve their security or are you just trying to
+
+Justin Gardner (@rhynorater):
+Mmm.
+
+Shubs:
+make money? And if the answer is, no, I'm actually trying to improve the security, then I would say option one or two is probably better, either separate reports or one big report. If you're just trying to make money, then option three is clearly better in many cases,
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+like where you report slowly, right?
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+And this is not something that hackers usually like to default to. Hackers want to get their money as soon as possible. They don't want to be waiting for a year to get the 20 xxs paid out. This only happens when a bug bounty program. has treated you unfairly in some way or form in the past, where you've done this 20 reports and they're like, you know what, we're duping all 20, we're just paying you for one. Then in the future,
+
+Joel Margolis (teknogeek):
+Yeah.
+
+Shubs:
+obviously bug bounty hunters are gonna be like, you know what, I'm not gonna report the 20, I'm gonna see if you catch on. And if you do, then sure, you fix the 20, if not, I'm gonna get as much money as possible. So it's this weird thing, it's about like relationships, economics, ethics, all into one, just about how you report bug bounties. Like, it's just... It's crazy
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+because this is some of the stuff that goes through my head when I find a lot of vulnerabilities for a single
+
+Justin Gardner (@rhynorater):
+Yeah,
+
+Shubs:
+person.
+
+Justin Gardner (@rhynorater):
+sounds like a very, very specific scenario Shubs when you find 20, 20 X, no, but I think that was really, I think that was really well stated. And I think, you know, the way you thought through that is, is really solid. There's so many different intricacies to it and there are going to be people that are going to optimize for their money and there are people that are going to be optimized for security. Bug Bounty is all about incentives. You're incentivizing the hacker to hack on your program and there's incentives on both sides to maintain the researcher relationship and that sort of thing. And I think this sort of quandary is very important for the programs to address in their policies, right? These are the kind of things that companies need to start putting in their policies. The piece of, okay, what happens if I have 20 XSSs? Do you want all of those right away? Do you want all of those in one report? Do you want those in 20 different reports? Am I incentivized in any way to put them in one report versus in spreading them out over time? Because at the end of the day, the company needs to. you know, outline that for the researcher. And so we can align our incentives. And the researcher might know, hey, I'll get paid for like, you know, two and a half of them or, you know, five of them or whatever. But that's better than sending in 20 reports, which takes time and effort, and then getting due back to one, or the opposite of putting them all in one report and then just getting paid for one.
+
+Joel Margolis (teknogeek):
+Yeah, I'm also really curious how the deep dive, like when you deep dive a program and you have a really long lasting relationship, like for example, with Uber, how does that change the way that you report things? Because I know a lot of times when people are really, really familiar with the program and they've spent many years or many months hacking on that program, they won't report everything because oftentimes they'll realize that certain things that may be lower impact or may not just be like. really nestled into the security model of that company don't matter enough to report, but they will matter in a future report. And so they're making certain decisions where they're like, I'm not going to secure this company with this bug, but eventually I will secure them with this and another bug. And how does that sort of play a role in the way that you report things?
+
+Shubs:
+Yeah, definitely a huge role. It happens all the time. Things like OpenRedirects or IDORs specifically are major things that I will decide to skip reporting in lieu of a future report. One example, if we think about Uber, there's this huge problem with Uber and IDORs where you need to know the UUID of a user in order to then discover further vulnerabilities, further IDORs, and things like that.
+
+Justin Gardner (@rhynorater):
+Know anything
+
+Shubs:
+Now,
+
+Justin Gardner (@rhynorater):
+about that Joel?
+
+Joel Margolis (teknogeek):
+That was definitely not the number one impact reducing modifier that was,
+
+Shubs:
+Ha ha.
+
+Joel Margolis (teknogeek):
+oh,
+
+Shubs:
+Yep, yep.
+
+Joel Margolis (teknogeek):
+we have UUIDs, so you need an IDORN for that.
+
+Shubs:
+Yeah, but dude if I was gonna find an iDawn and this has happened in the past where I can go from Like an email or a username to a UUID then and it's just the UUID in many cases I sit on that until I can make that even more impactful So I've done this for Uber in the past where we've gone from, and it's so great because the POC finally comes out and the POC is like, enter the name of the person you want all the PII for. And
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+it's like,
+
+Justin Gardner (@rhynorater):
+Hahaha.
+
+Shubs:
+I just take a video and it's like, they enter a name, they press enter, it's like, which user out of this list of 20 users do you want to get
+
+Justin Gardner (@rhynorater):
+Oh
+
+Shubs:
+PII
+
+Justin Gardner (@rhynorater):
+my
+
+Shubs:
+for?
+
+Justin Gardner (@rhynorater):
+gosh,
+
+Shubs:
+And
+
+Justin Gardner (@rhynorater):
+that's
+
+Shubs:
+they enter
+
+Joel Margolis (teknogeek):
+Yeah.
+
+Justin Gardner (@rhynorater):
+sick.
+
+Shubs:
+that one and then suddenly there's all the PII. So that's the kind of POC that I'm really excited about, but that takes a lot of time to get to. And in many cases, It does require sitting on certain bugs that you find. And Uber is particularly interesting, like, you know, just heavily brute forcing their GraphQL schema to find all of these really weird like queries and mutations that can lead to these issues. It's just, it's been so incredible seeing the transformation of Uber and the technology stack over the last five years. It's just gone from different technology to different technology. And now they've ended up in like React, progressive web app, GraphQL. That's like the final. And then they've got like, you know, PrestoDB and you know, Pino, Apache Pino and like all this stuff. So they've just, you know, really changed over the years. So it's been really interesting to see what they get up to.
+
+Joel Margolis (teknogeek):
+Yeah, well, and it's I think from a program perspective, having something like that is almost like keys to the kingdom, because especially if you have reported that I door that like leaks, you know, a UUID for a user or something by like phone number or email address, you can refer back to that report in so many future reports and say, as I demonstrated in blank, it's possible to leak this UUID, which makes it you know, one step away. Or you can, you know, if that report is still open. you can report a bunch of other IDORs that use a UUID that then reference back to your open report that leaks a UUID, and that can increase the impact of all those reports. And just like having that knowledge of a private report that shows that impact makes it so much easier to demonstrate impact for other reports, because it's no longer theoretical. It's something that you've actually done and you've actually reported, and the program now knows that exists, and it could exist somewhere else.
+
+Shubs:
+That's a really
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+good point. I don't think I've tried to refer to old reports like that. I've always tried to find new stuff to be like, oh, this works again. But that's
+
+Joel Margolis (teknogeek):
+I
+
+Shubs:
+a
+
+Joel Margolis (teknogeek):
+will
+
+Shubs:
+really good
+
+Joel Margolis (teknogeek):
+say
+
+Shubs:
+point. I should start
+
+Joel Margolis (teknogeek):
+at
+
+Shubs:
+doing
+
+Joel Margolis (teknogeek):
+live
+
+Shubs:
+that.
+
+Joel Margolis (teknogeek):
+hacking events, that's something that we did a ton, where
+
+Shubs:
+Okay.
+
+Joel Margolis (teknogeek):
+we would go back and we would say, oh, we know that this is possible. Or when we're trying to determine impact, what's the worst case impact? Well, we know what those worst case impact scenarios are on the internal security side. And so there's persistent problems or preexisting problems that you know automatically increase impact based on a class of bug. Like if it's an SRF, you know that SRF can get blank data or whatever. based on the network conditions. That is basically what you can do as a bug bounty hunter is mentioning that, oh, this is something that existed before, it can definitely exist again, and the impact has been proven.
+
+Justin Gardner (@rhynorater):
+Yeah, dude, we've seen that. I've seen that specifically in one live hacking event. There was this endpoint that leaked just all sorts of IDs. It was actually leaking paths, right? It wasn't leaking just the IDs. It was leaking the full paths of anyone hitting various endpoints. And dude, that bug got passed around like candy at that event. It
+
+Shubs:
+Ha ha ha.
+
+Justin Gardner (@rhynorater):
+was probably freaking worth hundreds, thousands of dollars in escalations, right? Because. Everyone was like, see this report, even if they didn't have access to their port, you know? They would say, put in your report, see this report ID, right? And
+
+Joel Margolis (teknogeek):
+That's true.
+
+Justin Gardner (@rhynorater):
+people would reference to it and be like, oh, that's where you get the IDs from. So those sort of gadgets, we sort of talked about this a little bit on the pod before, but those sort of gadgets, super, super valuable. Okay, cool, we're getting close to... end of time here, so I want to be conscious of your time shubs and the block that we have. But I have to ask, we've had a lot of people that are interested specifically in Bug Bounty plus entrepreneurial ventures, right? And I can't think of anyone better than you to talk to about this. So coming from being a hardcore Bug Bounty hunter into an entrepreneur running a successful company, can you talk a little bit about... that transition and what kind of skills apply and what kind of anti-synergies you see there as well.
+
+Shubs:
+Yeah, for sure. I think one of the really cool things about being a bug bounty hunter is sometimes you just have to be willing to do anything that's necessary to move forward. Whether that's
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+reading three megabytes of awful, ugly JavaScript or whatever it may be, but you've got to do the task at hand. And it's not that... different when it comes to running a business. When running a business, there's just a thousand things to do and sometimes you might feel that you could be spending your time on more impactful things like security research or whatever,
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+but at the end of the day, these things still need to get done. and we need to move the business forward. So as an entrepreneur, all I can really say is, two things really is pick the right co-founder if you're gonna co-found the business. And I'm very
+
+Justin Gardner (@rhynorater):
+Hmm.
+
+Shubs:
+fortunate, my co-founder Michael, he's someone that is excellent. He's a hacker by trade, used to do a lot of iOS hacking, and he has a ton of experience in enterprise sales. He has a ton of experience in running a sales team, running teams in general, doing management work that I had no experience in. And without my co-founder, there is no way been possible and vice versa is what we say to each other all the time. But the
+
+Justin Gardner (@rhynorater):
+Hmm.
+
+Shubs:
+second thing is be prepared to do anything that's necessary. Like there should be no work or no ego that prevents you from being from doing things that you might not want to do. At the end of the day like running a business is just about you know, providing a really good product or service to your customers. And there should be nothing that stops you as a founder from being able to do that when it comes to ego or comes to things like that. So, you know, just to give you an example today, I still respond to maybe like 80% of our support tickets, which is like, you know, wild, like, why am I responding
+
+Justin Gardner (@rhynorater):
+That's
+
+Shubs:
+to support
+
+Justin Gardner (@rhynorater):
+great.
+
+Shubs:
+tickets? I'm five
+
+Joel Margolis (teknogeek):
+That's
+
+Shubs:
+years
+
+Joel Margolis (teknogeek):
+such
+
+Shubs:
+in.
+
+Joel Margolis (teknogeek):
+a grud.
+
+Justin Gardner (@rhynorater):
+Oh my gosh.
+
+Shubs:
+It's such a grind. It's crazy. It's so much work, but And sometimes it can be quite difficult to respond to all of these, but I know sometimes that one of the superpowers we have in being the small company that we are is if we provide extraordinary support to our customers, that's one reason why they're not gonna leave us for one of our larger competitors, like a Microsoft or a Palo Alto or whatever else. And the other thing is, I'd probably say lastly, is just stay in touch with the engineering side of all of this. So if you are a technical co-founder, you should still be able to write to the code base
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+if you want to five years down the line. You shouldn't, like you shouldn't, as a CTO, let's say for example, you shouldn't lose touch with the engineering side of things. Like you should still be able to contribute to the project and be able to make changes where necessary, or at the very least understand what's going on. It shouldn't just be all someone else's responsibility and now you can do CTO-y things, whatever that means, right? So there's definitely that. And sorry, last thing. Titles mean jack shit,
+
+Justin Gardner (@rhynorater):
+Dude,
+
+Shubs:
+okay?
+
+Justin Gardner (@rhynorater):
+keep him coming, man. Keep him,
+
+Shubs:
+Titles
+
+Justin Gardner (@rhynorater):
+like,
+
+Shubs:
+mean jack
+
+Justin Gardner (@rhynorater):
+as you
+
+Shubs:
+shit.
+
+Justin Gardner (@rhynorater):
+get him, keep
+
+Shubs:
+Like
+
+Justin Gardner (@rhynorater):
+him coming.
+
+Shubs:
+my co-founder, he's CEO, he's leading
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+the company. I'm CTO. We never saw each other as CEOs or CTOs. We were never that before the company started. The titles mean jack shit. We're willing to do any work that's necessary to get this business moving forward. You know, my co-founder often does product design work. He does, you know, a lot of different pieces in this business and so do I. And that's because As a startup, we have to be able to be working in this capacity to move things forward. If people start thinking, I'm just X, I only do X at this company, then suddenly you're restricted by what you can achieve. And most of the time, if you put your mind to it, you'll be very good at something eventually. You might not be amazing in the beginning, but with more experience, you will be very good. So I guess those are my common points. And I think also, I just want to last thing note that there's a lot of luck required
+
+Justin Gardner (@rhynorater):
+Hmm.
+
+Shubs:
+to actually be successful. Like I'm not gonna discount the amount of luck we had when we started AssetNote. It was the right time that the industry was starting to look at attack surface management. We started to build this whole notion of attack surface management and whole segment was developed as a result. And people started selling this product and we had a lot of competitors that also came into this. We had large companies that came into this like Mandiant and Google and Microsoft with Risk IQ. So there was a timing element to this that was not predictable. There was a lot of luck involved. Even going back to the very beginning of Asset Note, I was about to abandon the project and we had Matthias Carlsen who, you know, he's been in the Bug Bounty community for some time. He reached out to me and he said, your project is amazing. We should continue work on it. And he got his girlfriend who was a project manager at the time to manage the project with us. Without him, I wouldn't
+
+Justin Gardner (@rhynorater):
+Wow.
+
+Shubs:
+even have continued building this.
+
+Justin Gardner (@rhynorater):
+Dude,
+
+Shubs:
+So the amount
+
+Justin Gardner (@rhynorater):
+that's
+
+Shubs:
+of
+
+Justin Gardner (@rhynorater):
+amazing.
+
+Shubs:
+luck that was involved to get to this point is just monumental, right? So it's something that I always recall. It's not just about the hard work and the effort. There is a certain amount of luck involved in all of this as well.
+
+Joel Margolis (teknogeek):
+Yeah. No, I think that's so true. I mean, even with my own career, like the whole reason I'm in Bug Bounty at all was because I happened to do CTFs and I got to like a CTF championship and one of the vendors who was sponsoring it happened to get my resume. And then they were like, Hey, do you want to interview? And I happened to interview and the person who sat across from me at my desk in the office in New York City was CoolBoss who is like a Facebook hacker, like way back in the day. And he was like, hey man, you should do this mobile CTF. And I was like, it's all luck, you know?
+
+Justin Gardner (@rhynorater):
+Wow.
+
+Joel Margolis (teknogeek):
+It's like,
+
+Shubs:
+Yeah.
+
+Joel Margolis (teknogeek):
+like I just happened to have this guy across from me, there's, you know, I think there, this happens so often in life where you see like big case examples where they'll be like, some company that like started from nothing and just like became something like Assetto, right? Like just like a little side project that just like developed and developed and became this huge, huge big like vendor product. And you know, there's just like, so many other cases where that didn't happen. And you have to acknowledge luck if
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Joel Margolis (teknogeek):
+you're gonna be realistic about how you got there.
+
+Justin Gardner (@rhynorater):
+Yeah, and for all of you people in the comments, you angry people in the comments that I can already hear saying, man, I'm just not one of the ones that has luck. You get luck, you get luck
+
+Joel Margolis (teknogeek):
+Yeah,
+
+Justin Gardner (@rhynorater):
+by doing
+
+Joel Margolis (teknogeek):
+you can
+
+Justin Gardner (@rhynorater):
+shit.
+
+Joel Margolis (teknogeek):
+create your own luck.
+
+Shubs:
+Yeah.
+
+Justin Gardner (@rhynorater):
+You get luck by putting yourself out there and making opportunities. You get luck by having friends like Matthias who will help you when you need help. You get luck by. taking a step out and making that company, right, and failing and then moving on to the next company and you know, so it's possible for anyone for sure. But when we look back at it, it's very easy to see all the places
+
+Shubs:
+Ha ha
+
+Justin Gardner (@rhynorater):
+where in our career we could have gone different trajectories. And that's just that's just what a blessing. That's that's the ride we've got, right?
+
+Joel Margolis (teknogeek):
+Yeah, yeah, it's amazing.
+
+Justin Gardner (@rhynorater):
+Um,
+
+Joel Margolis (teknogeek):
+And I mean, that's like how we know each other too. It's
+
+Justin Gardner (@rhynorater):
+right.
+
+Joel Margolis (teknogeek):
+all just like luck.
+
+Shubs:
+Ha ha
+
+Joel Margolis (teknogeek):
+It's
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Joel Margolis (teknogeek):
+like the chances that we even like, cross paths at these live hacking events and like, it's crazy.
+
+Justin Gardner (@rhynorater):
+Yeah, so that was a great answer, Shubs, and I really, it almost brings a little bit of a tear to the eye to hear you talk about the whole journey, you know, that you've been on for this whole time with AssetNote. It's really, really cool. I did wanna go back to the question, and I wanted to ask about, again, about those anti-synergies. Do you, and you know, if nothing comes to mind, no worries, I've got plenty of other things I can pick your brain on, but is there anything that... a bug bounty hunter or a hacker should be aware of that might be ingrained in them. It might be a default for them. And then as they transition into entrepreneurial stuff that they need to be aware of that's different in that area that might cause a problem.
+
+Shubs:
+Yeah, sure. I mean, there's definitely some things like I think, you know, I think one of the things is as hackers, we like to be very pragmatic. We like to think
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+logically. We like to think step by step sometimes. There are many cases when it comes to sales, customer support, or negotiations, where this sort of mentality, it can work, but it may not be the correct thing to do in whatever hand you're dealt. Like sometimes you've got to rely on gut instinct, you've got to rely on, you know, different ways of approaching the problem that may not just be approaching it step by step. Like for example,
+
+Justin Gardner (@rhynorater):
+Mm-mm.
+
+Shubs:
+if you're negotiating, that's definitely something where you can't just capitulate to everything that they want. You have to think a bit more creatively of how you can get to a deal without necessarily being in a position where you've just capitulated to everything.
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+So there is like a different type of thinking sometimes, especially even in customer support responses, like, Yes, you might have a bug in your product, but you can't always just go to your customer and say, yes, we've got this terrible bug in our product.
+
+Justin Gardner (@rhynorater):
+Mm-mm.
+
+Shubs:
+We have to be a bit more strategic about that. We have to think about what are we doing to fix this? When is it going to be fixed? How are we going to respond in a way that minimizes the customer freaking out about this bug in the platform, for example?
+
+Justin Gardner (@rhynorater):
+Mm-mm.
+
+Shubs:
+So there are these different things. But I think a lot of this, I think, even being an amazing bug bounty hunter, spending a lot of time on bug bounties, before I started my company, I was still so underprepared for what the five years that have brought me in this company. And there's just so much that I've learned on the sales side, the business side, and just generally running this company with my co-founder. I've learned all this stuff because my co-founder has this wealth of experience that he's brought me into. And I've been able
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+to experience it and iterate on it with him. But I just think that it's really important to to recognize that you do not know everything about running a business and be okay
+
+Justin Gardner (@rhynorater):
+Hmm
+
+Shubs:
+to look for help or to seek help or to get advice in certain areas that you may not be so good at. There's this
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+whole ego element that I keep coming back to and I know a lot of hackers can tend to have, you know, sometimes
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+bigger egos and if you wanna
+
+Justin Gardner (@rhynorater):
+true.
+
+Shubs:
+run a business and it's a small business, this ego stuff doesn't usually work that well unless you're the one who's just doing all the sales at the end of the day. But if it's not sales, the rest of the business, it requires this, I guess, this acceptance that you do not know everything and you
+
+Justin Gardner (@rhynorater):
+Mmm.
+
+Shubs:
+either might need to learn about something, you need to read about it, you need to go to someone asking for advice and you shouldn't be afraid to do that.
+
+Justin Gardner (@rhynorater):
+Hmm.
+
+Shubs:
+Not everyone's advice is gonna be golden. You don't have to take it. You just have to listen to it, see what you think and move forward however you feel.
+
+Justin Gardner (@rhynorater):
+Yeah,
+
+Joel Margolis (teknogeek):
+Yeah,
+
+Justin Gardner (@rhynorater):
+dude, that's great.
+
+Joel Margolis (teknogeek):
+in hindsight, were there any things that you think you could have or should have prepped better before, you know, starting a company or things that you'd wish you'd read or anything like that outside of like the people aspect, you know, were there things that you in hindsight wish that you would have learned?
+
+Shubs:
+Yeah, I wish I would have understood the market a bit better and done a bit more analysis with prospective customers about what they're looking for. Because
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+when we started our business, I remember saying to Michael, my co-founder, I said, you know, the minimum tier for AssetNode has got to be like 1,000 assets or 2,000 assets. We only sell to large enterprises. But lo and behold, now we have so many customers that have 200, 300 assets on the internet. So that was a complete misjudgment from my part about what we're selling and who we're selling to. And these deals are still worthwhile. Even at 200, 300 assets, they're still worthwhile deals. They're profitable. They're great for us. Enough of them, we're making quite a lot of money. So initially, I didn't even understand what the plan of selling this was and how we were gonna sell it. I feel like Michael and I, we had to come up with different strategies of, like, different business models as well, uh, that we had to come up with over time, where we landed on one finally, and that's worked very well. But I wish some of this stuff I did before even incorporating the business, you know, like there
+
+Justin Gardner (@rhynorater):
+Hmm.
+
+Shubs:
+was some stuff like this where I'm sure I could have reached out to some friends of mine and being like, Hey, I'm thinking about starting this. What do you think about this business model? Like this, would you be comfortable paying this for this? How much would you pay for this? what would this look like if it was in your organization? Some things like that
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+would be very useful because we had many assumptions about how we were gonna sell this, what it would look like, that ultimately were all proven wrong with running the business and realizing, well, a lot of people we're talking to, they don't actually have 5,000 assets on the internet. They have like 300 assets or something. But then I guess the last thing is, and this is specifically for bug bounty hunters and hackers. If you want to build a product, spend a lot of time becoming good at engineering because engineering is fucking hard. Like
+
+Justin Gardner (@rhynorater):
+Dude.
+
+Shubs:
+we think that hacking is hard, which is great. I
+
+Justin Gardner (@rhynorater):
+Hahaha
+
+Shubs:
+agree with you, hacking is hard. Engineering, where you're building a reliable product that's consistent and is performing how you were expecting it to perform, that is harder than hacking. Like that is literally the hardest
+
+Justin Gardner (@rhynorater):
+Wow.
+
+Shubs:
+shit I've done in my entire life. And people on my team... who deal with this on a day-to-day basis, our engineering team managed by Sean, they're the people that today are dealing with this problem still for all of our customers. And this is by far the hardest, I guess, thing that I had to do in this five-year journey was go from being a relatively good hacker to being a good engineer. And I still
+
+Justin Gardner (@rhynorater):
+Mmm.
+
+Shubs:
+don't feel like I'm there yet when it comes to engineering. Like I still feel there's so much more to learn in engineering. It's never ending.
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+I'm sure it's the same in bug bounty hunting, but. But this is definitely something that I learned, engineering is very critical to this.
+
+Justin Gardner (@rhynorater):
+And like you said in the beginning, it's not just scraping together some scripts like we do in Bug Bounty, right? You know, you're SGPing files back and forth and your Python, janky Python scripts aren't going to get you to a reliable enterprise product. So I'm sure there's so much more there. And we actually do have an episode coming out with Sean. I'm not sure if it'll air before we air this one, but that's... absolutely amazing episode as he talks about what it looks like to engineer this huge, massive, beautifully architected recon machine that you guys have put together and all the different pieces and the way that it integrates together. In light of that, I was going to ask and I asked Sean the same question. For the hunter that is building a reconnaissance setup now, you having gone through all of the many, many problems that you face building asset. What kind of advice do you have to the bug bounty hunter that wants to build a continuous reconnaissance platform?
+
+Shubs:
+Yeah, I think
+
+Justin Gardner (@rhynorater):
+For
+
+Shubs:
+this
+
+Justin Gardner (@rhynorater):
+their
+
+Shubs:
+is
+
+Justin Gardner (@rhynorater):
+own
+
+Shubs:
+this advice.
+
+Justin Gardner (@rhynorater):
+use in bug bounty, just to be clear.
+
+Shubs:
+Yeah. Well, I think like Justin, I remember you came to me a couple of years ago and you said to me, Hey man, I'm seeing all these people move to Golang. Like, do
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+I need to move to Golang as well? Does this, is this the right option to make? I remember telling
+
+Justin Gardner (@rhynorater):
+Such a
+
+Shubs:
+you
+
+Justin Gardner (@rhynorater):
+great
+
+Shubs:
+like,
+
+Justin Gardner (@rhynorater):
+conversation.
+
+Shubs:
+yeah. And it was just like, cause I remember at that point I was maybe two, three years into the asset note, um, adventure and we had migrated everything to Golang from the very beginning. So I had experience. working in your stack that you're familiar with,
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+which is just like basic Python, everything's
+
+Justin Gardner (@rhynorater):
+Yep.
+
+Shubs:
+pretty straightforward, you can understand it without too much complexity. Whereas our Golang stack for our enterprise customers, which can get quite complex with the number of microservices and things going
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+on. I remember saying to you, choose whatever you're most comfortable with and what you can iterate in quickly on. It doesn't matter if it's Golang or Python or whatever. It could be visual basic like Eric does, right? It doesn't really matter what
+
+Justin Gardner (@rhynorater):
+Mm-hmm,
+
+Shubs:
+language it is.
+
+Justin Gardner (@rhynorater):
+right.
+
+Shubs:
+But I remember you were like... really happy with that because you thought that you had to move to a different language. You thought that you were put into this position where the industry is moving and the industry is changing languages to everything in Golang for various reasons. So I have to do it too. And to be frank, I was the one in that position when I started Asano and I decided to move to Golang. There are many benefits that we got out of that. But I'm sure if we worked hard enough, we could get something working in Python as well.
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+It's not really the the distinction of how good the product is gonna be. And I see this trap a lot with, people will rewrite things in a new language. Like they'll say, oh, there's XYZ tool in this language. I'm gonna write it in Rust now because Rust is so hot right now and everything's amazing in Rust. But the outcomes are usually the same. Like usually the outcomes are very similar or the same. Sometimes there's speed differences, acceptable, I understand. But at the end of the day, are you gonna learn a whole new language to get that... bit of speed difference or are you going to build your systems in a language you're comfortable with that you can iterate quickly on? So that's definitely one of the advices that I would give. The other one would be like, really think about your data sources. As much as I would like to say that, you know, our reconnaissance techniques and all of that are a huge contributor. There's also a huge element where the data that we have access to is just overpowered compared to other. other people's data sources. So that sort of stuff, if you start looking at things like passive DNS, if you start investigating these things and start understanding where you can get these data sources, what these data sources look like, how much you're willing to pay for them, you're suddenly putting yourself at an immense advantage compared to almost every other bug bounty hunter out there. And I think one last thing is... just have an environment where you can quickly iterate code on. When I was
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+first building AssetNode, I did all of my programming in the equivalent of GitHub code build. So back then there was something called Cloud9, and I used that to do all of my iteration. It was so quick, like I was building so quickly. Today, you've got things like code spaces, I think sorry, in GitHub.
+
+Justin Gardner (@rhynorater):
+Mm, mm.
+
+Shubs:
+That's an equivalent of what I was using back then when I was building the very first iterations of AssetNode.
+
+Justin Gardner (@rhynorater):
+Wow, dude. That was just a treasure trove of advice there. Thank you so much for sharing that. And I remember that conversation very clearly. And I left that conversation, like you said, ecstatic, you know, with the result of what you said. And it served me well for the rest of the time, you know, that I was in the recon game, like being able to quickly develop code in Python, it was invaluable. And I think also one of the great things that just came out of that conversation for me was appreciation for that, right? down the other route and I had written all this going code, I'm like, oh, man, I used to remember when I used to be able to write code off the top of my head without even thinking about it in Python. That's great. And then I would have earned the ability to appreciate Python. But without having to go through that difficulty and that route, you made me aware every time I wrote Python code quickly how much of a blessing that is and how much of a win that was. So thank you so much for your advice, man. That really made
+
+Shubs:
+No
+
+Justin Gardner (@rhynorater):
+a big
+
+Shubs:
+problems.
+
+Justin Gardner (@rhynorater):
+difference Recon game.
+
+Shubs:
+No, for sure. I'm glad you stuck with it. Um, for sure.
+
+Justin Gardner (@rhynorater):
+Yeah. Okay. So I did have a couple of things. Joel, did you have anything else on that topic before we swing back into some technical content?
+
+Joel Margolis (teknogeek):
+Nah, nah, let's go back into it.
+
+Justin Gardner (@rhynorater):
+Okay, so I did have a couple more things that I wanted to ask specifically regarding IIS, which is your bread and butter, it seems, right? You've done a lot of, you've done some videos on IIS stuff, which we'll link in the description. And what can you tell us about hacking IIS servers? What do you have for the people?
+
+Shubs:
+Yeah, for sure. I think the second you see an IIS server, you should thank God because it's the easiest thing to hack out
+
+Justin Gardner (@rhynorater):
+Ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha
+
+Shubs:
+of all the other web servers that are out there. You should be grateful. You should be grateful that
+
+Justin Gardner (@rhynorater):
+I'm sorry.
+
+Shubs:
+you've come across the presence of an IIS server. You see that blue page that comes up when you hit an IIS server? That should be your point in time where you think, I'm gonna find criticals on this bad boy.
+
+Justin Gardner (@rhynorater):
+Oh my gosh, I love that.
+
+Shubs:
+Because 90% of the time, like guys, if you think about every other web server technology, Which other web server technology lets you guess partial files and folder names? There's nothing
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+out there like that. Like,
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+that's just ridiculous. And this vulnerability, this issue, has existed for like 10 years plus. Like, it's been around for so long. And it still works on the latest version of IIS.
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+Like, this is not even something that they're thinking about seriously fixing in future versions so far that I've seen. So there's that, right? You've got the ability to see partial file names and folders. With enough reconnaissance, you can figure out the rest of those file names and folders by doing some fuzzing, so on and so forth. Then there's all this other stuff that happens with.NET, and specifically with IIS and.NET, where you are able to get a shell if you get local file disclosure. Now, if
+
+Justin Gardner (@rhynorater):
+Hmm.
+
+Shubs:
+you get local file disclosure and you read a web.config file, it has the machine key, the validation key, you're able to escalate that from just that to command execution. Again. The only solution for this is you start storing these values in the Windows registry instead of the web.config file. 90%
+
+Justin Gardner (@rhynorater):
+Mm-hmm.
+
+Shubs:
+of the time, companies are storing it in the web.config file. And this is something that often leads to command execution once you get local file disclosure. Then there's the other aspect of this, where when you audit.NET products, you've got to deal with this whole idea of Windows shares and Windows domains. So let's say you find an SSRF. that SSRF on an IS server
+
+Justin Gardner (@rhynorater):
+Oh dude, I love
+
+Shubs:
+on a.NET
+
+Justin Gardner (@rhynorater):
+this.
+
+Shubs:
+product is much more than just reaching a web server nine times out of 10. If
+
+Justin Gardner (@rhynorater):
+Mmm.
+
+Shubs:
+they're using path.join, then in path.join, you can just do backslash, and put in like a Windows share, backslash C, dollar sign, backslash. And suddenly, because of the Windows APIs that are being used for these network requests, Windows willingly shares the net NTLM hash with your server. So you run responder on your server and suddenly
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+you've escalated an SSRF to a critical, much more critical than just being HTTP requests. So there's stuff like that. Then there's like, you know, I guess there's also this, there's also this amazing thing with.NET and IIS where there's like a thousand different ways to drop a shell. Like when you drop shells
+
+Justin Gardner (@rhynorater):
+Ah.
+
+Shubs:
+in IIS and.NET, You can drop shells with web.config, with ASCX files, with ASHX files, with ASPX files. You can drop shells
+
+Justin Gardner (@rhynorater):
+Oh, I love that.
+
+Shubs:
+in so many different ways. It's beautiful and it's really great to be able to hack on.NET IaaS servers. And one last thing
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+that I love, one last thing is if you're exploiting an XSE in a.NET application, there is an XSE payload that is universal for Windows that uses a a DTD file that's within the Windows file system that's
+
+Justin Gardner (@rhynorater):
+Yeah.
+
+Shubs:
+always present in the Windows file system that will nine times out of 10 that you leak file contents when you probably shouldn't be able to. So
+
+Justin Gardner (@rhynorater):
+Dude,
+
+Shubs:
+these are all the different things.
+
+Justin Gardner (@rhynorater):
+that's sick. And I want that payload. I'm gonna make a note right now, get the XSC payload from Shubz because that seems really helpful. I've seen some stuff floating around, but it'd be nice to have it here and link it down in the description for the people that are interested. Dude, that was such a treasure trove of knowledge. I feel like, dude, I'm so lucky to be able to have you on here because I just like throw a little like, you know, question out there. And then there's just like, boom, gold, boom, gold, boom, gold. And we were actually just talking about the, you know, the share paths last week and how crazy it is that you get those NTLM hashes and that you can interact with shares, you know, when you have SSRF as well. So that's. That's really cool, really cool stuff. And definitely for those of you that haven't hacked on IIS stuff, check out, uh, check out Shortscan, um, bit quirks, uh, you know, tilde enumeration tool. And then also read all the write-ups that we'll link below, uh, for shubs on IIS related stuff, because, um, like you said, man, I get excited when I see that, that blue page and I think most other hackers, uh, should as well. Um. That's, that's all I had on the list for today. Um, Shubs, do you have anything else you want to, you want to share anything you want to talk about? Where can we find you on, on socials as well?
+
+Shubs:
+just two last things I want to share and then we can wrap
+
+Justin Gardner (@rhynorater):
+Oh
+
+Shubs:
+it
+
+Justin Gardner (@rhynorater):
+yeah,
+
+Shubs:
+up.
+
+Justin Gardner (@rhynorater):
+great.
+
+Shubs:
+One of them is when you see the blue page on IIS, do not skip it, please.
+
+Justin Gardner (@rhynorater):
+Yes.
+
+Shubs:
+There's something there. Like there's no reason they've just spun up an IIS server for no reason. Like they wouldn't just do that. Most companies have something there. There is something there. Please keep looking, keep finding it, whatever. There's something there. And the second thing is just one other lesser-known technique in IIS is the virtual
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+directory path traversal to traverse into different virtual servers via virtual directories. So in IIS, you can set up directories that are pointing to different servers. And if you use path traversal within those directories, you can see the web root of different servers. This is something that I found
+
+Justin Gardner (@rhynorater):
+Huh.
+
+Shubs:
+quite common in IIS deployments that are complex. So they'll have slash SSO pointing to 10.1.1.1. And but it's pointing to 10.1.1.1 slash SSO. So you can go slash SSO dot percentage 2f. And then that will route you to 10.1.1.1 to the doc root.
+
+Justin Gardner (@rhynorater):
+Ah,
+
+Shubs:
+So.
+
+Justin Gardner (@rhynorater):
+okay, so it's your path traversing on the back end server in the
+
+Shubs:
+That's
+
+Justin Gardner (@rhynorater):
+reverse
+
+Shubs:
+right.
+
+Justin Gardner (@rhynorater):
+proxy.
+
+Shubs:
+That's
+
+Justin Gardner (@rhynorater):
+Okay.
+
+Shubs:
+right, yeah, this is similar to
+
+Joel Margolis (teknogeek):
+And that's an,
+
+Shubs:
+Sam Curry's.
+
+Joel Margolis (teknogeek):
+that's an IIS behavior specifically.
+
+Shubs:
+Yes, this is an IIS behavior specifically. This is very similar to Sam Curry's secondary context work,
+
+Justin Gardner (@rhynorater):
+Right, right.
+
+Shubs:
+but then this can lead to a lot of crazy vulnerabilities because in many cases, they don't expect you to be able to access the doc root of 10.1.1.
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+And then you can just brute force and find whatever you want and go from there. So that's the last tip that I don't think is publicly talked about that much. So just want to give that to your audience as well. But besides that,
+
+Justin Gardner (@rhynorater):
+That's
+
+Shubs:
+you can
+
+Justin Gardner (@rhynorater):
+awesome.
+
+Shubs:
+find me on Twitter as infosec underscore au. And yeah, if you need anything, you can reach out to me via Twitter.
+
+Justin Gardner (@rhynorater):
+Dude, that's super clutch. So do you know off the top of your head whether the short name enumeration technique also works on that backend
+
+Shubs:
+It does.
+
+Justin Gardner (@rhynorater):
+server then through the...
+
+Shubs:
+It does. Yeah,
+
+Justin Gardner (@rhynorater):
+Dude,
+
+Shubs:
+yeah, it does. It's
+
+Justin Gardner (@rhynorater):
+that's sick.
+
+Shubs:
+beautiful. It's... yeah.
+
+Justin Gardner (@rhynorater):
+That's amazing. I gotta check that out. I'm definitely gonna look for that for future IIS servers that I see. And guys, remember, if you see the blue page, go after it. That's Shub's
+
+Shubs:
+Hehehe
+
+Justin Gardner (@rhynorater):
+takeaway that he wants you to have for today.
+
+Joel Margolis (teknogeek):
+I need to go back to my recon data now.
+
+Justin Gardner (@rhynorater):
+Same bro, same. All right, infosec underscore A-U on Twitter or Axe or whatever you wanna call it. Joel, you got anything else you wanna shout before we bounce?
+
+Joel Margolis (teknogeek):
+No, that's it. I mean, thanks. I mean, thanks for doing this. It's always a pleasure to talk with you and just the wealth of knowledge that you have is so awesome. So I'm glad that we were able to share just like a little, little bitty piece of it.
+
+Shubs:
+Thanks
+
+Justin Gardner (@rhynorater):
+Mm.
+
+Shubs:
+for having me on, really appreciate
+
+Justin Gardner (@rhynorater):
+All
+
+Shubs:
+it.
+
+Justin Gardner (@rhynorater):
+right. Peace.
+
+Joel Margolis (teknogeek):
+Peace.
+
+Shubs:
+guys.

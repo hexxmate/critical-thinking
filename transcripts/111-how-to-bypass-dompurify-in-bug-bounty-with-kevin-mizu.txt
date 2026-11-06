@@ -1,0 +1,1575 @@
+Episode 111: How to Bypass DOMPurify in Bug Bounty with Kevin Mizu
+Source: https://www.criticalthinkingpodcast.io/episode-111-how-to-bypass-dompurify-in-bug-bounty-with-kevin-mizu/
+======================================================================
+
+Justin Gardner (00:00.62)
+All right, Mr. Kevin Mizu, the master of Dom Purify. Thank you for gracing us with your presence here on CTPB Podcast.
+
+Mizu (00:08.572)
+Yeah, it's a pleasure to be in there. I can't wait to speak about the verify today.
+
+Justin Gardner (00:14.06)
+Awesome, dude. You've been doing great work on the Critical Thinking Research Lab as well. It's been a pleasure to have you in there. And when I saw you write this stuff up and release it, I had the pleasure of pre-reading it. And as I was reading through, was trying to stay focused on being a good proofreader and trying to find, maybe we should reword this or reword that. But as I'm reading, I'm like, my god, that's really interesting. my god. man. I kept getting distracted by the content. So great work on this article, really. And like I said in the chat, I just
+
+Mizu (00:35.226)
+Hahaha
+
+Justin Gardner (00:43.948)
+I wanted to devote a whole episode to this because DOM Purify is so widely used in so many different applications. And what you wrote up here, don't get me wrong, Kevin, the first article was amazing, right? Absolutely amazing. But the second article is like, wow, this is so applicable for a bug bounty hunter because these misconfigurations are what bug bounty hunters live off of, right? That's where we live. So I was really excited to talk about both of them.
+
+Mizu (01:09.243)
+I think.
+
+Justin Gardner (01:13.87)
+But first, we gotta cut your teeth in the CTBB podcast world. We gotta start off with a bug that you're really proud of. So what bug did you bring for us today?
+
+Mizu (01:25.308)
+Well, so I think it's probably the bug that I'm the most proud of that I found recently. It's a client side chain. So I will try to explain it bit quickly, but I had like a gadget which allows me to have an account takeover on the main application of a website. But it do requires me to have control over cookies. So I need to find somehow a cookie injection or simply an XSS on a sub domain.
+
+And after looking a bit through all the subdomain of that website, I found one which had a get parameter, which was using in a fetch request. But this fetch request has to be same origin. So you still be limited by the feature which is present on the application itself. And the response of that fetch request was finishing in a document.write sync.
+
+Justin Gardner (02:24.161)
+OK, promising.
+
+Mizu (02:24.86)
+It's mostly an XSS as a feature. But the problem was that that application only have two routes, which was doing anything. I mean, there is no feature related to it except the XSS. And I have no file upload feature, no API, nothing that can actually use to have a bug. So after playing a bit with it, I found that the application was hosted behind Cloudflare.
+
+Justin Gardner (02:27.518)
+Mm. Mm.
+
+Justin Gardner (02:47.598)
+Mm.
+
+Mizu (02:55.356)
+And after playing a bit with the CDN CGI image endpoints, I found that that application was actually having another domain which was historically used. And that specific domain was still allowed in the Cloudflare configuration.
+
+Justin Gardner (02:59.644)
+Mmm, mm-hmm.
+
+Justin Gardner (03:14.574)
+Okay, that's great. How did you identify that? How did you find that?
+
+Mizu (03:18.992)
+Honestly, I was a bit like lazy and I took the top 100 websites or something like that, just a web, just a world list on internet, try to puzzle of them. And luckily I found one that's yeah, it's it was really lucky, honestly. And when I found that domain, I've saw that I was able to use not only the main domain of
+
+Justin Gardner (03:34.006)
+No way, wow, that's awesome, that's great.
+
+Mizu (03:46.332)
+the historical one, but also all the subdomain related to it. And yes, thanks to this, I managed to find an ident file upload feature, which allows me to use an image that I control on the CDNCGI endpoint. So in short, thanks to this, I was able to make a fetch request to CDNCGI, which returns me an image that I control, which contain into it in the exif an HTML payload.
+
+Justin Gardner (04:15.884)
+Hahaha.
+
+Mizu (04:16.494)
+And then when it's get consumed by document.rights, it png gets converted to HTML, which creates an XSS.
+
+Justin Gardner (04:24.034)
+Wow, okay, okay, okay. So I see that I'm looking at the doc right now. There's 14 bullet points under this bug. And so, and we're about halfway through right now. So let me take a second to summarize. correct me if I got any part of this wrong, okay? So we find this gadget on a subdomain, and we go specifically looking for this gadget because we have a session fixation based ATO. We find this gadget on the subdomain that allows you to control the destination of a fetch request. And...
+
+Mizu (04:35.546)
+Yep.
+
+Justin Gardner (04:51.66)
+that fetch request output is just dumped directly into document.write, but it has to be same origin. So there's no other paths on this. So we hit the cgi image endpoint, which is a part of Cloudflare, which allows you to retrieve an image from a different server. But it's limited to just a specific set of domains, which you enumerated by brute forcing. And then you find a place in that domain where you can upload a file.
+
+and put HTML data inside of the XIF metadata for that file, and then you hit that via the fetch request and dump it into document.write. Is that right? my god, dude. my god. That's amazing. It's crazy to me that, I'm sorry, I'm getting derailed, but it's crazy to me that the CDN CGI endpoint doesn't strip like that.
+
+Mizu (05:26.65)
+Hahaha!
+
+Yeah. Yep. PNG to XSS.
+
+Justin Gardner (05:45.546)
+metadata or those at least HTML tags. I feel like that would be a good security feature for them to implement. But if anybody from Cloudflare is listening to this, don't do that shit. Do not implement that. What do you think about that?
+
+Mizu (05:59.222)
+I think it's complicated because there is so many ways to hide like Charles within an image and so scar actors could be like, legit him. There is maybe some way that an image needs to have some stacks within it.
+
+Justin Gardner (06:10.082)
+Mm.
+
+Justin Gardner (06:14.67)
+It's true. Yeah, or like SVGs as well, right? Like if they allow legitimate SVGs, you can't just like replace the left bracket or whatever, left angle bracket. Okay, all right, so then we hit that, but you run into a CSP, it seems, right?
+
+Mizu (06:17.306)
+Yeah, exactly.
+
+Mizu (06:27.77)
+Yep. So the CSP bypass wasn't really difficult actually. I simply used an AngularJS gadget and I was able to have the XSS. So it's not really the most important part of the bypass. But thanks to this XSS, which was on a completely useless domain, I was finally able to end that chain, which was, I think, very interesting in the end.
+
+Justin Gardner (06:35.003)
+OK. Nice.
+
+Mizu (06:55.12)
+The login feature of the main website was using something interesting, which was when you go on the login page, you get redirected to a specific page which has in the link UUIDV4, so you can't reinforce it. And that UUID is associated with two cookies, one session cookies which has specific value, and another one which is prefixed with a double underscore host dash, which has the same value.
+
+Justin Gardner (07:22.526)
+Mm, okay.
+
+Mizu (07:24.872)
+And the double underscore host cookies is not something that you want to see when you to perform a fixation because you can't set it through JavaScript.
+
+Justin Gardner (07:35.628)
+Right, right, that has to be, that's an HTTP only one I think, yeah.
+
+Mizu (07:39.836)
+And not only it's, I think it's a reserved prefix, so it absolutely can't be set from the JavaScript, not at all.
+
+Justin Gardner (07:46.968)
+Yeah, yeah, absolutely, yeah.
+
+Mizu (07:49.532)
+And so to abuse that, mean, there is something that I need to explain to you because if you have like two clients, which has the exact same configuration, like the same UUID, the same session cookies, and one of them authenticates on the application, then the first one or the second one just need to refresh the page to be authenticated as well. So it was like a very interesting feature. Yeah.
+
+Justin Gardner (08:15.054)
+okay. That's a weird bug. Yeah, yeah, yeah.
+
+Mizu (08:19.28)
+So the only thing that I was needing to do is finding a way to force the victim to have the same setup as I do. And to do that, I wasn't able to directly do station fixation because the station cookie was set for something like a year and has the priority over mine. But after playing a bit with the application, I've thought that if you go like on any path, like a slash a.
+
+Justin Gardner (08:39.342)
+Mmm.
+
+Justin Gardner (08:47.747)
+Mm-hmm.
+
+Mizu (08:48.936)
+with two-session cookie with different value, then the application will detect that something wrong is actually happening. Maybe it detects that it is an attack actually. And it will try to remove the cookies on the top-level domain, because this is the only way for the browser to have two cookies at the same time. But the problem when you try to do that is that if you do a set cookie with an empty value, you need to have the exact
+
+Justin Gardner (09:08.706)
+Mmm.
+
+Mizu (09:18.872)
+a cookie configuration to remove it. Like exactly. So if you try to remove the cookie on sledge, but it has been set on such a, it won't work at all. So to bypass this, the application was trying to get the path on which it has been set. And to do that, it was simply taking the request URL provided by the user and putting it in the set cookie header. what I was able to do is simply going.
+
+Justin Gardner (09:20.354)
+Right, with the domain and the path, right?
+
+Justin Gardner (09:28.366)
+Mm-mm.
+
+Justin Gardner (09:43.118)
+okay, okay.
+
+Mizu (09:48.492)
+doing a session fixation, going on slash semicolon domain equal semicolon. And that's I was able to force the application not to remove my cookie, but the one from the user.
+
+Justin Gardner (09:54.414)
+Mm-hmm.
+
+Justin Gardner (09:57.934)
+nice, that's amazing, that's so good. Very good, so now you've got your session fixated on there and then.
+
+Mizu (10:01.269)
+Hahaha
+
+Mizu (10:08.142)
+Yeah, on the first cookie, but I was still needing to find a way to control the second one with the double underscore, house cookie. But yeah, but actually this one wasn't too hard to, like, said because when you go on the login page with a valid UID link to a validation value, if you don't provide the double underscore house cookie,
+
+Justin Gardner (10:14.862)
+Right, with the prefix, because you can't set it from JavaScript.
+
+Mizu (10:35.408)
+The application will detect that something is going wrong, but it will suppose that you are doing something like legitimate. So you are trying to log in with the correct value. So it will say like, you're missing that cookie. Let me set this cookie to the right value that you need. Exactly. So I was just needing to do a post request cross sites with the session cookie with same site none. And that way everything was ready. I just need to wait the user to log into his account and.
+
+Justin Gardner (10:48.75)
+Let me just help for you. my gosh. So helpful.
+
+Mizu (11:04.58)
+refresh my page to get to the content cover.
+
+Justin Gardner (11:06.754)
+Wow, very cool man. That is an amazing bug. Lots of cookie, cookie quirks, crazy creative, XSS. I love it dude, I love it. You have established your authority now to speak on the CTBV podcast after that bug for sure. I do have a question about it though. And this is just, I can't pull it out of my head. I'm wondering if we could have done anything with cookie jar overflows here. Where you could force that host.
+
+Mizu (11:18.94)
+Yes.
+
+Mizu (11:34.236)
+Mmm.
+
+Justin Gardner (11:36.942)
+and force the original cookie out of the cookie jar and then just fixate your stuff. Did you try that or did it occur to you? Because I don't remember if underscore host can be affected by that attack.
+
+Mizu (11:46.108)
+Ummm...
+
+Mizu (11:50.388)
+I didn't, but for two reasons. Because first, think that's a cookie jar overflow only works in if you set cookies on the actual domain on which you you want to do the attack. Yeah, I think. And the second reason is that since from a post request, I was able to have like the exact configuration I was needing. I don't even try to do that.
+
+Justin Gardner (12:00.558)
+You can't do that cross domain. Okay.
+
+Justin Gardner (12:12.94)
+Yeah, yeah, okay, that makes sense. Yeah, I'm gonna have to research that, because Cookie Jar overflow would be a little bit more helpful if we could just delete cookies. Like if I had an exercise on subdomain.site.com, if I could delete cookies for site.com, that would be pretty helpful with the Cookie Jar overflow. Yeah.
+
+Mizu (12:27.804)
+It will be amazing. honestly, if you do manage to do that, I think it will be a Chromium zero day. Yes, because there are supposed to be some boundary between different sites, even if they are same sites. So I might be wrong, but.
+
+Justin Gardner (12:33.486)
+really? jeez, okay, alright.
+
+Justin Gardner (12:41.044)
+Mm, mm, yeah. But it's just interesting because the reason the cookie jar overflow works is because you're pushing those cookies out of storage, right? So I don't understand how, I guess maybe the storage is segmented a little bit different by site. Perhaps that's what's going on. It's segmented by site. So it can send more cookies than are in the cookie jar to the server, but it can't store those in that same site.
+
+cookie, okay, okay, that makes sense. I'm gonna validate that after this though. All right, very cool. So let's go ahead and jump into, now we do things a little weird here on CTPP Podcast. Okay, now we're gonna jump back. Kevin Mizu, I said your name. Who are you, what do you work for, know, what are you up to in life right now, man?
+
+Mizu (13:09.54)
+Exactly.
+
+Mizu (13:30.488)
+so currently I've finished my studies, something like a year ago. I'm working in a small, fresh company called B-Secure in which I'm doing mostly pen tests and web audits. And, on my free time, I'm doing some research, some development like on WGAR++. And when I finally have some time, I'm doing bamboo tea actually, but I prefer to focus on research and developing stuff.
+
+Justin Gardner (13:56.418)
+Yeah, dude, it's been great to see your research come through and I'm really excited for some of the stuff you're building from an automation perspective. Obviously, DomLogger++ is a masterpiece and I love it, but also you've got some really cool JS and headless browser-based automation you're working on right now, which I'm excited to see come out soon. yeah, and to be honest, dude, that DomPurify, or not DomPurify, the DomLogger++ masterclass that we did for
+
+Mizu (14:07.644)
+Yeah.
+
+Justin Gardner (14:25.24)
+for the pod was like one of my favorite master classes we've ever done. That was just so fun and so insightful. So thank you so much for doing that. Now you're a guest in the master classes and a guest on the pod. So definitely excited for that. All right, let's go ahead and jump into the main topic for today, which is DOM Purify and its various misconfigurations and bypasses. Kevin did a...
+
+Mizu (14:25.82)
+Mmm.
+
+Yeah.
+
+Justin Gardner (14:53.366)
+two article series on DomPurify and the research that he put into DomPurify on his blog, Mizu.re, which if you haven't subscribed to, you should, and definitely go follow him on Twitter at Kevin underscore Mizu. And so these articles were broken out into two articles. The first one was mostly just focused on research and the DomPurify bypasses that you worked on and that other people have worked on, sort of documenting the sort of state of the art as far as
+
+DomPurify bypasses go. And then the second one was taking that research and then building on upon it with misconfigurations and taking some of the knowledge from the research that was done in the beginning and applying those with misconfigurations to find ways to exploit DomPurify in really hands-on production environments. And when I hit you up about this, I told you we were gonna do things a little weird, you know? Like first we jump into the bug, then we go into the introduction, and we're gonna skip to the end.
+
+Mizu (15:50.076)
+Hahaha.
+
+Justin Gardner (15:52.546)
+to first talk about the DOM Purify misconfigurations. And the reason we're doing this is because, listen guys, I am a client-side guy, I love client-side stuff. I don't profess to be a particular expert in mutation XSS, right, which is a lot of what this is, but that first article is dense, guys. And it is tricky to, don't get me wrong, Kevin, it is amazingly done, especially with the way you embedded all of the, you know,
+
+Mizu (15:58.512)
+Yeah.
+
+Justin Gardner (16:20.91)
+DOM stuff into, what's the name of that thing from Yes We Hack that you, yeah, DOM Explorer, man, I love that. It's so clean, but it's a little bit difficult to convey that via the audio medium to the listeners. So what we're gonna do is we're gonna hop into misconfigurations. We're gonna talk about misconfigurations as much as we can until we start needing some of that requisite knowledge from the first article. Then we'll go back, hit that, and then we'll finish up the misconfigurations which are most relevant to the bug hunters. Does that sound good, am I crazy?
+
+Mizu (16:24.634)
+Dome Explorer, which has been developed by BitKey.
+
+Mizu (16:50.608)
+Yeah, perfect.
+
+Justin Gardner (16:51.584)
+Okay, all right, all right, cool. So let's do it. All right, so we're gonna start with a little bit about DOM Purify. Correct me where I'm wrong on this and then I'll, you can kind of take the explanation a little further. DOM Purify is an HTML sanitization library, the premier HTML sanitization library, and essentially what it allows you to do is take untrusted user input, sanitize it, and then put it into the DOM. And this should allow you, the configurations in DOM Purify should allow you to do that.
+
+without fear of XSS occurring from that HTML sanitization. And there's some questionable defaults, I think, in DOM Purify with style and with form and stuff like that. But by default, it should pretty much clean everything up. Do you have anything else you wanna say on what DOM Purify does and how it functions and what makes it unique as an HTML sanitizer?
+
+Mizu (17:47.3)
+Yeah, probably because I think Dunperify is said is very special because by default, Cure53, which is the company which has developed Dunperify, try to provide not only a basic sanitizer, but one which allows by default as much stuff as they could allow. So like they could have tried to simply put a sanitizer which only allows like HTAG or I don't know, but actually they do allow.
+
+Justin Gardner (17:57.39)
+Mm-hmm.
+
+Justin Gardner (18:05.902)
+What a task, man. What a task.
+
+Justin Gardner (18:13.368)
+Mm, mm.
+
+Mizu (18:16.358)
+the html namespace, the matml namespace, the html namespace. And I think that this is probably one of the only HTML sanitizers that actually allows that. And yeah.
+
+Justin Gardner (18:26.766)
+It's crazy ambitious for them to do that, man. It really is. So yeah, it's used all over the place. We see it everywhere. Very, very cool project that Cure53 put out. I have so much respect for those guys. Really, they do an amazing job. And one of the other things that makes DOM Purify unique is it can be run on the server side and the client side, right? So is it more common for us to see it on the server side? Is it more common for us to see it on the client side?
+
+When you're approaching Don Purify from a research perspective, and also as a book bounty hunter, what have you seen? What's your experience with that, Ben?
+
+Mizu (19:04.668)
+Actually, most of the time I think it's being used on the client side. I did try to see some statistics like on NPM, the number of click downloads and like on CDNs. But actually if you look at NPM, it's represent both client side and server side usage. And on CDN you can't really have the number of applications that are currently using it because you will just have the number of individual conviction. But since it's... Yeah.
+
+Justin Gardner (19:08.749)
+Mm-hmm.
+
+Justin Gardner (19:21.293)
+Mm.
+
+Justin Gardner (19:29.197)
+Yeah.
+
+800 million monthly HTTP requests. Holy crap, that's insane. Yeah.
+
+Mizu (19:34.042)
+That's a lot. That's insane.
+
+But in this example, if I can only be used on a JavaScript backend, I think that's probably mostly being used on the client side. And yeah.
+
+Justin Gardner (19:47.106)
+Yeah, yeah, that makes sense. Let me just say to the listeners as well, like perhaps for you guys as you're listening wherever you are, whatever you're doing, you know, it just sounds like a good episode, right? You listen to the episode, you're like, wow, that's a great episode. This episode is so well prepared. Kevin, thank you for going into the dock here and do it, like I just threw a question in there, I said, more common, server side or client side? And he like breaks down, grabs all the CDN statistics, the NPM statistics, like.
+
+Mizu (19:59.613)
+I'm
+
+Mizu (20:06.31)
+Yeah.
+
+Mizu (20:15.226)
+you
+
+Justin Gardner (20:15.96)
+The prep that went into this is amazing. So thank you. Thank you for doing that, Kevin. I have to shout you out for that. OK, awesome. So we're dealing with it mostly on the client side. So what we might expect to see with that, let's say, for example, let's say it's a stored XSS. We send some HTML to the server side. It's stored in that format. And then it comes back to the client side, maybe as the result of a fetch request. And we see the valid XSS payload in the response from the server.
+
+Mizu (20:20.54)
+Thank you.
+
+Justin Gardner (20:45.954)
+But then by the time it hits the DOM, it's sanitized, right? And that's like a classic scenario where you'd be like, okay, yeah, there's some sanitization happening at the client side level. Okay, I see where we're at there. So, I guess, man, there's so many ways that we could go with this, right? Because one of the things that I wanna ask you about is like, okay, let's talk about the server side for a second, because it's so much more impactful if we can get an XSS on the server side, right? Like you can...
+
+If you can get an XSS on a headless browser that's generating an invoice or something like that, a lot of times you have a route to SSRF and RCE. So let me ask you this. If you're in a blind scenario where it's just generating a PDF and you can see the output physically, but you can't actually inspect the DOM, how do I fingerprint whether it's DOM purify or not? I don't know if that's a crazy hard question or not, but does anything come to your mind?
+
+Mizu (21:43.068)
+Not really. Actually, there is a trick for that that I've used several times in bug bounty. If you do have an HTML injection in a PDF and you don't know really what happened with your inputs, you can just use the plain text tag, which is a deprecated tag, which is going to convert the end of the DOM as raw text. So that way, you will be able to see the text version of your HTML inputs and like...
+
+Justin Gardner (21:52.141)
+Mm.
+
+Justin Gardner (22:04.301)
+Really?
+
+Mizu (22:11.066)
+That's where you will be able to see what is going to be sanitized, what is going to be replaced. And I've seen a lot of time, like very bad sanitizers are being used in that context. And simply by being able to see what happens, you see like, what the fuck, there is an A replace it there. And you just need like to update your payload to have something working.
+
+Justin Gardner (22:25.406)
+Yeah. Yeah.
+
+Wait, wait, so, and does, let's say it is dumb purify, will the plain text tag make it through dumb purify or is it in a different environment?
+
+Mizu (22:40.188)
+It depends because if your PDF you generated, for example, with an headless browser, then Dumpurify is going to be used before the input being inserted into the DOM. So what you are going to see is the sanitized version of the inputs, but this time in text. So then you can like play with the text output version of Dumpurify to see if there is some patterns that might fit Dumpurify or I don't know, another sanitizer to then start playing with it.
+
+Justin Gardner (22:54.882)
+Mm-hmm. Mm.
+
+Justin Gardner (23:08.418)
+Dude, that's a great tip. Okay, very cool. And then when we're fingerprinting DOM Purify on the client side, I see you've got another trick here in the doc relating to the CID aspect of the href. Can you tell me about that?
+
+Mizu (23:24.764)
+I might be wrong, but I think that Dumpurify is one of the only sanitizers that allows by default the CID sheme in the hash ref attribute, think. But honestly, if you want to see if it is Dumpurify on the client side, is so many ways to just simply check into the sources. Yeah, exactly.
+
+Justin Gardner (23:35.113)
+Okay.
+
+Justin Gardner (23:44.952)
+You can just open up the sources and control F for DOM Purify. It's not ever like, you haven't run into anything where it's obfuscated or anything like that before. Okay, cool. So it should be pretty easy on the client side. You just control F for it, boom. If you're dealing with something where you can inspect the href, we can use CID if it's server-side or if it's client-side and then you don't feel like using your resources tab, I guess. Okay.
+
+Mizu (24:12.646)
+You
+
+Justin Gardner (24:13.592)
+Cool, so that makes sense. Now let's go into a little bit of the misconfiguration that we sort of talked about now that we kind of set the tone. So one of the things that you said moving into this second article was that you sort of ended the first article with, okay, now DOM Purify security solely relies on one regex being executed correctly. What is that regex in like,
+
+why is that regex so important to don't purify security?
+
+Mizu (24:46.268)
+Actually, I will try to explain it without needing to explain everything that has been covered in the first article. But in short, when you want to do mutation XSS, most of the time you will hide the payload within an attribute value. So we need to use something like a command closure or maybe a style or a title closure tag. And so those are like mandatory if you want to do a mutation XSS.
+
+Justin Gardner (24:54.147)
+Yeah.
+
+Justin Gardner (24:57.432)
+Mm.
+
+Justin Gardner (25:01.805)
+Mm-hmm.
+
+Justin Gardner (25:14.218)
+Because those are different contexts on the inside of those tags. Is that the reason for that? Like you can't have HTML tags inside those?
+
+Mizu (25:19.708)
+Um, more or less, yes. Actually you do can, but it's, it's like on the, when you are using an HTML sanitizer, you have like two parsing. So the first one is what's a dumb purify is going to see. And the second is what's the dumb is going to receive. And when you are going to do mutation XSS, you want to have a different context between the browser and the purify. And the, the goal in the end is to have a context, which is going to break.
+
+an HTML attributes and create the XSS. So one way of fixing it is to limit the attribute value. And I think it's a good way actually, but it's still like not perfectly limited because if you find a way to bypass that reg ex in the end, the mutation is still present.
+
+Justin Gardner (25:54.178)
+Hmm, okay.
+
+Justin Gardner (26:12.364)
+Okay, okay, so what you're saying there is that a lot of times the flow, the strategy that we use to get these mutation XSS is we put HTML tags inside of the attribute, right? Because we can use those characters, you know, the angle brackets, that sort of thing, inside of the HTML attribute. And then what we try to cause with the mutation is that attribute moving from an attribute state to an actual HTML processing state, and then that's where the mismatch occurs. Is that accurate?
+
+Mizu (26:41.649)
+Exactly.
+
+Justin Gardner (26:42.326)
+Okay, perfect. And so what DOM Purify did, and I did kind of give you an impossible mission here. I'm like, explain the regex without explaining the first bug. So great answer, that makes sense. And the reason why that's so important, just trying to quickly summarize that first part, is that there's a pretty well-documented way to bypass DOM Purify if you are able to smuggle HTML tags inside of that regex, right?
+
+Mizu (26:48.806)
+Okay.
+
+Justin Gardner (27:11.374)
+So the regex that they implemented is simply to remove all HTML-like tags or maybe just a set of HTML-like tags from the attribute.
+
+Mizu (27:20.028)
+Not exactly because Core 53 still want to have something which doesn't limit the developer at all. So that's why they haven't implemented that 3GaG before, while there is a lot of research that have already been made in the past. So they decided to only limit to style, title, and comments tags, which are being used in mutation XSS. So you still can use like...
+
+image tag in an attribute, you won't be limited. But if you try to do something malicious, it won't work.
+
+Justin Gardner (27:54.446)
+These guys are legends, man. They really, really do try to go for the minimum secure, maximum secure, but with the minimum restrictions that you can possibly have. Super cool. Okay, so we've got no HTML comments, no title, no style in our HTML attributes. And if we can figure out a way to not make that regex hit, then we are good to go to trigger that mutation XSS.
+
+Mizu (28:00.486)
+That's amazing.
+
+Mizu (28:21.712)
+I just need to charge my computer, excuse me.
+
+Justin Gardner (28:24.212)
+you're good, you're good, you're good. We can cut. Or we can not cut, you know, we'll see. It's fine, this pod is very chill. you're good, yeah. Okay, cool, so that makes sense. Now, let's move to the misconfigurations. And some of these misconfigurations are like clear as day. And other ones utilize this like regex bypass to cause the mutation and do trigger the XSS. So, first one on the list.
+
+Mizu (28:30.684)
+Okay, perfect.
+
+Justin Gardner (28:53.186)
+dangerous tags, dangerous allow lists. Tell me a little bit about that.
+
+Mizu (28:58.012)
+Well, Dumpurify aims also to provide a lot of ways to be configured to a web developer. So when you are using it, you can modify which tags are being allowed and which tag you want to add to the default allow list. So those are commonly used, but most of the time you won't see any general tag because obviously the developer wants to allow a script tag. But sometimes, who knows, maybe
+
+They could be used in a way that they shouldn't be used. So we have the list on the dock. Maybe you want me to cite them.
+
+Justin Gardner (29:35.424)
+Yeah, yeah, let me go ahead and share my screen as well. I probably should be my screen. Sorry, Christian. My video editor is always like, dude, just share your screen so we can give these people some visuals. OK, let me jump to this. Yeah, so what have we got here in the, yeah, what is the default allow list here?
+
+Mizu (29:38.885)
+Okay.
+
+Mizu (29:56.828)
+I could give you the link but it's present on the DumpTree Fisores code.
+
+Justin Gardner (30:02.414)
+Okay, gotcha. So the default allow list is pretty liberal. Let's see.
+
+Mizu (30:09.392)
+Yeah, every HTML tag are being allowed, except maybe script, no script, iframe, or dangerous stuff like that.
+
+Justin Gardner (30:22.286)
+Right, okay. And so, we have these several configuration settings that are passed into DOM Purify. Allowed tags, allowed attributes, add tags, add attributes, okay? So if we're using allowed tags or allowed attributes, we are overriding the default list and allowing only these specific tags. So you're sort of limiting the amount of tags that are there. On the other hand, if we're using add tags or add attributes,
+
+then that's adding it to the already default allowed list and making the policy a little bit more lax. Is that accurate? Okay, cool. And I think, I don't know, now that I'm in here, I'm remembering it. But yeah, I think it was right here. Dude, this is what I'm talking about, Kevin. When I am reading articles, this is exactly the kind of shit that I wanna see, okay? So in the beginning of this article, I should have put this before we started in the misconfigurations.
+
+Mizu (30:56.783)
+Exactly. Exactly.
+
+Mizu (31:08.687)
+Yeah.
+
+Justin Gardner (31:18.988)
+He says, hey guys, here is what you should do if you're ever looking at a DOM Purify misconfiguration. And he gives you a string to search for that will just take you directly to the beginning of the sanitize function in DOM Purify. And that sanitize function, if you just inspect that sanitize function, you can easily grab out the configuration values that are being passed into DOM Purify. And then, like that is just such a valuable tip. like it's just amazing because it creates an easy entry point.
+
+You don't have to source, jump through all the code. You're always gonna go to the same spot if it's DomPriorify. You're gonna set a break point or a log point right at the beginning of that sanitize function, and then you inspect the configuration values and look for any of these misconfigurations that we're talking about further down in the article. So, awesome stuff there. Obviously, the ways you can shoot yourself in the foot with the dangerous allow lists would be like allowing something like script or like onload or anything like that for the attributes. Is there anything else sort of that we should be on the lookout for?
+
+with these allow tags, allow attributes configurations.
+
+Mizu (32:23.548)
+I don't think so because anyway, even if you allow tag, would be sanitized by the Dump purify in the end. So it needs to be a tag that's have a direct impact with the dumb like if I'm source doc or something like that.
+
+Justin Gardner (32:31.534)
+Mm.
+
+Justin Gardner (32:38.528)
+Mm, mm, okay, solid, yeah, that makes sense. Okay, and then later down in that same section, you're talking about the default setting for DOM Purify, which is pretty liberal, like we talked about, is allow data attributes and allow aria attributes. So essentially, you can set any attribute as long as it starts with data equals or aria equals. Why are they doing that, and why is that important to know for bypassing DOM Purify?
+
+Mizu (33:05.404)
+I think why they are doing it is like everything that they are doing with them purify, they want to have something flexible. And why this is important in the context of bug bounty? Well, there is an example right after this snippet, but there is a lot of HTML gadgets which can be found like with UGS, which is present on Ruby framework by default, think.
+
+Justin Gardner (33:32.802)
+Hmm. Yeah, by default on Ruby, yeah.
+
+Mizu (33:35.429)
+And yeah, a lot of data attributes can be abused to like hijack some JavaScript flows and trigger an XSS, which don't verify I won't be able to see.
+
+Justin Gardner (33:44.75)
+Yeah, the data attributes, think, I've seen this a couple times. I think it was with, with Johan, Johan Carlson doing some research that one of the best ways to bypass in a highly CSP'd environment, I think we actually talked about it when he came on the pod, is these, are these sort of gadgets, right, where it's like, okay, I can't, I can't run script, you know, unsafe inline or anything like that, but I can, you know, add something to the DOM with a specific data attribute.
+
+or whatever, and there's something, some observer sort of watching the DOM and saying, okay, when this gets added, we're gonna trigger some code, right? And then it just becomes a gadget hunting, where you're like, okay, what can I add to the DOM that changes the state of the DOM, that changes the state of my specific tag, that triggers some code that accomplishes a malicious purpose? And I think, if I remember correctly, DOM logger++ is one of the best ways to sort of find these gadgets, right?
+
+Have you, cause you can hook after something's been added to the DOM in particular, right? Can you talk a little bit about that?
+
+Mizu (34:50.524)
+Yeah, I've made a configuration which should be available on the GitHub, which basically aims to start logging everything which is happening after a specific event has been triggered within the DOM. So it could be like you start logging when your inputs reach the documents, and that way you will be sure that you won't have any false positives when you are auditing some codes.
+
+Justin Gardner (35:16.462)
+So you say, there's gonna be a tag. There's gonna be an a tag with the data dash, Justin is checking something, you know, ID, and then we hook that into DOM logger plus plus, and then everything, as soon as that element hits the DOM, then DOM logger will start going brrrr, you know, and it'll start, you like how my brain thinks about this stuff? And then DOM logger's gonna go brrrr. And then DOM logger will start logging everything.
+
+And then we'll be able to see what is happening after that hits the DOM so we can find those gadgets. OK, cool.
+
+Mizu (35:54.076)
+There is also something which could be interesting to look for the auditors, which is the JavaScript event delegation. So basically there is several ways to create an event in JavaScript. One way is simply to put the event on a specific tag like the onclick events. But another way, is exactly what UGS is actually doing under the hood is you will put
+
+Justin Gardner (36:02.325)
+Mmm. What is that?
+
+Mizu (36:21.932)
+the onclick events on the documents. And at the time you click on the body, you will check all the event.target nodes and check if one of those nodes have a specific attribute or whatever. And the main difference with the first way to set an event is that you can have like an HTML injection, which occurs after the event has been created.
+
+Justin Gardner (36:49.71)
+Mmm.
+
+Mizu (36:50.64)
+Because anyway the event is present on the documents, when you are going to click on the node in the end, it will simply check if it has the property that you want him to have to trigger the events.
+
+Justin Gardner (37:04.846)
+So I guess maybe is this what's happening when, I'm not sure if I tracked with that, but I'll try. Is this what's happening when I'm like, okay, I've got this button. I wanna see what happens when I click this button. So I go into DevTools and I click on it, and then I go to events and stuff like that, and I try to find the click event, and then there's nothing there. What's happening is the click event is actually happening at a higher level.
+
+Mizu (37:27.036)
+Yeah, probably.
+
+Justin Gardner (37:32.704)
+and then it's saying, okay, what's the target of that event? it's this button. Now I'm gonna register that callback. that, dude, I've always wondered why that was happening. I'm like, how are they triggering something if there's no on click event? That makes sense though.
+
+Mizu (37:37.872)
+Yeah. Because...
+
+Mizu (37:45.648)
+Yeah, because when you click on the page, it's going to trigger the events on all the elements that are related to that action. putting the event on the document works. this is why you are able to abuse the UGS gadget actually, because when the page loads, UGS is probably one of the first thing which is actually being executed. But even if your HTML injection happened at the end, you'll still be able to abuse it.
+
+Justin Gardner (37:52.782)
+Mmm.
+
+Justin Gardner (38:10.189)
+Mm-hmm.
+
+Justin Gardner (38:15.724)
+Mmm.
+
+Mizu (38:15.834)
+Because this is how actually the event is being used.
+
+Justin Gardner (38:19.694)
+Dude, that is really helpful. That is so helpful, Kevin. Dude, this episode is already amazing. I'm hyped. I learned so much stuff already. Okay, any final comments on this dangerous allow list section of the misconfigurations?
+
+Mizu (38:24.932)
+Hahaha
+
+Mizu (38:38.876)
+I don't think so.
+
+Justin Gardner (38:40.342)
+Okay, let's move on to the next one then. Dangerous URI attribute configuration. And when I saw this dude, was like, hell yeah, a regex. You know, like this is what we love to see as hackers. It's like, wow, if there's a regex, people always mess that up. And it's interesting too because I don't know if this was intentional or not, but like the allowed URI regex that you put in the thing, you know, it has the.
+
+Mizu (38:47.388)
+Thank you.
+
+Justin Gardner (39:06.998)
+an escaped dot there and whenever I see a dot without a backslash in it, I'm like triggered. You know, obviously it doesn't have the carrot or the dollar sign as well, which is what you exploited here. whenever I look at this regex, which for anybody who's listening on audio only, is literally just a domain, mizu.ree, which is where his blog is hosted, but the dot isn't escaped, my brain just goes triggered, exploit that. So what is this allowed URI regex?
+
+Mizu (39:29.508)
+You
+
+Justin Gardner (39:36.462)
+configuration that can get passed into DOM Purify.
+
+Mizu (39:41.852)
+I'm not sure to understand the question, but like it allows you to simply overwrite which links can be used in Dump Purify. So basically by default Dump Purify has a pretty strong regex, but sometimes you might have something a bit more custom. I've seen it on several websites and yeah, I don't think that developers understand that they are overwriting the default value and they might be forgetting.
+
+the dollar at the beginning, at the end, think. And yeah, there is a lot of ways to use it actually.
+
+Justin Gardner (40:13.204)
+Mm, the dollar at the end, Little carrot boy at the beginning. Okay, so what this does is it overrides the URL regex, which is pretty strict, although it does include the CID thing that we mentioned before, that's default to DOM purify whenever it's put in like an href or something like that. And the example that we have here is.
+
+they just provided their, you just provided your domain, which I could totally see happening, right? They could be like, I just popped my headphone cord out. But I could totally see that happening, right? Where it's like, I only want this to be able to point specifically towards my domain, no other links to any other sites in this specific setup. But what they forget is that this is a holistic regex, so it needs to have the carrot at the beginning, the little upward arrow.
+
+and the dollar sign at the end in order to match that whole flow. So what you did to exploit that was you put JavaScript colon alert one, and then you just commented out the rest of the line, and then put in the value that they wanted to see, and that matches the regex, which allowed you to pass through a malicious href into your a tag. That makes sense. And then is this regex only for the a href?
+
+attribute or is this used in other places as well?
+
+Mizu (41:39.88)
+Now it's for every URI attributes. So the href attribute of the use tag is going to be involved as well. The home action, think. But yeah, every attribute that needs to have a URI are going to be impacted.
+
+Justin Gardner (41:53.838)
+really?
+
+Justin Gardner (42:00.31)
+Okay, very cool. And then what is this add URI safe attribute setting?
+
+Mizu (42:06.044)
+It's mostly the same. Honestly, I never saw this being used somewhere, but it was important to be mentioned. So this option allows you to say, that specific attribute is not safe and you don't need to check it anymore.
+
+Justin Gardner (42:10.158)
+Mm-mm.
+
+Justin Gardner (42:22.686)
+okay. So it says, just don't worry about it. We got it. Wow.
+
+Mizu (42:24.39)
+So basically, yeah, exactly. You just downgrade the sanitization in some place.
+
+Justin Gardner (42:34.722)
+That's an easy one to look out for. And all of these will be present in that sanitize function when we put that break point at the beginning of the sanitize function. Dude, this is easy, man. You make it too easy, Kevin. One of the things we talked about on the pod before, and I even shouted you out for this, was that there are a lot of hackers that have done this really cool thing where they have become the go-to person for one thing. Classic example of that is Alex Chapman.
+
+Mizu (42:41.776)
+Yeah.
+
+Justin Gardner (43:03.906)
+who is the go-to guy for anything headless browser, right? And I think you've done the same thing for DOM Purify. If I've got a DOM Purify scenario, I'm just like, yep, it's gonna go to Kevin right now. But now, Kevin, I can just load up mizu.ree and look at this methodology, and you made it too easy to know how to bypass DOM Purify. But I really do appreciate the contribution to the community. Yeah, okay, so let's go to this next one. Go ahead.
+
+Mizu (43:13.163)
+Hahaha
+
+Mizu (43:29.7)
+I think there is something important to be mentioned because since the beginning, are saying that you can easily retrieve the option passed to document.sanitize call. But it's important to remind that each time DumpRefi is being used, it might have a different configuration. Like I've seen it a lot of time. We even abused this once with Matumba on a bug.
+
+Justin Gardner (43:41.249)
+Mm-hmm, yeah.
+
+Justin Gardner (43:48.59)
+Mmm.
+
+Justin Gardner (43:56.802)
+Mm-hmm.
+
+Mizu (43:58.266)
+Yeah, it's not because you see a specific configuration that is safe that the next call will be safe as well.
+
+Justin Gardner (44:04.366)
+So it would be interesting then to be able to do like a DOM logger plus plus hook at that sanitize function. I told you that before and you told me some problem with that and I can't remember what it was. What was that problem?
+
+Mizu (44:17.884)
+Actually, there is some way to hook the sanitize function. Like you can hook for dump parser prototype parse from string, which is used to parse the HTML in the end. So you will be able to see when your HTML input is being passed. But if you want to retrieve the configuration, the problem is that dump verify could be initialized anywhere within the JavaScript. And actually it's almost impossible to retrieve a local variable, is used somewhere.
+
+Justin Gardner (44:41.454)
+Mmm.
+
+Mizu (44:47.908)
+you do, you don't have information about.
+
+Justin Gardner (44:49.612)
+Yeah, yeah, that's interesting, because even if we did something like, okay, one of the first lines, think, and this is how you find the sanitize thing, is like doing a string replace. Even if we override the string replace function to do something that we're gonna do, you can't jump up that extra call in the stack to go into the, okay, to get the access to the local variables in the DOM logger, plus plus sanitization, or the DOM purify sanitization function. Okay.
+
+Yeah, that's tricky. Okay, so you kind of have to do it little bit manually each time. Yeah.
+
+Mizu (45:23.258)
+Yeah, but you can simply use a log point at the beginning of the sanitize function and just look into your DevTools if there is any configuration that are being used, which are dangerous.
+
+Justin Gardner (45:34.446)
+That makes sense. Okay, cool. Let's jump into this next one. Bad usage, not enough context. As I understand this, this is not using DOM Purify how it's intended to be used. And essentially it's adding some text area or some NoScript style XMP. You listed a bunch of tags here that could affect how DOM Purify will be able to effectively sanitize the user input.
+
+before, know, and appending that after the sanitization already occurs. Is that accurate and what, have you seen this often? This seems like this would be really, really common.
+
+Mizu (46:17.372)
+Honestly, I've mostly seen it in CTF challenge. But I still believe that having sanitized inputs which finish in a title tag might be possible. Just people absolutely don't look into the title tag because they assume that it is safe most of the time, think. But yeah, the problem is that when you're using Dumpurify, mostly on the server side,
+
+Justin Gardner (46:22.542)
+Okay.
+
+Justin Gardner (46:33.118)
+Mm-mm.
+
+Justin Gardner (46:39.011)
+Mmm.
+
+Mizu (46:46.07)
+you will provide him only parts of the body as a context. So you will sanitize the user inputs, but that user input is going to finish somewhere within the page. And when the server responds to the browser with the whole page, that time the browser will parse everything at once. yeah, if you put the output of the verify into something dangerous, then you might break everything.
+
+Justin Gardner (47:14.958)
+Okay, so the reason why this is bad in this specific scenario is the code that you gave here was that it sanitizes the user's input and then places it inside a text area tag. And a text area tag prevents the actual content inside of it from being parsed as a HTML tag up until the closed text area tag. So it's considered to be plain text. So then what we do, we pass in a
+
+a div that has the ID or whatever other approved attribute of closed text area and then whatever our XSS payload is, that will be permitted inside the attribute because they've got to be super permissive with their attributes.
+
+Mizu (48:00.344)
+Exactly. Actually this since 3.1.3, it doesn't work anymore with style and title as we have said at the beginning, but they still have decided to leave text-area scripts and also stag being allowed in an attribute because they do want to have something which don't limit the developer in the end.
+
+Justin Gardner (48:06.542)
+Hmm.
+
+Justin Gardner (48:20.91)
+Wow, yeah, that's amazing. So then when it is added to the DOM with the text area, the div tag, which we previously had, is just plain text. It's not a tag. the ID attribute isn't being processed up until the closed text area, and then our image tag that precedes that directly is being parsed as HTML, and that's why the bypass works. Okay, cool. So the TLDR of all that is look at where your specific
+
+sanitized output is being placed and try to manipulate the payload that's going through DOM Purify. I keep on wanting to say DOM Logger, because why are they so similar, Kevin? The payload that's going through DOM Purify to actually fit that context that it's in. That may allow for some additional bypasses. Okay, solid, solid. Anything else that the user should know about in this specific session? I see...
+
+Mizu (49:02.618)
+Yeah.
+
+Justin Gardner (49:20.214)
+some stuff with JSON here.
+
+Mizu (49:23.068)
+This one is a bit more specific, but it's not working anymore on the latest version. It was a bug that I did found in bug bounty. But I think it's still interesting. It was a case where a dumperify was used twice in a row with a user inputs. what you could... Yeah. Exactly. And what you can do in such specific version is thanks to the first HTML injection.
+
+Justin Gardner (49:28.3)
+Mm.
+
+Justin Gardner (49:31.864)
+Mm.
+
+Justin Gardner (49:40.078)
+Okay, it's two user inputs right next to each other. I feel like that should be pretty common. Yeah.
+
+Mizu (49:52.54)
+you hijack the document getElementById to this time put an HVG tag. So now the second DumpurifySanitize is going to be used not in the HTML namespace, but within the HVG namespace. And thanks to that, before Dumpurify3.1.2, you was able to simply bypass it just because it was using it twice, it's seen on the one.
+
+Justin Gardner (50:14.766)
+So it's a little bit of like, it's not necessarily DOM clobbering, but it's like a little bit of like a query selector or a get element by ID selector hijacking in the page. So okay, if there's multiple calls to DOM purify and you're able to hijack one of those calls, then that may allow you to swap the namespaces and trigger the XSS. Okay. Dude.
+
+A little side tangent, I love query selector and get element by ID selector hijacking. That is just such an interesting bug class and you can trigger so many interesting pieces of functionality with that.
+
+Mizu (50:45.254)
+Yeah
+
+Justin Gardner (51:00.59)
+crazy. It really is. All right, let's jump down into this next one. Okay, so we've got bad usage, replacing the output. Yeah, dude, this is a really cool one. And I think this is one that sort of applies to security in general, right? If you do sanitization and then after that sanitization, you modify it in some way, right, further, then that really can affect the integrity of the sanitization.
+
+Tell us a little bit about the bad usage and replacing the output misconfiguration.
+
+Mizu (51:33.596)
+Actually, there are two examples in that section. The first one is related to an old CVE, which has been found in 2020. So shortly, jQuery in the oldest version was doing some kind of specific replacements in the HTML function to make it compatible with the old HTML.
+
+Justin Gardner (51:43.746)
+Mm.
+
+Mizu (52:03.004)
+uh, parsing. So there was making replacements with the slash and a greater than to force the tag from being closed. And so when Massato have found that, um, Go53 decided to fix it and to put some very strict rules about that to ensure that the purify can't be bypassed because of that issue, because jQuery was used almost everywhere also. And the fact is, um,
+
+Since a lot of protection have been added in Dumpurify since 2020, they decided something like a year ago to remove that protection. And now, thanks to the recent bypasses, if the application is using jQuery with an older version, which is still vulnerable to that issue, then it's possible to use the recent Dumpurify bypasses research to bypass Dumpurify again.
+
+Justin Gardner (52:59.31)
+Wow, okay, so if I'm looking at this correctly, it says by default, since that version, the filter is deactivated. So you are able to use this alternative close tag, is that right? Okay.
+
+Mizu (53:15.268)
+Exactly. You should be able to see in the snippets that I'm using a style slash instead of slash style. Yeah. Which is going to be replaced automatically by a different version of GCOI.
+
+Justin Gardner (53:21.908)
+right here, okay.
+
+Justin Gardner (53:30.23)
+Wow, okay, gotcha. So that is going to be replaced with jQuery to the actual closed tag and that also sort of affects that regex that we were talking about in the beginning. it's all coming, dude, you I'm not gonna lie, I'm not gonna lie. Sometimes I go into these episodes and I'm like, man, I've read this, I understand it, but like putting it into words is so hard and now I'm starting to see it. So then, you know, what happens here is jQuery is providing,
+
+Mizu (53:39.696)
+Yeah.
+
+Justin Gardner (53:58.696)
+a sort of a replace, right? Where you're putting in style slash, let me be very clear, left angle bracket style slash right angle bracket, right? And so it's not a valid closed tag. But in jQuery, it's providing a replacement, and we use that replacement to bypass the regex that is validating is there a closed style tag in the HTML attribute. Is that right? Dude. Dude.
+
+Mizu (54:03.557)
+Yeah.
+
+Mizu (54:23.42)
+Exactly. That's it.
+
+Justin Gardner (54:28.28)
+Thank you for validating me, Kevin. I feel like half of this episode has been you saying something and then me being like, wow, when Kevin says it, I understand it. And then I repeat it back to you. And when you tell me, yes, that's right, my heart is so happy. OK, so that's great. So jQuery is doing a mutation on this, which makes sense. What is this other mutation that happens next?
+
+Mizu (54:37.19)
+Yeah.
+
+Mizu (54:51.228)
+Well, on the jQuery issue, this is something that you probably won't be able to see today since the version is five years old now. But the concept is very important. Like if there is any library or anything that happens after, which do a replacement or a normalization like a two-upper case, which we are going to see a bit later, then you should be able to bypass them.
+
+Justin Gardner (55:02.861)
+Okay.
+
+Justin Gardner (55:14.253)
+Mm, mm.
+
+Mizu (55:18.786)
+This is exactly what Masato have done a second time with tinyMser, which is the second issue. So before a specific version, tinyMser was replacing after dumpurify the bum character by an empty string. And because of that, you can simply hide a payload within a style tag or like in latest version.
+
+Justin Gardner (55:34.54)
+Hmm
+
+Mizu (55:46.428)
+to bypass the regex and have the payload working again.
+
+Justin Gardner (55:50.798)
+Mm, mm, okay. So TinyMC was doing a replacement, I'm looking at this, on the UnicodeCodePointFEFF, that's byte order mark, is that what that is? What is it, okay, cool. And then, okay, dude, this is so crazy. So then you put that right in front of the style close, dude, everything just manipulates this style close thing. That's so hilarious. Okay, yeah, and then that bypasses the regex.
+
+Mizu (56:03.067)
+yeah.
+
+Mizu (56:14.074)
+Hahaha
+
+Justin Gardner (56:20.514)
+the all important regex that prevents the closed style tag from being inside of an attribute, which then breaks, got it.
+
+Mizu (56:28.152)
+And actually this is very interesting because something that people need to keep in mind is that dump purify is like used everywhere. So on one website, it's might be possible to have two dump purify version because imagine that you are using tiny MC. So tiny MC has his own dump purify version, and then you are using your own dump purify version because you aren't using the one of the tiny MC. And this is more or less
+
+Justin Gardner (56:39.053)
+Mm.
+
+Justin Gardner (56:45.197)
+Mmm.
+
+Mizu (56:57.936)
+What I did try to explain in the second example, because I found a case in bug bounty where the, it is the second one with on top of it. That one, yes. I faced a situation in bug bounty where a tiny himself was using an up to date version of the purify, but thanks to the replacement, I was able to bypass it. But then the website to fix that issue was using.
+
+Justin Gardner (57:09.038)
+Well, here? This one, yeah. OK, I see, I see.
+
+Justin Gardner (57:23.427)
+Mm.
+
+Mizu (57:28.22)
+this time an outdated version of Dumpurify. So the fact is that you can bypass Dumpurify even if it's used several times in a row. And more interestingly, I faced the case where there is two Dumpurifiers used in a row, but this replacement was used twice as well. The problem is like...
+
+Justin Gardner (57:52.152)
+Ha ha ha ha!
+
+Justin Gardner (57:57.454)
+man.
+
+Mizu (57:58.03)
+You can't put, for example, a new line within a new line. So at the first replacement, you really lose your gadget to bypass the second Dom Purify. But you can use the fact that the Dom decodes by default HTML entities to hide from the first replacement the new line, which is going to appear after the third Dom Purify sanitizing, which then going to create
+
+the height's replacement to bypass them perify a second time.
+
+Justin Gardner (58:31.352)
+Dude, that is amazing. That makes total sense. you can't split a new line. A lot of times I think of a new line character as backslash n because that's how I've always seen it. And I was like, you could just do backslash n, but that doesn't work. And so it's just such a, for a second your brain's like, wait a second, no, no, no, no, that's not right. But yeah, absolutely, using some sort of encoding here to sort of.
+
+Mizu (58:50.669)
+Yeah.
+
+Justin Gardner (59:00.31)
+space that out, that's genius, I love that. And using the auto decoding of HTML entities. Very cool man. Okay, so now, that sort of, and you listed a bunch of other examples on how DOM Purify has been bypassed and with other misconfigurations or bypasses. But that sort of concludes the first section which is the misconfigurations that you commonly see. And now we move into,
+
+DOM Purify hooks, which is a little bit of a newer feature to DOM Purify. And it allows, if I understand correctly, it allows the developer to hook into the sanitization process at various points. And when there's more configuration like this, there's more problems. So can you tell us a little bit about those hooks and where they can be used to bypass stuff?
+
+Mizu (59:53.698)
+Yes, so those are present within the DumpLurify since a long time. But the fact is that in the context of sanitization configuration, it will be applied for one DumpLurify.sanitize call. At the opposite, a DumpLurify hooks are defined to configure DumpLurify more globally. So they will be present each time you do a sanitization with that DumpLurify instance.
+
+Justin Gardner (59:57.867)
+Okay, so they're not newer.
+
+Justin Gardner (01:00:09.453)
+Hmm.
+
+Mizu (01:00:21.666)
+And because of that, there is no direct way to find source hooks except by searching within the JavaScript files. And I think that's one of the reasons why people probably haven't looked at them a lot since today, because you have to know that they exist, actually.
+
+Justin Gardner (01:00:42.75)
+Mm, mm, and you have to search for them directly, because they're not going to be in that sanitized call. OK.
+
+Mizu (01:00:45.786)
+Yeah. So there is many hooks, but partly what you need to keep in mind is that all the time you have three hooks for the sanitize element timing, three hooks for the sanitize attribute timing, and three hooks for the sanitize shadow DOM timing. And each time...
+
+Justin Gardner (01:01:07.054)
+shadow DOM. I'm sorry, every time I hear that in my brain, I'm just like, and then the shadow DOM, like that's hilarious. I'm sorry, okay, so three hooks for element sanitization, three hooks for attribute sanitization, three hooks for shadow DOM sanitization. Okay, before, upon, and after.
+
+Mizu (01:01:13.935)
+Yeah
+
+Mizu (01:01:22.246)
+Yeah. And exactly.
+
+Justin Gardner (01:01:26.934)
+Okay, and so these hooks allow you to change the current configuration, the settings, manipulate the things being sanitized as they go through that specific flow. help me understand how DOM Purify does the sanitization. Is it like starting with the top node and then like going down to the first child and then does it go all the way through that whole?
+
+chain and then work its way back up? What does that flow look like?
+
+Mizu (01:01:59.26)
+If we go directly into the technical details, it uses first DOMParser, which is an API provided by the browser to parse HTML. Thanks to this, it will obtain a tree, and it will retrieve by default only the body. This is something I abuse later in the article, but it retrieves only the body. And then it's going to use the NodeIterator API, which allows to create something on which you can do a for loop.
+
+Justin Gardner (01:02:09.208)
+Okay.
+
+Mizu (01:02:28.59)
+And you will simply iterate over each node of the tree, but it takes the node on the top of the tree and iterates down the tree to finish with the one at the bottom.
+
+Justin Gardner (01:02:40.248)
+Okay, so does it start sanitizing at the innermost node or does it start sanitizing at the top node? At the top node, okay, so it sanitizes, goes to the child. Sanitizes, goes to the child, okay, gotcha. And it does that recursively. Dude, actually, it makes a lot of sense. When you said it just takes the body, I know you used that later with the base tag. That was such an amazing misconfiguration. But that also makes me understand why the meta tag bug.
+
+Mizu (01:02:48.758)
+Top node.
+
+Exactly.
+
+Justin Gardner (01:03:10.22)
+Do you know what I'm talking about? Where you can set like a meta tag refer policy? Have you seen that? Yeah, so J Rock mentioned that on his episode. I'll have to go back and find the episode number. Maybe the production team can put it on the screen if they want to. But essentially what happens is you can pass a meta tag into DOM Purify and that meta tag will get stripped out, right, for sure. But the effect that it has on the DOM is still present somehow.
+
+Mizu (01:03:17.339)
+Yes.
+
+Justin Gardner (01:03:41.973)
+As I'm saying it, I was like, oh, that makes sense because it's being passed in the DOM parser. when you apply a meta tag to the DOM parser, then it applies it to the main DOM. Now it's not making sense again. Do you understand? Do you? Okay.
+
+Mizu (01:03:56.412)
+I'm not sure, but actually it shouldn't be applied on the main DOM, but...
+
+Justin Gardner (01:04:01.366)
+Maybe that isn't the place where it's triggered then.
+
+Mizu (01:04:06.406)
+but it should be applied within the DOM which is created by a DOM parser. And I'm not really surprised to hear that it do work in the context of DOM Purify or any DOM parser API because when you are using DOM parser, you simply create a DOM the same way the browser will do when you receive an HTTP request. Like it's exactly the same. And this is why most of the time you want to use a sanitizer on the client side because you are going to use the same parser at the beginning and at the end of...
+
+the input usage. So yeah, I'm not really surprised. And the other point, as I was saying about the body is that it should put the meta tag at the very beginning. Dump purify won't be able to see it at all because by default, when you pass an HTML input and you have like a style tag or a meta tag at the beginning, it will be placed in the head tag, which is untreated and sanitized by Dump Purify, but will have an effect on all the nodes.
+
+Justin Gardner (01:05:01.048)
+and the head, yeah.
+
+Mizu (01:05:06.31)
+that I'll present after.
+
+Justin Gardner (01:05:08.654)
+Dude, that's pretty hecked up, to be honest. That they only look at the body, that they don't consider what is in the head. I bet there's more bypasses that could be done there, because you can manipulate what the, yeah, mean, obviously there is, because you did it with the base tag. All right, let's keep going. We'll have time for that, but let's keep going through what you have, and then I'll geek out about that later. Okay, so the first...
+
+Mizu (01:05:26.159)
+Hehehehe
+
+Justin Gardner (01:05:37.908)
+section that you had here was the upon sanitize attribute. we, and I'm sorry, let me just refresh my memory on the order. So it goes sanitize element, sanitize attribute, sanitize shadow DOM. Just for, can you give me like a two second description of what sanitize shadow DOM does?
+
+Mizu (01:05:57.244)
+if you go within, no, no, it should be fine. Like if you go within the dumb purify source code, it's like, there is, okay. It won't be this two seconds, but there is something really important to know. Like when you are using the not iterate API, there is something, which is sent and done by default by the browser is that when you iterate. When it's rich, a shadow dumb, it won't go through the shadow.
+
+Justin Gardner (01:05:58.198)
+Or is that not a two second description? Okay.
+
+Justin Gardner (01:06:06.477)
+Hahaha
+
+Mizu (01:06:27.142)
+So basically, if you create a sanitizer, which only used the node iterator API, you will miss a lot of tags and there will be a lot of bypass just because of that. That's it. So don't purify is simply taking the Shadow DOM, creating a new iterator function out of it. And at the beginning and at the end of that new function, they are putting some hooks to add developers to do some stuff.
+
+Justin Gardner (01:06:27.181)
+Mmm.
+
+Justin Gardner (01:06:37.624)
+because they'll be hidden in the Shadow DOM. OK. Gotcha.
+
+Justin Gardner (01:06:56.182)
+Okay, gotcha. So the flow is sanitize elements, sanitize attribute, if it's a shadow DOM, sanitize shadow DOM. Is that right? Okay, cool. So then we talking about the first configuration, it's the upon sanitize attribute. So this is while the attribute is being sanitized itself. And you say that there's a misconfiguration there with the force keep attribute. Can you tell us about that?
+
+Mizu (01:07:02.95)
+That's it.
+
+Mizu (01:07:24.479)
+Well, I think that this specific hooks is probably one of the most used hooks in dump purify because this is the only one that allows a developer to have both a node and a reference to a specific attributes within this sanitization. And the funny stuff that was present in dump purify 3.1.3 up to 3.1.5.
+
+is that when they do implemented the regex, then put it the regex after the for-skip attributes value, which was being used by that specific hook. So in short, developers was able to say to them, purify, hey, that specific attribute is completely safe. I want you to do not sanitize it. And right after, the purify was simply skipping it.
+
+Justin Gardner (01:08:03.832)
+Mmm, okay.
+
+Mizu (01:08:19.696)
+But the regex check wasn't made at all. So if there was any attribute which was allowed by default by the developer, thanks to that, OQ was able to bypass and purify on source version.
+
+Justin Gardner (01:08:32.046)
+Okay, okay, so force keep attribute, I wonder if that's a little bit of a misnomer, because I like, or if the name is a little bit weird, because what I would think if it was force keep attribute was do not remove this attribute. Doesn't necessarily mean do not sanitize it at all. Like, is that, does it mean do not sanitize it at all?
+
+Mizu (01:08:51.324)
+It's more do not sanitize it at all.
+
+Justin Gardner (01:08:54.862)
+Wow, okay, gotcha. Yeah, even just the naming convention on that is a little bit unsure about that. And I would imagine that, yeah, even if you wanted to say, for these specific data attributes or something like that, yeah, I need this specific data attribute to go through, and a user can control even a part of that, you say, force this attribute to stay there. And then that skips the whole regex, which once again, breaks all of DOM Purify.
+
+Okay, so we should be on the lookout for any use of forcekeep attribute.
+
+Mizu (01:09:27.484)
+but it has to be on specific version because this is something I've reported to Qo53. So now it speaks on the latest. I mean, it's important.
+
+Justin Gardner (01:09:33.346)
+damn it, Kevin, why? Why did it, no, no. It is very important. My first instinct is damn it, Kevin, why? But then my second instinct is like no, no, Justin, secure the internet. Okay, cool. So that works well.
+
+Mizu (01:09:43.61)
+Hahaha.
+
+Mizu (01:09:47.93)
+Hahaha
+
+But the example on the whole UI, think it's a great one, which helps to understand why do a developer will have to use that. It's a bit on the bottom. Yeah, that one, the snippet on the bottom of your screen. Yeah. I think this is a great example because when you do want to.
+
+Justin Gardner (01:10:06.448)
+Is it further down here?
+
+Justin Gardner (01:10:11.82)
+This one right here? OK, cool.
+
+Mizu (01:10:18.084)
+sanitize for HVG contents, or I don't know, for example, the use tag with the href attributes, you might want to put some very specific sanitization process on source because they are like spatial and you know that bad things can happen because of that. So you don't want to simply allows the use href elements. So sometimes web developers could want to use a hooks.
+
+Justin Gardner (01:10:24.14)
+Mm-hmm.
+
+Justin Gardner (01:10:39.874)
+Mm.
+
+Mizu (01:10:46.64)
+to put a more specific logic to underlit in the way they want to underlit. And this is where the Royo was vulnerable in the snippet present in the screen. They were simply making sure that Dumperify do not sanitize the content attributes. And because of that, it was possible to bypass it.
+
+Justin Gardner (01:11:07.564)
+Yeah man, there's, so literally the condition is, if force keep attribute is there, and you control arbitrarily even a part of the content of that attribute, just those two conditions definitely bypass. Dude, I love that, I love that. And I also love that you said, that you said this upon sanitize attribute is like one of the ones that's used the most, right? Like that.
+
+Mizu (01:11:21.124)
+It's enough.
+
+Mizu (01:11:25.112)
+Hahaha
+
+Justin Gardner (01:11:33.738)
+is the kind of shit that you need to hear from an expert that's like, yeah, I think that's the one that, you know, that's the one we pay attention to, that we're really like, you know, if there's one that you walk away from and you actually store in your hacker brain rather than having to reference back to the article, then it might be upon sanitize attribute. That's really good. I also love how you just casually dropped the dry-o zero day here. That's great.
+
+Mizu (01:11:58.172)
+Actually, it's not really a zero there because this is something I've reported to Royo and it has been fixed a year ago.
+
+Justin Gardner (01:12:02.654)
+Damn it, Kevin. No, no, no, no, you're good. No, that's great. All right. Let's move to this next one. Once again, another upon sanitize attribute bypass. And this one occurs when you're using currentNode.setAttribute. So essentially, you're adding attributes to the element that have already been is being sanitized.
+
+Mizu (01:12:27.004)
+This one is, I think, way more interesting than the previous one because this is something pure53 can't fix at all. So it still works in the latest version. But in short, when dump-curify sanitizes an attribute, will take the node, retrieve the attribute. Then it will iterate over each attribute present within it.
+
+Justin Gardner (01:12:31.661)
+Mm.
+
+Justin Gardner (01:12:50.454)
+Mm, mm.
+
+Mizu (01:12:56.232)
+And then it's going to sanitize it and call the OpenSanitizeAttribute hook. But the fact is, because the attributes has been retrieved before iterating over the attributes, obviously, if you add an attribute within that loop, it won't be verified at all by them verify. And if it's not being verified, it's not being verified by the regex, so you can bypass it again.
+
+Justin Gardner (01:13:15.054)
+Mmm, okay.
+
+Justin Gardner (01:13:21.922)
+The holy regi, okay, gotcha. So what's happening here then is it's loading up a list of all the attributes first into like a local array and then it's iterating across all of them doing the sanitization. And then because you're adding things after that, it's not getting caught in that first, these are all the attributes for this specific node and then, okay, I see what's happening here. Yep, that's buggy. But I wonder, you know, said this is something that maybe,
+
+the folks over at Cure 53 can't resolve. But I'm thinking, what if just after the first iteration across all the, well, then you'd have to do it recursively forever. Yeah, yeah, no, it's not gonna happen. RIP. That's crazy. All right, so then you add another attribute. So any use of currentNode.setAttribute, or is there a way to add attribute here?
+
+Mizu (01:14:08.944)
+Yeah.
+
+Justin Gardner (01:14:22.4)
+not that I see, I'm sure there is, but I guess that attribute could be used in the same way. Then, and you control any part of that, then you can trigger that same bypass. Okay.
+
+Mizu (01:14:31.494)
+That's it. And I've seen a lot of HTML editors that was simply taking all the dangerous attribute that they do not know and only setting a new attributes, which was prefixed with data. So that way they were sure that this was being safe. But simply because they were doing that, the whole sanitization was just broken.
+
+Justin Gardner (01:14:47.278)
+Hehehehehe
+
+Justin Gardner (01:14:55.902)
+Don't mess with DomPurify, man. Don't try to make DomPurify more secure. They've got it. It's like shooting yourself in the face. It's like rolling your own crypto. Okay, awesome. And yeah, here's that use of that same mutation XSS that we talked about before the call. Gotcha. And you know, the thing is, I would like to go in. We're already at like an hour, 15 minutes, which just blew by. So I'm not sure we're gonna be able to get to the full.
+
+Mizu (01:14:58.438)
+Yeah.
+
+Justin Gardner (01:15:24.722)
+research, you know, explanation section this time around. But there are so many gadgets that I think are really helpful. You've mentioned two of them already, you know, the fact that it parses the body, only the body, not the head of that DOM. And then, you know, the usage of how bypassing DOM purify is very proceduralized with like the XSS or the mutation XSS being triggered via the title, style, or HTML comments tags.
+
+Those I think are really helpful. And I think you also included a section at the end of your article that talks a little bit about areas of research that can continue as well. for anybody who's interested in continuing research or having a little bit more deep of understanding on how all this works, I'll refer you to mizu.ri domain to sort of read through that. But let's go ahead and cover these remaining hooks.
+
+dip it into the miscellaneous section a little bit and then we'll call it a wrap because it's already an hour 15 in. So let's talk about before sanitize attributes. So this is happening after the sanitization of elements. This is happening before the start of the attribute sanitization. And apparently, if there's attribute manipulation happening here, that can result in a problem.
+
+Mizu (01:16:48.599)
+Well, manipulation can be like whatever you want. It could be a replacement. It could be a change. And if there is something like that, which happens on the ID attributes specifically, then you should be able to do some kind of second order dumb clubbing, which was a concept I have used in the first article. But basically, as you can see on the dumb explorer window on the bottom,
+
+Justin Gardner (01:16:51.79)
+Mm-hmm.
+
+Justin Gardner (01:17:00.814)
+Mmm.
+
+Justin Gardner (01:17:07.074)
+Mwah.
+
+Mizu (01:17:16.408)
+If there is a normalization like a trim or a replacement, you can have a form which has an ID with a value set to space X and an unload attributes. So at the time, purify is going to sanitize it and check for a dump clobbering issue. Because there is a space within the ID, dump purify will don't find any dump clobbering issue and the tag is going to be left.
+
+At the time the normalization occurs in the beforeSanitize attributes, then you can recreate a link between the form tag and the input tag. So in that case, by removing the space. And because of that, you can now clobber the form tag before the attributes being retrieved. And thanks to that, you will be able to force the Purify to iterate not over the form attributes.
+
+Justin Gardner (01:17:57.486)
+Mm.
+
+Mizu (01:18:14.906)
+but over the input attribute, the input tag. And that's why you just won't see the unload events.
+
+Justin Gardner (01:18:18.104)
+Okay, I'm sorry, go ahead. Okay, okay, So, confusing. That's confusing. I'm sorry, I'm sorry to take, but, so what you're saying is, you we've got a form ID space X, right? Then we've got another input tag form equals X, right? So, it's associating with that specific form. And,
+
+Mizu (01:18:28.572)
+No, that's probably my fault.
+
+Justin Gardner (01:18:47.38)
+So when Dom Purify is reaching into the Dom to sanitize this attribute, I mean, it's not, I'm confused as to why this is resulting in, because attributes, okay, okay, I see what's happening here. It is a little bit hard to explain. Yeah, yeah, let's go back and explain that piece.
+
+Mizu (01:19:04.176)
+Yeah. Maybe I should have.
+
+Mizu (01:19:10.748)
+Maybe I should have explained the form attribute actually. So the form attribute can be used on input tags or select tags or whatever, which is related to a form. And that attribute is very interesting because it allows you to link your input tag to a form in which you aren't into. So this can be used in a lot of ways, but in the context of DomPurify, what you can do is force this link to be created
+
+Justin Gardner (01:19:14.156)
+Mm, okay.
+
+Justin Gardner (01:19:30.478)
+Mmm.
+
+Mizu (01:19:40.324)
+after the dump club ring check been made. then, thanks to the normalization, the ID value and the form value will be equivalent, which will create a link between the form tag and the input tag. And at the time that link is being created, the dump club ring is going to occur. So now, thanks to this, you control the form.attributes value. And because Dumpurify is restricting that value without doing any dump club ring checks, you
+
+kind like break the sanitization for that form specifically.
+
+Justin Gardner (01:20:13.944)
+That rocks, dude, that rocks so much. So what's happening here? Okay, this requires a little bit of pre-knowledge of DOM clobbering, And we typically, on this podcast, we try not to go back too far into the requisite knowledge that you need, because that gets a little cumbersome. But this time I think it's helpful. So in the DOM clobbering world, using a form and an associated input tag is a way for you to create...
+
+Mizu (01:20:16.708)
+Okay.
+
+Justin Gardner (01:20:44.322)
+to clobber attributes that are several elements deep. So x.attributes in this specific scenario, right? But that only occurs if the input tags form attribute is pointing to the ID of the form that it is being associated with, right? And so what's happening here is when that specific ID is being trimmed, right? That's what's happening in the code. And the ID goes from space x to just x. That is when it creates the link.
+
+Mizu (01:20:49.435)
+Exactly.
+
+Justin Gardner (01:21:13.772)
+between the form and the input and allows us to override the attributes. Kevin, this is freaking genius, man. This is genius, genius. Very cool. And the amount of detailed knowledge of the DOM Purify source code that is required for this is like really, really cool. How does, let me ask you this a little bit derailed, but how does DOM Purify deal with those DOM clobbering issues?
+
+Mizu (01:21:18.78)
+That's it.
+
+Mizu (01:21:44.572)
+Actually, they are using isValidAttribute function. I think that's the name at the beginning of the sanitizeElement function. And in short, they check if the current node is a form. And if it is a form, it will check if, for example, the attribute value has a specific type, which is supposed to be a node name, I think, elements. If, for example, it's
+
+Justin Gardner (01:21:50.774)
+Hmm. Okay.
+
+Justin Gardner (01:22:10.466)
+Mm. Mm.
+
+Mizu (01:22:13.99)
+check the node name, will be sure that it is a string, et cetera. So it just verified the type of all the dangerous attributes that can be present on the form. And if they find something malicious, they remove the form.
+
+Justin Gardner (01:22:27.896)
+Kevin, dude, it's just unbelievable that I can just ask you about a specific section of the DOM Purify code and the procedure that they're using to sanitize, and just off the top of your head, you can rattle off how exactly they're doing that. That is unbelievable. This is what I'm talking about, just a word to the listener really quick. This is what I'm talking about when I'm saying you should become the world expert on a specific piece of technology. When you're hacking something,
+
+Mizu (01:22:41.707)
+Hahaha
+
+Justin Gardner (01:22:55.082)
+you have to know it inside, outside, upside down. Even more so true if you're trying to bypass a security-oriented library like this. But even the applications that you face from day to day, the targets that you're going up against, you need to know that application inside, outside, upside down so where you can rattle off the specific procedure that's used for whatever on that specific app. So this is a perfect example of that. All right. Go ahead.
+
+Mizu (01:23:19.714)
+And it even helps when you want to try to find bugs while you aren't in front of your computer or your mobile phone, because you can simply think about everything that you have memorized and say, there is something that I didn't expect. now you want to try, but you can continue to think anytime. And I think that makes the difference, actually.
+
+Justin Gardner (01:23:44.204)
+Yeah, 100 % because it's all in there, right? And you can run simulations in your brain. You can be walking down the street and be actively hacking. Like, that's something that my wife and stuff doesn't understand sometimes, which is like, I'm sitting there, I'm playing piano, right? Like this desk right here that's behind me typically has a piano on it. you know, because sometimes when I'm working and stuff, I gotta like get up and like play some piano or whatever. And I'm sitting there playing the piano.
+
+Mizu (01:23:48.612)
+Exactly.
+
+Justin Gardner (01:24:09.592)
+And I'm thinking about where I am in the code base and where the flow of data looks like and what access to inputs and outputs I've got. And it just, you you can hack whenever, wherever. That's a great point, Kevin. Gosh, guys, I don't know. Podcasts like these just get me so jazzed up about. But bounty, like, what a dream career we have, guys, where we get to just hack stuff every day. I love it.
+
+Mizu (01:24:33.169)
+Yeah.
+
+Justin Gardner (01:24:37.87)
+All right, rant over, rant over. Let's talk about after sanitize attribute and then some string replacement or attribute manipulation. What is this one, Kevin?
+
+Mizu (01:24:48.774)
+So this one is mostly the same as we have seen with the tinyMCE issue and the GQuery issue. If there is any kind of manipulation or replacement occurring after sanitized attributes hook, because it happens after the regex checks being made, any manipulation can be dangerous, actually. So I'm just providing a first example, which is
+
+Justin Gardner (01:25:13.112)
+Mmm.
+
+Mizu (01:25:16.74)
+just a replacement to empty. But this could be anything that's modified the value actually. I think the second example is more interesting, like the super case.
+
+Justin Gardner (01:25:19.182)
+Mmm.
+
+Justin Gardner (01:25:24.802)
+Hmm. Dude, this second example is super interesting. I love this. And I love it when things, the stars align for stuff like this. So let's get to that. first, the thing that you said was that if after sanitize attribute occurs, there is some modification to the attribute, right? After sanitization, we're modifying. That's where we kind of get into the issues like we talked about before.
+
+Mizu (01:25:30.267)
+Hahaha
+
+Mizu (01:25:35.27)
+Yeah.
+
+Justin Gardner (01:25:52.342)
+Specifically, this happens when you are replacing something to nothing, because you can create structures that shouldn't have been allowed to exist during the sanitization. Cool. Now, this is the crazy shit right here. Take it away, Kevin.
+
+Mizu (01:26:02.3)
+You
+
+So this is something I don't know if it's well known, but when you are using the two uppercase method or the two lowercase in every language, it's not related to JavaScript. There is some unicode normalization that occurs. So there is few chars which are going to be converted to the ASCII equivalence. And in source chars, luckily, there is one which
+
+converts a Unicode child to ST. So thanks to this, if the attribute is being too uppercase, you can hide a style tag from the regex, which is going to then be converted to the ASCII equivalence because of that normalization.
+
+Justin Gardner (01:26:55.564)
+Dude, that is just, I wanna know what the code point for this is. Okay, it's UnicodeCodePoint009C that gets normalized to an ST when it goes to uppercase. And I think there's another one here too. There's two that kind of, when they go to uppercase, convert to ST. What a gift from heaven that is, right? Like that we have out of these, what is there, like 10, 15 characters that actually convert to something.
+
+Mizu (01:27:19.964)
+You
+
+Justin Gardner (01:27:24.27)
+completely different when they are uppercased. One of them goes to st, which is exactly what we need for a style tag. my gosh, dude, that's amazing. Okay, so then somebody's just simply doing an innocent to uppercase on the contents of this attribute, and we can use that to bypass DOM Purify by creating a style attribute, which is one of those ones that we're not allowed to have in the attribute. Is that right?
+
+Mizu (01:27:29.442)
+Hahaha
+
+Mizu (01:27:50.286)
+Exactly.
+
+Justin Gardner (01:27:53.294)
+Man, the hits keep coming, man. That is very cool. And yeah, I think for anybody who is listening to the podcast and didn't know about this two uppercase thing, one, you should either go back and listen to the podcast that you haven't listened to where we've talked about this, or you should try to take this opportunity right now in this moment to remember that forever. Because that is extremely helpful in so many scenarios, this Unicode normalization and this alone.
+
+can really result in some crazy bounties. Being able to do this in an email or like a username or something like that can allow you to just get ATO super easy. So Unicode normalization is definitely something that any serious hacker, web hacker in particular, should look into I think. All right, node manipulation, insert before, what is this one?
+
+Mizu (01:28:50.886)
+So this one is mostly related to the load them pre-applied to sanitize an HTML input. So as we said, it will like iterate over the DOM from the top of top-est node to the bottom-est one. And so if within any hooks, the developer decides to take a node and insert it above the current node.
+
+Justin Gardner (01:29:09.07)
+Right, yep, yep.
+
+Mizu (01:29:20.4)
+then this is something that DumpRify won't be able to see at all because it's going to continue down world.
+
+Justin Gardner (01:29:23.842)
+Hmm. Right, okay. So if it has a reference to a specific div or something like that that's above it, maybe by an ID, and you just say insert before that, boom, we've now jumped in, effectively hidden that node from DOM Purify so it can't be sanitized.
+
+Mizu (01:29:42.592)
+And this can bypass the verify in many ways because imagine that this happens, I don't know, in the sanitize element function. And the inserted node isn't dangerous at all. Like it's just a simple P tag that you control, but that P tag has the reg ex bypass. Then it's enough to bypass them. So like it.
+
+Justin Gardner (01:30:05.304)
+Dude, it's crazy to see, it's crazy to look at this example here and just see like the DOM Purify output in DOM Explorer just be a perfect XSS tag. That's crazy. Wow.
+
+Mizu (01:30:15.024)
+Yeah. And you can play with the integration, actually. If you want to update it in the bar, it's actually working in live.
+
+Justin Gardner (01:30:20.792)
+Yeah.
+
+dude, that freaking DOM Explorer is so cool, dude. I love that. I love that. Very cool. All right, cool. So we gotta keep in mind the order of the sanitization that's occurring, and if there's any elements being inserted into a node that has already been sanitized, then that is not gonna get touched at all. That makes sense. Easy peasy. Let me see how many more of these we've got left here.
+
+Mizu (01:30:28.378)
+Yeah, Bitcoin is...
+
+Mizu (01:30:52.942)
+Maybe the node name normalization is interesting.
+
+Justin Gardner (01:30:56.622)
+No name, case confusion, is that the one?
+
+Mizu (01:31:00.252)
+Not the base hash ref pollution. This one is very technical, very deep, the impact is not that much useful, I think. Yeah.
+
+Justin Gardner (01:31:05.55)
+you
+
+Justin Gardner (01:31:10.626)
+Yeah, and we sort of already talked about it, right? This is using the base tag to affect the fully qualified URLs of the items, of the relative URLs in the body of the DOM that is parsed by DOM Purify, right?
+
+Mizu (01:31:21.916)
+Yeah, that's it.
+
+Yes, but not only there is also the fact that I'm abusing that DumpRefi is trimming all the attribute values to have some collision between what it is going to use and what the Dump is going to receive. But in the end, this is it. You have a way to control the final hash ref, which is going to be sanitized within the
+
+Justin Gardner (01:31:50.36)
+Wow, damn it, Kevin. All right, fine. We'll have to come back to that. That one is very, very technical. I do love the output of it, though. This is just a beautiful exploit. So we're gonna leave that one to the listeners to go check out themselves, and then we'll talk about this one. This one is node name namespace case confusion. Is that the one you wanted to talk about?
+
+Mizu (01:31:54.651)
+Yeah
+
+Mizu (01:32:09.818)
+Well...
+
+Mizu (01:32:13.52)
+Yes, because I think that one is pretty common. Like I've seen it a lot of time in bug bounty. Well, it might sound a bit stupid, but when you try to access the node name value, depending on the namespace of the node on which you're trying to retrieve that value, the case is going to be different. Like if you try to access node name in the HTML namespace, it's going to be uppercase. But if you try to...
+
+Justin Gardner (01:32:17.044)
+Mm. Mm.
+
+Mizu (01:32:42.694)
+do the same within the HVGENOME space, it's going to be lowercase.
+
+Justin Gardner (01:32:47.011)
+Why?
+
+Mizu (01:32:49.5)
+I don't know.
+
+Justin Gardner (01:32:51.608)
+That's crazy. Is that something specifically done by Dom Purify or is that a part of the like HTML spec?
+
+Mizu (01:32:59.596)
+It's part of the HTML specification. Like this is something that browsers do.
+
+Justin Gardner (01:33:05.016)
+Dot node, yeah, of course, dot node name, Current node, we're actually, using the browser, wow. Okay, so that's weird. in, and if we hit dot node name, typically, in the HTML namespace, it's gonna be uppercase, but if it is in the SVG namespace, then it's gonna be lowercase.
+
+Mizu (01:33:22.584)
+Exactly. And I've seen some application using that specifically to sanitize style tag, for example. So to sanitize the content and limit what the user can do. You actually send me an example, right? That's already in the article, but this is something very common. And by simply putting your style tag within the SVG tag in case it's do not check it with two uppercase.
+
+Justin Gardner (01:33:24.011)
+Interesting.
+
+Justin Gardner (01:33:39.181)
+Yeah, yeah, yeah.
+
+Mizu (01:33:49.845)
+Then you will just bypass this condition and we're able to do a full CSS exfiltration.
+
+Justin Gardner (01:33:55.746)
+Wow, okay, so, and that output there that has SVG tag style inside of it, that's perfectly valid HTML style tag that will execute on the page. Having it wrapped inside of an SVG doesn't like hijack the functionality of it at all.
+
+Mizu (01:34:04.177)
+Yes.
+
+Mizu (01:34:13.76)
+Um, I'm sorry, I'm trying to have understood the question.
+
+Justin Gardner (01:34:15.128)
+No, no, no, that's fine. So, you the output here of the sanitization that you showed is SVG and then a style tag, right? So the style tag is wrapped in the SVG. But that doesn't affect the functionality of the style tag at all. The style tag still works normally on the pitch. Wow, very cool, very cool. Okay, do you wanna cover this last one? I know that this is like a dom-clobbering DOS, but actually, let's do it if we can because...
+
+Mizu (01:34:26.672)
+Yep.
+
+Mizu (01:34:31.484)
+Exactly, should dance.
+
+Mizu (01:34:41.796)
+Justin Gardner (01:34:44.428)
+I think this, you made a great point that DOM clobbering inside of an HTML parser like this or sanitizer can have really bad effects on applications.
+
+Mizu (01:34:55.248)
+Yes. this, I think this kind of exploitation is still very specific. Like if you are trying to do a Dumpurify or any JavaScript library in a page that isn't visited at all, it might be useless. if you manage to use Dump Club ring to like, do Dumpurify within the chats, then you will be able to block the conversation for all the user, which is way more impactful. And.
+
+Justin Gardner (01:35:06.382)
+Mm.
+
+Justin Gardner (01:35:17.75)
+Exactly. Very impactful.
+
+Mizu (01:35:25.09)
+When you are using as a developer before sanitized elements in DOM Purify, this specific hook occurs before the DOM clubbering check has been made. So if the developer uses any attributes function of a node, then you can simply clubber it on a form and DOM Purify is going to crash.
+
+Justin Gardner (01:35:34.061)
+Mmm.
+
+Justin Gardner (01:35:45.964)
+Hmm. Hmm. Okay, so it will, if there's anything being done before sanitize elements, then that is before the DOM clobbering check. So you can just blow it up, essentially. Wow, okay. That seems like a problem. Yeah, I wonder why they didn't move the DOM clobbering check to before, well.
+
+Mizu (01:36:07.292)
+It's complicated because they want the developer to be able to manipulate the node before it's being sanitized by them purify. So I'm not really sure there is something they can do about that.
+
+Justin Gardner (01:36:18.668)
+Yeah, I agree, I agree. Okay, let's jump into the miscellaneous category here. The regex that, this is the regex by the way, for everybody. We've been alluding to the regex, I don't know that I've showed it on the screen yet, my bad. This is the regex that everybody needs to know. And I'm sorry for people that are audio only, you're you're screwed this time. I'm not gonna read a regex out loud to you.
+
+Mizu (01:36:29.946)
+Yeah.
+
+Mizu (01:36:38.94)
+you
+
+Mizu (01:36:43.96)
+Hahaha
+
+Justin Gardner (01:36:44.578)
+But the code that uses this regex is actually prefixed by an if statement. And the if statement says if, say, for HTML and in regex test, right? And then goes through our regex. So you say, of course, if this is false, then we triggered the bypass. So is that a specific configuration that can be passed in?
+
+Mizu (01:37:06.14)
+Yes, actually I've seen it recently with a friend in bug bounty where in a library, the developer was like using it because he wasn't able to use comments within the attributes. So when I first did it, was like, okay, that seems legit, but you're just breaking the world, don't verify sanitization. And yeah, this is something that's is mentioned in the, don't verify readme.
+
+Justin Gardner (01:37:25.057)
+Yeah.
+
+Mizu (01:37:35.836)
+But if the developer doesn't take into account the fact that there is a warning about it, then you can bypass it easily.
+
+Justin Gardner (01:37:43.81)
+Very cool, man, very cool. So if they pass in, say for XML, set to false, then it's just boom, game over, you're done. Okay, there are a lot of other really cool things in here. Let's, I'm gonna do these two. I know I said that I was gonna be done, but I'm actually not gonna be done. Suck it, listeners, you better keep listening, because this is cool shit, okay? So, all right, this is it though. After this,
+
+Mizu (01:37:52.251)
+Exactly.
+
+Mizu (01:38:02.917)
+Hahaha
+
+Mizu (01:38:09.573)
+Hahaha
+
+Justin Gardner (01:38:13.166)
+I'll end it, I know, we're going long. This misconfiguration is really, really cool, and this switches back over to the server side, right? In this scenario where we are in the server side, and what's being done is that there's a JS DOM that's, JS DOM is being used with DOM Purify, and JS DOM is the recommended server side parser for this to be used in conjunction with DOM Purify. But what,
+
+Dude, this is like really gold. If there is no content type charset defined, right, if there's no charset defined for that specific DOM, which I would imagine would happen all the time, if people are just on the fly sanitizing HTML, they're not gonna set like a content type header or whatever, then this would be resulting in a full bypass using that sort of.
+
+Mizu (01:39:00.348)
+Mm.
+
+Justin Gardner (01:39:07.203)
+What is the name of that research that came from SCRHY here? Let me see, it's encoding differentials, why char sets matters.
+
+Mizu (01:39:11.004)
+It's some research that has been made by Sona. yeah, something fun about that research is that this is something I have found like one month before Sona released everything. I have reported that to Dom Purify and Curfew 53 told me that this is not something that they could fix. This is something that had to be reported to Google. And actually...
+
+Justin Gardner (01:39:20.3)
+Am I tripping here? Okay.
+
+Justin Gardner (01:39:29.345)
+No!
+
+Justin Gardner (01:39:38.35)
+Mmm.
+
+Mizu (01:39:41.084)
+I was just thinking that this is not something that was going to be fine quickly by someone else. So I decided to play a bit with it with in the bounty and like something amounts I go, I see the world research and I was like, okay, great. But unfortunately.
+
+Justin Gardner (01:39:51.65)
+Kevin!
+
+Justin Gardner (01:39:58.366)
+Wow, so you had it before research collision, of course it happens. But what this, if I understand correctly, this is that same research as well that was talking about how you can use one of the Japanese character sets to trigger, is that accurate, right? it will.
+
+Mizu (01:40:03.462)
+Yeah.
+
+Mizu (01:40:18.202)
+That's one, yes. ISO GP 2022.
+
+Justin Gardner (01:40:22.358)
+Right, okay, so what you're doing here is you are manipulating the fact that there's no charset set on the server side and then using that fact to make the browser sniff the charset and since DOM Purify isn't aware of that, then in JS DOM, then it will bypass it. Is that accurate?
+
+Mizu (01:40:42.556)
+That's it.
+
+Justin Gardner (01:40:44.43)
+Dude, yeah, like am I crazy to think that this is gonna be like super common, a super common bypass? I can't imagine somebody setting a char set like that.
+
+Mizu (01:40:50.62)
+I don't think it's like a lot of framework by default set a chart set nowadays. I think where it's going to be the more present is in file uploads. Like if you can upload, for example, an SVG and it's being sanitized, most of the framework, when they do send the file, they won't set the chart sets. So this should be veniable all the time.
+
+Justin Gardner (01:40:59.95)
+Mm.
+
+Justin Gardner (01:41:06.55)
+Hmm.
+
+Justin Gardner (01:41:15.788)
+Hmm. Kevin, Kevin, I'm misunderstanding what's happening here. The problem is not with, so we also have to have a char set not defined when it hits the sink on the client side. Is that accurate or no?
+
+Mizu (01:41:32.796)
+Not really. It's like when the browser is loading the page, it does need to not have a char set being defined.
+
+Justin Gardner (01:41:44.162)
+the browser, the final rendering of the payload.
+
+Mizu (01:41:48.028)
+No, I mean the HP response in the content type response header. It do need to not have a char set for it to be sniffed.
+
+Justin Gardner (01:41:53.432)
+Mmm.
+
+Justin Gardner (01:41:57.366)
+Right, but what I'm wondering here is whether we can take, so there's two things happening here, right? It's creating a new, it's creating a JS DOM, right? And then it loads that into DOM Purify, and then it runs DOM Purify sanitize on that specific string, right? And that specific string has the stuff to indicate that it's the Japanese char set, or char character set, and then, you know, renders it, and then the output of that,
+
+Does that also need to not have a character set or can it just be integrated into a UTF-8 character set and it's fine?
+
+Mizu (01:42:30.579)
+no.
+
+Mizu (01:42:36.54)
+It's fine. I think it's the escape Charles, which is a basic ASCII character that you need to use to trigger the cut point to switch between the Japanese Charles and the ASCII one. So this is something that is going to be allowed most of the time by any text parser or a sanitizer like the Merify.
+
+Justin Gardner (01:42:50.69)
+Mm. OK.
+
+Justin Gardner (01:42:58.806)
+Okay, so I'm looking at this code right here. You set the header text HTML here. Could this have the UTF-8 character set in it, or is that necessary to not have that?
+
+Mizu (01:43:11.644)
+It's not mandatory, but nowadays almost every frameworks to have it set by default.
+
+Justin Gardner (01:43:19.266)
+Right, so if it did have it, would this clean not work or would it still work?
+
+Mizu (01:43:25.308)
+It won't work, but there are still some tricks that can be made. Even if the content type is set to text HTML semicolon char set is equal UTF8, there is something funny that if somehow you can control the two first bytes of the response, you can use the BOM characters to specify the browser to pass it as UTF16.
+
+Justin Gardner (01:43:39.138)
+Yeah. Yeah. Yeah. You're good.
+
+Mizu (01:43:55.372)
+And even if the chart set is defined as UTF-8, it still will work. So it could be possible to be bypassed that way, but Dumpurify does not allow to use those characters.
+
+Justin Gardner (01:44:06.86)
+those characters, okay. Okay, so I guess my question is this. Right here on this line where it says clean equals DOM purify.sanitize and then passes in our specific input, will the output of clean after this is done, when passed to a specific, or when passed to like a normal browser DOM with text HTML, UTF-8, will that trigger an XSS or does the end browser also have to have a
+
+Mizu (01:44:28.927)
+OK, I get the question.
+
+Justin Gardner (01:44:36.91)
+no char set defined.
+
+Mizu (01:44:37.97)
+OK, OK. Good question. Well, that depends on the actual library that you are using. In the context of DumpUrify, it's jsdump. And by default, it does not execute JavaScript. So even if there is a way for you to trigger JavaScript within DumpUrify, it won't be executed at all, only because this is disabled by default. But if you are using
+
+Justin Gardner (01:44:47.63)
+Mm.
+
+Justin Gardner (01:44:52.238)
+Mm-hmm.
+
+Justin Gardner (01:45:01.536)
+Okay, okay, gotcha.
+
+Mizu (01:45:04.732)
+For example, a library like Happydom, which is present right at bottom. This is something that can happen.
+
+Justin Gardner (01:45:07.574)
+Okay, here we go. Happy DOM right here. Okay, so they say use JS DOM, but if you're using something else like Happy DOM, then you can trigger JS execution inside of DOM Purify standardization.
+
+Mizu (01:45:22.404)
+Yes. And actually this is since how do I manage to get an RCE because obviously the JavaScript execution occurs within the sandbox. So you can't really escape it. But the fun fact was that when you provide to that parsing library, a script with a specific source, it's going to use a sub process using a node dash E to like fetch the file, restore it, execute it.
+
+Justin Gardner (01:45:29.069)
+Mm.
+
+Mm, right.
+
+Justin Gardner (01:45:50.126)
+No way.
+
+Mizu (01:45:52.63)
+And the link that is provided within ScriptSource is single quoted. And why this is bad? Because within the pass and within the anchor, you can put single quotes, which won't be encoded by default within the URLUFC. So that way, was just able to hide, like, just code directly within my ScriptSource. So you should be able to see it in the second snippet.
+
+Justin Gardner (01:45:59.342)
+Dude, that's nuts.
+
+Justin Gardner (01:46:21.665)
+Yeah, right here.
+
+Mizu (01:46:22.777)
+which are going to be executed directly within the library.
+
+Justin Gardner (01:46:26.968)
+That's crazy, it's like that old flash thing. This is what we always reference in these sort of scenarios where the way that you used to trigger flash-based XSS a lot of times was, you could just close off the, it would just dump it right into a JS eval and you could just close off all the functions and stuff. It's crazy that this is happening with Happy Dom as well.
+
+Mizu (01:46:47.152)
+And this is something I've found a lot in the bounty. Like sometimes the developers simply reflects the current pass within a JavaScript viable. But if you do that with a single quoted string, you can just escape it using a single quotes. It's not encoded.
+
+Justin Gardner (01:46:50.232)
+Mm.
+
+Justin Gardner (01:47:04.246)
+Wow, that's nuts dude. How do you, I guess, then we go back to the fingerprinting problem. How do you figure out if they're doing it server side, what DOM parsing they're using? Like happy DOM versus JS DOM. That gets a little trickier, right?
+
+Mizu (01:47:18.051)
+Maybe if you like create a local setup and you try to see some differences between the HTML parsing, you will be able to find something. But yeah.
+
+Justin Gardner (01:47:29.898)
+Mm, I feel like there's some stuff out there for that. Yeah. All right, Kevin, we are an hour 45 minutes in. I have, this is you right here. I have squeezed you for every last bit of wisdom that I can get on DomPurify, at least the second article. And we still didn't even get into the first article. So thank you so much for coming on, for sharing so willingly about all of this research that you've done. Yeah.
+
+Mizu (01:47:38.307)
+I'm
+
+Thank
+
+Justin Gardner (01:47:56.514)
+Really, really appreciate it. This is really a master class on DubbPurify. Anything you want to say or anything you want to shout before we wrap this pod?
+
+Mizu (01:48:04.06)
+That's fair, it was a pleasure for being there. It was amazing speaking about DomFerrify today. And yeah, I think that's all. I'm very happy being there.
+
+Justin Gardner (01:48:12.374)
+Awesome. Thank you so much, Kevin. Appreciate you, brother. Peace.
+
+Mizu (01:48:17.452)
+Thank

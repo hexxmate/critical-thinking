@@ -1,0 +1,547 @@
+Episode 92: SAML XPath Confusion, Chinese DNS Poisoning, and AI Powered 403 Bypasser
+Source: https://www.criticalthinkingpodcast.io/episode-92-saml-xpath-confusion-chinese-dns-poisoning-and-ai-powered-403-bypasser/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:00.36)
+Alrighty man, here we go. Chains out, ready to roll. I finally got one yesterday and I'm feeling it, you know? It brings an extra level of confidence, I think, to the table.
+
+Joel Margolis (00:04.092)
+The chain gang gone
+
+Joel Margolis (00:10.626)
+Yeah? It's really bringing your Florida out.
+
+Justin Gardner (@rhynorater) (00:16.258)
+is it really? All right. I dig it. Well, the hair is extra curly today too, so I'm feeling it. I'm feeling it. All right, man. Well, this week we have a lot of crazy research that has hit the Twitters, has hit the bug bounty scene. Geez, where do we start?
+
+Joel Margolis (00:21.323)
+Yeah, yeah.
+
+Joel Margolis (00:36.314)
+will do you want to start with the asinore research because i was pretty crazy i saw every once in a while i'd there's like you know again there's a good week from shubs and to feel like yeah we found this thing like how are these spent spend looking at this comes select months of research
+
+Justin Gardner (@rhynorater) (00:39.334)
+Yeah, yeah, that one is crazy for sure.
+
+Justin Gardner (@rhynorater) (00:57.874)
+Yeah, and he was just casually about it too. Like I think he tweeted out the first time he's like, on the 27th of this, of September or something like that, we're going to drop some crazy shit. And then he did. And, and so, yeah, dude, mean, having read through the whole thing, it's like, I don't understand why the, the great firewall of China would implement this this way. This seems so such like a weird thing to do. But the TLDR of the situation is,
+
+Joel Margolis (01:09.73)
+You
+
+Justin Gardner (@rhynorater) (01:27.88)
+essentially anything that routes through China from a DNS perspective is getting DNS poisoned and essentially any keyword if it contains a specific keyword like web proxy ID or I think they listed like 700 something keywords at the at the bottom of the research Then if that is in the subdomain of this any DNS resolution it will just resolve it to like a random IP address a set of random IP addresses and
+
+You know, the, the, where the rubber meets the road with that is that, there, there are vulnerabilities on hosted on these IP addresses. Right. So one of them is vulnerable to a C panel XSS. And one of them, or several of them are actually, IP addresses that point towards a, a proxy provider that I can't pull out of my brain right now. Which, which one was it? Was it like proxy proxie? No. Fastly. That's it. Yeah, that's it.
+
+Joel Margolis (02:21.922)
+Uhhh, Fastly?
+
+Justin Gardner (@rhynorater) (02:25.575)
+Yeah, fastly. And so you can go on there and just register that domain and to your account and almost pull like what a subdomain takeover would look like in these sort of scenarios. lots of domains are affected and it's crazy that they implemented it this way.
+
+Joel Margolis (02:45.078)
+Yeah, I mean it's really wild. I guess that's one of those attack surfaces that most people probably just don't touch out of a variety of reasons. I certainly probably wouldn't have gone poking at the Great Firewall personally. I've never been to China, but I'd like to go at least once before I do that. So it's just, you know, props to the Asset Note team because I don't know if I would ever step foot in China again.
+
+Justin Gardner (@rhynorater) (02:55.944)
+Mm.
+
+Justin Gardner (@rhynorater) (03:00.867)
+Yeah. Yeah.
+
+Joel Margolis (03:14.582)
+That being said, super, super cool research.
+
+Justin Gardner (@rhynorater) (03:17.2)
+Yeah, yeah, think also, you know, that they, this shows their commitment to their customers because they're like, yeah, so we onboarded this customer and they had some stuff in China and then we realized like, what is all this garbage that we're seeing, right? Like we have to fix this for them. And then they went down that rabbit hole of fixing it for them. And that's how they found that this weird edge case was happening, right?
+
+So yeah, think it's really solid. And I think that shows when you have such a mass amount of data like Astanoid has, you see these anomalies if you're looking closely and you're able to find cool pieces of research like this.
+
+Joel Margolis (03:56.642)
+Yeah, yeah, absolutely.
+
+Justin Gardner (@rhynorater) (03:57.926)
+Yeah. And it seems like Eric as well, today is new, contributed pretty significantly to this research. He dropped a bunch of keywords and known IPs associated with the ways that you can poison these various domains. So now that there's a whole list and there's also what I think a lot of people might've missed and they put a little disclaimer at the top of the article now, but I don't think that was there in the beginning, is that at the very bottom of this article, so if you go to dnspoison.com, it'll redirect to the article.
+
+There's like a little tool and you can just enter a domain and it'll be like yes that domain is vulnerable Here's your XSS, you know, here's your here's your ATL, you know that sort of thing And so I think I think it's cool that they implemented that right into the blog And I definitely think it would be it'd be cool to see somebody take this off You know off the the web interface here put into a command line tool and spray it across all the programs like I'm sure Eric is doing you know if Eric was involved in the research then there's definitely some large-scale automation in place, but
+
+Joel Margolis (04:35.67)
+You
+
+Joel Margolis (04:55.072)
+Yeah, yeah. Yeah, I definitely do. This is something I've seen more and more in like recent blog posts is like an interactive element, so to speak, or just like, you know, like a form or a table or something that you can like input a value into and it'll like interactively tell you if it's affected or whatever. And it seems like a nice way to make sort of that research more tangible to people reading it.
+
+Justin Gardner (@rhynorater) (04:55.772)
+definitely applicable in a more wide environment.
+
+Justin Gardner (@rhynorater) (05:08.968)
+Mmm.
+
+Justin Gardner (@rhynorater) (05:20.792)
+It's more refined for sure. know, and, and I think that with, I've actually noticed that with, and we talked a little bit about this on the pod a couple of weeks ago, but with cursor and with some of these other systems that make it so easy to build out these like pretty simple POCs and stuff like that. think this will become a lot more common because now I don't have to sit there, write all this little CSS to make it actually look decent. I can just say like, do this and then call this function and it just plops it out. And that really, that's really helpful.
+
+Joel Margolis (05:50.016)
+Yeah. Yeah, for sure. well, speaking of POCs, there was this project discovery, blog posts about, there was a Ruby SAML bypass. I think the phone was actually in Ruby SAML, right? Like the core library. Well, don't know core library, but like the library Ruby SAML that is a used by a lot of different things, including GitLab. so, it's, it's
+
+Justin Gardner (@rhynorater) (06:01.64)
+Mm.
+
+Justin Gardner (@rhynorater) (06:14.408)
+Mm.
+
+Joel Margolis (06:17.514)
+You know, Samel is one of those things. What was the the Samel ramble? Was that the? I don't know. It was a while ago, but as we have talked about before, Samel is very,
+
+Justin Gardner (@rhynorater) (06:21.734)
+The Sammel Ramble, the episode, what was that, episode like 48 or something like that, Sammel?
+
+Joel Margolis (06:31.68)
+finicky it's easy to shoot yourself in the foot there's a lot of verification and Signing and hashing and all these sorts of things that you need to be doing properly in the correct order in a very specific way if you do it in the wrong way or you skip a step or you make an assumption then It's very easy for an attacker to smuggle a malicious SAML payload through to through your server and do you know potentially really really drastic, you know off bypasses that kind of stuff, so
+
+Justin Gardner (@rhynorater) (06:39.516)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (06:52.52)
+Mm.
+
+Justin Gardner (@rhynorater) (06:59.42)
+Yeah. Episode, episode 46 was what that was when I just absolutely lost my mind on Samal and I just like deep dived that and then just dumped it all on you guys. so if you're interested in, in learning a little bit more about it, episode 46 for that, but, yeah, dude, I think this is really quality research coming out of project discovery and you know, we see, we see, a lot of great tools obviously come out from, from project discovery, which is, which is great. but I think it's also really cool that they have this research division where they're finding, you know,
+
+zero days and writing them up and integrating them into the tools and, you know, releasing nuclei templates for these exploits. So major props to the team over there. The takeaway for me on this one was a couple things, but primarily the biggest one was that when you're doing this SAML signature validation, there has to be some way for you to select the nodes that you are.
+
+you need to be hashing and you need to be checking the signature on, right? And that is typically done via XPath. And when you're using XPath, obviously you're selecting from an XML document. And as XML, we all know from learning about HTML parsers and XML parsers and all this sort of thing that that is a very shifty environment. There's like mutations that will occur from one to the other. And I think
+
+trusting xpath to do the selection correctly is definitely, it is something you have to do in order to be able to select the elements out, but I think there's a lot of wiggle room there. And if you can get it to select the incorrect element like it did in this scenario, then clearly a lot of damage can be done. that's something whenever I review code for SAML stuff in the future, the one takeaway that I'm gonna have in my brain from this blog post is like,
+
+investigate how they're doing their XPath selections and see if you can if there's any wiggle room in there.
+
+Joel Margolis (08:58.944)
+Yeah, yeah. Well, and I think it's more critically than that. It's like something as simple as an X-Pax selection you might think is not anything complicated, but it's kind of a complex functionality when you think about it, right? Like you're taking a blob and you're selecting a key from it and...
+
+Justin Gardner (@rhynorater) (09:10.44)
+Hmm.
+
+Joel Margolis (09:15.666)
+In the case of XML, there's no guarantee that those keys are unique or what order they're in or anything like that. So when the library is naively just saying, Hey, give me that settlement by this key.
+
+You know, what if there's two of it? What if, you know, what, you know, how does it select it later on? How does it compare against it? Can I put one in a different order? Can I put one in a different place? So I think that something as simple as that, it's important to just not take that functionality for granted. And there's probably other instances of things that are very, very similar to this, whether it's JavaScript.
+
+Justin Gardner (@rhynorater) (09:32.424)
+Mm.
+
+Joel Margolis (09:52.514)
+query selectors or CSS query selectors or XML or beautiful soup or what, you know, there's a ton of different ways that like XPath and these query selector type behaviors is used all over the place. And I think, you know, maybe some creative research could be done around how these things are working and whether or not there's other pitfalls around, you know, that selection process where you might just be like, give me that element. But, you know, sort of like this like double use or use after free type mentality
+
+Justin Gardner (@rhynorater) (09:53.645)
+Mm-hmm. Mm-hmm.
+
+Justin Gardner (@rhynorater) (09:59.656)
+You
+
+Justin Gardner (@rhynorater) (10:05.032)
+Hmm.
+
+Justin Gardner (@rhynorater) (10:15.057)
+Yeah.
+
+Joel Margolis (10:22.148)
+It's like, you're selecting an element in one place, but if you select it somewhere else, it might come out different.
+
+Justin Gardner (@rhynorater) (10:27.56)
+Yeah, and I think that there's that just to even take the principle higher like you were saying that selection in general I think is is tricky because there's there's a lot of a lot of these algorithms for signature validation or whatever are really vetted and are pretty Hardcore, but they're a single point of failure would be where they're getting their information from right?
+
+And so I think that's, that's a great principle to take away. The other thing that I was reading through this and I was like, yeah, man, this is just kind of weird. Right after I say all the signature algorithms are vetted and everything is that, you know, XML or the way that SAML does the signature validation is the whole SAML response is not signed. It's, it's the assertions, right? And then those assertions are, are, are signed or are hashed. then that, that list of hashes essentially is then signed, right? And that's how the validation occurs, right?
+
+So in this scenario, what they're able to do is they're able to smuggle in an assertion by putting in a hash in a specific spot that isn't a part of the signature. So it's not something that's gonna invalidate the signature. And when they check to see if the assertion matches the hash, it does because you can just hash it yourself. And then when they go to check the signature, because that hash that they defined
+
+is not actually a part of that signature, then the signature still matches because nothing inside the signature was tampered with, right? So there's a little bit of a disconnect there, right, with how SAML is being validated. There's like this signed list of hashes and not everything in the body of the SAML response is actually.
+
+being signed. there's some wiggle room for you to sneak in various elements and hijack selectors and that sort of thing without actually affecting the signature, the integrity of the signature in that response.
+
+Joel Margolis (12:20.898)
+Yeah, for sure. I just find it very interesting in general. Anything that's sort of self-encapsulating that, that should kind of raise some red flags where there's a signature inside of the message, but it's excluded from the signature itself. You know what mean? It's a signature that represents the message that it's inside of. It's kind of strange behavior because then you have to think, right, on the server side, like...
+
+Justin Gardner (@rhynorater) (12:34.567)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (12:40.806)
+circular almost.
+
+Joel Margolis (12:46.481)
+It has to remove that and like calculate like yeah, it's just a weird It seems a little bit over engineered and so again, I can definitely see how it would be possible to shoot yourself in the foot
+
+Justin Gardner (@rhynorater) (12:54.045)
+Mm.
+
+Justin Gardner (@rhynorater) (12:57.926)
+Yeah. So there's xpaths. So two things in my little SAML, SAML trick, you know, folder in my brain right now is, the xpath thing. And then there's also the XSLT thing that we talked about in the SAML ramble episode where, know, you're actually applying these transformations to the XML as it's being parsed. And various different parts of the, the XML document might be being parsed at different places in different ways. So those transformations can
+
+create mismatches. And so those are definitely two things that I'm gonna keep up in the top of my head, XPath and XSLT for parsing SAML stuff.
+
+Joel Margolis (13:38.594)
+Yeah, for sure. there's a, like I said, there's a POC, you know, speaking of POC, you know, they, of course, Project Discovery released a Nuclea template for this bug that will scan for it. think, I don't know if it only looks for GitLab instances, because that's what was affected, or if it just like kind of looks generically across the board. Yeah, I think it's just GitLab by the looks of the query, but.
+
+Justin Gardner (@rhynorater) (13:43.89)
+Mm.
+
+Justin Gardner (@rhynorater) (13:56.71)
+Hmm.
+
+Yeah, it seems like GitLab.
+
+Joel Margolis (14:04.726)
+You know, that's a, you know, if you're using Nukely already, then your template should auto update. So you'll probably already get this automatically, but you know, it's definitely some interesting research. And GitLab is not the only application that uses SAML.
+
+Justin Gardner (@rhynorater) (14:19.526)
+Yeah, yeah, so right before this episode, was like, Justin, can we delay this a little bit? I need to go look at something. So that's great. I love that. But yeah, definitely more widely applicable.
+
+Joel Margolis (14:24.034)
+Joel Margolis (14:32.746)
+yeah i i got to be the publication of the father the we have to look at it after this
+
+Justin Gardner (@rhynorater) (14:36.848)
+Yeah, yeah, you gotta go, man. Yeah, so that one's pretty solid. Definitely a cool writeup there. And I think a lot of this too, they narrow this down to this specific library as well. And it takes a lot of setup and it takes a lot of introspection to get these libraries sort of isolated away from GitLab or isolated away from whatever piece of software that you're attacking.
+
+But I think if you can isolate them out and just focus specifically on finding vulnerabilities in the library, that can be very widely applicable. And I think that's another area where AI can really help a lot. You could just say like, hey, you know, cursor, could you please like stand up a sample, a SAML application that uses this library, right? And you know, it's ingested all the docs, it understands how to dockerize things and stuff like that. And if it can spin up that library and give it a
+
+you know, give you a playground where you can, you know, have a debugger in there and actually see, okay, well, when it does this XPath selection, it's grabbing this, you know? I think that that, I think that will be really helpful for security researchers as well, because there's so much friction that comes along with getting your environment set up, you know, your VMs, your enterprise software stuff. It just, I think there's a lot of room for improvement there.
+
+Joel Margolis (15:57.002)
+Yeah, yeah. like, well, two, two funny things. One, I find it very amusing that the, the nuclei template itself uses expat selectors. so hopefully they didn't, hopefully they didn't write a bug in there. but secondly, like from unrelated to that, from like the, you know, the sort of like setup process, like you said, like, yeah, I've been setting up a.
+
+Justin Gardner (@rhynorater) (16:07.88)
+I'll do that. That's great.
+
+Joel Margolis (16:23.868)
+source control application and let me just say it is quite a process. Okay. Not only does it need an insane amount of resources, like literally I spun up this software and it started and it was like, I only have 40 gigs of Ram. need 60 minimum 60, 60 gigabytes of Ram. I was like, Jesus. Okay. So it's just one of those things that like,
+
+Justin Gardner (@rhynorater) (16:36.305)
+Mm.
+
+my gosh
+
+Justin Gardner (@rhynorater) (16:46.927)
+no, dude.
+
+Joel Margolis (16:51.582)
+You know, it's a bit of a learning curve for sure. I had to set up a bunch of, DNS records and all sorts of like things that, aren't exactly the most glorious stuff to set up. That's for sure. but you know, once you get through that barrier, then, you know, there's lots of research you can unlock afterwards. So.
+
+Justin Gardner (@rhynorater) (17:12.698)
+Mm-hmm. Yeah, think that other researchers aren't doing that as much either, right? So we've seen time and time again that if you take the time, you set up the software, you get yourself a nice environment, you're gonna find so much more because it's not as hardened. And I think a lot of newer people, they will shy away from that because they don't have the confidence that the path they're going down is the right way. And instead, they'll keep slamming their head into very, very, very hardened scope because that's just
+
+you know, right on the surface, because that's what everybody looks at. it's really, you're kind of shooting yourself in the foot with that, I think.
+
+Joel Margolis (17:47.743)
+Yeah, I will say like, you know, that grit during when you come across frustrating things is like, I definitely just see it more as a, okay, if I'm hitting this wall, every other researcher has also. So if I push through that, then that narrows the, you know, the competition.
+
+Justin Gardner (@rhynorater) (18:00.168)
+Mm.
+
+Justin Gardner (@rhynorater) (18:05.64)
+For sure, 100%. All right, let's jump around a little bit on this. We've got the, I don't know, how much do we wanna talk about this media tech, wifi, chipset exploit? I...
+
+Joel Margolis (18:19.33)
+Yeah, I mean we could speak about it briefly. I mean, so, so basically there was a CD in the MediaTek chipset, certain MediaTek chipsets. MediaTek is a chip manufacturer. make a lot of Wi-Fi chips. They're used in a variety of different Android devices and IOT devices and a bunch of their chipsets.
+
+Including ones that I think are used in some routers were vulnerable to a buffer overflow. I think it was It's quite complicated. I mean, it's one of those low-level like C++ abilities like straight up So there's a really interesting in-depth write-up that was provided by coffin sec On their blog about you know, how it works and what's affected and the whole background and discovery process and the payload and everything It's very very good I don't think we need to get into the
+
+ROP chain specifics.
+
+Justin Gardner (@rhynorater) (19:15.876)
+Yeah, I was going to say as I'm scrolling through this, I'm like, you know, we do our best to condense some of the material on critical thinking into the audio medium, but you kind of can't just start reading out like exploits like this on the podcast. I do think so, Joel, maybe you can enlighten us with regards to this. Like, clearly there's some pretty well formed exploits in there. What how would we how would we apply these? Are we are we going to, you know, should we attack IOT devices that
+
+Joel Margolis (19:29.569)
+Yeah.
+
+Justin Gardner (@rhynorater) (19:45.564)
+that are we looking at mobile stuff, we looking at IOT devices, what kind of stuff will this affect?
+
+Joel Margolis (19:49.751)
+both.
+
+Yeah mobile and iot I know that there's at least one iot device out there on the market that uses a media tech chip Although I believe it's a newer version than these so i'm not 100 sure if it's vulnerable. It's something i've been meaning to test but that being said, there is a list of affected known chipsets and software versions I think it was also something like something to do with like the sdk obviously because it's like it manifests itself, right? It manifests itself in like a software. thanks. What's
+
+Justin Gardner (@rhynorater) (19:52.316)
+you
+
+Mm.
+
+Justin Gardner (@rhynorater) (19:58.609)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (20:03.272)
+Mm.
+
+Justin Gardner (@rhynorater) (20:11.688)
+Mm-mm.
+
+Yeah, the drivers for it, I think.
+
+Joel Margolis (20:20.228)
+It's not like purely a hardware vulnerability. It just affects certain chipsets, I guess, based on the SDK that it uses or something. yeah, think like definitely, if you see something that's using MediaTek, especially in the 7,000 or 6,000 series MT chipsets, probably would at least try the exploit. I'm pretty sure there's just a Python script on this GitHub repo to...
+
+Justin Gardner (@rhynorater) (20:28.456)
+Mm.
+
+Justin Gardner (@rhynorater) (20:42.663)
+Mm.
+
+Yeah, there is.
+
+Joel Margolis (20:46.336)
+to test it out. So, yeah, the other thing that's interesting about this is that it was found with fuzzing. And fuzzing is something that I've spent a little bit of time recently looking into. And I think every once in a while it kind of like pokes its head back up.
+
+Justin Gardner (@rhynorater) (20:53.288)
+Hmm.
+
+Joel Margolis (21:04.63)
+But I think fuzzing is still definitely a very, very useful technology and it's not going away anytime soon. This fuzzer that was used specifically for TCP and UDP fuzzing is called Fuzzotron and it's like designed as a network fuzzer. So this was found essentially black box by fuzzing network traffic or packets or something to this chipset until it crashed and then was developed into a full exploit, which is awesome.
+
+Justin Gardner (@rhynorater) (21:08.345)
+Mm. Yeah.
+
+Justin Gardner (@rhynorater) (21:28.272)
+Yeah, that is pretty rad. think, I think once again, something that requires a lot of setup, right? and one thing that I've been kind of toying with Joel is like, how do we, you know, how do we, in this position as, as people that are in the community of researchers and run this podcast and kind of have a little bit of a platform, how do we encourage and help people put in the time and get better ROI?
+
+to do deeper research like this, right? Where you have to set up like this fuzzing harness and you've got to like detect all of these crashes and bloody, bloody, blah, right? That's something that I'm continuing to noodle on, but I think it'd be really cool at some point to do grants or something like that and have people just decide, okay, the MediaTek chipsets are very widely used and it would make sense for us to have a Docker.
+
+things set up where we could fuzz this more simply or that sort of thing. So I think it's really cool to see people take the deep dive on that and fuzzing is definitely an area that I can improve on. I don't even really use it that much in web. I do sometimes, but clearly at this binary protocol level, especially in light of some of the exploits we've seen lately in live hacking events, there is a lot to be gained there.
+
+Joel Margolis (22:50.86)
+Well, on that topic of fuzzing and finishing exploits and all that kind of stuff, websites, whatever, there's a lot of connections here. There's two things that were in the list that were really good. there's the first one is this Kydo plugin from Turr. Turr.js, Turr24Turr on Twitter. X, sorry.
+
+Justin Gardner (@rhynorater) (23:00.04)
+my god, Joel
+
+Justin Gardner (@rhynorater) (23:11.548)
+Mmm.
+
+Justin Gardner (@rhynorater) (23:21.608)
+you
+
+Joel Margolis (23:22.045)
+So basically it's just an AI tool that will generate word lists for you, I believe. So you basically just say, here's a class of bug. And I don't even think you give it any other input than that, right? It's just, here's the class of bug and it just goes, here's the list of payloads.
+
+Justin Gardner (@rhynorater) (23:25.768)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (23:32.209)
+Yeah.
+
+Well, so there are some AI things that we'll address a little bit later down in that section, but this one I think is more specifically just for generating word lists based off of a set of word lists, you know, the sec list tools from Daniel Measler. And essentially just management of those word lists within Kaido. And I think it's great to see that released and out there. But switching to the AI vein, the Kaido plugin that I really wanted to talk about.
+
+that does AI just so well is Bebix's Kaido 403 Bypasser plugin, right? And I think this was actually motivated by the episode that we released on brainstorming proxy plugins. And Bebix sort of took that and really just implemented it perfectly, man. So when I see this, I am so happy, right? So click on this link, Click on this link and go to the GitHub repo and look at the demo that he has on there, right?
+
+it brings up this interface and it's the perfect hybrid of having automation that you can customize and build in your own way. Right? Because what we talked about on that episode was like, okay, 403 bypass here. Like that's cool, but I don't have enough introspection into what it's actually doing for me to trust it. So I'm still going to sit there and fuzz manually, right? And like, you know, play around with stuff and tweak stuff and that sort of thing. Right?
+
+what this thing does, and this is the beautiful part of it, is it allows you to use AI to say, I wanna try, these are the things I wanna put in my 403 bypasser, my customized version of the 403 bypasser. I wanna put all of the different requests. I wanna put a dot, semi-colon, slash at this path index. I wanna do this and this and this, and then the AI will automatically generate the code and give you a test interface.
+
+Justin Gardner (@rhynorater) (25:26.94)
+where you can test to ensure that that method is being implemented the way that you want it to be implemented, and then save it into your scan templates for the 403 bypasser, right? So, and then when you press scan, it'll say, okay, trying your HTTP method trick, trying your, know, dot, semicolon, slash trick, you know, and then you can go through and you can see the different outputs for each one of those things that you would try. And it's,
+
+It's extremely low friction because you're just using natural language to tell the AI to generate the code, which gets loaded into the template. And it's very high integrity because you can still see everything that's being checked and have assurance that, I don't have to go back there and manually check this because I can just see it right here. And I just, I just, I love that. I love that so much because, it, it's something that I can trust and it's something that has so low friction for me to implement and then have saved off for.
+
+the future, any time I need to do four or three bypasses in the future.
+
+Joel Margolis (26:26.998)
+Yeah, absolutely. Yeah. And, we're finally getting now to a point as well with the, with this, the plugins and stuff, like the ecosystem within Kaido that it's some, it's getting a lot better to manage stuff. Like I just went in and I can now update plugins manually or like automatically, I guess, like you just go into the tab and you just click update and everything is much more integrated now. So finally, finally, I mean, when you look at burp,
+
+Justin Gardner (@rhynorater) (26:34.918)
+Mm. Mm.
+
+Justin Gardner (@rhynorater) (26:42.376)
+Mm. Mm-hmm.
+
+Justin Gardner (@rhynorater) (26:52.806)
+Yeah. And there's a store too, you know?
+
+Joel Margolis (26:56.074)
+I mean if you look at burp and you look at how long burp has been around and you look how long it's taken for some things to happen on there versus how things are changing on Kaido, you know, we finn boy a lot for Kaido but it's a good product.
+
+Justin Gardner (@rhynorater) (27:01.181)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (27:05.19)
+Hmm. We do. It is. And there's lots of evolution happening in that ecosystem. I'm actually working on a plugin right now that I'm super excited to release. Hopefully we'll be able to release it within the next month or so, but there's a lot of dev going on right now and I'm getting very familiar with the Kaido APIs. And I think I've also, the Kaido team is, here's a I'm just leaking this, you know, as I do. Kaido team is putting a lot of
+
+effort right now into the dev ecosystem in Q4. And so I think as we're going to see a lot of really, really nice to haves come into place and then make it really easy to dev front end and back end plugins in Kaido. Lots of automation surrounding how do we get like a starter kit up and rolling? How do we just have all the documentation in one spot? How do we use AI to supplement that and say like, hey, this is actually how it should be implemented and that sort of thing.
+
+It's just, I'm very excited for it. This upcoming quarter, there's gonna be a lot of progress there and I think it's gonna result in an explosion of innovation in the plugin arena, which would be very exciting. One thing we still gotta solve though is like how do we, I mean it's that age old problem with open source stuff is like how do we continue to give incentives to people that are.
+
+Joel Margolis (28:15.67)
+Yeah, absolutely. Absolutely.
+
+Justin Gardner (@rhynorater) (28:29.192)
+developing these plugins. And I think one of the things that kind of sucks about the bug bounty community and the security community in general is we don't love to support financially a lot of these projects that we use. And so I think I'll just give another shout out because I support Bebex on GitHub and use the GitHub subscriber feature. And I think if you're using plugins, if you're using...
+
+stuff like that, especially if it's directly leading to monetary gain for you through Bug Bounty, then maybe like chuck 25 bucks to your friendly plugin developer because that will do a lot for their motivation to continue to develop their plugin.
+
+Joel Margolis (29:11.606)
+Yeah, yeah, absolutely,
+
+Justin Gardner (@rhynorater) (29:13.736)
+All right, man, we got a couple more things here on the list. We got the, this one was really cool. So, cspbypass.com, did you see this?
+
+Joel Margolis (29:23.754)
+Yeah, yeah, so that was the other one I was gonna bring up was csbpipeass.com. This was from ReniPack? Yeah, so ReniPack, I don't even, well it's on GitHub, right? it's just like, my god, it was updated 42 minutes ago. So awesome.
+
+Justin Gardner (@rhynorater) (29:30.492)
+So it's ReniPack. Yeah.
+
+Justin Gardner (@rhynorater) (29:41.608)
+Yeah, dude.
+
+Joel Margolis (29:42.868)
+Yeah. So there's basically just a list of CSV bypasses and a CSV. It's nothing even that crazy. And yeah, it's, it's just a collection of CSV bypasses. And I guess you just, if you are trying to bypass CSP and you're like,
+
+Justin Gardner (@rhynorater) (29:48.68)
+Hahaha
+
+Justin Gardner (@rhynorater) (29:58.728)
+It's long too,
+
+Joel Margolis (30:02.998)
+You know, there's that CSP tool that that one that everybody knows the one from Google the CSP evaluator and it's like so close to being useful because You'll go and you'll put your whole CSP in there and it'll be like hey, there's this domain on YouTube calm That's vulnerable to CSP and you're like great What is it? And it's like I don't know. It just is so
+
+Justin Gardner (@rhynorater) (30:06.013)
+Mm-hmm.
+
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (30:21.724)
+Let's go. Yeah. We're not going to tell you that. We're not going to tell you that. Yeah.
+
+Joel Margolis (30:28.032)
+So this is that last step, So you go CSV bypasses, you go youtube.com, and hey, here you go, script source, youtube.com slash oembed, question mark, callback equals alert one. And there's your CSV bypass for YouTube. So this is super, super helpful. One of those tools you just throw in your back pocket and...
+
+Justin Gardner (@rhynorater) (30:47.73)
+Well, I think it's been good to see the community come around it as well, right? Like, there have been a lot of community contributions, people going back through all their reports and like grabbing all the CSP bypasses that they've ever used and loading them into this. The thing is with this, there's a couple of things that I would like to say with regards to this, right? Like obviously it's awesome and I'm so glad that we have it. Some of these are not actual, you know, bypasses, right? They are JSON.
+
+JSONP callback interfaces, right? And some of them don't have even the ability to use like a dot, right? Because we saw that research, I think it was related to WordPress related stuff where, you know, it is possible for you to exploit a CSP related or a CSP bypass of sorts just using a JSONP callback functionality by hijacking the .click function. And you can essentially say like, if you're able to provide a
+
+arbitrary length callback function and that callback function can contains dots you can say you know window dot parent dot child dot child dot child dot you know whatever find the delete account button dot click it because You know JavaScript will take any parameters, you know that are in there It just doesn't care about the parameters It'll just click the button and delete your account or whatever right or do like an OAuth authorization or something like that if it's on the same origin And and so, you know, definitely categorizing JSON P
+
+related functionality is massively helpful. But I did go through here and I was looking at some of them and like some of these don't even have like dots. You can't even put a dot, you can't put a slash, you can't do a function call. It's just, you know, the typical JSONP callback interface, which actually isn't super helpful as far as I know. So definitely something nice to have would be to categorize each of these by like ability, by flexibility or like maybe what character set they support.
+
+in the JSONP callback. then also the other thing that I have with regards to this is it would be really cool to combine CSP evaluator and this, right? Where you can say, okay, here are all the domains in my CSP. Which of these domains match a known bypass? So I think that's some pretty easy dev work to do. I think we'll probably see it at some point come into this, especially since this has been open sourced. Someone should probably definitely go in there and like build in that parser.
+
+Justin Gardner (@rhynorater) (33:15.44)
+and then just compare it to the list of all the bypasses that are done.
+
+Joel Margolis (33:19.394)
+Yeah, absolutely. I mean, I think this would be a good opportunity to, I mean, you could even make another tool out of just tying these things together or maybe the tool, the tool developers could have a little discord chat and combine or, you know, integrate functionality with each other. But definitely there, there's sort of an easy win here where at minimum as a hacker, you could manually use both of these tools together. And if you want to streamline your process, you could automate them together. And if you want to streamline everybody else's process, you can really set.
+
+Justin Gardner (@rhynorater) (33:40.456)
+Mm. Mm.
+
+Justin Gardner (@rhynorater) (33:48.488)
+Yeah, yeah, for sure. All right, so actually, I probably should have clustered this one with the other one. But let me, I'm gonna jump down to this arbitrary read write on llama.cpp by SideQuest for a second. This was a little bit of a weird one. And this isn't stuff that we normally talk about on the Bug Browdy podcast quite as much. But I really wanted to shout this out because I think that it, one is relevant to AI stuff, which is very...
+
+very hot right now and I think that I've used Llama multiple times and I think if anybody's interested in doing offline AI stuff, they're familiar with this. And there's a pretty serious vulnerability in the Llama server, the RPC server. And it was very odd because it almost looked intentional. Like essentially this RPC server, which is unauthed, was exposing primitives where you could...
+
+essentially supply memory addresses and just allocate onto the heap and read from specific, like you could literally give it a memory address and it would read from that. And it's like, what? And yeah, so it was really interesting because the guy that did the write-up on it, SideQuest, I was watching some of it because it's a very good example for me as a primarily web hunter how this sort of exploitation
+
+Joel Margolis (34:59.394)
+It's so wild.
+
+Justin Gardner (@rhynorater) (35:15.474)
+process works once you've established the primitives because the RPC protocol is essentially the primitives that you would normally need to trigger these exploits, right? Normally you've got to go find an arbitrary read, an arbitrary write, that sort of thing. The RPC protocol was pretty much just exposing that. the process was him taking this, crafting this Python file to use these RPC primitives to trigger code execution. And it's like an hour long, an hour and some change.
+
+Joel Margolis (35:32.098)
+So crazy.
+
+Justin Gardner (@rhynorater) (35:45.51)
+And I think it's a really cool example of that exploitation without having to find that extra layer of like, how do I not crash it? And like, how do I isolate these specific primitives and then build the exploit? So definitely a cool piece of work there.
+
+Joel Margolis (36:03.05)
+Yeah, you know, this reminds me of early on in my bug bounty career. One of the first bugs that I found was a RPC server vuln in a crypto project. And if you don't know a lot of crypto projects, they use this thing called the JSON RPC. It's, you know, kind of similar thing, but that's like how you would like talk with your wallet and stuff. And there was this RPC call called delete.
+
+And literally you would call it and it would just delete the entire server wallet and I was like I Don't know why this exists, but it's there and like yeah, they were like, wow Thanks for catching that like we don't know why it was there
+
+Justin Gardner (@rhynorater) (36:35.582)
+no.
+
+Justin Gardner (@rhynorater) (36:43.846)
+Yeah, dude, that's, that's crazy. I think there's a lot of stuff hiding in these non-HGP related protocols and it's scary to try to investigate them for a lot of people. But, I think when you take, take the dive, it's, it's very friendly. I, and just, just to quote some of the, the stuff from this, this YouTube video, you know, he's looking at this protocol and he's like, yeah, it's just like, you know, one, one integer is like a, is like the, call you're going to do.
+
+And then there's like the message length and then the message and that's it. You know, it's just a very simple binary protocol that took like five lines of code for him to implement, you know, the send call function. And so I think it's not as scary as everyone. Maybe I shouldn't project it to everyone. As many as I think it could be and as many, I think web pen testers believe it to be.
+
+to actually dive deep on this stuff. I just, I just also, hmm.
+
+Joel Margolis (37:40.49)
+Yeah, no, I mean it goes back to that like that barrier thing right of you know, every but every hacker hits the same barrier that you're hitting whether it's setting up the software learning the documentation whatever and if you decide that you're gonna push through that and you're gonna learn through and you're gonna grit and you know Head down and do it then you you get past where everybody else stopped
+
+Justin Gardner (@rhynorater) (37:45.191)
+Mm.
+
+Justin Gardner (@rhynorater) (37:48.646)
+Mm. Yeah.
+
+Justin Gardner (@rhynorater) (38:01.596)
+Yeah, yeah, for sure. The other little takeaway that I wanted to talk about on this topic was, think, so, and this is just very, very wide conjecture, but I was listening to the Lex Friedman podcast that they did recently with the Cursor AI team. And it was very interesting because they were talking about optimizing stuff with the LLMs at a very low level. And then I just, you the next day saw this.
+
+where it's like, okay, you've got this pretty well-respected, you know, LLM entity here that is exposing these primitives to an RPC, know, via RPC. So I think, you know, I'll just throw this conjecture out there. I think some of these LLM-related things may, in the pursuit of performance, may start exposing some much lower-level functionality via some of these protocols.
+
+Because I know that that's what the cursor team was talking about is optimizing at a much lower level. And then we see this right here with llama as well. when you're investing, so I think the way that I've approached AI related targets at this point has been a lot of like, you know, almost like red teaming the AI sort of approach, right? And that's surely that is necessary as agents become more prevalent and you actually weaponize these, these LLM models to,
+
+you know, do stuff. But I think if we want to take a more technical approach, which is very attractive to me because of the wishy washy nature of AI, like I don't really like red teaming AI because it's just so wishy washy. If we want to take a more technical approach, then we can look deeper and deeper and see if they're exposing any of these lower level primitives that might be used for optimization of the LLM to get snappier response times like you see in cursor.
+
+Joel Margolis (39:52.202)
+Yeah, I will say like one of the things that bothers me a lot about testing with AI and like trying to do adversarial stuff with AI is that you can get down a rabbit hole where it gets like stuck with all this context that you've been testing with for whatever. And if you just make a new chat, it can behave completely different. And like, it's like as you know, a reset basically where you can sort of re...
+
+Justin Gardner (@rhynorater) (40:12.104)
+Mm-hmm.
+
+Joel Margolis (40:17.9)
+Path it to in the direction that you want simply just based on the fact that doesn't have the context from the previous attempts and That can be very very frustrating to go back and forth with
+
+Justin Gardner (@rhynorater) (40:28.732)
+Hmm. Yeah. Yeah, absolutely. It can. Yeah. I think, I don't know if I'm ready to say it on the, I guess I'll say it on the podcast just cause that's how I do. But I think definitely within the next year or two, I would like to experiment more with this lower level exploitation stuff. I think I've spent a lot of time on web and I think there is overlap between web and some of this, this, you know, binary exploitation stuff, that
+
+that it would be really helpful for me to be able to utilize my web skills, to be able to interact with some of these sort of things and understand what's happening a little bit better at that lower level. So I think I'm gonna go back after this episode and rewatch this exploitation video and see what I can take away from it because I think this is a really cool example of how you can do that.
+
+Joel Margolis (41:20.086)
+Yeah, yeah, for sure.
+
+Justin Gardner (@rhynorater) (41:21.346)
+all right. Last one that we had on the list for, for today was, just a helpful little WAF bypass that I came across. and this was under an article entitled XSS WAF bypass one payload for all. And, this is by a guy named Edra. and I'm looking through here and there's some, there's some interesting bypasses in here. So definitely check it out. Obviously they're going to get whack a mold, you know.
+
+like the whole WAF bypass game goes. But I liked the principle of essentially weaponizing encodings against WAFs themselves, because WAFs by nature need to be able to deal with various layers of encoding because they don't know what they're dealing with on the backside of them, right? On the backside of the WAF.
+
+And so this whole concept of using different levels of encoding with the same entity, in this case, a double quote, I think is pretty attractive. the X plate that he released was, or the bypass that was released was X equals and then double quote, and then a quote entity in HTML, and then another double quote, and then an on-air handler or whatever. And so they're mixing that traditional just
+
+double quote plus the HTML encoding to create a mismatch in perception from the server. And the WAF thinks, okay, this is an X attribute and then an attribute that starts with double quote and then goes to on error, right? Whereas actually the middle piece is actually encapsulated inside the HTML attribute and the on error definition is its own attribute itself, which will trigger.
+
+So it's just trying to take these principles and bring them up to a higher level and say, can we learn from this specific WAF bypass? Is that creating an odd number of these specific entities, right? You've got double quote, double quote, double quote three, and then sort of creating that mismatch between various HTML entities, encodings, that sort of thing is pretty widely applicable, I think.
+
+Joel Margolis (43:41.44)
+Yeah. Yeah. I mean, and again, you can just file this one into the, the, the notebook of bypasses or put it included into the AI script in the four or three bypass or whatever, you know, like there's, there's a ton of different, there's a ton of different little bypasses and little, I don't know, gadgets coming out now that are so useful to have in the back pocket.
+
+Justin Gardner (@rhynorater) (43:47.976)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (43:52.856)
+Mm-hmm. Mm-hmm.
+
+Joel Margolis (44:08.928)
+I will say it's almost getting to a point now where I need some way to organize them and just test them all at the same time. So I think those extensions that are like, know, 403 bypasser and that kind of stuff that do a lot of different tests at once against a single target are pretty useful because it makes it so I don't have to remember so many individual things.
+
+Justin Gardner (@rhynorater) (44:12.728)
+Mm-hmm. Mm-hmm.
+
+Justin Gardner (@rhynorater) (44:18.172)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (44:27.16)
+Yeah, and this article contains three bypasses for Imperva, Amazon, WAF, and Akamai that all utilize this specific functionality. And as we've, think also just lately with Shazer and with some of the other research that's been coming out surrounding HTML entities, I think HTML entities in particular as in encoding are pretty helpful because there's so many ways to represent the same character. Even with these like sort of
+
+double character, ones that we've seen where it's like, okay, you get like a less than sign and some junk, you know, that sort of thing. I think we'll be very helpful for, for bypassing WAFs in the, in the future. all right, man, I think that's, that's all I had. I got this, you know, I'm going to push this next one to, to next week. So I think that's all I had on the list. You got anything else before we close off this one?
+
+Joel Margolis (45:20.258)
+think that was it, dude.
+
+Justin Gardner (@rhynorater) (45:21.35)
+Alright, GG. Peace, that's the pod.
+
+Joel Margolis (45:23.362)
+That's the plan. Peace.

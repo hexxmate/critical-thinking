@@ -1,0 +1,756 @@
+Episode 134: XBOW - AI Hacking Agent and Human in the Loop with Diego Djurado
+Source: https://www.criticalthinkingpodcast.io/episode-134-xbow-ai-hacking-agent-and-human-in-the-loop-with-diego-djurado/
+======================================================================
+
+[00:00:01.04] - Diego Jurado
+I recently joined Xbox, like in Microsoft, because it was part of.
+
+[00:00:05.40] - Joseph Thacker
+You did not. You went from Xbox to Xbow. You changed one letter.
+
+[00:00:08.96] - Diego Jurado
+Yeah.
+
+[00:00:15.16] - Justin Gardner
+just, you know, critical thing, right? One of the things we love the most as hackers, right, is people or industries that are just pushing the boundaries of what are possible. They're on the bleeding edge and they're asking the tough questions and pushing industries forward. Right? And that, I just want to be clear, is why we've had Threat Locker on as a sponsor of this podcast for so long, is they are doing that for the Zero Trust industry. They're constantly coming up with innovative solutions to push the industry forward. And the latest one that they've come up with is Threat Locker User Store. Right, because one of the main problems with Zero Trust is everything has to be validated on the last mile, right? There has to be a response team that's approving applications as it's coming through, and that's burdensome to the user. And so they decided to preload that compute, right. And approve a set of applications in advance that Threat Locker users can utilize to accomplish their business goals. For example, if they're trying to download sketchy PDF file reader exe instead, the User store will give them instant access to Adobe Acrobat, saying, hey, why don't you open it with this one? Instead of. Rather than having to go through the whole response team. It's instantaneous, it's quick, it's preloaded. That's another way the Threat Locker is pushing the industry forward. Sup, hackers? Got that this weekend bug bounty segment for you. First up is, yes, we hacks live hacking event at Nullcon in Berlin. Okay. This is September 4th through 5th, and maybe if you guys haven't been able to land one of those exclusive live hacking event invites, this is a good opportunity for you because they're running a live hacking event that is open to all Nolcon Berlin attendees. Okay. So you can just pop in, pop some shells with other hackers, have a blast. The live hacking event experience is really unparalleled, guys. It really is. So if you're at nocon, you're definitely going to want to hop in on this. I love the how to participate here. They're like, okay, log into the Nullcon Berlin WI Fi and then log into your yes, we hack account and boom, you'll see the Nullcon Berlin program featured at the top, right? So they've got something set up that's cool there. So that's definitely something you Want to check out if you're going to be at Nolcon? Next up. Oh, what is this? Next up on the list is Bug Bounty Village. There's a talk by your boy Justin Gardner. Wow, how did that get there? No, seriously, the agenda for Bug Bounty Village is super stacked this year. You've got golden, you know, doing something. You've got me, you've got the Expo team, you've got Haddocks, you've got Ben, you've got the voices from the front lines of all the Triagers and stuff like that. Managing Book Bounty programs. You got another panel with me and naham and insider, PhD. The list goes on and on, guys. It's an amazing lineup. Also, I'm only going to be around DEF con on the 8th, right after I give this talk. I'm going to be hanging around at Bug Bunny Village pretty much the whole day, giving out swag left and right. So definitely come and see me on the 8th if you want to. If you want to catch up. We're going to be giving out a ton of T shirts. Rezo will also be around, so I think he'll be around for longer so you can catch him as well. But if you see me come up, say hi. I'd love to talk to you. All right, next up on the list is yes, we hack again in conjunction with Talk to Pony. Kaido Special Number two Advanced Features and Customization. There's been a lot of really awesome content coming out featuring Kaito lately. And this is a great YouTube video that covers some of the plugins that you should be aware of, including quick ssrf, Auth Matrix, yes, we Kaido Param Finder and more. So there's been a ton of movement in the Kaido space lately. So if you're looking to kind of keep up with that, this is a great place to do it. Or if you want to really deep dive Kaido, like really deep dive. There's an amazing video that just came out recently, amrsec. Okay, this guy's been putting out some awesome content. This is a one hour video covering how a Kido masterclass, essentially how to use everything in Kaido. Okay, so you've got like all of the plugins, you've got environment variables, automate workflows, HTTP history filtering, all of that. Right? So this is one of the most comprehensive videos that's been put out on Kaido just yet. He beat me to the punch on it because I wanted to do something just like this as well. So definitely check this out and if you're looking to take the dive into Kaido. All right, last but not least, our boy Itugulo, full time hunter hacker extraordinaire, did a write up for bugcrowd. I met this guy at Grhack and we hung out the whole time and I just had a blast. So shout out to my boy. He also has a great blog by the way, but he did a write up for Bug crowd called Access Control versus Account Takeover. What bug Bounty hunters Need to know. And it covers a lot of great content on understanding the nuances of various vulnerabilities like account takeover, idor, that sort of thing. So there's definitely a lot of bugs in here that you're going to want to be aware of. So check this out if you're interested in understanding the nuances of these vulnerabilities. All right, that's it. Let's go back to the show. All right, man, Our pillow fort has been built, our audio is dialed in and we are glad to have you on the pod today. Diego, thanks for coming and represent yourself as a talented hunter and Expo, this crazy AI that we're seeing all over the bug bounty space.
+
+[00:05:52.87] - Diego Jurado
+Yeah, thank you guys for inviting me. It's a pleasure to be here.
+
+[00:05:55.83] - Justin Gardner
+Of course, man. Well, y' all know the drill. The drill is as soon as you come on Critical Thinking podcast, you've got to drop a bug. So Diego's got a bug for us and you know, a bug that he's going to talk about, you know, representing Expo in this specific situation because we're competing with Expo on the leaderboards. Right. So we got to have, you know, Diego and Expo giving their, their, their bug right up. So let's do, let's do yours first. Which looks like it's an account takeover, right?
+
+[00:06:25.00] - Diego Jurado
+Yeah. Yeah, right? Yeah. So this one was an account takeover through like different multi step bypasses that we went through. I want to give kudos to my teammate Blackamba from Spain, because this was Foundry in one of the Ambassadors World Cup. So basically to give some context, there was a company that has some sort of identity management system. So there was an endpoint to validate the current user token and retrieve access scope information. So there was something like API/B5 token. It was a post request and you have to provide the client ID in the body. So the first thing that we saw is that if you do some sort of API downgrade from B5 to B2, you could modify the post to a get and the request was working anyways. So that was the first Step that we found. Then we saw as well that the endpoint has JSON key support. So when you add the callback parameter in the request, the response will be wrapped into a JSON key structure and so the response can be kept from a cross domain origin. But then we found that of course not origins were allowed and that was the third step. So there was some sort of refer based access control and the server was only returning the data if the request comes from one of those domains. So that was a complex step because of course you need to find an XSS or something like that to change that. In one of those whitelisted domains we had like four or five, I remember. So the last step from this bug was finding an XSS through an Adobe Experience Manager dispatcher bypass. So we saw that one of those domains was using am and I'm really used to this kind of bypasses. So with that dispatcher bypass we could exploit an XSS and then do the full POC to get the account takeover. But it was like a crazy chaining between like all five steps. It was like a really cool one.
+
+[00:08:37.00] - Justin Gardner
+Dude. Joseph, like I don't know man, when you hear a bug like this, doesn't it just like. I don't know, I know you're not as much of a client side guy as I am, but this just like is just heaven.
+
+[00:08:47.45] - Joseph Thacker
+No, no, I have extreme respect for any kind of like anytime there's multiple things you have to bypass, like multiple either protections or just multiple like features or gadgets you have to chain together, it definitely gets my blood going.
+
+[00:08:57.85] - Justin Gardner
+So yeah, dude, it's great. Okay, so this actually is interesting, Diego, because it sounds, you said there's JSON P you can wrap in it, right? Then it actually sounds a little bit like it's like an xssi, which is a dead bug class thanks to samesite default cookies. But what you guys did here is you chained that within xss, I assume on a samesite subdomain. Right. And then you were able to include that script cross, cross origin, but same site and then grab the access token out of there. Is that right?
+
+[00:09:33.00] - Diego Jurado
+That's right, yeah.
+
+[00:09:34.12] - Joseph Thacker
+When I read your little summary, I thought that the entire chain was in AEM and just the way that you listed out the different things. So I thought it was going to be like a traditional refer bypass, like you know, like an unescaped dot or something in the refer check so you could like register a new domain to do the bypass and that all that was actually happening in aem. But now I understand like that it was actually on a different system, but then you all use an XSS in AEM to then make the request. Very cool.
+
+[00:10:00.55] - Diego Jurado
+Yeah, that's right.
+
+[00:10:02.03] - Justin Gardner
+Beautiful, man. I love these chains. And I love the, you know, because.
+
+[00:10:06.84] - Joseph Thacker
+These chains are going to be resilient to AI finding them eventually.
+
+[00:10:10.12] - Justin Gardner
+Oh yeah, there we go. Let's see. Let's get some takes on that. But I think this really highlights as well, collaboration. Right? One of the big, big pros of collaboration. Right. Like, I don't know the details of this specific environment, but often when I've been working with a team, I'll have this API downgrade JSON P refer problem and then some other person's like, oh, well, I've got this crappy little XSS over here that doesn't really do anything besides maybe on a CDN domain or something like that. And then you chain those two things together to get account takeover. Is that what happened in this scenario? Did multiple people find different pieces?
+
+[00:10:47.95] - Diego Jurado
+Yeah, exactly. So this was basically found originally by Black Gamba, like the API downgrade and the JSONP callback. So then he talked to me like we used to bypass this kind of am. I know, like multiple dispatcher bypasses. Some of them really, like, I think that they are not known yet. Some of them have been fixed during the doing the way, but some still work nowadays.
+
+[00:11:14.25] - Justin Gardner
+Well, Diego, you know, the CTBB podcast is the best place to drop those sort of things if you're so inclined.
+
+[00:11:20.97] - Diego Jurado
+I think we. I can disclose that because actually I cannot find like a lot of them right now. I think almost all of them are fixed now, so.
+
+[00:11:28.37] - Justin Gardner
+All right, awesome. Well, we'll loop back around to that. I'm definitely going to take you up on that. It is my favorite thing about doing this podcast when, you know, we get some, some new research released right on the pod. And I love to bring people on and like interview them and dive deeper into the research that they do. But when it's released here on the POD first, that's just when I'm like, this is why I started this podcast. So excellent job, man. What a great bug. All right, so now you've established your worth as a hacker here. Now let's talk a little bit about Expo. So you had a.
+
+[00:12:02.58] - Joseph Thacker
+Well, well, let's actually intro Diego, fully similar to Justin and I. You're a hackerone ambassador, right? But you are an ambassador from Spain. Where do you live?
+
+[00:12:13.04] - Diego Jurado
+In Madrid.
+
+[00:12:13.73] - Joseph Thacker
+In Madrid. Cool. And what's your favorite team?
+
+[00:12:17.45] - Diego Jurado
+Real Madrid, of course.
+
+[00:12:20.25] - Joseph Thacker
+Cool. Yeah, no, I Just wanted to ask that for fun. Yeah. So Diego has been around the live hacking event circuit for a while. Justin and I have seen him at plenty of life hacking events, but yeah. So tell us how Spain's been doing in the Ambassador World Cup, Diego.
+
+[00:12:34.33] - Justin Gardner
+Oh, my gosh, dude.
+
+[00:12:35.85] - Diego Jurado
+Yeah. So so far it has been, like, really good. We. We managed to win for second year in a row, so.
+
+[00:12:43.45] - Joseph Thacker
+So, yeah, yeah, those things are pretty great. Yeah, we got knocked out at what Final 8. Did us south or whatever U.S. team we were on this year get knocked out in, like Final 8 or Final 4 or something?
+
+[00:12:54.92] - Justin Gardner
+I don't know, man. You know, and that's something that I kind of want to get a take on from you, Diego, as somebody who, I mean, it looks like your team obviously went really hard for the Ambassador World Cup. Is the Ambassador World cup this year? The incentives were not there for me, and obviously I've got to do this as a job. I love bug bounty hunting, and sure, I try to do things for fun sometimes, but as big of a commitment as the Ambassador World cup is, it has to be a good opportunity for me as a bug bounty hunter as well. And I just feel like the dupe possibility going up and the negligible increase of bounties, or maybe not even increase.
+
+[00:13:34.78] - Joseph Thacker
+And not really new scope either.
+
+[00:13:36.30] - Justin Gardner
+And not really new scope. Right. It sort of. It sort of said, I looked at that opportunity and I was like, I'm an H1ambassador, but like, I. I can't do that, you know?
+
+[00:13:44.71] - Joseph Thacker
+Like, I do think it's different for you where you already get to go to events, though. I think the real draw here for many hackers was like, the fact that the top four went to a new event. So, like, while Diego was already at those, lots of his teammates probably had never been to a live event. Right?
+
+[00:13:58.33] - Justin Gardner
+Yeah. Yeah. What's your take on that?
+
+[00:14:00.57] - Diego Jurado
+Yeah, that's right. I think that this competition is meant to be for newcomers, or at least that was. That was what hacker1 was. Was claiming at the beginning. Of course, like, having a competition, like a team competition is something that a lot of people, and especially Spanish people, takes, like, very serious. And I think that's one of the reasons why we. We are performing really good. Because it's true that there's not too many incentives for spending time in this competition because as you said, bounties might be the same. You have no bonuses, you have a high risk of getting a duplicate because there is a lot of people hunting at the same applications. But for us, it's more like during all the year, we are always hunting alone most of the times. And we use this competition like to get together. We don't really care about bounties because in the end, apart from this competition, we are still doing our bounties. Some people have their own job, so they don't care much about the bounties in the competition, but of spending some time with the rest of the team collaborating. And also in the end, we are also getting a lot of bugs and a lot of money as well.
+
+[00:15:17.17] - Justin Gardner
+So.
+
+[00:15:18.02] - Diego Jurado
+So I think that we are having that perspective. But I agree that it's really demotivating to not have, for example, a final reward for the winners or having bonuses for those findings. So I totally understand the people that get tired of this.
+
+[00:15:36.90] - Justin Gardner
+Yeah. I mean, I think your approach on it is really solid and I think.
+
+[00:15:41.87] - Diego Jurado
+That.
+
+[00:15:44.00] - Justin Gardner
+Especially for countries that have a lot of national, national pride in the competition space. Right. Like that makes a lot of sense. And it's funny coming from an American. Right. Like, at least we individualistic, Justin, but we also have that piece of individualism. Right. Like, okay, well, if this doesn't make sense for me, then I'm not going to do it, you know.
+
+[00:16:01.12] - Joseph Thacker
+Right.
+
+[00:16:01.52] - Justin Gardner
+And, and so, yeah, I think there's, there's a dichotomy there, but I would definitely like to see, you know, hacker1 or anybody else who puts on, you know, something similar. We need live hacking event like incentives here and we need some sort of duplicate shield. Whether you're segregating the teams out to different targets. Okay, these teams go to this target, this teams go to this target, or you're providing a dupe window and some assurances of minimum bounty per team. So, for example, if there's a high that's found and it's found by 60 people, you know, and it's, and it's a, and it's a, you know, six grand high. That's going to feel really bad. Right. You know, like, and so I think there needs to be some shield there where it's like, okay, you know, your team, for every high you get, your team will get at least $2,000 or $1,000 or something like that. And then you can split it across the team however you will. But there definitely needs to be some better incentives there.
+
+[00:17:03.50] - Diego Jurado
+Yeah, yeah, agree with that.
+
+[00:17:05.09] - Justin Gardner
+Yeah. Either way, congratulations, man. It's a crazy competition. Yeah, thank you. Yeah. I mean, Reza, what else do we want to say about Diego, man? I mean, he's a security researcher at Expo. Right. That's a big piece. So that's one of the reasons we wanted to bring you on is because not only are you performing at the top level in the bug bounty competitions, but also you're on the forefront of this AI wave that's happening.
+
+[00:17:31.46] - Joseph Thacker
+So yeah, actually just as like a very small thing in that transition, I think it makes sense to talk about at this point. How did Expo reach out to you? Like, did they find you off the leaderboards? Was there like a one degree, you know, separation of connection you had? Like, I'm just curious because I do think a lot of our listeners will be eventually utilized in some way by hackbot companies or they'll be using hackbots themselves or they'll be using being wrapped up in like AI safety companies or they'll use AI safety tools. Like I'm really curious how that initial connection happened in case it's like applicable to others.
+
+[00:18:02.31] - Diego Jurado
+Yeah, so in this case I joined like one year ago when the team, the security team was getting built and in this case Niman Sec, this guy from Argentina, Joe, reached out to me. We are friends, we have been collaborating in previous events. So he know how it works and I know how he works. So he reached out to me like, hey, I have a really good opportunity. But that time I was. I recently joined Xbox like in Microsoft because it was part of.
+
+[00:18:33.55] - Joseph Thacker
+You did not. You went from Xbox to Xbow. You changed one letter.
+
+[00:18:37.07] - Diego Jurado
+Yeah, I was part of.
+
+[00:18:39.72] - Joseph Thacker
+I actually type Xbox every time I'm trying to type Expo. I do that every time.
+
+[00:18:44.27] - Diego Jurado
+Yeah, I was part of the offensive security at Activision Liquor King, but then we got bought by by Microsoft. So I moved to the Xbox gaming security team. And like once I was like a couple months there, I got this offer from Expo and of course I decided to join. Like the idea was amazing. The team is insane. Probably one of the best teams I ever seen. Not only in the security part, but the people from Engineering from AI is crazy. So I thought that it was like a unique opportunity to join that. Even though it was a risk to me in the beginning. But I had to try. Of course.
+
+[00:19:23.82] - Justin Gardner
+Yeah, absolutely, man. Well, I'm glad you did because I think like you said, they have a dream team and you're a piece of that. Right? They've got the AI dream team, they've got really great management and then they've got the top tier security researchers. So that's why I'm hopeful for it. And I guess Reza and I were kind of discussing before this episode, we, we are fans of AI related stuff for sure. And I'm definitely rooting for Expo. There is a little bit of skepticism, obviously that we're bringing into this episode. And I think a lot of one.
+
+[00:20:02.53] - Joseph Thacker
+Part, it's because I think we want to represent that user base. Whenever I quote, tweeted Urals findings, there's just dozens of comments that are like half RNA and informational and dupes and other people are like, it's all VDPs. And so I think I'm personally not that skeptical. I think that Expo's product's probably great, like probably fantastic, just because I've seen a lot of hackbots and I know that you all are kind of like leading the space, but I think we almost have to be skeptical because on behalf of our listeners and because it does affect our job, outlook, performance stuff too.
+
+[00:20:33.28] - Justin Gardner
+So, yeah, I mean, with that, Diego, what I want to say here is I want to give a little disclaimer like, we're rooting for you guys, we're rooting for Expo. But we also have to, you know, try to ask some difficult questions on this podcast. Right. And to represent the listeners and also to, you know, solve our own, our own thoughts on, on where expos at. But yeah, the results have been promising. I'm not going to lie, dude. So let's, let's, before we jump into all of the Expo pieces, all the questions we've got, let's go ahead and have you do the cloud test XXE that you guys released about for Expo. Go ahead and talk about that and show what kind of technical prowess the Expo software has. Okay.
+
+[00:21:19.50] - Diego Jurado
+Yeah, so I don't know if you want to go through.
+
+[00:21:23.82] - Justin Gardner
+I'll share my screen here.
+
+[00:21:25.50] - Joseph Thacker
+If anyone is living completely under a rock, Expo is an autonomous pen testing company and they have an account of HackerOne that finds vulnerabilities just to lay the lowest level of groundwork there.
+
+[00:21:39.03] - Justin Gardner
+Thanks for that. Thanks for that. Yeah. So how did you want to do this, Diego? Did you want to go straight through the write up first or did you want to jump?
+
+[00:21:46.03] - Diego Jurado
+Yeah, we can go through the write up and then maybe show the trace so that people can see how it works.
+
+[00:21:53.11] - Justin Gardner
+Perfect.
+
+[00:21:54.96] - Diego Jurado
+Okay. So, yeah, so this finding was basically an XXE in Akamai cloud test. This is something that we originally found in an asset from a HackerOne program. So they were using this product and we found this back. How Expo works right now is you just provide a URL. You provide like the attack types that you want to test and then you just wait for findings. Okay. So of course there are more Pieces there you can provide credentials, you can provide documentation if you want. But of course in back bounty usually and in this kind of automations usually what you provide is just a URL and you just let it find bugs for you.
+
+[00:22:37.42] - Joseph Thacker
+Do you ever just like paste in the program policy in case there's some nuance there that it should care about? Do you ever just throw that in into the context?
+
+[00:22:47.18] - Diego Jurado
+Yeah, so we have like an infrastructure where we monitor all the domains that are allowed by the company. So whenever we start like, like a test, these infrastructure checks the scope from that program. And for example, if we have a URL that is out of a scope or even though if doing the trace, like doing the interaction with XFO with the system, it turns out that it finds that asset which is out of scope, it won't test that. So it is like we have some proxy rules that. So every traffic that goes to an asset that is out of scope, it will get, it will get blocked so that we have some word rates for that. Of course this is automation, this is an AI. We have some issues sometimes and that's why we are constantly improving that so that we can be sure that companies and customers are safe. And we are only testing what is supposed to be tested. In this case we just got an asset from a customer and in one of those iterations Expo decided to test for file read vulnerabilities. In this case for xxe, we have like some attack types like file read that includes xxe, path traversal and other kind of attack types. In this case it decided to try xxe. So we have to keep in mind that the objective during this trace, like during this experiment is to find xxe. Okay, this is something that has been decided by like a higher coordinator into the, into the tool. Maybe we can then later talk about how it works entirely. But in this case we are testing this endpoint, this asset with this specific attack type. So yeah, it just do like a human will do, like access to the site, see what happens. It gets like a redirect to an endpoint that is concerto and then it starts to try some XXE payloads. So yeah, this is like how the site looks. And then during one of those iterations there are some hallucinations during the process, but it finds an endpoint SOAP endpoint, which is the repository service. And of course when you have these kind of endpoints, what you have to try is an xse. So it goes ahead, it tries the XSE and then after trying a few payloads it gets an error which of course is giving some evidence that some kind of XML parsing is happening behind the scenes.
+
+[00:25:27.44] - Joseph Thacker
+When it says it discovered it, does it likely mean in the JavaScript.
+
+[00:25:33.20] - Diego Jurado
+In this case? I think that it was really, we can wink a check in the trace, but I think that this endpoint like appearance out of the blue, like, you know, it was trying to search. It's funny because in this trace it was trying to search for a specific cve, which was like an illusion because this CVE was not related to this product. And from that point it managed to get this endpoint. So I guess that it has this information probably in the, in the training, that data that it has.
+
+[00:26:04.35] - Joseph Thacker
+That makes sense.
+
+[00:26:05.44] - Diego Jurado
+We saw that some of the bugs that we are going to disclose in the next couple of next weeks, we saw that Expo has a lot of information in training data, like about endpoints, about parameters, and you do like a lot of weird combination with those as well. So yeah, we found that from that. I guess so, yeah. So then it starts trying some secessive payloads and if you go below you will see that it fails. So then it decides to try with inbound, outbound and error based payloads. So again it tries again to get more information from a WSDL file that it founds with some documentation and then tries a couple more payloads. And then finally if you go below, I don't want to bore you with that, it tries a payload that it gets like an Interact into our Interact SH system. So we have basically have this integrated into Expo. So we monitor every request that is performed by Expo using this filtration server. So we got a callback and at that point we can confirm that the XSC was working. But of course the objective of this tool of EXFO is to make sure that the vulnerability is real. So we do not slack a bug until we have a clear evidence that this works. So for that we have some sort of validators. I don't want to give a spoiler because one of our teammates is going to be doing a talk in Black Hat in a couple of weeks, but basically we have some system with a lot of validations that make sure that the findings is not going to be confirmed until we get a real evidence in this case, until we get some file extracted from the server. So then, yeah, if you go below, it finally crafts a payload that works. So if you go a little bit up, it should be. Yeah, we have. Yeah, a little bit more up. Yeah, there. So that's the payload. So basically it creates a DTD file Pointing to a file that doesn't exist to force the error base and then it points to the ETC password. So it will basically do an error based XXE and then in the other request you just point to the DTD file, it's just a normal XXE and you get finally in the error you get the response from the file.
+
+[00:28:44.52] - Joseph Thacker
+So when you get Etsy password in Slack, do you just freak out? I mean is your face as a bug bounty hunter just like your draw on the floor? I don't know, what's the reaction there?
+
+[00:28:55.25] - Diego Jurado
+Yeah, so we really are used to that right now. At the beginning it was like oh, an xse, an rce. But now every day we have these kind of findings. We have a channel where we get all these notifications and we get the type of bug that Expo found and we go there and check that if it's true positive or not. Of course we have this kind of validators that make sure that it is always a true positive. But you know, we are still fixing some issues because sometimes the AI manage to cheat. This kind of validators is something that is also used to. So we are constantly improving that. But for some attack types and vulnerability types we have zero false positives. Like right now we don't have any false positives.
+
+[00:29:46.74] - Justin Gardner
+That's amazing. So looking at this exploit, I mean this required out of band interaction, right, which you guys have implemented with Interact Sh. It seems like so many questions about that one. In this scenario it seems like the AI can host a DTD file and then it can know where it's hosted and then point stuff to it. So that's something that the AI is capable of doing autonomously.
+
+[00:30:10.39] - Diego Jurado
+Yeah, yeah, exactly. So we have an attack from a team basically with hosting service and then we have this exfiltration server and yeah, we have a lot of components that are provided to the AI whenever it start to start finding bugs in an application. So with all that information in the prompts and how to use these tools and how to host a file and how to use the Interact server with all this information, Expo can start running and interact with all these pieces.
+
+[00:30:40.84] - Justin Gardner
+Dude, that's crazy. So architecturally, I mean as much as you can talking about Expo's architecture because I know it's, it's you know, proprietary but like how, how does this work with out of band stuff? Like does the AI just kind of say all right, I yeeted a request out there, I threw a request out there, now I'm going to wait and see, you know and like, and then how does the, the data get, you know, pushed back into the prompt or that that's fed to the actual agent that's doing the, you know, hands on the keyboard hacking versus like the, the coordinator or conductor or whatever.
+
+[00:31:13.59] - Diego Jurado
+Yeah, so in this case, whenever we start a new assessment, and let's say an assessment is when you want to scan a URL, we have a unique interactive safe server for that specific asset. We have also specific attack machine where we can host all the files that we want to use for that specific assessment. So yeah, whenever we want to try, for example for xxe, we can use those tools and we will have some sort of system is monitoring those requests. So whenever we get a request, let's say from an XFC payload automatically in the next iteration, we will have that into the prompt like hey, I just got this callback from the server. So it's probably that your previous payload has worked. So we have some ways to track from which iteration this payload comes from. Because of course we know that some payloads might not work at that same moment. And maybe you get the call back in five minutes. So we have a system to track that as well.
+
+[00:32:23.93] - Justin Gardner
+Maybe you send it and then five minutes later some backend job gets it and then so does it just pick up right where it left off when it issued that request and you load up all the context and then you say, and now you've got a hit. So now do something with that. You know, do you give all that information to the AI as well as information about like oh, you know, there's this amount of time between when you sent the request and when the hit occurred.
+
+[00:32:48.93] - Diego Jurado
+Yeah, so we have a way whenever, so whenever we perform these requests we have a way to track that. And of course the AI is also like clever to follow like where these requests might come from. You know, so also we, we help that with, for example, you, you want to perform like you want to test in XXE payload we can maybe just add like a/XXE one so you can track where this callback comes from. So that kind of hints are, are like tips that we provide in the prompt so that the, the AI knows how to work and how to identify those requests.
+
+[00:33:25.34] - Joseph Thacker
+Also, also Justin, there's also like a natural delay here just from the fact that you know, these models don't output tokens instantly. Like if you think about it as it's writing the response and getting to the next trace and doing the next step, especially if they're using reasoning models under the hood, it's going to Naturally take like, you know, 30 seconds to a minute between things. So I bet a lot of times they kind of get it for free. Or if it's, if it's not on the first next step in the trace, it might be on the one after that because then it's been five minutes or whatever.
+
+[00:33:53.36] - Justin Gardner
+You know, it seems to me like there needs to be like a decision tree of sorts that happens here, right? Like, like, you know, okay, the AI tries, you know, for an out of band call, right? And then, you know, this decision tree path says, okay, well the out of band call didn't come back, so I'm going to keep iterating. And then, you know, if you do get some callback at some point now we've got this path over here where it's like, okay, I got the callback, you know, but, but that's a good question.
+
+[00:34:17.84] - Joseph Thacker
+That's a good question. Does it, does it branch or is it always like singular in the way that it. Obviously the orchestrator can spin off multiple instances, but for a single instance, does it branch at all or does it just keep going in like a single line?
+
+[00:34:30.05] - Diego Jurado
+Yeah, so, yeah, so that's right. You have, we have like some sort of like coordinator that, that can have like multiple, what we call solvers. The solvers is like a unique pen tester that we, that has an objective and it goes through that. So let's say that when we are doing, when we are running XO against an application and we run that, the coordinator do some sort of discovery process, get some endpoints and then start like popping up solvers with different objectives. So this one might try this endpoint with this attack type. This other might try XXE with this endpoint. So then those are unique. Okay, so you have all the context, like you have some limited iterations for that solver and you have all the context from what that solver is doing. And that solver has like a very unique objective. Like you want to try XXS in this endpoint and until it doesn't find an xss, it will consume all the iterations and then it will stop with the fine one or with like, hey, here I couldn't find anything. And then it continues. So the coordinator has like all the information about what the other solvers is trying to. But then once the solver starts that's unique, you will be only trying that until you run out of iterations.
+
+[00:35:52.05] - Justin Gardner
+Wow, that's amazing. Dude. That sounds like a really cool architecture. And so I guess when you said you have these different solvers These different pen testers, it reminded me of the trace. Right. So at the end of which is one of the coolest parts about this blog post, by the way. Please always continue to include these traces because that is really cool to see. So for any of you guys that aren't on YouTube or haven't read the write up, if you scroll down to the bottom of this cloud test XXE write up that was done by Expo, there is a little box at the bottom that shows the chain of thought for the AI that is attacking this specific endpoint and how it uncovered this vulnerability. And it's amazing. And one of the ones that I saw down here, I'm trying to see if I can find where it is, but I think it was pentester 28. Yeah, look at this right here. This one says pentester 28, check read file. And then it's trying for an LFI of sorts or lfd. So how many of these things are you spinning up to attack a given target or a given asset that you've been given by a target?
+
+[00:36:56.23] - Diego Jurado
+Yeah, so it really depends. We know that right now we can perform better with some specific type of issues. So it really depends on what we like to look for. Let's say that we want to focus on server side because Fourier, then we will run like a specific number of pen testers for that specific task. So we have different modes of running these kind of experiments that we call. And it really depends, that's something that we can configure ourselves. So whenever we want to run some experiments and scan some URLs, we define how many ancestors or solvers we want to run, how many iterations and what kind of attack types we want to focus on. So yeah.
+
+[00:37:40.15] - Justin Gardner
+Wow, that's.
+
+[00:37:41.19] - Joseph Thacker
+Are you, are you all personally able to spin them up? Like for example, like let's say you're doing bug bounty on the clock and so you're intentionally testing Expo. Do you ever use it for accomplishing a single task? That's one thing I've often thought about is a lot of these systems are built to basically be like an abstract hacker, like go find bugs on this black box domain. But then the other use case like a, it's like almost like a, a precision needle. It's like, hey, I'm looking at this specific request and I think there might be excess in this parameter test for only that, you know, are you able to kind of hand it something very specific like that?
+
+[00:38:15.32] - Diego Jurado
+Yeah, so we have like two different modes. One of them is like, you Just get a URL and you want to try ssrf, for example. So you will just do like everything in that single solver. And then we have like the coordinator way that I was talking before, where the coordinator decides what endpoints want to try. And so let's say that we have some discovery phase where we start getting endpoints, we start filling forms, we start mapping the application. And then the coordinator decides like, okay, this specific feature, I want to try that with ssrf. So it provides all the context on how to get into their. What kind of authentication is required in case he had to register or authenticate into the application. And then just like all the information that it needs to try that specific type of bug in that specific endpoint. So that's how it works. And so we have a lower amount of iterations for those solvers that are very specific. So that's how it works. It's like spinning a lot of different solvers to try every single endpoint from the application. And that's something that we are improving right now, like making sure that we cover all the endpoints and all the features from an application. And of course you can set some boundaries as well, like if you don't want to test something, you can block that in the tool. So we have some specific part in our UI where you can define what kind of endpoints you don't want to hit or what features you want to avoid testing, just in case there is any restriction.
+
+[00:39:52.94] - Justin Gardner
+I was out on a run this morning and I was listening to a podcast on AI related stuff and one of the things that they've said on this podcast, and Joseph, you probably know more about this than I do, was how important data labeling is for some of this stuff. And I'm wondering if Expo has utilized that at all. How much training. And I know we've got some. One of the things you said before we came on the POD was like, we can't disclose what models we're using and what other stuff like that. But I'm wondering, you know, what that training process looks like. You know, are you having seasoned pen testers go through and, you know, label what kind of endpoints should be interesting, what and why they're interesting, and help the AI do that? Or are you mostly relying on the AI's sort of brain of sorts? Right. To determine whether. Okay, you know, maybe I shouldn't start trying LFI on this CSS file, you know, sort of thing. Right?
+
+[00:40:46.57] - Joseph Thacker
+Do you mean for fine tuning, Justin?
+
+[00:40:49.32] - Justin Gardner
+Yeah, for fine tuning or just for like. Yeah, I mean I guess more so for fine tuning.
+
+[00:40:55.15] - Joseph Thacker
+My guess is that they don't use fine tuning. I don't know if Diego can tell us, but I'm definitely curious if he's able to.
+
+[00:41:00.36] - Diego Jurado
+Yeah, I cannot tell that, but we have a try. Yeah. So to answer to Justin's question, basically, we have some sort of intelligence behind the product where we know what to focus. So, of course, if you have like a JS file, you don't want to poorly test for SSRF unless you have some sort of parameters included. So that kind of logic is included into the tool. So we will only use JS files to read them, to go through that and understand how the application work, but not to test them. So that sort of logic is included, of course, from our experience into the product.
+
+[00:41:41.50] - Justin Gardner
+So from the prompting perspective, like, you guys have built prompts to direct it, you know, towards, okay, you know, use JS files like this, use, you know, dynamic endpoints like this.
+
+[00:41:50.86] - Diego Jurado
+Or it's not part of the prompt, it's part of the how the tool is built. Okay, how the coordinator works and all the stuff.
+
+[00:41:59.07] - Justin Gardner
+Okay, so there's some hard logic behind Expo where it's like, okay, this is a JS file, you know, and, you know, that's interesting. That's kind of how I architected my recon system back in the day was, you know, I would ingest a bunch of data, I would drop it into like a queue, right? And then the queue would understand what kind of data this is. Okay, this is a JS file. So now I throw this off to a different, you know, sort of queue where it's like, okay, we're going to parse the JS files and try to extract endpoints. We're going to, you know, try to iterate on the JS files. Let's find older versions. You know, we know these are all of the queues that JS files go into. And then. And then you kind of have, you know, whatever scripts you're using to process those JS files. And I imagine this is sort of a similar architecture.
+
+[00:42:40.65] - Diego Jurado
+Yeah, exactly. So it's like a way to help the AI to not test things that you shouldn't test. Like, you know, of course you don't want to test like a PNG file for xss, probably. So that kind of things is. And we saw that doing, like, we saw the AI doing that kind of stuff in the past. So that's like giving some help to the AI to avoid doing that kind of stuff.
+
+[00:43:07.71] - Joseph Thacker
+Listen, you got to check. Sometimes you just got to check it might happen.
+
+[00:43:13.71] - Diego Jurado
+And it happened actually the other day and hopefully we can disclose this soon. But we found a local file inclusion where there was some sort of system that gets an image and you can decode byte by byte. So you can just generate like a png, like an image file with the content of a file of the system file and you can then decode it. So we are going to share something related fully soon.
+
+[00:43:40.01] - Justin Gardner
+Amazing.
+
+[00:43:40.82] - Diego Jurado
+And that's one of the cases where you have like a PNG file with some sort of parameters that they are doing some, some stuff behind the scenes and actually found local fine inclusion. So.
+
+[00:43:51.69] - Justin Gardner
+Yeah, yeah.
+
+[00:43:52.42] - Joseph Thacker
+Justin, do you mind if I ask about like kind of false positive rates and that sort of thing real quick?
+
+[00:43:57.17] - Justin Gardner
+Okay, well let's stay focused on this specific. Right, because I'm very much wanting to dive deep into Expo and how it works and all of that sort of thing. But let's get through this one and then we'll go through that list. So put it in the doc for now. I actually was about to, just about to ask about harnesses.
+
+[00:44:14.96] - Diego Jurado
+So.
+
+[00:44:15.21] - Joseph Thacker
+Yeah, do it.
+
+[00:44:16.21] - Justin Gardner
+Yeah, well, I'm not going to. We'll get through this write up and then we'll go back to Expo how it's actually working. All right, so going back to the write up a little bit here, it seems like from this trace, what's happening here, Diego, is it is generating Python code, right? And then it's using that to explore the application and it's getting this sort of response back that it then parses and makes deductions about the app. Is that the typical flow that you guys use for this, like testing for XXE or is it, you know, obviously individual for various types like XSS or you know, DOM based stuff?
+
+[00:44:55.98] - Diego Jurado
+Yeah. So basically for every attack type that we have, we have some sort of reasoning. So basically it analyzes what the application is returning from the previous command and is deciding what to try next. So that's basically how it works. Always you have, you need to keep in mind that we always have an objective that has been defined when this pen tester has started. In this case we were tasked with finding like a file read vulnerability. So you have to take that in mind and then just the AI decides what to try next.
+
+[00:45:30.67] - Justin Gardner
+Yeah, so I can see up at the top here, it's like, okay, looking for potential file inclusion vulnerabilities. We see later down it's trying for all of these sort of known payloads and then, you know, this is where it really gets interesting for me. Right, right here on the screen. So I'll read a little, a little snippet from it. You know, it's, it's notes a piece of the response that says xmln exelon. And it knows that that's an XSLT processor. So it starts thinking xxe. That's a reasonable deduction. Right. And you know, it says, okay, the problem states the vulnerability is at this spot. Right. You know, and so I guess from what you've told me so far, that this is the way you're phrasing this to the solver. Right. You're saying, hey, there is a vulnerability at this specific endpoint and you're, you're telling it to try to go solve it. Right. Versus like there might be a vulnerability here. Did you guys, you know, try around with both of those? And one of the most difficult problems for a hacker is to know when to stop. Something's not vulnerable or something is vulnerable. So how do you, how do you solve that problem with the AI?
+
+[00:46:37.15] - Diego Jurado
+Yeah, so in this case we are not telling the AI, like there is a specific issue. We are just asking to find that because we don't want to. We want to give freedom to the AI. So we may give like initial objective, but then if the AI decides to go through and try another thing related to that objective that has been specified, it can do that as well.
+
+[00:47:03.32] - Joseph Thacker
+Then why does it, why does it say the problem states the vulnerability is at if it's not in the prompt?
+
+[00:47:10.19] - Diego Jurado
+Yeah, so this specific pen tester comes from the high level coordinator. So probably at one point the coordinator has found like, has decided to try for this specific file inclusion vulnerabilities. And then it started as a solver to try to achieve that. And then inside that it will try different options like XXE or path traversal or whatever. Because the objective that we have is to extract one file from the server, like the etc. Password file.
+
+[00:47:43.09] - Joseph Thacker
+Yeah, I think what Justin's asking is that the wording there is very strongly worded. Like it says the vulnerability is at, which is like. It implies that the prompt says something along the lines of there is a vulnerability at URL rather than there might be a vulnerability or look for vulnerabilities at URL. Like it's pretty weird phrasing from the LLM to say because I know the vulnerability is at this. It almost, it almost reads as if you fed it that there's a vulnerability there, which I know you've told us you all don't do. So I think that's why we're kind of like pressing into this.
+
+[00:48:17.38] - Diego Jurado
+Yeah, yeah. In this case I need to make sure until unless they have done some changes, I would say that we are not like giving that information to the coordinator. We are asking to find vulnerabilities, but we are not saying, hey, here is a vulnerability 100%.
+
+[00:48:38.30] - Joseph Thacker
+Justin, to kind of just tell it there is one. And since you're going to cut it off after so many cycles anyways, it might be gaslighting it a little bit, but in some ways it would probably make it more persistent. Right. Like if you're working on a CTF and you know there is a vulnerability and you're giving it to a model, you would want to say, I know there's a flag here. You know what I mean?
+
+[00:48:56.92] - Diego Jurado
+Yeah.
+
+[00:48:57.19] - Joseph Thacker
+And so that kind of confidence, kind of interesting.
+
+[00:48:58.92] - Justin Gardner
+Maybe that's the coordinator doing that. Right, Diego?
+
+[00:49:01.15] - Diego Jurado
+Yeah, exactly. So, so that, that's the difference between like doing an assessment and trying to solve a ctf. You know, in this case, if you want to solve a ctf, of course you need to make sure that the, the coordinator knows that there is a, indeed there is an abnormality and it has to find one. But in this case, if we say that there is a vulnerability in this specific endpoint, the solver might try again and again and again and it will end up consuming a lot of iterations without finding anything. So we always give freedom to the AI to stop whenever it thinks that it cannot find anything. So for example, in this case, if it started finding, trying to find local fine inclusion and then ends up like, okay, I've wasted a lot of iterations and I cannot find anything, it will stop and then it will continue with another part of the application or with a different endpoint or whatever that makes sense.
+
+[00:49:59.57] - Justin Gardner
+So you're giving a little bit of freedom to the AI here. That's interesting. And we're also seeing a little bit of tactics being implemented from the coordinator saying, okay, the problem states there is a vulnerability here. Right. So maybe it's saying to the thing, you know, there's a vulnerability here, go test it, go find it. Right. It could be a strategy. And then like you said before, and this was something that read really weird whenever we, whenever we were reading this write up that we wanted to talk to you about, but luckily you addressed earlier on, which is I'll read this for the people that are on audio. A quick search reveals a known XXI and redacted cloud test and then lists a bogus CV number. This CVE describes an XXE Vulnerability in the Concerto Service REST repository service endpoint, specifically when posting XML data within an external entity. The affected versions are this. This is our current build number, so it doesn't really match up. However, redacted Cloud Test became Akamai Cloud Test. So this is highly relevant, which is interesting. Right? So I'm trying to figure out exactly what's happening here. Maybe there's a bit of hallucination, maybe there isn't. I was trying to do research on this repository service URL before this episode, and it seems to have just yoinked it out of nowhere. Right? Like, where did this even come from? So I'm wondering what your take is on this, because on one hand we could say, whoa, it's AI magic. And how did it know? But for us that are hackers, we kind of wanted a more concrete answer to where this URL came from. And I'm curious to hear your thoughts on that.
+
+[00:51:38.44] - Diego Jurado
+Yeah, so that's what I was mentioning before. It seems that this endpoint comes from the training data set because that CVE is not even part of an atomy cve. If you check that cve, you cannot find that endpoint as well. So it's like a complete hallucination from the AI. So it might be relating some known endpoint with. With a CVE that doesn't make sense. So, yeah, that's a completely hallucination. And it's funny because the other day I was talking with my boss, like, hey, thanks to this specific hallucination, we managed to test this endpoint, like otherwise. And if you see that endpoint, it's not the right one, you know, the final one is the same without the rest part. So of course it managed to find like, that endpoint, which is probably part of the training data set. If you go back, like below to the. To the very end, you will see that the vulnerable one is without the rest. So after trying and doing. Yeah, after trying and doing some. Some attempts, it realizes that that endpoint doesn't exist because you're returning a 404. And then it finds the other one. It goes back to the wsdl, it reads that, and it gets the right endpoint implants on that.
+
+[00:52:55.40] - Justin Gardner
+Dude, that's crazy. I didn't pick up on that the first read. Yeah, look at this right here. 404. Yeah. Wow. Okay, that's. That's whack. But it's just odd to me. I mean, like, I hate to keep pushing the point, but, like, it's odd to me that shrouded in all of this hallucination, right? You know, it's hallucinating about the cve, it's hallucinating about these version numbers a little bit. It. It seems to me like it's hallucinating about this. This line. However, redacted Cloud Test became Akamai Cloud Test. So this is highly relevant. I tried to look into like old cvs, like what, what was the product before it became Akamai Cloud Test? Like did this get acquired? What did it get renamed? What happened? And I couldn't find anything related to that.
+
+[00:53:35.71] - Joseph Thacker
+I will say, Justin, there's kind of two points to bring about this. One is that at the scale of expos running these, they're probably not using like really large models and these types of hallucinations or at least not the very, you know, state of the art models because it would just be so expensive to run on like Cloud Opus 4 or something. And so these types of hallucinations are pretty common in, in like the non state of the art models. And then the other thing is, where.
+
+[00:53:59.90] - Justin Gardner
+Does it get that endpoint though, dude? Like, what do you mean get it in that whole. Well, hold on. In that whole bit of hallucination, right? Yeah, so many things hallucinated. The endpoint is the thing that isn't hallucinated.
+
+[00:54:10.11] - Joseph Thacker
+Right, but that makes sense, right? Like if, if you imagine in the training data, it's seen that endpoint multiple times, like those three tokens in consecutiveness. And further up in its trace, it's also been finding like it actually found a real ENDP Concerto Services Repository service. It just now hallucinated and added in rest. Probably because there was, you know, a lot of training data where IT services rest, right? Because it's, you know, it's, it's still a token completion engine. And so anyways, the other thing I was going to tell you is that like reasoning traces are actually often wrong with a lot of hallucinations. This is something that's been studied pretty heavily with like the deep SEQ models. So the deep SEQ models and other reasoning models, Justin, will be used to like solve math and physics problems. And when you look at the reasoning trace, it's all wrong. Like the, like the, the intermediate steps are all wrong, but the final answer will be correct. Right? And that's one thing that's interesting about Bug bounty is it's like. And at the scale of, of hackbots right now, if you're running a thousand of them, it's like it doesn't matter if the majority hallucinate or even if like their logic's wrong, as long as they find a real vulnerability at the end, that's actually what matters to the customer.
+
+[00:55:09.21] - Justin Gardner
+Yeah, I mean that makes total sense. I'm sorry, Diego, I know I'm just debating here with Joseph, but it's fine. It, you know, I'm trying to think about how this could possibly be happening and the only thing that I can think of is that this, the, the model that, that has this, you know, because this is not, you know, this, this endpoint is not something that you just like, it's not really even guessable. Right. Like if it was like API user, you know, whatever, that got to be.
+
+[00:55:36.42] - Joseph Thacker
+In the training data. You're right, it's in the training.
+
+[00:55:38.21] - Diego Jurado
+Yeah.
+
+[00:55:38.50] - Justin Gardner
+The source code for this app is in the training data or they've got like you know, a logs, trace documentation logs. Exactly. Or there's a zero day and somehow it has access to that zero day as a part of its training base. Right. So somewhere buried in Reddit, somewhere buried in the dark web or whatever, and that somehow made its way into this model's training data. There is a reference to this endpoint. Did you have any theories about that, Diego?
+
+[00:56:08.76] - Diego Jurado
+I don't know. Like we, we were thinking that it's probably part of the training data and we thought that we are like really part of the training data, but we, we cannot know. Like, we don't know.
+
+[00:56:21.23] - Justin Gardner
+That's interesting.
+
+[00:56:22.28] - Joseph Thacker
+So Justin, I, I, I was going down a similar path when you were reading this and looking at it. Let me, let me share my screen real quick. Cause I think that it might convince you otherwise. And I think this is like really important even for the listeners, just about how like you know, next token completion works. So, so I was searching for services repository service, I was searching for other things before this and it was all just pointing back to the Expo write up, right? It's like all things that like reference the write up or that find vulnerabilities like nuclei or whatever. But then when I finally did this search services repository Service, it got 2K hits. So like there are 2000 projects that have like services repository service, Services repository service, right? As, as a, as a chain of tokens that exist across lots of apps, like literally 2,000 places, right? And so the, these tokens, services repository service like are side by side very, very many times in the training set, especially around like code and projects and like you know, even XML based stuff. So I don't think that it is like really that much of a leap at all for it. To have like put those two tokens together specifically.
+
+[00:57:29.90] - Justin Gardner
+My faith is weak, you know, my faith is weak in the air overlords like forgive, forgive my unbelief, you know. But yeah, that makes sense. And when you look at the logic. You kicked me off the screen.
+
+[00:57:43.30] - Diego Jurado
+Sorry.
+
+[00:57:43.59] - Joseph Thacker
+You can rescue.
+
+[00:57:44.30] - Justin Gardner
+You're good. I'll. I'll share it again. It is interesting because it does mention the wsdl. Right. Like you said, Diego. Right. So, you know, maybe this WSDL somehow ended up in the trainer set, the training set, or you know, maybe through the flows. Right. With the, with the, I keep on forgetting what's the. The parent called? The conductor. The.
+
+[00:58:04.61] - Joseph Thacker
+Oh, the, the coordinator.
+
+[00:58:06.61] - Justin Gardner
+The coordinator. So, you know, maybe some, some up there with the coordinator. Right. You know, is passing this down because it parsed a WSDL later on, you know, or earlier on in the assessment and it's like, oh, I saw some reference to this. So I guess there's a lot of things going on there. But that's the kind of stuff that's really amazing to me, man, about these things. And Joseph, I didn't know that piece about how all of the inferences are wrong, but somehow the result is right.
+
+[00:58:32.19] - Joseph Thacker
+Yeah. This is actually a big mystery and it makes researchers wonder if the real reasoning is occurring in the model at inference time as it bounces between the different, I guess, nodes is kind of a way to say it and that the reasoning trace is not true evidence of what's actually occurring in the model. And it's an area of open research that a lot of people have been discussing because on these evals where, where these new models will score really well on math and physics tests, when they go and they look at the reasoning traces, they're often wrong or there's hallucinations in them. And so this is like almost like it's a very similar style of thing here.
+
+[00:59:06.82] - Justin Gardner
+Yeah, yeah, I, I think that's, that's fascinating and I'm sorry to push a little bit on it. On it, Diego, but I do think that that is a really cool part of what you guys have found here. And I imagine you, your team is, you know, anytime a valid vulnerability is found, are you guys looking through the chain of thought for each of these vulnerabilities and like understanding exactly what the AI did right, what it did wrong, where it got the information and how you can use that to improve the prompting?
+
+[00:59:32.03] - Diego Jurado
+Yeah, so we always try to check those, but of course we have like thousand of them, like every day. We have a lot of Hits, we have to check them and we cannot like validate all the different traces. Also, as we are running multiple times against the same applications, sometimes we find like the same XSS or the same XXE or the same RCE from a different like with different trace. So you cannot compare them. But yeah, we always try to look for patterns so that we can improve how the tool is working and we see that it's doing a lot of times the same wrong thing. We try to change the prompt and modify that to fix that behavior.
+
+[01:00:10.26] - Joseph Thacker
+Yeah, speaking of that, I know you said that you all have really great validators, but sometimes they get hacked by the models, bypassing them to get them straight into your all Slack. You know, if you're able to even just ballpark it, like what is the false positive rate is, you know, for ones that actually get through to Slack, is it like 50% or is it like 10%? Like obviously those are really big differences because like if, if it were something like 10% true positive, then like it's not really the model that's finding it completely because you all are, you know, ruling out 90% and validating them. Or for the, for the attack types that are not being hacked, is it actually a lot closer to like 100%?
+
+[01:00:50.13] - Diego Jurado
+Yeah, so I don't have the numbers, but it really depends. For example, we know that for some specific attack types we have no false positives. For example, the xss, which is a very simple one, we always run a headless browser whenever we find like vulnerability. So whenever one of the solvers finds a vulnerability, we have a validator that checks the XSL that it has found and it validates that it's popping up with a headline, browser, an alert or whatever it has found. So we have some checks to verify that we don't have false positives related to this. But of course for other type of issues like ssrf, at the beginning we have some issues because we like the pen testers, the solvers were trying to use some external services to hit our Interact SH server. So we had to fix that, adding new rules like fixing the proxy, fixing the DNS rules that we have so that there's no way to perform a direct request to this Interact SH server from the different location. Of course, the AI always comes with different cheats and different ways to hack that. And that's one of the parts that we are actually working on, improving the false positive rate. But right now we are in a very good state. I don't want to give too much spoilers because in Black Hat. We are going to have one of our teammates giving a full talk about this. So I don't want to.
+
+[01:02:29.51] - Justin Gardner
+That's interesting that you're saying that it's in a good state though. I mean, I trust your opinion on this, Diego. Like if you, if you tell me it's producing pretty good results, you know, I believe you. I think you have a good.
+
+[01:02:40.38] - Diego Jurado
+It always depends on the vulnerability types. You know, things like Open Redirect for example is super easy to verify. We don't have any false positive there. But of course we have some cases.
+
+[01:02:51.82] - Joseph Thacker
+Where like info disclosure, I'm sure it thinks that some keys are sensitive that aren't and stuff like that, right?
+
+[01:02:57.59] - Diego Jurado
+Yeah, there are some type of issues that is hard to detect nowadays and you don't have ways to easily validate them. So we are limiting to the things that we can detect without false positives. One of the keys from Expo is that we don't want to deliver a lot of false positives to the customers. So of course we might be losing some good findings during the way, but we don't want to provide hundreds of false positives to the customer. So we are prioritizing to at least at the beginning, limit the number of false positivities that we have and doing the way we are improving that so that we don't miss anything. So that's why the coordinator exists. That was. That is why this system and this infrastructure is built so that we don't miss anything.
+
+[01:03:56.80] - Justin Gardner
+I had another question about the Harness interface. Is it okay if I pivot to that? Joseph, did you have any follow ups there?
+
+[01:04:02.55] - Joseph Thacker
+No, that's good.
+
+[01:04:03.67] - Justin Gardner
+Okay. Throughout the. And I stopped sharing the screen now I think that's probably the last question we'll do on the trace. But in that trace it showed that there was. Sometime it's generating Python code and then it's running that code to interact with the server. Sometimes it's building raw HTTP requests from scratch. Right. And then it's putting them in a file and then passing that file to some program it seems that will send it to the server. I'm curious about how much freedom you give the AI to do these sort of things and whether you found whether one technique using having it generate code, having it generate RAW HTTP requests, having used tools to modify an already present HTTP request like set body or set query parameter or whatever. Are any of those more effective than others?
+
+[01:04:54.53] - Diego Jurado
+Yeah, so something that we saw is that using Python scripts are really, really good. So it's also a way to something that we have in the prompt is that we want to be as much efficient as possible. So we don't want to like consume all the iterations from a solver just doing like cool requests. So if you can just create a Python split that performs five requests and try five different payloads in the same iterations, that is much better. Of course. So we are always trying to do that and that's why you can see a lot of Python use in our traces, because we are using that. Also we saw that some of the models that we are using are much better when using Python than when using Core or other tools. So we are prioritizing that.
+
+[01:05:44.65] - Joseph Thacker
+Writing cookies and bearer tokens and stuff in Python is pretty annoying though, and also uses a lot of tokens. Do you all have some way that you kind of just like wrap it in auth.
+
+[01:05:55.53] - Diego Jurado
+Sorry, what? Can you repeat that?
+
+[01:05:57.44] - Joseph Thacker
+Do you have a way that the Python script is just kind of like wrapped in authentication or something so that it like inherits or uses a cookie jar or you know, just does something like that? Because obviously like models rewriting massive cookie strings or like useless headers or bearer tokens is like really annoying.
+
+[01:06:13.61] - Diego Jurado
+Yeah, yeah, so we have. That's funny because the authentication part is like a different game. You know, we, we had a lot of issues with that. It's also something that we, we had to improve a lot and we are improving nowadays, like dealing with, with authentication. So. So yeah, it's like a completely different game and there's a lot of stuff behind that. We always give some advices to the solver on how to deal with authentication, how to deal with tokens. So whenever it's playing around with request, it doesn't forget about authentication. If it has previously authenticated with an account, it always has to remember that. So we have some prompting behind that to do that as well.
+
+[01:06:58.26] - Justin Gardner
+Yeah, Even with generating the Python request, a lot of times these WAFs will block, you know, Python requests, certain user agents. Yeah, right. So it's like I feel like you gotta hook the Python request library and like, you know, override the user agent. And I feel like you've gotta hook, you know, like you said, some cookie jar related thing because yeah, getting the AI to manage all of that has gotta be really tricky. Yeah, yeah. Wow. Very interesting. All right, well, we kind of went through a lot of the write up. I think this is an hour long segment here, which is the first prove how your hacking skills are sets a record in the CTVB history. I think. Let's dive a little bit Deeper into Expo and the architecture. You talked a lot about the coordinator and then you've got these various solvers underneath. Are there more pieces to the puzzle? How have you guys architected this thing?
+
+[01:07:55.01] - Diego Jurado
+Yeah, so basically we have some moving pieces. We have the ATTCK machine that I was mentioning, like completely isolated machine that we use for every solver. So whenever a new solver starts, we have an attack machine that performs all the actions and then it goes down. And that attack machine includes all the services that I was mentioning, like the collaborator and the hosting service and all the stuff. Also we have the report generator and stuff. So whenever we find something, we have like another different agent that performs the report and generates a report so that then we can send it to the Customer or to Hacker1 and all that. And then we have the validation stuff. And yeah, I think I'm not missing anything from that. Let me remember. But I think that's all. Yeah, we have also some network stuff going as well, like behind the scenes so that we make sure that we follow all the safe words we are implementing and we make sure that we don't go out of scope and all that. But that's different.
+
+[01:09:13.64] - Justin Gardner
+I think that makes sense from an architectural perspective. And what we've studied, just Joseph and I talking as well, is that that's pretty much the way that you must build these larger scale systems. And one of the difficulties that we actually covered on a previous episode of Critical Thinking is how do you convey context from your coordinator down to your solvers and stuff like that? Is that a problem that you guys have addressed at all or is that something you guys have struggled with?
+
+[01:09:41.86] - Diego Jurado
+Yeah, so that's something that the AI team could say better than me because I don't know all the, all the things that are running behind, but I know that they have been dealing with context. So that every time that we start like a new solver with a specific objective or trying to look for a specific attack type, we provide all the previous context about authentication. We provide sessions, we provide a way to reach that endpoint so that we make sure that we follow all the steps to get into that, into that same step.
+
+[01:10:16.05] - Joseph Thacker
+Do you provide gadgets from other threads or. No, that's always something that I thought would be really interesting was if you saved off.
+
+[01:10:21.81] - Diego Jurado
+I don't see.
+
+[01:10:22.52] - Joseph Thacker
+Or partial bugs.
+
+[01:10:24.21] - Diego Jurado
+No, we are just providing like the way to reach that endpoint and all the stuff.
+
+[01:10:29.13] - Justin Gardner
+Yeah, that makes sense. Man, that must be nice to have the whole AI team behind you being like, yeah, you guys deal with that.
+
+[01:10:36.32] - Joseph Thacker
+Whole context, that's actually a perfect transition. I had that exact question, Diego. I've noticed in the companies that I, I meet with, like the hackbot companies that I've met with or that I talk to that before I was there, if they didn't have. This isn't true of Ethiac, you know, which I'm an advisor for because obviously it was founded by Andre who's like a very top bug bounty hunter. But for the other companies that don't have like bug hunters, even if they had pen testers on the team, it felt like their path or their trajectory was not as impact based or not as practical as we are as bug hunters. Right. Because we're like impact or gtfo. Right. It's like if there's no impact, you don't get paid. And so I was just genuinely curious, like if not ask you to say anything bad about the team, but whenever you joined the team or maybe was Neiman Sec already there?
+
+[01:11:22.78] - Diego Jurado
+Yeah, maybe it's a question for him.
+
+[01:11:25.10] - Joseph Thacker
+But I would be curious if you all ran into that at all. Right, where there was like some sort of disconnect where it's like they have the hackbot looking for like TLS version differences and you're like, no, those aren't going to fly. Right. We need to actually look for, for real bugs or something. Like I didn't know if there was any kind of friction like that.
+
+[01:11:40.85] - Diego Jurado
+Yeah, that's something that, that's also why we created these kind of validators. Like we don't. Of course this is quite different for companies and for customers. If you perform a pen test, you want to deliver all the results and you would like to include that as well. And we have another way to include that information into our reports and then we have the other way, like a way to prove that we are indeed getting a valid finding like an XXE or an rce. And that's why we have these sort of validators. And then for the rest of vulnerabilities we have other ways to detect that which we are still working on. And I think I cannot give too many details.
+
+[01:12:21.68] - Joseph Thacker
+No, that's fine. I actually, I don't know if I recently tweeted or told a couple of people, but I think that validation is going to be one of the biggest kind of sub industries in AI in the next few years because there's so many domains where you need really strong validation of output.
+
+[01:12:36.39] - Justin Gardner
+Yeah, yeah, absolutely. Yeah, it's, it's interesting, man. And there's, there's so many so, so many places that I could take the conversation at this point. My, my, my brain is exploding. I think one of the things that I'm interested in just in general as a bug bounty hunter, is how bug bounty is such a great platform for startups to go. And clearly we can see Expo utilizing bug bounty as a way to validate the product and also maybe even recuperate some of the costs of operating them. Yeah, exactly. Right. And so I know that there was a tweet that I'll put out from your CEO saying that currently it operates the, you know, the tool operates at a negative amount, Right. Like earning from bounties at a loss. Thank you. It surpasses the amount that it costs to run it. It's running negative. But I guess, do you see that mostly being addressed in the future via increasing prices? The cost of compute going down, the tool becoming more efficient and finding things better. How do you think that's going to change and what timeline do you have for that?
+
+[01:13:50.78] - Diego Jurado
+I think it's a mix of a couple of things, but the main one is that we all think that inference costs going to be much lower by the next year. So we already seen that with vivseq. I don't know what was the percentage of reduction with the cost, but we have already seen that and it's something that we really believe the next year the cost will be much lower and with that it will be profitable to find bucks. Also related to Hacker1, we need to say that we are not using Hacker1 as a way to prove that we can find bugs, but more like a playground to improve the product. So of course having a lot of different customers with different applications and using their networks and the environments to test and find bugs is the best way to prove and to make sure that our product is improving. So of course, at the beginning when we started, we couldn't find many of the things that we can find nowadays. And HackerOne has helped us with that to improve the tool. So every day we use that to, whenever we can detect a new vulnerability type, we test that in HackerOne and we make sure that we do all the improvements that we need. So let's say that Hacker One is our playground to build the tool.
+
+[01:15:19.96] - Justin Gardner
+Yeah, yeah, that seems like a great way to address that. And I wanted to address some of the grumblings from the community where they're saying Expo is just a glorified XSS finder with all of the, I think it was like 800 reports or something like that from Expo of the 1100 are coming from XSS and furthermore a lot of people are saying oh Expo found this one like Global Protect XSS and then just sprayed it everywhere and that's like all 800 of their reports. And I'm like dude, chill out. Like that's definitely. If you could find 800 in scope global Protect instances then the product rocks. But what would you say to those people? How would you address that rumor?
+
+[01:15:59.14] - Diego Jurado
+Yeah, so of course, and I guess that you guys will agree with me if you see someone in the top leaderboard of hacker1, of course they are in some way finding a lot of the same stuff. Of course maybe you'll be reporting a lot of self domain takeovers. You might be reporting a lot of xss and there's something you cannot be in the top if you don't report these kind of bugs which are the most easy to find. Of course you won't see anyone in the top leaderboard reporting only RCEs. I mean that's not going to happen. So of course we need to be clear with that. And we are like XSS is one of the bugs that we can find like more often. And of course we have a good way, as I was saying, to validate them. We have like no false positives in xss so whenever we find one we know that it's a real one. So that's why is one of the main issues that we report nowadays. But I have some numbers that I got from our hacker one stats and during the three, three months that we have been reporting stuff we found one like more than, I think it's 15 rces. So if you ask to the top hackers of the leaderboard how many RCs they reported in the.
+
+[01:17:17.76] - Justin Gardner
+Not 15 for me, let me tell you.
+
+[01:17:20.07] - Diego Jurado
+Yeah, yeah, so, so, so you know of course we are reporting a lot of XSS because we, we also find not only the Palo Alto one, but a couple more CO days that we still need to disclose. But also all the reputation points that we have are not coming from xss because mostly all the XSS that we have reported from Palo Alto ended up being informative because almost nobody is accepting co days in HackerOne. So we have a lot of informatives, we even have some nas because companies thought that we shouldn't be reporting that. And the first thing that we did was report it to Palo Alto. And then of course we always think that whenever, like it's our responsibility to let the company know so that they can also fix or add some countermeasures to fix that until of course Palo Alto applies the global fix. But yeah, I mean we have a lot of different reports. We have XXE SQL injection, we have 32 SQL injections during the last 90 days. I don't even have that in my own account.
+
+[01:18:34.77] - Justin Gardner
+That's crazy.
+
+[01:18:36.93] - Diego Jurado
+So yeah, you can imagine that we are finding a lot of different bugs. But of course if you want to be in the top in terms of reputation, you have to be reporting these kind of bugs massively as well.
+
+[01:18:48.77] - Justin Gardner
+Yeah, absolutely.
+
+[01:18:49.60] - Joseph Thacker
+Are you all using any other bug bounty platforms, if you don't mind me asking? I don't know if you all were running on, you know. Yes, we have our integrity or anything right now.
+
+[01:18:59.31] - Diego Jurado
+No, I, we have a few reports. So we found some also some co days in some programs that they had the, the, they were in other platforms like background and intuiting. So we, we also send the reports to them. But we are not like actively reporting to those platforms, you know, like the. We are not really interested in the revenue from bounties. We just want to improve the tool. We just want to make sure that the tool is improving and I think that with HackerOne right now is more than enough and they can give us everything that we need to improve the tool. And we know that when this Palo altobag was released, a lot of people was farming that in background and we don't care about that, we don't care about that money. We just want to make sure that we improve the product.
+
+[01:19:53.48] - Justin Gardner
+Yeah, and you mentioned XSS is kind of one of the things that Expo can find most reliably. And as I was reading this write up of the Global Protect xss, I just wanted to say I was impressed with some of the methodology pieces here where it looks particularly this part that I'm sharing right now where it's looking at the code and it's saying, oh, test results. Test results showed that no direct reflections of our XSS payloads were found. But we did identify several JavaScript variables that might be controllable through mechanisms. And it lists a set of empty JavaScript variables that were sitting inside of a script tag or something like that in the response of this page. And I'm like, dude, that is either the AI getting that sort of intuition that the hackers, hacker thinks about and it could be you guys putting this in, or it could be the AI developing it itself. But I was impressed with that because that's not as beginner to your stuff where you see an empty JavaScript variable and you're like, I bet that if I Take that name and I put it in the query parameter and I tweak it around a little bit. Maybe I can inject directly into that context, which is one of the most likely ones for xss. So I'm going to ask directedly, do you think that this is something that the AI sort of came up with or is this the sort of thing that you and Joel and all them are sort of building into the app, this methodology so that it can do stuff like this?
+
+[01:21:19.90] - Diego Jurado
+Yeah, so this is completely from the AI.
+
+[01:21:23.90] - Justin Gardner
+Wow, that's interesting, man. It's using its brain, it's using its creativity, right? Yeah, that's exciting to see.
+
+[01:21:32.18] - Diego Jurado
+It's really crazy. Like, you know, in a few days we are going to release a new bug, probably when this comes out to be released. And you know, this bug that we are going to publish is really cool because it starts using information that has, from the training data set and it finds a bug by doing some combinations of parameters that it knows and some endpoints that it knows and then it finds a bug in a product that is widely used like a lot of companies is using. It's super crazy when you see that.
+
+[01:22:09.35] - Justin Gardner
+And I guess I should ask, I guess a little bit more clearly about that last question, not to say that that would be bad at all. Right? That is your job is to make this AI better. So to what degree are you guys involved as top tier security researchers, how are you involved in building the prompting that powers these, these bots? Because, you know, I would imagine that if you hadn't told it, hey, if you see an empty JavaScript variable, try to put that in the query parameter and see if you can reflect into it. Then that would be like a pretty, you know, you, instead of relying on the AI for that, if you put that in the prompting, then the AI, you know, I imagine would increase its methodology a lot more. So are you guys sort of involved in developing that methodology that you're feeding into the AI or are you contributing in some other way?
+
+[01:22:55.56] - Diego Jurado
+Yeah, so we are in charge of developing these sort of technical prompts. So if you ask the AI to find xss, it will probably end up trying the typical XSS techniques, but it will probably forget about trying the CRLIF techniques or it would probably don't test for postmessage or it will probably don't try for stored xss. So of course that kind of things are something that we are working right now and we are adding that information into the prompt so that we force the solvers to find and Try that specific techniques. So that's something that we are working on. But yeah, that example that you were showing, like that Exactly. Example is not something that we have provided. I think that's just something from the AI entirely crazy.
+
+[01:23:50.21] - Joseph Thacker
+So do you. This is a question you had, Justin, but I'm gonna go ahead and say it. Do you think that like we would just love to have your opinion and your take on like humans in the loop? Like, I think that you're obviously mentioning lots of stuff that you're impressed by where there basically are no humans in the loop and you all are driving false positive rates down to zero, where automated reporting would actually even work out. Those two things to me scream like, hey, actually you should be mildly worried because like we might not need humans in the loop at all. Right. But um, but you know, clearly having you all to do like final triage, final validation is like very valuable at Expo. And you know, I personally think that other hackbot companies will need, you know, hackers to write those technical prompts that you were just talking about and for doing that last layer of validation and testing. But anyways, yeah, I would just be curious one, like if there's like a product strategy or vision, like do you like, you know, obviously you haven't said this, but it would be extremely beneficial if you had access to Expo to just use for your bug, for your bug bounty on the side. Right, And I'm sure you're not allowed to use it for that, but like if you were, it would be amazing. And you know, me and Justin need access so we can find more vulnerabilities. Of course. But no, but no, in general, you know, like, I would just love your thoughts on like human in the loop versus not human in the loop, both as like, where's the industry heading? But then maybe more importantly, like does Expo plan to potentially, you know, have bug bounty drivers, you know, running Expo for customers at any point, or if you're able to share that or not. I would definitely love to have all your thoughts on all of that.
+
+[01:25:20.07] - Diego Jurado
+Yeah. Okay, so regarding autonomous agents versus human in the loop, I think that both approaches are valid and complementary in some ways. Like Expo is fully focused on full autonomy. So that's what we are looking for. We are not including any human in the loop. Besides what we are doing right now, like for improving the tool right now, the only thing that we are doing is just getting the report, checking that it's a right report and sending it to HackerOne whenever is a good one. But for customers, we are not even doing that. All the things that we provide is fully autonomous. The reports, the findings, everything. But of course I still think that Human in the Loop is something that is interesting, but I don't think that scales well. It brings value of course in some cases because you can use that human intuition and creativity to improve how the AI behaves. But we think that there are some ways to do that without having a human. They have some things in mind for the future and how to combine both without having any human interaction and still using like our knowledge and our creativity. But yeah, in our case we are fully focused on fully autonomy and it's something that we are.
+
+[01:26:49.57] - Joseph Thacker
+Yeah, I mean I think that, I think that that long term vision is probably why Expo has best done so well. Like, I think if you keep that goal in mind as you build a product like Expo is building, then you're going to end up with the best product in the end, you know, whereas like, like you're, if you're already kind of like copping out and like falling back on humans like along the way in multiple steps, then you're, then, you know, that's not like with the ideal end state for it. So. But that is really interesting and kind of scary. Yeah. Justin, what do you think?
+
+[01:27:17.60] - Justin Gardner
+Yeah, yeah, I'm, I'm thinking about that, man. I think, I think my intuition, my thought is that Human in the Loop is going to be bigger for the next couple years and then it may take off from there into, into autonomous. Obviously we haven't seen really a big player in the space that's working on Human in the Loop as much as I've, you know, that I've heard of at least maybe Joseph, you've got some inside scoop or some NDA stuff you can't talk about.
+
+[01:27:46.64] - Joseph Thacker
+Well, I do know some companies that are leaning that way for sure. But I mean clearly we don't see the results on the leaderboard. Right. So.
+
+[01:27:52.52] - Diego Jurado
+Right.
+
+[01:27:53.40] - Joseph Thacker
+My word to them would be get on the leaderboards.
+
+[01:27:56.22] - Justin Gardner
+Yeah, exactly. I think that's a massive proof that Expo is performing well. So definitely congrats on that. I did want to loop back around to the prompting thing though. You guys are spending your time building out these prompts that optimize the AI's performance going up against these targets. And I wonder if you have any advice to the bug bounty hunter or the pen tester that will be writing their own prompts for Human in the Loop automation. And I'm not sure whether you can share it or not, but any takeaways you can have would be helpful.
+
+[01:28:31.75] - Diego Jurado
+Yeah, I don't know what to say about that. Yeah, I'm not sure if I understood the question.
+
+[01:28:38.47] - Joseph Thacker
+I think he's saying from like a meta level, like when you're going into like, let's say you, let's say they added support and Expo to like really search for, I don't know, CSS injection to try to leak credit card numbers. Right. Like Justin's favorite bug or whatever. And so if you were going to go in and write a system prompt for that specific attack technique, what are the things that you hold in your mind, the ideas that result in a good prompt for a specific attack vector? Is that what you're asking, Dustin?
+
+[01:29:05.38] - Justin Gardner
+Well, yeah, it's mostly about prompt engineering for security. What things have you learned, Diego? Because I'm sure your position in Expo, you're one of the top experts on this, I'm sure. What have you learned about prompt engineering that gets the AI to give better results? And I'm asking you a little bit to give out the secret sauce. Right, A little bit here. So in as much detail as you can share, what are your thoughts on that?
+
+[01:29:27.56] - Diego Jurado
+Yeah, so something that I can tell is that as far as you provide as many details as possible, the AI will perform better. And that's something related to what I was talking before. If you just give a very generic description of what you are looking for, let's say xss and you don't provide like specific techniques to test. I don't know if it's something related on how models are made, but the DA will start testing like the typical payloads and it will forget about testing the really complex stuff. So if you add that kind of information, like hey, remember to test this or hey, remember to like you can try this other technique. We can see that from time to time. It would try that and it will prioritize that instead of just trying like normal payloads and spamming that all around. So that, that's some, some of the tips that, that I learned. Like if you are very specific and also if you provide like a very specific endpoint to test a very specific type of issue, it performs much better than if you just give freedom and let him like so as much technical.
+
+[01:30:37.02] - Justin Gardner
+Detail as possible there I guess is interesting. And are you, how do you balance that? And I'm not sure if even this is your department. Maybe you just show up and say this is the, the methodology, like figure out how to fit it into a prompt. But some of the things that Joseph and I have struggled with With AI engineering from our side with Shift and other products is balancing, you know. Oh, I want to give a lot of examples. I want to give a thorough prompt with prompt size and how much that reduces your context of also getting information from the AI itself and getting that into the prompt. Have you faced that or is your like superpowered AI team kind of dealt with all that for you?
+
+[01:31:14.39] - Diego Jurado
+Yeah. So to be honest, I've created some prompts myself, but of course there's people in the team much better than I doing that. So whenever I try, like whenever I want to focus in some specific type of issue, I'll just develop a prompt that I will use and then I pass it to the AI team and they will do some adjustments to fix that and they will came up with some recommendations like if you use this instead of this, it will likely perform better. So they have all that knowledge to improve those prompts. And I just provide the techniques of the things that we want to test or the specific attack types that we want to test.
+
+[01:31:54.43] - Justin Gardner
+That's really cool that you get to sort of collaborate with other experts in that and that arena like that and condense that information. I did want to circle back around to the post message based stuff obviously. I love post message based stuff. It's one of the things that I test for a lot. And I think that it would be really hard to test for post message based vulnerabilities without at least for a human, without access to a debugger. So I'm wondering what your harness for Expo looks like in a post message testing environment.
+
+[01:32:26.01] - Diego Jurado
+Yeah, so that's something that's really cool that you asked because it's something that we have been starting to report recently, like one week ago, something like that. So we have like, so we have some tools. One of them is a header browser that is included. I forgot to mention that. But we have a header browser also included as part of the tooling that we provide to the AI. So of course we can use the browser to test and to interact with the application. And then we have included some sort of features so that we can also show the event listeners, we can show the DOM content, we can show all that information from the console and the debug so that the AI knows what's happening in the client side as well. So whenever we ask Expo to find the post message base vulnerabilities, we have some sort of version that provides this information to the solver and with that it finds all the stuff.
+
+[01:33:30.47] - Justin Gardner
+Okay, so is it utilizing a debugger itself or Is it mostly looking at the DOM and the console logs?
+
+[01:33:37.59] - Diego Jurado
+It's looking at the DOM and the console logs, yeah.
+
+[01:33:40.10] - Justin Gardner
+Okay, solid. Yeah. It would be very interesting to have it be able to set breakpoints at various points and inspect the state, but that would be such a complicated thing to code like. I imagine that's going to be way down the line.
+
+[01:33:52.73] - Diego Jurado
+Yeah. And I think that that's something that definitely in the future we may have. Right now we don't have that, but it's something that we may have in the future.
+
+[01:34:00.34] - Justin Gardner
+Yeah, very cool. Yeah. And so, you know, it's shooting off a payload, you know, it's observing what kind of stuff is coming, coming back from that and just from that back and forth and code auditing, it's trying to craft that. The payload that will result in the, in the vulnerability.
+
+[01:34:16.02] - Diego Jurado
+Yeah, exactly. And then we have also the XP hosting, like the hosting service to like store any, any, any HTML with a POC so that then it can reproduce it with a. Yeah.
+
+[01:34:27.94] - Justin Gardner
+Is, is, is this implemented with Chrome DevTools protocol? Is that what you guys are using to hook into all of this or do you have some other, do you have like a custom browser build or what?
+
+[01:34:37.43] - Diego Jurado
+No, we are using chrome.
+
+[01:34:38.84] - Justin Gardner
+Yeah, Chrome DevTools protocol. Okay, gotcha.
+
+[01:34:41.72] - Diego Jurado
+Nice.
+
+[01:34:42.19] - Joseph Thacker
+Well, make sure you keep it up to date. So we don't have a, what's it called, a reverse prompt injection execution on the Expo executor.
+
+[01:34:51.39] - Justin Gardner
+Yeah, well, I was actually going to ask him about that dude, because if you look at the global protect write up, it says, okay, I'm getting the get config ESPN point, right? Richard, there's a image in the thing. If you could put it up on the screen at this point, that'd be great. But it does a curl request, right? It just says pentester zero and it does a curl request out and then it parses the result with XML lint. Right? And I'm like, oh wow, it's dynamically generating like dash. I kind of want to do an argument injection right here. Have you ever seen it trigger syntax errors? Or are you guys concerned about sort of reverse hacking when using Expo as a product?
+
+[01:35:34.03] - Diego Jurado
+Yeah, so that's something also is something that we have been working as well, like protecting and making sure that we don't execute something that we don't want to do to execute. And of course all the instances that we are using for testing are completely isolated. So even though we have any case that we didn't have yet, but even though we have any case in the future of some prompt injection, of course, is always there and could happen. We have this isolated environment, so we don't have any issues. And that's completely. That's not connected to any component from EXO or connected to the infrastructure. So in that aspect everything is ephemeral. So that's great. But of course we are improving that. We are improving the safe works.
+
+[01:36:25.93] - Justin Gardner
+It'd be interesting if a company was like, all right, run Expo on us, right? And then they give get a reverse shell on Expo. And then Expo's like, oh, I found this vulnerability. And they're like, hmm, that's not good. You know, like, like they get the free assessment because they shelled Expo and just dumped whatever was on there and it's like, yeah, oh shit. Six findings. That's not good.
+
+[01:36:45.14] - Diego Jurado
+Do not give ideas to the people, please.
+
+[01:36:47.22] - Justin Gardner
+Yeah, don't do that. Not endorsed by Critical Thinking Podcast. Wow, dude. Well, you know, overall I've been really impressed by it, the results. The only other big question that we had here was like, you have been interacting with the bug bounty platforms and through the. How do I phrase this? Through the, you know, network of bug bounty hunters that we have access to with critical thinking. We've seen a couple hackers have mentioned that there are some programs updating their scope, saying, you know, Expo AI has been ignoring our guidelines and have submitted a couple hundred test cases or, you know, whatever. Have you run into a lot of programs where the AI is going rogue and you gotta be like, sorry about that. I mean, that's a part of bug bounty, right? That's going to be a part of what people sign up for when they go onto these programs. But I'm wondering the frequency of that and how you guys have dealt with. With that.
+
+[01:37:44.03] - Diego Jurado
+Yeah, so as I was saying before, we have some infrastructure on top of all our product that makes sure that the scope that we are testing is the right one. Of course, in this case that you are mentioning, it was a company that they have one application which was in Scope and EXO found an application that has some form with a captcha that wasn't working properly. So EXMO managed to bypass that and then started submitting like forms over and over again. And it seems that we ended up like submitting a lot of support cases.
+
+[01:38:23.57] - Joseph Thacker
+Wasn't that in Burp 1.7 too? Like the spider would have like the automated like form submission. Guys, you all won't believe this. At my old employer, I was running that on a prod system and it was creating objects everywhere. It was like it was blowing up the database. I was running just that old form. I was like spidering on the old burp with just like the all no safety protocols. Oh, it was a mess.
+
+[01:38:46.86] - Diego Jurado
+So anyway, yeah, yeah, yeah, of course we didn't have like too many cases where we, where we had issues with customers. Of course we have, we had some. I would be lying if I said the opposite. But also I think that, you know, in every test that we perform we are sending the X Bounty header with Expo name. So it's also easy for the companies to know that we are doing that kind of testing. So I'm really sure that people with their automation are also poking those applications and might be even breaking them. But then if they check the logs and they see Expo, they might be pointing to us.
+
+[01:39:31.19] - Justin Gardner
+Yeah, that's a good point, Diego, is that you guys are doing it responsibly and in a way that's easily correlated back to you and other bug bounty hunters for sure are not. So maybe you're taking the heat a little bit, but that's because you're being intentional about it.
+
+[01:39:44.92] - Diego Jurado
+Yeah.
+
+[01:39:45.35] - Joseph Thacker
+So now all we have to do, Justin, is just start using XBounty Expo in our headers. Yeah.
+
+[01:39:52.43] - Diego Jurado
+The other day was a customer that was asking to us like hey, are you like using this IP address to test this application? And we had to check and it wasn't actually. But you know, they saw that a header in one of other applications in the logs and they thought that we might be also testing the other application. So. Yeah, but in our case we are always sending this header so whenever someone has any doubts he can check that and see if is external. And we are using a very specific header so that no one can use it.
+
+[01:40:27.47] - Joseph Thacker
+Oh, that's actually a good point. Yeah, you can use.
+
+[01:40:29.39] - Diego Jurado
+And we are also changing that. We can set a different header.
+
+[01:40:32.98] - Joseph Thacker
+Nice.
+
+[01:40:34.02] - Diego Jurado
+Every day.
+
+[01:40:36.75] - Justin Gardner
+Wow, very cool. I have gone through here. I think I've got all of my Expo questions out of the way. Joseph, you got any other ones?
+
+[01:40:43.94] - Joseph Thacker
+I could probably go on for a lot longer. And also it's hard for me not to. I'm just restraining myself to not ask stuff that would be too sensitive because I obviously want to know all the details. But I think that that would also be. I think the Diego has been extremely, extremely open and forthcoming. I think one that's really cool that you all do that. Even publishing those traces are something that I think the majority of companies would not do. Even just showing that the primary tool usage is Python. But it can also do custom full requests and, and then the fact that you're sharing more about the harnesses and other stuff. And like, so I won. I mean you all probably have that privilege to do that because you feel like you are kind of so far ahead. Or maybe you all just as a company really believe in kind of, you know, information sharing in general to kind of push the industry further and increase the security of everything. I do want to, I think this could be a pretty scary conversation for a lot of listeners. So actually I do want to take a quick second here to basically tell people like at the end of the day, like the security of everything is going to get much more improved by stuff like this. And I, and I do think that I kind of fully agree with Justin that I think kind of Human in the Loop will still do well for years. And I think there are still lots and lots of multi step vulnerabilities like the ATO the Diego mentioned at the beginning. Like there's not going to be a hackpot that's going to find anything remotely close to that for years. Um, like it will find other things that are similarly impressive, but not things that require multiple bypasses and xss on a different site and all of that. Like, I think that that's still years incoming and I saw a really nice tweet from, really nice tweet from Simon Wilson today that said, like, saying that you're going to give up on coding because LLMs exist is like a carpenter saying they're going to give up on carpentry just because a table saw was invented. And I think that's, I think that's a really great analogy for hacking too. It's like, hey, you know, just because these amazing, you know, AI hacking applications are being developed doesn't mean that you need to give up on the industry because it would be kind of silly to do that at this point.
+
+[01:42:48.27] - Justin Gardner
+So anyways, yeah, I agree. Any, any thoughts you want to add about that Diego, or can I pick your brain a little bit more about the AWC stuff?
+
+[01:42:56.94] - Diego Jurado
+Yeah, so, so I agree with, I fully agree with, with, with reso. I think that of course doing like complex chaining nowadays for AI is complex and we all know that. But we've so far, like from one year until now we saw a huge improvement in models and we started seeing kind of similar behavior in that and we have some findings where we saw that the solvers were chaining multiple vacs and like starting exploiting ancestors and changing that with a local inclusion. And we saw that in our Traces and we are willing to share that soon. So I guess that for now we are safe and always human will be necessary for some specific kind of bugs. But in the time we will see, I think that it's going to get like bigger and bigger.
+
+[01:43:52.84] - Justin Gardner
+So I think so too. A lot of these more simple bugs may disappear. So that's why. Why it's definitely smart for, you know, people to scale up a little bit here and start looking for more complex vulnerabilities. Even if you're able to pay your bills with authorization vulnerabilities. Right. You know, or, or whatever, or simple xss, I should say, because there's some complicated xss out there, but definitely a time to start looking for more complex chains and getting those reps in to find those. All right, well, I did want to come back to the AWC because I'm a little salty about it. Not going to lie. I wanted to love it. I really did. I wanted to love it, but I just don't think it's there. Obviously you guys did really well. We talked about it a little bit in the beginning. This is the second year in a row that you guys won it. I think if you win something twice, we see a pattern. I'm wondering whether you guys are going to go as him on it next year. Are you going to try as hard next year with the AWC if nothing changes or are you guys going to sit it out?
+
+[01:44:57.28] - Diego Jurado
+Yeah, so I think that definitely we are going to go for the fair one. I mean, like all the people from. Yeah, all the people from Spain are like super try hard with, with these kind of competitions. They really like winning. And also I think it's is that time of the year where the people, you know, we were talking about this before, like, and you can see that, for example, one of the top 1 hackers in hacker 1, he's one of the most dedicated hackers in this competition. And you know, he has like a lot of bounties. And even though it spends a lot of time in this competition as well, so it's like a way to share time with all the people, the team. We are like close friends. We have like a really good relation and we like to collaborate. We like going traveling together. And that's one of the main things that I think one of the reasons why Spain is doing really well. Everyone is in the same mood and we are collaborating with each other. And yeah, I think that's definitely something that is like their secret sauce, as I was saying.
+
+[01:46:11.01] - Joseph Thacker
+Well, the real secret sauce is if they're struggling, Justin. They just tap in Expo and then, you know.
+
+[01:46:18.77] - Justin Gardner
+Yeah, dude, I think that commitment piece is really big. Right. You know, one of the things you keep saying, you know, about Team Spain is how committed they are, right. And I think that it's hard to get that many people rallied behind a shared vision. So that's a big achievement for sure. And I think it's also hard for people to motivate themselves to push, push, push hard on something like this for an extended period of time, because this is multiple competitions back to back to back. So, yeah, I think that's exciting to see with the nuts and bolts of collaboration. Do you have any tips that Team Spain has used to optimize their collaboration between other hackers? And how do you guys deal with bounty splits? So, two questions there.
+
+[01:47:03.85] - Diego Jurado
+Yeah. So something that we, you and we do like in every round of this competition is that usually we have a couple teams of two or three people. Like, we do like mini teams inside Team Spain and we split like the scope that we have. So let's say that we have three or four companies, so we start doing like teams of two or three people and we go through different scopes. And that's a way to don't have duplicates against us like itself because in the first rounds we have duplicates inside the team as well. And it's funny because even though we had some duplicates, I remember that some of the team were even inviting the other teammates, like, hey, you find this? I find it before I will invite you to the report with a 50 50, which is like insane. And I saw that inside the team and I don't think that other people in other teams are doing the same. And in the end, I think that happened because we are also friends and that's really, really important.
+
+[01:48:05.96] - Joseph Thacker
+Do you all get together physically? Are there a lot of you all near Madrid?
+
+[01:48:11.00] - Diego Jurado
+Not really. I think we are a couple members in Madrid. Some are in Barcelona, some are not even in Spain, are in Portugal, nearby and Spain. But yeah, from time to time we try to travel and do at least one of the rounds together. I think that this year we had. We meet up in two different rounds and then we have like the quarter finals, which was in Prague, and then the finals in. In Dubai. So we, we miss each other like four, four rounds. So that's also important as well.
+
+[01:48:44.32] - Joseph Thacker
+Obviously we didn't experience those last few rounds. Did the last few rounds end up slightly better with the lack of like a way lower numbers? Like, it's not as harsh on duplicates and, you know, payouts or bonuses and stuff. How did that look?
+
+[01:48:57.97] - Diego Jurado
+Yeah, it was a bit better because, you know, I think that also customers were better like in those rounds. And it's also something that I was, was willing to talk in this, in this podcast. Like, I think that not all the customers from this competition are mature enough to, to be part of this competition. I know that some customers were really overwhelmed with reports and they even don't know how this competition works. They don't know that they have to do triage in time. They don't know that they have to pay in time. So I think that this is something that definitely hackeroone has to improve. They have to try to look for customers that are mature enough and they know how this works. But in the other side, I know that it's hard also for them to find customers that they want to participate. Of course. So yeah, they have to balance between those.
+
+[01:49:52.72] - Justin Gardner
+Yeah, dude, that is definitely a balance. But it's. I mean, I think the targets are going to, they're signing up for a lot, you know, when they, when they go onto this, you know, especially, I think it takes a lot of guts to say like, all right, 600 and blah, blah, blah, hackers just come at us. It definitely takes a level of maturity. So hopefully H1 will nail that down and in the future, as they continue to grow the awc, you know, hopefully they'll have more of like a brief or whatever of like this is what you could expect like buckle up sort of scenario as well.
+
+[01:50:25.50] - Diego Jurado
+Yeah, I remember something really good that hacker1 did in finals. So when the competition ended they did some like one hour feedback on site. So they get all the teams together and we start like talking about the whole competition giving feedback to HackerOne. So I think that's really, really smart for doing that and hopefully they will get some advices for the next year. But yeah, in the end I think that everything depends on customers. If customers are good enough, I think that the round should be good. Also, I think that they have to do some changes with the teams. I don't think that they. There should be countries with five or six teams. It doesn't make sense. There's a lot of people in the end poking at the same targets and that's something. Also.
+
+[01:51:15.31] - Justin Gardner
+Do you think the team should be limited to one per country and then capped at a certain size? Is that what you're thinking?
+
+[01:51:20.76] - Diego Jurado
+Yeah, I think so. And it's something that we are trying to do in Spain. Like in Spain we are Two different ambassadors, hypothermia and me. And we were asking multiple times, like we, we wanted to split the team and we always said that we prefer to have one team with 20 people that are fully committed to, to the competition instead of having like five teams of people that in the end they're not going to spend enough time. And that's also something that we, that I think is working good for us. And we are rotating the team whenever we have someone that is not like, doesn't have time enough to spend. We are fully transparent. Like if you don't have time to spend, there is always someone that wants to get into the team. So also that's working really good for us.
+
+[01:52:11.18] - Justin Gardner
+Awesome, man. That's awesome. Well, it's definitely been a success for Team Spain. It's been exciting to see. Yeah, I think collaboration at that scale is really challenging even when you've got the two teams or if, if it, you know, it's just one big team of 20 people. So I'm excited to see how it'll, it'll pan out in the future. All right, Joseph. I mean, that's all I had on the docket. Did you have anything else you wanted to ask?
+
+[01:52:35.77] - Joseph Thacker
+No. I'm super grateful and super thankful for your time, Diego, and for your. Yeah, just being willing to answer our questions and even come on here.
+
+[01:52:43.46] - Justin Gardner
+Yeah. Did you have anything you wanted to shout out at the end here, Diego, or something you wanted to get on the record for the podcast?
+
+[01:52:50.35] - Diego Jurado
+Not really. I appreciate that you have invited me. It has been really amazing to talk with you guys. So, yeah, thank you for that and looking forward for a new podcast in the future, maybe.
+
+[01:53:03.55] - Joseph Thacker
+Yeah, dude, we'd love that.
+
+[01:53:04.51] - Justin Gardner
+That sounds great, man. That sounds great. All right, peace. That's the pod.
+
+[01:53:07.22] - Joseph Thacker
+See you guys.
+
+[01:53:07.67] - Diego Jurado
+Thank you.
+
+[01:53:08.98] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'.
+
+[01:53:12.78] - Joseph Thacker
+All.
+
+[01:53:12.98] - Justin Gardner
+If you want more Critical Thinking content or if you want to support the show, head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of Masterclasses, Hack Alongs, exclusive content and a full time Hunters guild. If you're a full time hunter. It's a great time, trust me. I'll see you there.

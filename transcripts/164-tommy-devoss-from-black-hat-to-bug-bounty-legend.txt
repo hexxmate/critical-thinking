@@ -1,0 +1,593 @@
+Episode 164: Tommy DeVoss: From Black Hat to Bug Bounty LEGEND
+Source: https://www.criticalthinkingpodcast.io/episode-164-tommy-devoss-from-black-hat-to-bug-bounty-legend/
+======================================================================
+
+Title: Transcript - Thu, 05 Mar 2026 15:22:35 GMT
+Date: Thu, 05 Mar 2026 15:22:35 GMT, Duration: [01:11:56.76]
+[00:00:01.19] - Tommy DeVoss
+We would just buy cool looking domains so that we could have like 100 character long vhosts so that it says like i.am.in.your.computer.today. And just these, we would have like a whole message.
+
+[00:00:38.99] - Justin Gardner
+not sure y'all know this, but two of the most respected hackers in the CTBB community, BusFactor and XSS Doctor, are now running monthly hackalongs on the CTBB Discord. Okay. You've got to check this out. ctbb.show/discord. We find bugs almost every time we hack. It's crazy. And oftentimes it's not even the people running the hackalongs. It's the community members that are hacking along with us. You definitely increase your chance of finding a bug by being on these hackalongs. So check them out, ctb.show/discord. Join Bus, XSS Doctor, and yours truly, and let's pop some bugs. All right, let's go back to the show. Sup guys, got the This Week in Bug Bounty segment for you. Yes, we hackdropped another great blog, Alex Brumans. I tell you, man, What a researcher. This article that he released that I want to cover real quick called Python Pitfalls has some crazy, crazy stuff in it that I've definitely missed in prior assessments. So check this out. The first one is in Python's os.path.join, which I've seen many times. So in the example here, he says os.path.join passes in /usr/uploads and then the payload received from the user, right? Well, if you give it just an absolute path, it just ignores the prefix, right? So if you give it as arguments, I'm trying to put this in audio for you guys. os.path.join /usr/uploads is the first, uh, argument. And the second is /etc/passwd. That will resolve to /etc/passwd. It'll just ignore the prefix. Uh, which is super crazy to me. So, uh, yeah, don't even worry about path traversals. You can just put in the absolute path. Uh, very odd. Um, and then there's also this one down here. It's the same sort of situation, uh, which is apparently urllib.parse.urljoin does the exact same thing, but for domains. So consider this, you have urllib.parse.urljoin. The first parameter is http://example.com. And then the second parameter is http://evil.com. So you're, you know, providing an absolute URL. The output of that is evil.com. It just removes the whole example.com piece, which is nuts to me. So Python's got some crazy weird quirks. Apparently, you should just be yeeting absolute file paths and absolute URIs everywhere into Python, and it just will just accept it. So check out this article, we'll link it in the description. There's lots of other good stuff in here like pickle deserialization and stuff like that. Okay, so that's that. Next is actually a quick announcement that I wanted to remind you guys, we talked about it on the Google Cloud episode, but Google Cloud VRP is offering a bonus to all Critical Thinking Podcast listeners. If you mention the podcast in any rewarded report between now and the end of April, you will get, uh, an extra reward, either cash or swag. Um, so definitely want to do that. So drop some love for us in those cloud reports you guys are putting in and get yourself, uh, some swag. All right. That's it. Let's go. Let's jump to the main show. Dude, Tommy, man, I've been looking forward to this episode. For a long time. And this is a special episode for me, as you guys know, because Tommy is a part of my hacker origin story, especially in the bug bounty world. So dude, I owe you a debt forever for introducing me to bug bounty that day. And the reason that happened was— Yeah, true. But the reason that happened was you just showed up at my VCU college cybersecurity club and we're just talking about Bug Bounty randomly. Do you even remember how that happened?
+
+[00:04:39.29] - Tommy DeVoss
+Whoever the president was, I don't remember his name.
+
+[00:04:42.49] - Justin Gardner
+Parker. Yeah.
+
+[00:04:43.12] - Tommy DeVoss
+Yeah. So he had emailed me or reached out to me on Twitter. I don't remember which one it was. And he had asked me if I would come and talk to you guys about it. And I was like, yeah, I guess I had absolutely no idea what to expect. I wasn't expecting, uh, like 10— nothing against y'all, but kids. Yeah, standing in a— what was it? It was like a computer lab.
+
+[00:05:08.04] - Justin Gardner
+Yeah, it was a computer lab. We, we like grabbed the corner and stuck like a server rack in there.
+
+[00:05:12.75] - Tommy DeVoss
+Yeah. And yeah, I wasn't expecting what it ended up being, but it ended up working out. I had let, um, both, uh, HackerOne, Bugcrowd— or I guess all 3, HackerOne, Bugcrowd, and Synack I had to let all 3 of them know that I was going to go be going to be doing it.
+
+[00:05:29.63] - Justin Gardner
+Nice.
+
+[00:05:29.95] - Tommy DeVoss
+And asked each one of them to send me some stickers and swag and stuff to go. I think HackerOne was the only ones that actually did.
+
+[00:05:36.80] - Justin Gardner
+Yeah. You said you gave us some good stuff.
+
+[00:05:38.60] - Tommy DeVoss
+Bugcrowd and Synack didn't, or they couldn't in time, something. I don't remember. But yeah, he emailed me or DM'd me on Twitter. So funny, man. And since y'all were local, I was like, yeah, anytime. Because it's like 10 minutes from my house.
+
+[00:05:54.06] - Justin Gardner
+Sure, I'll pop in there.
+
+[00:05:55.30] - Tommy DeVoss
+Yeah, whenever.
+
+[00:05:56.33] - Justin Gardner
+Well, it's funny because I was running, you know, he's my co-president and I was running the labs at that time, you know, and then you just showed up, you know, and I was like, he didn't even tell you about it. He didn't tell me.
+
+[00:06:06.33] - Tommy DeVoss
+Yeah. Oh man. And he didn't even come.
+
+[00:06:08.45] - Justin Gardner
+Yeah.
+
+[00:06:09.22] - Tommy DeVoss
+No, he didn't even show up.
+
+[00:06:11.06] - Justin Gardner
+Shout out to Parker, man. I don't know if you're listening, but, uh, that was the most poorly organized thing that had the greatest impact. Um, So yeah, definitely grateful for that. Well, you know how we do it here on the pod. I guess we didn't even really talk about this beforehand, but typically on the podcast, what we do is have guests bring a vulnerability that they want to talk about, you know, and give us a little summary just to, you know, prove some expertise. Obviously, Tommy DeVos, guys, we don't have much to prove here. Legend. But if you have anything you want to— a bug you want to run by us, or you can talk about your more recent fuzzing stuff.
+
+[00:06:49.26] - Tommy DeVoss
+Um, well, the fuzzing— I can't talk about the phones yet. It hasn't been long enough to where I'm allowed to disclose them, right? And I don't really want to make Google mad. Yeah, I like them being nice. Um, I guess my favorite bug is still from Yahoo in 2018 that bought me my GTR. Um, I was in Las Vegas in October 2018. I had like moved out there halfway for most of 2018, and I was waiting for my friend Steve. We were going to go do something that night. I don't remember what it was, but he was taking a shower and he was like a— I don't want this to come across the wrong way, but he took forever to get ready like a girl. Like it took him almost 2 hours to take a shower, do his hair. And everything. And it's like, dude, no. But I was bored and I went and took out my computer and I was sitting on his kitchen table and I didn't want to start hacking on anything new because it's like I only had a little bit of time. You don't want to—
+
+[00:07:56.38] - Justin Gardner
+could have had 15 minutes, could have had 2 hours.
+
+[00:07:59.18] - Tommy DeVoss
+Yeah, exactly. And I don't want to get into something and then have to stop it. Like this morning, having to walk away from the computer was driving me nuts.
+
+[00:08:05.35] - Justin Gardner
+I'm so sorry, dude. Like literally he popped an RCE on one of his bugs As he was walking out the door.
+
+[00:08:11.43] - Tommy DeVoss
+Yeah, like I literally did it and then I had to walk out the door. But I was worried about doing that back when I was at his house. So I went and opened up my HackerOne reports and just picked a random SSRF from Yahoo and decided to start playing with it. And I had had all kinds of success in coding the IP addresses in different ways to bypass because they used a blacklist. They didn't use an allowlist. They used the blacklist. And blacklists are very, very, very bad. Well, I don't even know why it worked, but I was super stoned. So I decided that I was going to take the AWS metadata IP and instead of encoding the entire thing, I took just the first 169 and octal encoded that, left the rest of the IP the same. And it worked for some reason. I have absolutely no idea why. Why logically it shouldn't have worked. And I was just trying things because I was trying to pass time. Well, it worked and I got the AWS credentials again.
+
+[00:09:13.41] - Justin Gardner
+Oh my gosh.
+
+[00:09:13.94] - Tommy DeVoss
+So then I went back into my reports and I pulled every single SSRF that I had against Yahoo from the last 3 years and it worked on every single one of them. So I went and filed 18 new reports, each for each one of them was a unique location and everything, but they needed to go and update their, Deny list again. And they paid me $10,000 for each one. So I got the $180,000.
+
+[00:09:39.87] - Justin Gardner
+And then that's not—
+
+[00:09:41.59] - Tommy DeVoss
+4 days later, I flew back here to Richmond and sat outside of the dealership that had my GT-R until they were open at 10:30 in the morning and told them that it was mine now.
+
+[00:09:52.42] - Justin Gardner
+Wow, dude, that's crazy. So you had— you went back to all of your previous reports. So that's one. I think that's a great takeaway for the listeners as well. It's like if you do have a short amount of time perhaps to hack, go back and look at a report that you think you may be able to bypass or something like that, because then you don't have to find— spend time finding something interesting.
+
+[00:10:12.61] - Tommy DeVoss
+Yeah, exactly. It's a, it's a great way. And I mean, things change. So even if it's not bypassing the old vulnerability, they might have added new functionality to the exact same little area that you can quickly play with and you already know at least enough about it to find some vulnerabilities. So anything that's different there, it's it's less of a learning curve to translate from not doing anything to instantly being able— excuse me— to get in there and hack.
+
+[00:10:39.49] - Justin Gardner
+Right, right. Make sure you don't bump your mic when you're doing that. Yeah, dude, totally. I think that that technique is really interesting too, because obviously— so just to speak it out, you know, plain and clear, you had an SSRF, you were going to hit 169.254.169.254, which the AWS metadata endpoint, which was gonna drop back the access credentials.
+
+[00:11:04.07] - Tommy DeVoss
+Yeah, 'cause I had already done it in the past, so I already knew the exact path and the key name and all of that stuff. So I was just trying to find a new way to represent the IP address that they hadn't accounted for.
+
+[00:11:15.11] - Justin Gardner
+Nice. And the way you did that was taking that first 169 and—
+
+[00:11:19.42] - Tommy DeVoss
+Just the first one. Because if you did any of the other ones, it wouldn't work. Or if you did the entire IP, it wouldn't work. It had to be the first one. First 169 for some reason.
+
+[00:11:28.91] - Justin Gardner
+I'll have to look that up. I'm not sure, but I imagine what happened there is that when you had that first octet encoded with 4 characters rather than 3, right?
+
+[00:11:40.63] - Tommy DeVoss
+Yeah, because it's like, it's like, oh, it was like, oh, 526 or something, something crazy like that. Like it doesn't even, when you're looking at it, it doesn't even look like it's a valid IP address.
+
+[00:11:52.96] - Justin Gardner
+Wow.
+
+[00:11:53.36] - Tommy DeVoss
+But that's crazy, man. According to Yahoo, it was at least. And actually just saw recently, um, within the last 2 weeks, I saw some other kid on Twitter post that he did the exact same thing. Not to Yahoo, it was for somewhere else, but he did the exact same thing like just a couple weeks ago, and it's still working. So it's still something that is valid today. It's still one of the things that I try anytime I find something that I'm going to test for SSRF.
+
+[00:12:21.23] - Justin Gardner
+Wow, nice, man. Good, good bug. I think that, uh, you were the first person, and I don't know if you were the first person to discover it at all, but you were definitely the first person I heard talk about the AWS metadata URL as well, and also this octal encoding. So, uh, for a lot of the bug bounty community, I think that was, uh, you know, you were the introduction into that.
+
+[00:12:40.23] - Tommy DeVoss
+For the octal, maybe. Like, I remember the first time I hit the AWS server was actually on Yahoo as well. I was sitting in AWS re:Invent up in DC.
+
+[00:12:52.73] - Justin Gardner
+Yeah, that's right. Yeah.
+
+[00:12:53.76] - Tommy DeVoss
+I had gone up there because me and a friend of mine here locally, Josh, we had started a company here in Richmond for security and we wanted to go up there as part of the company. It was right before or right when I was leaving my previous job and getting ready to do bug bounties full time. And that's where they taught me about the metadata server. I had no clue what it was. And I'm sitting in a, in a talk there with my laptop next to Josh. And then they told us about the IP and that it could be used to get the, the access, access creds and everything. And I was like, hold up. So then I actually sent Sam ZLZ a message because we had been hacking on Yahoo and there was this place in their small business You used to be able to go and buy hosting and domains and stuff from Yahoo Small Business. And there was a place on one of their main front pages where you could give it a URL and it would go take a picture of it for you. And we used that to take a picture of the AWS access credentials for us. And that was the first time I'd ever gotten it to work.
+
+[00:13:59.91] - Justin Gardner
+It's so funny you talking about this because I, I don't remember very much from that era at all of like what was going on in life and stuff like that. I remember everything that you just said like it was yesterday, man. Like the Yahoo domain. It's so I remember as well, AWS stuff. I was like, wow, this is the most interesting thing I've ever heard. And my brain just like clamped on it, like, you know. So very good times back in the day watching you and Sam.
+
+[00:14:25.77] - Tommy DeVoss
+Oh, it was a lot of fun. It was a lot of fun. And they had stupid— like, we weren't even finding anything crazy. It was just stupid, simple XSSs and stuff like that because it it's exceptionally hard, especially when you've got a website builder as part of your product. It's exceptionally hard to do that in a safe way. And yeah, it took Yahoo a while before they were able to do it. But that wasn't—
+
+[00:14:51.90] - Justin Gardner
+that was good scope. It was good scope, man.
+
+[00:14:53.95] - Tommy DeVoss
+I was sad when they took it out. Yeah, I was real sad.
+
+[00:14:56.99] - Justin Gardner
+So, so, you know, pulling on that thread a little bit like you, I've already talked about how you're, you know, part of my origin story as a hacker, but also you were a strong influence on Sam, Sam Curry and Corbin Leo, uh, and some of the other earlier on hackers, um, that kind of popped up in the scene and started, you know, going to live hacking events and stuff like that. Um, so I mean, was that something that you were always trying to, you know, do intentionally, or was that just a part of you being early on in the bug bounty scene, you think?
+
+[00:15:32.87] - Tommy DeVoss
+Um, a little bit of both. I'm older than most of y'all by quite a bit. And it's been really important to me to try and get younger hackers, including all the way down to kids like in middle school, involved in it. I got curious when I was in like late elementary, early middle school.. So I know about when kids start getting interested. So that's why I like going and speaking at middle schools. I haven't spoken at an elementary school. I don't think that would be appropriate because I'm not sure that the kids in elementary school are quite knowledgeable enough about computers as a whole. Like, they know how to open up Roblox or Minecraft. That's about it. But once they're in middle school, they're actually have the ability to take classes, programming classes, typing classes, and that kind of thing. And they're actually using computers more. And I don't want them to make the same mistakes I did. It's, uh, I have been having this conversation a lot the last couple of weeks, but when I started, we didn't have virtual machines. We didn't have a lab that you could go like try hack and try to hack and all of that kind of stuff. We didn't have any of that. Our practice was the real world. We had to go and hack real systems. And if you wanted a challenge, you had to go and make really stupid mistakes and hack government military systems.
+
+[00:17:08.00] - Justin Gardner
+Yeah. Yeah. Okay. So let's, let's go down that path a little bit here. So that was a part of your origin, right? You were a black hat earlier on and, you know, got, got caught and kind of reformed there. Do you want to give us like the, the, you know, 5-minute version of that story so that we can have that context?
+
+[00:17:28.72] - Tommy DeVoss
+Yeah. IRC was a fun place in the '90s. We like to take channels from each other. So we built very, very large botnets to DDoS people. And yeah, you're— I don't even know if you're old enough to remember. There was this kid in Canada named Mafia Boy. Back in '99, 2000. He's credited with the first large-scale DDoS attack when he DDoSed like eBay and like, I don't remember all the sites, but it was any of the big sites that were on the internet back in like 2000. And he was actually the kid we were fighting on FNET for our channels. He was a member of TNT. And I was with TDK, Those Damned Kids, and we were constantly fighting over the channels with him. So that botnet that he used against like all the Fortune 500 companies of the time, he hit us with it a lot and it would take us offline a lot. But I spent a long time doing that. I changed in about 2000. I thought it'd be fun to deface websites, so I started doing that.
+
+[00:18:42.70] - Justin Gardner
+When you were doing the botnetting, how are you getting these compromising these machines? Was it just rats? Are you like—
+
+[00:18:48.31] - Tommy DeVoss
+No, no, no. There was no concept of that.
+
+[00:18:50.55] - Justin Gardner
+No.
+
+[00:18:50.88] - Tommy DeVoss
+Like the only rat there was at the time was like Sub7 and then CDC, the Cult of the Dead Cow put out BackOrpheus and they were only Windows-based. Yeah. When I was a hacker, we had a rule in our groups. You weren't allowed to hack Windows. It was too easy. It was too easy. Deadass. I don't mean to cuss, but you weren't allowed to have Windows at all. We felt that hacking Windows was too easy. But every system back then could be hacked. Literally, there was no such thing as a secure system, right? Because these things were designed without thinking that somebody might want to break into it over the internet. The internet was still fairly new. It was 10 years-ish old, maybe a little bit less. So it was, it was a completely different world. There was no such thing as a web vulnerability. I don't even think we had databases like for you to store one of our databases. No, it wasn't a concept. It was stored on disk. Like if you were to go to a website and purchase something, they would actually save your name, address, credit card number and all of that into a text file on the web server, like on the web server. All you had to do was break into the web server and go find like cc.txt. And you had a list of everybody's legitimate info.
+
+[00:20:11.07] - Justin Gardner
+That's crazy, dude. What a time to be alive.
+
+[00:20:12.96] - Tommy DeVoss
+And this was before we had those little 3-digit codes on the back. Like, I remember being a kid and we had credit card generators where you could literally open up this tool, click a button, and it would give you a credit card number and an expiration date. It didn't need the 3-digit code 'cause that didn't exist yet. They created it because of this fraud time period. I bought probably 100,000 domains. No, Tommy. No, domains for like a dollar apiece. Just by clicking this little button and say, hey, generate me a credit card. And it would just generate one. You didn't need any name or anything like that. It was all you needed was the 16 digits and the 4-digit.
+
+[00:20:53.03] - Justin Gardner
+What a time, man.
+
+[00:20:54.07] - Tommy DeVoss
+Yeah, because they didn't— they weren't connected like they are now to— I don't even know the payment process companies anymore, but they weren't connected to them in real time to be able to actually validate them and everything like that. So I think most of the companies would just kind of like, if it was the proper format and looked real, then they would accept it. And then they would find out a couple of days later that, oh, it wasn't valid or something like that. So, but it was with, for domains back then to go on IRC, we always wanted a BNC and it was just a Vhost. It allowed us to hide our ISP and IP address behind it. And you used to have to pay companies each month for them to create you a vhost because then they would create you the vhost. And if you paid them the $5 a month or whatever, they would make that vhost reverse DNS to a certain IP address so that way you could go on IRC with it and everything. And it all looked right. And we would just buy cool looking domains. So that we could have like 100-character-long vhost so that it says like i.am.in.your.computer.state. And just these, we would have like a whole message as our hostname.
+
+[00:22:14.40] - Justin Gardner
+Wow, dude, what a time. So after the IRC era, you kind of moved into website defacement, right? Yeah, defacement. And I imagine that was your intro into like web vulnerabilities and stuff like that.
+
+[00:22:26.07] - Tommy DeVoss
+No, no, there were still no web vulnerabilities. Okay. There's no such thing. Okay. So like there wasn't like websites back then were written in either HTML, static files or. Yeah, it was. It was like, I don't even, I don't remember if we even use JavaScript. Yeah. Like I'm trying to remember.
+
+[00:22:53.59] - Justin Gardner
+So would you just like use some network level exploit to get access?
+
+[00:22:57.03] - Tommy DeVoss
+Yeah. Yeah. It was always, it was always, we would root them through Telnet, SSH, FTP. Root them through Telnet. Yeah. Telnet. Every Telnet. Solaris, which is SunOS, whatever you want to call it. All versions of BSD, FreeBSD, NetBSD, BSDi, OpenBSD. I think there was one more too. I think there was like 5 of them.
+
+[00:23:22.16] - Justin Gardner
+Would they just leave Telnet open? Like, or would you have to use a Telnet exploit or what?
+
+[00:23:26.51] - Tommy DeVoss
+You would use a Telnet exploit, but you got to remember something. Everything had Telnet back then. We, SSH was new. SSH was new in the mid, mid '90s. I want to say mid to late '90s was when it was starting to be adopted and it was significantly more common for them not to have SSH than it was for them to have SSH. So everything was Telnet. So the whole process was use a Telnet exploit or whatever the exploit you wanted to use, whether it was Telnet, we RPCs, RPCs on Unix boxes listen on port 111, I think it is. Every single RPC that listened on that port had a remote root exploit. Every single one. Printers, name server, BIND, what underpins our name server, that had tons of vulnerabilities back in the day. And that was a huge target for us. We always wanted to compromise name servers, but we would compromise them. And because everybody was using Telnet, we would install packet sniffers, keyloggers on it so that we could get the Telnet credentials of anybody that connected to that machine and used it to connect to others. So we would target university computers a lot. Taiwan, Korea, and Hong Kong. Those three countries were, they were always farther behind like most of the rest of the world. Like we're running Linux 5.2, they're still running like 4.1. For example. So they were always running super old operating systems that always had vulnerabilities. Anytime you needed shells, because our rule was you don't hack from your own system, right? You never hack from your own system. So you would get either take the risk that first time and hack something overseas and get the access to that box, or you would get somebody to give you access to a box overseas. And anytime we needed shells, we would scan the entire Class A of 200. and 210. because there you were guaranteed to get a few hundred root shells. Wow. Over scanning those, we, we would write auto routers that would—
+
+[00:25:48.18] - Justin Gardner
+Yeah, I was going to say, how are you routing traffic through these things then? Are you just like hopping on via Telnet and then running the exploits from there or—
+
+[00:25:55.09] - Tommy DeVoss
+Okay, that's all we would do is now starting in the late '90s and early 2000s, we weren't using Telnet anymore. We were using backdoor versions of SSH. So that way it was encrypted and we would have our rootkits installed so they couldn't see anything that we were doing and have our hidden directories and everything. And we would just use those essentially as a jump box. We would use those to do the hacking and do the connecting because back then we figured that it would just be a lot harder for them to— the websites that we hacked would trace it back to that Korean or the Hong Kong or the Taiwanese server. And then we were banking on the fact that they weren't technologically advanced enough to be able to trace it from there back to us.
+
+[00:26:42.48] - Justin Gardner
+So, I mean, that sounds like a good plan, man. How did you guys get caught?
+
+[00:26:46.00] - Tommy DeVoss
+Oh, people tell. Yeah, people talk. Yeah, that's what it always just about came down to. Cowhead got arrested. Because of DEF CON in '01 at the Alexis Park. You know, they have the little scavenger hunt. Well, the scavenger hunt that year took you to a payphone that was 24-karat plated gold on the wall. He ripped it off the wall and took it to him instead of taking them to it. Because you got to remember something, we didn't really have camera phones back then, so you couldn't just take a picture with your phone and show them you found it. So instead of taking them to it, he ripped it off the wall. He got arrested at DEF CON. We all went home a week later. He puts on our website— he makes— Rafa makes a graphic for him and then he puts it on— Khaled put it on our website and it was bragging about him getting arrested at DEF CON for ripping the payphone off. The FBI monitored our website, duh. So they saw his post. They went to Las Vegas, said, hey, tell me who you arrested during this week for doing this. Oh, no. They gave them his information in Tennessee. So they went to Tennessee and he was 15 years old. I had broken into the—
+
+[00:28:07.98] - Justin Gardner
+Wait, Cowhead was 15 years old at this time?
+
+[00:28:10.81] - Tommy DeVoss
+Yeah.
+
+[00:28:11.38] - Justin Gardner
+What? How did he get— Did he live in Las Vegas? How did he get to Def Con?
+
+[00:28:14.74] - Tommy DeVoss
+That's what I'm getting ready to Explain.
+
+[00:28:18.02] - Justin Gardner
+My God, this is crazy.
+
+[00:28:20.96] - Tommy DeVoss
+Um, I'd broken into the Utah DMV computer systems so I could actually create fake IDs, but mine, if you got pulled over by a cop and handed them your ID, you were okay because they would actually put you into their system. And yeah, all of us had an ID that said we were 22. I wasn't, but 17, almost 18.
+
+[00:28:41.38] - Justin Gardner
+Oh my gosh.
+
+[00:28:41.90] - Tommy DeVoss
+And your parents were just like, Oh, they didn't care.
+
+[00:28:44.50] - Justin Gardner
+They do. No, it's gone.
+
+[00:28:46.61] - Tommy DeVoss
+Yeah.
+
+[00:28:46.77] - Justin Gardner
+Like, I'm going to a conference.
+
+[00:28:47.94] - Tommy DeVoss
+But no, I didn't even— it wasn't even that. It was just I left. You just like, from the time I was like 13, from about 13 on, I could pretty much do whatever I want. Like, I got expelled from school in 2000 and my punishment was I went on vacation for a month in New Mexico with other hackers. Oh my gosh.
+
+[00:29:14.82] - Justin Gardner
+So, well, that is, that is one way of doing it, I guess. So, okay, so he gets, he gets caught. Yeah. They monitor the FBI site, or the FBI monitors that site. They track him down.
+
+[00:29:27.15] - Tommy DeVoss
+And then he was only 15. Yeah. He had pictures on his computer of him and his girlfriend who was also 15. So yeah, people don't understand. That, that still counts as child pornography. Right. So they threatened him to charge him with possession of child pornography, even though it was him and his girlfriend, consensual and all of that. They threatened to charge him unless he told on us. So he's told on everybody. He didn't know enough about me to know where I lived or anything, but he knew enough about one of our other members, Noid. And, uh, Noid actually lived over in Charlottesville. Oh really? Yeah, me and Noid went to King's Dominion and stuff a few times together, and they caught Noid when he was boarding an airplane to go— he was Brazilian, and he was boarding a plane to go back to Brazil because we had found out Cal had gotten busted. And they caught him when he was getting ready, like literally getting ready to board plane. Wow. He knew enough about me, right? So out of the 13 members of the group, there was only one that didn't tell me.
+
+[00:30:39.22] - Justin Gardner
+Wow. It was Rafa. Wow, dude, that is a, that is a crazy time. Just trying to like put all that together in my head. It's like you guys were so young. Yeah, that's nuts. And boarding planes and like crafting these fake IDs and like, that's nuts, man.
+
+[00:30:54.81] - Tommy DeVoss
+Yeah, it was It was a fun time. I got a lot of fun back then and I wouldn't change any of it.
+
+[00:31:01.86] - Justin Gardner
+So, so you got caught, you went away for a little while. How long were you in prison?
+
+[00:31:07.23] - Tommy DeVoss
+And the first time, 2 and a half years. And then I came home and when I got expelled from school, they banned me from touching a computer because one of my charges during the expulsion was for computer hacking as well. So they banned me from computers. And then when I got released in '06, I'm not a fan of people telling me I can't do something, right? So I didn't listen. I stayed off a computer for like a month. By February, I was back on the computer.
+
+[00:31:41.53] - Justin Gardner
+It's got to be torture, man.
+
+[00:31:42.94] - Tommy DeVoss
+Like, yeah, it's like being like I'm ADHD. The only thing that can keep my interest is computers and hacking and security. So it was like I was working bullshit jobs as construction. I was a chef for a little while and it was just boring. I hated it. And I started getting back on the computer again. I started— I joined another group. Called Core Project under a different name that time and defaced a few websites again. One of them was Yahoo. They got real mad at me. It was biz.yahoo.com. And for that one, I wasn't allowed on computers. My probation officer would show up at my house randomly, like at least once a month. He had come over like a week before, so I was like, he's not gonna— he had never come again for at least 3 or 4 weeks in between visits. So I figured that was good. I was sitting on my computer one day and I had my computer set up in my room so that I— there was— the walls were like this, my computers were right here, and I was sitting right here facing this way. But literally right beside me, I had two giant windows, like double the size of this window right here. Yeah. So that I could look straight out into my driveway. And my driveway was pretty long. You had to come into the driveway and then turn and come down a little bit, turn again, and then come back.
+
+[00:33:24.43] - Justin Gardner
+So you'd have some time.
+
+[00:33:25.15] - Tommy DeVoss
+So I had some time. I see him pull in, like starting to pull into the driveway, and I panic. Yeah. I jump up out of the chair. Start taking— laptops weren't as prevalent back then, so it was always desktops. So I start ripping everything apart. I take the keyboard and the mouse, throw it onto my bed. As I'm taking the tower out, I don't remember where I hid the tower, but I hid the tower somewhere in the house. Came back, got the monitor, hid that somewhere else.
+
+[00:33:57.19] - Justin Gardner
+These things are heavy as shit at that time too.
+
+[00:33:59.41] - Tommy DeVoss
+Yeah, they were. I forgot to grab the keyboard.
+
+[00:34:05.24] - Justin Gardner
+Freaking keyboard, man.
+
+[00:34:06.31] - Tommy DeVoss
+Off the foot of my bed. Probation officer comes into the house and one of their things that they do is an inspection. So they walk through every single room of the house and look through every— they aren't allowed to actually search, search, but they can come in and anything that is within their view, they're allowed to use against you. So damn it, dude, he had me walking him through the whole house and opening the closet so he could peep his head in and everything. And we got up to my room and the keyboard was sitting on my, on my bed. And he used that as saying there was enough probable cause to say that—
+
+[00:34:46.73] - Justin Gardner
+to search or something or—
+
+[00:34:48.09] - Tommy DeVoss
+no, to consider me in violation of probation because there was no reason to have a keyboard if I didn't have a computer. So he violated me on my probation. And the funny thing is, he gave me my little violation hearing for like the next week. I went to it. I had been doing a lot of drugs, but I was using these drinks and pills that are supposed to clean your system. And I was having to take a drug test 3 times a week. And I was taking these and they never said nothing to your body, man. They never said nothing to me. Right? When I went to court for my violation, they called me out. I had failed 17 tests in a row for cocaine.
+
+[00:35:34.55] - Justin Gardner
+Yeah, you're kidding.
+
+[00:35:34.76] - Tommy DeVoss
+I passed them all for weed, and I took every test high. So the drinks and pills I was using, it was these, um, these like cleaning things that you take it, you drink 32 ounces of water, and you're clean for 6 hours. Yeah, I was taking those. They're just like little detox things. And they worked for weed. They didn't work for coke. And I had no idea until I show up and the judge is like, yeah, well, you've got 17 violations for failed drug tests for cocaine. And then for—
+
+[00:36:03.40] - Justin Gardner
+and they never told you once?
+
+[00:36:04.80] - Tommy DeVoss
+They didn't tell— no, not until I was there, dude. So then they gave me another year. So I went back to prison for a year or a little under a year, and then I got out again in Uh, in late 2008, I think it was. So then that time I was, I was good when I came home that time. I didn't go back to hacking. I got an Xbox and started playing Call of Duty, which I wasn't allowed to do. I wasn't allowed to have a game system. I was gonna say like, dude, that's computer violation. Um, I started playing a browser-based game. My sister had come up from Florida to visit with her fiancé at the time, and, um, he was playing this game called Evony. And, oh yeah, dude, yeah. So he showed it to me and was telling me about how people were finding exploits and stuff like that in it. They were making money selling resources. So I was like, I'll give it a try. I wrote the first bot.
+
+[00:37:05.28] - Justin Gardner
+You said you were good, dude. Hold up, you said you were being good.
+
+[00:37:08.36] - Tommy DeVoss
+I was just playing games. I wasn't hacking anything.
+
+[00:37:10.65] - Justin Gardner
+Oh, sure.
+
+[00:37:11.32] - Tommy DeVoss
+I was just playing games. But I wrote the first bot for Ebony. And then there was a business two doors down from me at this time, and they got broken into. And the only thing that was stolen was computers. The cops in Hanover, they know my history. I've been running in with them for a very long time at that point. And they swore up and down it was me. Rafa was also doing black hat hacking again from Venezuela, and he had somebody in America working with him. They swore that was me. So they watched me. The FBI watched me for 6 months and could not get any evidence against me. So then they used the burglary at the business 2 doors down as an excuse to raid me and look for those computers and then find anything else they could lock me up with. So I was up playing Ebony until 5:30 in the morning on October 8th of '09. I went to bed and laid down between 5:30 and 6:00, and the next thing I know it's 6:15 and I hear something banging on the door. So I went downstairs and I peeped around the corner because we had those glass things beside the door so you could see outside. Yeah. And I could see people standing out there, but they're beating on the door saying, police, get out the house. I live like, at the time I lived like 2 miles from a jail. Yeah. And people escape from it every once in a while. And when they do, they search our areas and everything. I thought somebody done escaped from the jail and they were like in my backyard or something.
+
+[00:38:54.71] - Justin Gardner
+Oh my gosh.
+
+[00:38:55.23] - Tommy DeVoss
+So I go and open the door and they bust through that door. They bust through the door with their M16s. They handcuffed me. And this is in October. It was cold as hell. I'm in just sweatpants because I was in bed. They've got me handcuffed for over an hour, laying face down on the floor in my living room while they secure the house. And then they found a few computers, a few computers here, some Xboxes and stuff like that. They sent me back for a year and a half that time. But it was the reason they sent me back for a year and a half was because they were trying to build a case against me for doing stuff with Rafa again. And I kept trying to tell them every time y'all have ever come and arrested me for something, once y'all get to the point where you show up at my house, it's too late to deny it. They know it was you if they ended up at your house, you know, if you're actually the one that did it. So I've always been honest. Like, you come and kick my door in and say, hey, were you hacking this? I mean, you just kicked in my door. I'm going to admit it because I'm going to try and not get in as much trouble, right? You have at least enough that led you here. I kept trying to tell them that it wasn't me and they didn't want to believe me. So they gave me— was it 16 months, 15, 16 months that time to build the case? And then 4 months into my sentence, They came and visited me and apologized. They found the person that had broken into the business two doors down.
+
+[00:40:30.32] - Justin Gardner
+Yeah.
+
+[00:40:30.48] - Tommy DeVoss
+And they had found the person that was working with Rafa, that was talking with Rafa. So I asked them, hey, does that mean y'all are going to get me out of here? Let me out of here. And they were like, well, you were still in violation of your probation for having the game system, cell phone, and the computers. But they killed my probation. Okay. So, and they removed the limitation that I was banned forever from a computer and they removed that from me. I kind of as like their apology. That's for sending me back.
+
+[00:41:00.07] - Justin Gardner
+So that's a great, a great, uh, consolation there.
+
+[00:41:02.90] - Tommy DeVoss
+Yeah. It ended up working out because otherwise I wouldn't have been able to do bug bounties or anything. Otherwise I still probably would have done it, but I would have just gotten in trouble.
+
+[00:41:10.94] - Justin Gardner
+And then you would have this, uh, year, year in prison every couple of years.
+
+[00:41:15.07] - Tommy DeVoss
+It's life. If I get in trouble again for computer crimes, it's life. That's why I—
+
+[00:41:19.17] - Justin Gardner
+that's why you're really, really—
+
+[00:41:20.69] - Tommy DeVoss
+that's why I yell at people all the time about scope. They don't understand. The only reason bug bounties are legal is because the company says, yes, you can do this if you follow these rules. If you follow— if you deviate from those rules, what, in any way, shape, or form, there is absolutely nothing you can do to prevent a CFAA violation. All it takes is one pissed off chief legal officer one day. Or one company to be having a bad time and then you go out of scope and them just say, all right, you know what, screw it. And they go after you. And it's like, just because it hasn't happened yet doesn't mean that it can't. And I'm not willing to take the risk that it would be easy.
+
+[00:42:02.15] - Justin Gardner
+Let me ask you your take on this then, because you've hacked with Sam a good bit. Sam does a bunch of like, just, I'm gonna hack this company and do a write-up about it. Under the name of security research. And he, you know, I've talked to him about it at length and he's like, I'm pretty sure it's under this like fair usage policy of these websites, you know, for security research purposes. And I say, dude, I wouldn't do that.
+
+[00:42:27.73] - Tommy DeVoss
+Only if, if they explicitly have a VDP or bug bounty program. Yeah, you're legal if they don't and you do not have written permission. It can't even just be them, you know, a friend that works there and he said, yes, you can. No, you have to have written. It's no different than a pen test. If you're going to go pen test a company, you wouldn't pen test them without having scoping documents over what you're allowed to hack, what are your limits and everything. It's no different. So there's a lot of people that will pick a random website And my big problem is when these— now I'm not saying Sam would do this because I'm absolutely certain Sam is smart enough to know that if he finds a vulnerability doing this, the first thing he does is email security@company.com, not privacy@company or legal or support, trying to scare people.
+
+[00:43:27.07] - Justin Gardner
+That's a good—
+
+[00:43:28.53] - Tommy DeVoss
+it annoys the hell out of me. And my biggest pet peeve is when people claim to be experienced security researchers and their first email for something like that goes to privacy or legal or random-ass email addresses. It's like, no, you're, you're not an experienced researcher or anything because any, any researcher knows logically the first thing you do if you find a vulnerability, check if they have a program on a platform. If they don't, you email security@. Why am I going to email their legal team to tell them that their security is messed up?
+
+[00:44:08.26] - Justin Gardner
+Yeah, exactly. No, no, it's bad, man. Okay. So, so I guess that's a good transition though into bug bounty. When did you first hear about bug bounty? And yeah, well, let's talk about—
+
+[00:44:20.63] - Tommy DeVoss
+2014 is when I first heard about it. That's when I created my accounts on AckerOne and Bugcrowd, but I didn't do it. So at that time—
+
+[00:44:30.36] - Justin Gardner
+Do you remember how you heard about it?
+
+[00:44:32.57] - Tommy DeVoss
+I want to say it was Twitter. Twitter? Because I was extremely active as an anon, but not in— like, I didn't do online ops. Like, I wasn't DDoSing websites either. Sure. I still consider myself an anon. But I disagree with the route most of them went. Yeah, I don't think breaking into— if your target is Pfizer, for example, I don't think you hurt Pfizer by breaking in and stealing their customer data and releasing that.
+
+[00:45:07.36] - Justin Gardner
+Right.
+
+[00:45:07.63] - Tommy DeVoss
+Because you hurt the end user. Exactly. And Anonymous, that's my biggest complaint about Anonymous, is that they— their accepted collateral damage is a lot different than what I would do. Yeah.
+
+[00:45:24.19] - Justin Gardner
+But so you heard about Bug Bounty via Twitter?
+
+[00:45:27.51] - Tommy DeVoss
+By Twitter.
+
+[00:45:28.34] - Justin Gardner
+And then made your accounts?
+
+[00:45:29.63] - Tommy DeVoss
+I made my accounts, but it wasn't worth it because it had only been at that point a couple of years since she told me it was life in prison if I get caught hacking again. Never heard of Bugcrowd, never heard of HackerOne, and it seemed too good to be true. And then late 2015, I started seeing posts on Twitter that were bug bounty write-ups, like such and such getting paid X amount of money for a vulnerability they found and everything. And then finally, early 2016, in like January, February, I was like, all right, you know what? I'm bored as hell at work. Let's give it a shot. Opened up HackerOne, tried to register, and it said that I an account already exists with my email. I didn't even remember signing up for the account. So I recovered the email or recovered the account, logged into it and went to the little directory of the programs and I saw Yahoo. So I was like, hmm, let's give it a shot. Yeah, I knew a little bit about Yahoo. Um, and yeah, just started, gave it a shot. Yahoo gave me my first bounty in March of 2016, $300. And then my next bounties after that were for Hack the Pentagon.
+
+[00:46:45.86] - Justin Gardner
+Wow, dude.
+
+[00:46:46.53] - Tommy DeVoss
+And I'm pretty sure I finished first in Hack the Pentagon. And so Hack the Pentagon, they advertised it a bit, gave us 30 days from all of May of 2016 to hack on the FUSE host and stuff like that. It was supposed to be like a limited event and all kinds. They would invite us to it. We assumed that if you got an invite to the program, that they had already done whatever they needed to, to clear you. Found out after it ran and after they owed me like $30,000 for vulnerabilities that you had to pass a background check in order to actually collect the bounties. I got pissed. Yeah, I went to Twitter and vented my frustration. Oh no, about finding that out. No, it ended up working out. Um, one of the people that was running the program, she saw my post and hit me up in a DM. She was like, I 100% understand your frustration, give me 24 hours. And 24 hours later, she hit me up and said, you now pass background checks and you are gonna get paid. So now if you do a background check on me, I'll pass it.
+
+[00:48:10.69] - Justin Gardner
+Wow, that's kind of crazy. Yeah.
+
+[00:48:12.86] - Tommy DeVoss
+Wow.
+
+[00:48:13.73] - Justin Gardner
+Well, I'm glad you got that redemption opportunity there.
+
+[00:48:17.71] - Tommy DeVoss
+Yeah, I was, I was super mad because I spent the whole month because I had just gotten into it. Totally. I just gotten into it and they weren't letting us hack the US military. From my experience in the '90s and early 2000s, the US government military were some of the easiest to hack into. So I was really looking forward to doing that for bug bounties. It's also one of the reasons I stayed on Synack for as long as I did. I only did government military targets on them. I left them when their new legal team decided to ban me from legal, from government military targets.
+
+[00:48:52.38] - Justin Gardner
+Oh man, you keep getting it, man. That's crazy. Wow. All right, man. Well, how has the bug bounty industry changed since that time? Like, I imagine back then it was very fresh. I mean, do you think things are more difficult now? Obviously there's more mass adoption, but.
+
+[00:49:14.30] - Tommy DeVoss
+I don't know that it's more difficult. It's definitely different. Because there's so many more companies that are doing it. There's a lot more competition, but I'll be honest, 99% of the competition is not actually competition for anybody that has any kind of skill whatsoever. The vast majority, and I don't mean any disrespect to the people, but the vast majority of people that I see on InfoSec Twitter and X, whatever you want to call it, they're never going to succeed because they— I don't think they have the right type of thinking. Like, anybody can run an exploit. But yeah, I feel like you've got to have a certain logical way of thinking to figure out how to break because computers do everything logical. They do exactly what they're told based on certain conditions. And part of being a hacker is figuring out how to break that logic of what they're expected to do. And just most people aren't— they just can't do it.
+
+[00:50:23.51] - Justin Gardner
+Yeah, I think there's something special about it. I've been trying to like figure out exactly how to call it, but the only thing I've landed on is like reasonable attack vector ideation, you know, like being able to look at a system, look at the security boundaries, look at the implementation and just have enough understanding about computers in general and about the logic of that app to come up with a reasonably feasible attack vector.
+
+[00:50:47.61] - Tommy DeVoss
+Yeah, but the problem is, the problem is a lot of times our successful attacks, there's no reasonable reason they should have succeeded. Like, there is absolutely no reason this should have worked, but it does. But that's just one of those things that Even when we know something's not going to work, we still do it anyway because we have to see it. At least for me personally, I have to see it for myself. And I— it doesn't make sense why a lot of it works, but I, I think there's more competition. There are tons of really great hackers out there. But the only thing is like there's so many programs out there. That you can realistically find a couple of programs that you want to focus on yourself and make decent money if you really wanted to. But I, I will probably get to that.
+
+[00:51:48.13] - Justin Gardner
+So yeah, well, I wanted to swing back around to SSRF and what attracted you to SSRF as a vulnerability originally, because I think at the time SSRF was not as popular of a vulnerability early, early on in the, in the bug bounty arena, in the, in the, you know, offensive security world. And, and then, you know, you kind of went down this path and really raked Yahoo over the coals with that.
+
+[00:52:14.19] - Tommy DeVoss
+Yeah, it was the main reason was because I have a lot of fun beating denialist blacklist, whatever you want to call it. SSRF is one of those vulnerability classes that historically the main way they try to fix it is to blacklist whatever it is that you're reporting. Yeah, exactly. And there's just so many different ways that you can bypass it that it's just fun and it's a challenge. It was back then. It's not so much anymore because at this point I've got a couple of dozen different ways that I encode IP addresses and it's, if I find something, I'll script something to run through and test every one of my variations and things like that. And if it doesn't work, then I'll move on. Well, depending on the target, if it's a target that's a big enough target and everything, then I might pass it off to AI at that point and say, hey, I've tried all of this. See if you can come up with absolutely anything that should not work that ends up working. Yeah, but I— my main reason for SSRF was because I like beating the blacklist. It's just, it's fun.
+
+[00:53:27.28] - Justin Gardner
+It feels freaking good, man. It feels good to get around a list like that.
+
+[00:53:30.76] - Tommy DeVoss
+You know, it's like it— there's no other way to describe it than it's similar to a high because you get that dopamine rush and it's just like, yeah, you know, other people looked at that exact same endpoint too. And when you are like, none of them were able to figure this out and you were, it's just one of those things. It's just like that much better.
+
+[00:53:52.30] - Justin Gardner
+And that the programmer sat there and said, oh, this, I'll get 'em. I'll get 'em with this little regex, you know? And then they don't escape a dot or something, you know? Yeah.
+
+[00:54:00.53] - Tommy DeVoss
+Or they forget the little question mark at the end and things.
+
+[00:54:04.17] - Justin Gardner
+Yeah. It's crazy, man. It's crazy. It's a lot of fun. Sweet, dude. So you mentioned AI. How are you using AI nowadays in your in your workflow? I know you just— well, adding a little context, you're just coming back from a little bit of a bug bounty hiatus, and I know you're focusing more on fuzzing now.
+
+[00:54:20.19] - Tommy DeVoss
+Yeah.
+
+[00:54:20.36] - Justin Gardner
+But how do you see AI in your workflow?
+
+[00:54:24.00] - Tommy DeVoss
+I'm using it a lot for the exploit development aspect of it. Yeah.
+
+[00:54:29.71] - Justin Gardner
+I imagine that's really helpful.
+
+[00:54:31.44] - Tommy DeVoss
+It is extremely helpful. I am having it do most of the exploit development, but I've got some restrictions on my AI. They're never allowed to delete delete files every couple of minutes. They have to do a brain dump into a file so that way I can read through it because I don't want them doing things 100% for me. I want to learn how to do it. So I've got them doing little brain dumps explaining why they did something, what they've tried that's failed. Like, I don't want just the information on what succeeded. I need to know what you tried that failed as well. So that I can learn for the next time that I'm doing this and everything. I've started to use it a little bit when it comes to writing my harnesses for the fuzzing. Trying to— I've been targeting Chrome. It's no secret that I've been targeting Chrome. I've— before, I would go in and find the functions that I wanted to fuzz and I would just write a very, very basic fuzzer that would just call the API for that function and fuzz that. But now I ran into several instances where I found a vulnerability, but it wasn't reachable in Chrome. So I've got AI now where it builds my harness to essentially mimic the exact same flow it would go in, go through if I were to load it via a web page.
+
+[00:56:02.94] - Justin Gardner
+Okay, so you just gave me a bunch of information that we're not going to air, but, um, so I guess the TL;DR of the situation is you are focusing on a sub-technology within Chrome and right now, yes, because I'm trying to learn it.
+
+[00:56:16.09] - Tommy DeVoss
+I've never done browser hacking before, right? So I'm, I'm trying to learn it. Like I haven't even started to learn about the IPC, how they're passing things from one sandbox to the next one and all of that kind of stuff. And I haven't done, I've done almost everything that I've done so far has been within the renderer itself. I do have a separate vulnerability that I actually need your help with because I need, you run Windows, I think.
+
+[00:56:49.13] - Justin Gardner
+I do, I'm running Windows there, yeah.
+
+[00:56:50.48] - Tommy DeVoss
+So I need you to test a vulnerability for me today. Gotcha. I'm like 99% sure that I've got to use AfterFree in Chrome, but it's only reachable on Windows. I tried installing a Windows VM and— Nah. Yeah, it didn't. I couldn't figure out where the start menu was.
+
+[00:57:11.71] - Justin Gardner
+Okay, so you're using AI right now to build these harnesses that trigger certain code paths within the code, within the Chrome code base for this to happen.
+
+[00:57:19.19] - Tommy DeVoss
+Yeah, that follows the same path because when it comes to Chrome, It's like they've got all of these kind of protections and validations so that as soon as you open up a website, as soon as it starts to load and everything, before the first bit of its loading, they're running all kinds of checks. Like if there's script tags, making sure that the JavaScript is legitimate. If there's image tags, making sure there's valid video, I mean, images in there, video tags, valid video and that kind of thing all through all of that. And figuring out that just because there's a vulnerability behind all of that, the vast majority of them are blocked by the validation that Chrome does before it ever can reach the vulnerable code path. So I've got mine set up so that it actually sends my, what do you call it, corpus? Yeah, yeah. My, my current test file, it sends it through the harness, and the harness is designed to first go through Chrome's validation and then through the next step, and then the validation of whatever's in the actual area. Because if it's going to fail those, I can't actually exploit it.
+
+[00:58:37.48] - Justin Gardner
+Do you have that isolated, or are you hooking into Chrome and like loading up HTML files or whatever? It depends.
+
+[00:58:42.76] - Tommy DeVoss
+And then It depends. In some instances, it's isolated. Some instances, I'm just running like a pure C or C++ program that calls the exact same methods that Chrome does in the same order. I see. And then I'm sure most people have seen by now the CSS zero-day that came out like last week that was exploited in the wild. I'm fuzzing for similar things to that right now where I'm actually doing it within browser as well. One of my AMD machines. I've got 32 Chrome instances that are running. And then within them, I wrote some little custom JavaScript things that run in the web page on each side that's doing all kinds of testing. It hasn't found anything yet. I'm not even certain that it's going to work. But, but we give it a shot. Yeah, I mean, you don't know if it's going to work until you try it. So I, I've got to try it. Nice, man.
+
+[00:59:45.46] - Justin Gardner
+Yeah, that, that definitely sounds like AI is helpful for all that because it requires a lot of isolation of code within the Chrome codebase. It requires—
+
+[00:59:53.59] - Tommy DeVoss
+and it's a huge codebase. It's a huge codebase. And that's something that is helpful is making sure you understand The AIs we have access to are good at different things. Yeah. So like, for example, if I want to look at the entire Chrome codebase, I'm only going to use Gemini. Yeah. Gemini with your paid subscriptions and the paid max or whatever it is that I've got, you get like up to 2 million tokens of context. Yeah. You need that context to be able to not forget when you're trying to have it trace through hundreds of files.
+
+[01:00:34.67] - Justin Gardner
+Did you clone down the codebase? Are you having it like navigate? Okay.
+
+[01:00:38.19] - Tommy DeVoss
+Yes, I've got it all down. I've got probably 6 different or like 6 unique checkouts of Chrome. I've got an ASan Chrome, an MSan Chrome, a UBSan Chrome, a normal vanilla Chrome, a debug Chrome, an exploit-dev Chrome. Oh, I—
+
+[01:01:00.80] - Justin Gardner
+It's heavy, man. That's a lot of code.
+
+[01:01:02.28] - Tommy DeVoss
+It's heavy and it's hard as hell to actually build Chrome from source. Oh my gosh, yeah. There's so many problems and dependencies. So I try and keep absolutely everything in its own folder so that way— because I mean, if you're— when you're fuzzing, if you find a crash and you might need ASAN, address sanitizer, in order to find it. Well, if your libraries and stuff weren't most recently compiled with ASAN, you might have compiled them with MSAN, memory sanitizer. Instead, you have to go through the entire process of rebuilding it again. So I've got a different— it takes time, right? Yeah, it takes hours sometimes depending on your system. So I've got a different folder for each different version of it. And then I've got I, when I go through the process initially on a new target, I go through everything that it takes to build it for every version that I need. And then I build shell scripts that will essentially be able to— because when you're fuzzing, you've got to— you change things a lot. Like every time I find a vulnerability, I patch it locally. I don't want to sit there and spend the next 2 days discovering the exact same vulnerability over and over.
+
+[01:02:19.00] - Justin Gardner
+You patch it locally and continue fuzzing.
+
+[01:02:21.07] - Tommy DeVoss
+And then because it lets me get farther into the codebase. Because everybody else that's fuzzing it, if you're not patching it, you're gonna keep getting stuck at that exact same spot and you're gonna have no way to know if there's more vulnerabilities.
+
+[01:02:32.67] - Justin Gardner
+And with the patch reward program, you submit that patch, you get an additional bonus, you know that that code is getting implemented.
+
+[01:02:39.80] - Tommy DeVoss
+But not even just that because Google actually has it so that even if I find a vulnerability, for example, in a third-party library that Chrome uses,, but it's not reachable in Chrome, I can still go to the upstream maintainer, report the vulnerability, put a patch in for it. After 30 days, if they accept my patch and merge my patch in, after it's been merged in for 30 days with no problems or anything like that, you can go file it to Google because they've got the concept of open source Yeah, I forgot what it's called, but you can— the open source VRP thing. Yeah, anything that you can, like, you fix that is a material enhancement to the overall security of anything that Google uses, then you can get— I think it's up to like $15,000 you can get depending on what the bones are and stuff.
+
+[01:03:35.84] - Justin Gardner
+So yeah, I haven't, I haven't looked thoroughly at this VRP very much, but yeah, there's a ton of open source projects that they— yeah, look at this. One of them, uh, supply chain compromises can get up to $31K. Yeah, dang.
+
+[01:03:50.65] - Tommy DeVoss
+Yeah, and they—
+
+[01:03:51.88] - Justin Gardner
+like, Google's got money. I'm looking at you, man. Lupin, go, go do this, man. Run DEPI on this shit. Um, yeah, dude, they've, uh, they've got a lot of stuff trying to care for the ecosystem, I think, you know. Yeah.
+
+[01:04:04.32] - Tommy DeVoss
+Um, and then Microsoft is now trying to do the same. Oh, really? Microsoft just made their announcement a couple weeks ago. I guess it's been a month or so ago now, maybe a little bit more. More where they're going to start actually paying for third-party vulnerabilities and stuff that they hadn't previously because they want to also try and help increase the security.
+
+[01:04:24.13] - Justin Gardner
+I've heard, I've heard Microsoft's upping their game. I'm excited to see more from them.
+
+[01:04:28.53] - Tommy DeVoss
+I'm going to end up right now. I've been doing Google. My goal is to try and be top 3 or 5 for Chrome VRP through, through this year. Uh, once I find a couple more bones to at least see myself up there.
+
+[01:04:43.53] - Justin Gardner
+Crazy though, man, because some of these guys just drop like, you know, fully, fully built out, you know, straight RCE in just one, you know, but like, and then it gets like 250K or whatever.
+
+[01:04:54.42] - Tommy DeVoss
+It's like, yeah. So the max that mine, the one that I've been working on, can get is like 55 because it's within the renderer. But the one that I'm gonna have you help verify whether it's actually reachable or not, that one could be more because it's in a— what do they call it—
+
+[01:05:14.15] - Justin Gardner
+high privileged sandbox process.
+
+[01:05:15.71] - Tommy DeVoss
+There we go. So that one can get a little bit more up to like 85.
+
+[01:05:20.28] - Justin Gardner
+How are you? How are you determining what section, what sandbox all this is in? Are they—
+
+[01:05:26.88] - Tommy DeVoss
+oh, it's in the code. You just know, like there's the GPU sandbox, there's the renderer sandbox, and then there's the actual Chrome process itself. And I've— most of my vulnerabilities so far have been in the renderer process. I've got one in the GPU process. I actually found it because I was trying to figure out if there was a way to escape the sandbox. With the vulnerability that I've been working on. There's not— I need a completely separate vulnerability for it. But I did find what I'm 99% sure is another vulnerability. It can't be used for this kind of chain, but it could be a completely different, unique reportable one.
+
+[01:06:15.98] - Justin Gardner
+So you've got AI helping you parse the codebase, build out these harnesses, build out these shell scripts, sort of helping you get into browser-based hacking. Do you, I mean, do you find yourself doing a lot of the hacking via these AI agents nowadays for this stuff? Or are you doing, what kind of stuff are you doing manually versus having the AI agents go do it? So I'm not gonna lie, I spend a lot of time having AI agents go do stuff nowadays.
+
+[01:06:44.55] - Tommy DeVoss
+They're doing a lot. Like say I get a new crash. They'll be doing a lot of the RCA for me, like helping me trace through the exact flow of whatever it was that got there because they're so much faster. Like, I could do it, dude, but they can do it in 2 minutes where it would take me an hour or two. So I naturally will have them do a lot of that. I haven't gotten back into web hacking much yet. I'm trying to.
+
+[01:07:18.15] - Justin Gardner
+I'm just struggling to get motivated and find a program that I want to actually hack on. Google's fun, man. Google is fun to hack on, especially for web. It is like, it's challenging, you know? Oh yeah. It's very hard because they're not using a lot of just straight JSON. You're dealing with a lot of ProtoJSON. You're dealing with a lot of like, you know, just arrays that don't have any keys, you know, like, you know.
+
+[01:07:42.51] - Tommy DeVoss
+That's what I thought about looking at. Amazon, like, I mean, Amazon, Google GCP and stuff. I've toyed around with going back to Amazon and doing some on Amazon. Had a ton of success hacking with Sean and Jonathan. Jonathan. Yeah. For a couple of those AWS events we were doing, made a decent amount of money. So I've thought about going back to that. It's just hard to get motivated. To want to do that. And I'm having a lot more fun doing the fuzzing right now.
+
+[01:08:15.11] - Justin Gardner
+Yeah, man, if you're having fun with it, you know, that's, that's the main game for us at this point, I think. Right?
+
+[01:08:20.39] - Tommy DeVoss
+Yeah. Cause it's like, I, I don't want to say web stuff is too easy, but it's not as much of a challenge. So my goal, I like, I want to attend Pwned Down one time.
+
+[01:08:35.39] - Justin Gardner
+Dude, me too.
+
+[01:08:36.27] - Tommy DeVoss
+I really want to do that. That's why I am main, the main reason that I'm looking at fuzzing and binary exploitation and stuff is because I want to do it just one time just to prove to myself that I can do it. Yeah.
+
+[01:08:50.43] - Justin Gardner
+So, dude, we should, we should, we should do it, man. I've talked about it on the pod a couple of times and I've had a couple of guys from Pwn2Own on. But, you know, obviously the binary exploitation piece, which is a lot of Pwn2Own, is not a forte for me. But I have done a little IoT stuff and there is a good amount of— Oh yeah, yeah. And, and web stuff is actually really applicable to these systems.
+
+[01:09:10.60] - Tommy DeVoss
+Some of the IoT systems it is for sure, because a lot of times it's going to be your front door.
+
+[01:09:15.68] - Justin Gardner
+Yeah, your web interface. Yeah, yeah, yeah. So some of the guys I was talking to were saying like, yeah, definitely. Like, you need to have a good skill set in reverse engineering and binary exploitation. But also, like, if you have a really good web guy, you know, then that would be helpful for a pwned own team because, because definitely there are those exploits out there. The thing is, it's just got to be unauthenticated RCE, which is like, you know, a tall order.
+
+[01:09:41.51] - Tommy DeVoss
+Yeah. Yeah. Now, my big problem with it is that it's generally got to be unauthenticated RCE, but also unsandboxed and everything like that. If you want to go and pop Chrome for it, you don't get many points if it's RCE in the renderer. You need that actual sandbox escape. Yeah. Full system compromise and stuff. It's tricky, man. Yeah. My, my, my goal is to compete in Pwn2Own at least once. Yeah. And I want to get the max bounty one time for Google. I want the $250,000 for a full sandbox escaped RCE in Chrome.
+
+[01:10:27.56] - Justin Gardner
+That would be sick, dude. That would be super sick. Well, maybe we'll do, maybe we'll do a Richmond Pwn2Own team, man. Me, you, Turbo, you know, uh, that would be, that'd be a fun one. All right, dude. Well, that was, uh, that was quite a run. I have to say those stories are, are very unique. And, uh, thank you for the part you played in the, in the bug bounty ecosystem, man. And, and, and for me personally, like really, I, I know I keep saying it over and over again, but when I think back to that day in that stupid little lab in VCU. Like, crazy to think that that was such a juncture point in my life.
+
+[01:11:00.64] - Tommy DeVoss
+Yeah, and it's, it's like we didn't do nothing but sit there for what, about an hour? Yeah, just talking, looking at your bug bounty reports. Yeah, talking about the different types of bounties and bugs and companies and stuff like that. It's crazy how everything kind of evolved from that. It's, uh, Yeah, it's nice. It's fun.
+
+[01:11:26.18] - Justin Gardner
+Yeah, dude.
+
+[01:11:26.67] - Tommy DeVoss
+Thanks so much, man. No problem.
+
+[01:11:29.22] - Justin Gardner
+Thank you. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more critical thinking content, uh, or if you wanna support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content. And a full-time Hunter's Guild if you're a full-time Hunter. It's a great time, trust me. I'll see you there.

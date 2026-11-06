@@ -1,0 +1,203 @@
+Episode 46: The SAML Ramble
+Source: https://www.criticalthinkingpodcast.io/episode-46-the-saml-ramble/
+======================================================================
+
+Alrighty sup y'all, it's your boy RhinoRaider running the pod solo this week. And when I'm solo, you know what we do, we get in those technical nitty gritty details. So I actually know what I'm going to call this episode already. I'm going to call it the Samel Ramble because I'm about to ramble for the next, you know, however many minutes about Samel to you guys and try to pique your interest in Samel. It's kind of a complicated topic. So the goal for this episode is going to be...
+
+get you interested in it and get you comfortable enough with the structure of SAML where you can desire to attack it, where you'll be curious and not scared by it whenever you see it in an SSO context. Okay? So that's the goal. Now, I chose SAML because I'm really interested in it. And the reason I'm really interested in it is this. SAML is everywhere.
+
+We see it in a lot of organizations being used for single sign-on and for IDP, your identity provider services. And here's the crazy part, okay? It's XML-based, which we all know all the concerns that go around with XML, but it just kinda recently struck me that if a company is using SAML for their identity, in conjunction with their identity provider, then all of the different applications that they're going to be logging into using this single sign-on,
+
+will need to be parsing XML and parsing SAML, right? And because it's such a complicated thing, you know, all of these different languages, you've got Java apps, you've got Node apps, you've got Python apps, all of these are gonna have different libraries that they're using to parse the SAML, the SAML assertions or the SAML responses. And I'm sure that there will be, you know, some quirks between all of these different applications, right?
+
+Whenever I feel like whenever I see Samul, it's like, oh, there's gotta be a bug on the scope somewhere because not all of these things can be parsing it exactly the same way. Okay, so rant over there. Lots of attack potential for Samul. So let's get ourselves comfortable with it because I don't know about y'all, but before I did this deep dive on Samul and prepped for this episode, I was a little intimidated by Samul because you see this giant base 64 blob and then you.
+
+Justin Gardner (@rhynorater) (02:24.374)
+Base64 decoded and then XML inflated, so you're actually looking at the XML. And then it's just a huge blob of XML. There's all sorts of references to, what is it, w3.org or something like that, where it's like, check out this protocol and that sort of thing and the schema. And there's all sorts of attributes and who knows what all of it does. And sometimes even there's large Base64 encoded blobs inside of the SAML response.
+
+you know, encapsulating certificates and signatures, and it's just like, gets overwhelming really quickly. At least that was the experience that I had before I deep dived in for this episode. So I'm hoping that we can delete that and get us comfortable with it. Okay. So the thing that spurred this research was a researcher that I'm really a big fan of named Green Dog released some of the details that they did on a talk in...
+
+at a conference called the CozHackStan, which is awesome. That's such a great name for a conference. And I mentioned it on the pod a couple weeks ago, and it's called How to Break SAML If I Have Paws, okay? So I was looking through this presentation, and I was kind of looking at all the various techniques in there, and that is an amazing presentation that we will link below. So definitely go check that out, because this is gonna require a little bit extra research on your behalf to become really, really on top of SAML stuff.
+
+Because there's only so much you can do over a podcast And sometimes you just need to see stuff So there's gonna be a lot of resources associated with this episode that you'll need to go and check out So I was reading through this slide deck by Green Dog Also check out his weird proxy stuff because that's the name of the repo weird proxies That's a that's really interesting research And and I stumbled upon this just absolute gem of an article
+
+by a researcher named epi052, which is the same guy that did Fair Ox Buster by the way, on how to hunt bugs in SAML, a methodology. And this was from 2019, research from 2019, and holy moly is it good. There's three parts, they're very digestible, very readable, very simply written. Clearly, this guy knows what's up with SAML, because when you can take it and you can make it this simple, it rocks. So,
+
+Justin Gardner (@rhynorater) (04:45.174)
+My plan for the rest of the day, rest of the day, rest of this episode is to talk to you guys about the methodology that he lays out in that blog series that he does, and just kind of generally get us familiar with that. So let's go ahead and go down that path. So before we get into the attack factor stuff, we've got to understand a little bit about SAML or security assertion markup language, okay?
+
+So here's the basic context in which this is used. So you've got a user. All right, we gotta get some terms out of the way here first. We've got a user. That's the person that's wanting to auth into an application or a service provider. An application, let's say you wanted to auth into an organization's, let's just say it's their GitLab or something like that. That would be a service provider, SP, service provider.
+
+Hopefully these terms will not make this more complicated or scare away any of you. So just when you hear service provider, think app, okay? And then we've also got the identity provider, okay? That's the person that's providing the identity. That's gonna be your, you know, sort of SSO domain, right? Your SSO service provider. Okay, whoa, I can't say SSO service provider. Your SSO portal, let's just say that, okay? And they're the ones, you log into that, and then it throws your auth over to your service provider, your app.
+
+Okay, so we've got the service provider, that's the app, identity provider, that's the SSO domain, okay? So the basic flow that happens is this. The user wants to auth into the service provider, they want to auth into the app, so the service provider says, okay, sure, I'm gonna create this parameter called SAML request that contains a base64 encoded XML document, essentially, and they're gonna redirect us via our browser over to the identity provider, okay?
+
+the identity provider is gonna look at that SAML request, look at the XML inside of it, and it's gonna say, okay, I understand, you know, I need to auth this user for whatever service provider, now I need to auth this user. So then we go ahead and we put our credentials in to the service provider. Excuse me. We put our credentials into the identity provider, and then it will go ahead and create something called a SAML response, okay? The SAML response.
+
+Justin Gardner (@rhynorater) (07:08.822)
+will contain a cryptographically signed SAML response tag that contains assertions about who the user is. So they're asserting, hey, this user is blah-de-blah, right? You can trust that, okay? And so that SAML response is put into a parameter in HTTP. It could be a query parameter, it could be a post body, and then sends it back over to the service provider or the app, okay?
+
+and the app will then look at that SAML response, parse it, and trust cryptographically, hopefully cryptographically check that SAML response is valid and not tampered with, and then trust the person that the identity provider set is there and log them into that account, okay? So it's a pretty standard flow when you look at SSO-based applications. So that's the basic flow. Let me, I'm gonna take a sip of water now.
+
+Justin Gardner (@rhynorater) (08:09.878)
+Alrighty, so let's break it down a little bit further and we'll start talking about attack vectors, okay? So before we get any into the technical details of what the XML structure looks like, I just wanna say that I've noticed a pretty strong correlation between libraries and domains that use SAML and XSS, okay? So I don't know why that is.
+
+maybe it's an older technology, but whenever you see an application parsing SAML or a SSO domain that is utilizing SAML to log users in, then you're going to want to check that pretty thoroughly for XSS. You're going to want to check that for XSS in the SAML request, so that first little information that is sent from the service provider, the app, to the identity provider or the SSO domain, right?
+
+and you're gonna wanna inject XSS-related payloads in there. And I'll give you an example of this later. And see if they fire on the identity provider or see if they fire on the service provider via the SAML response. So if you're injecting inside of tags in the SAML response or you're injecting in attributes in the SAML response, and sometimes it'll throw an error, be like, hey, this is an invalid thing, here's the invalid thing, and then they embed the invalid thing in the DOM and then it triggers XSS. So.
+
+It's a story you guys are all familiar with. I'm not gonna explain how XSS works here, but just know that there is a pretty strong correlation with SAML and XSS, okay? And then the only other caveat I'll add to that is that in order to embed XSS payloads inside of attributes and inside of tags, you may need to HTML encode those brackets. Normally, HTML encoding is our enemy in these scenarios, right, if you see it HTML encoded, that's bad.
+
+But in order for it to not break it and for it to parse properly, we have to HTML encode it sometimes, and then it will get reinjected back into the DOM, HTML decoded, and it's full, you know, XSS glory. So that's that, I'll leave that there. Definitely look at similar related stuff for XSS. Okay, so now let's go and talk about attacks outlined by epi052 and what kind of,
+
+Justin Gardner (@rhynorater) (10:34.202)
+Attacks that are a little bit more relevant to SAML Itself, okay, so the first attack that epi052 has in their Description is test whether or not the SP accept an assertion without a signature. Okay This is known as signature exclusion. Okay, so as I mentioned before the SAML response the thing that is coming back from the identity provider and going to the service provider that
+
+response is a XML document. And there are a couple things that are normally inside this document. For one, there is a SAML response tag. That tag contains almost everything else that you'll need inside of it, okay? It also contains a lot of signatures, okay? Signatures are the things that cryptographically ensure the integrity of the SAML response, okay?
+
+And so when we talk about an SP accepting an assertion without a signature that will be You know us simply just removing the signature tags from the SAML the SAML Document, okay, so all you have to do is base 6040 code XML inflate and Then take out the signatures re encode it up and send it over to the SP and if they accept it boom you're in
+
+because you can just modify that assertion to have anything you want in it. Well, how do you modify an assertion? Well, an assertion is exactly kind of what it sounds like. It's asserting that the IDP, or the IDP, the identity provider, is asserting that the user is a specific person. So a lot of times this will contain attributes saying, which is another tag inside of a SAML, saying something along the lines of like, user dot, you know, username or whatever is Rhinorator, right?
+
+and it'll have a bunch of attributes that the identity provider wants to convey to the service provider, okay? So if we can modify those assertions and those attributes within the assertions, then we're golden, right? Because we can just assert that we're anybody. And the only way that those assertions are actually validated for integrity is via the signature. So if we just remove the signature and send it on through, then we're great. And there's a report that we'll cover later on in this episode that we're...
+
+Justin Gardner (@rhynorater) (12:59.894)
+this, exactly this sort of vulnerability happens. So this is an easy attack vector you can try. However, you don't always have access, when you're trying to hack a company, you don't always have access to a sample SAML response, right? Excuse me. So you may need to take sort of a template SAML response and just Google, you know, SAML response template and send it on through and see what it says. Because sometimes it'll say, hey, you're missing this attribute.
+
+And sometimes it'll say, hey, there's no signature here, what the heck is going on, right? And so in the scenarios where it says, hey, you're missing this attribute, there's a very good chance that it's actually not checking the signature, and it's just gonna tell you what kind of attributes you need in order to log in any account that you want. So definitely try to be going after assertions without a signature when you see any SAML-related endpoints. Okay? The next section that we wanna talk about
+
+is XML signature wrapping. Okay, and before we get into this section, I'll throw a caveat out here, okay? There's a burp extension called SAML Raider, okay? This extension is super fire, and epi052 talks about it in the blog post and gives a very clear example on how to execute all of these attacks using SAML Raider, very simply. So...
+
+If you're using, if you're using burp, definitely check that out. If you're not using burp, you might can open burp for this specific thing because it's pretty awesome. And I don't believe it's a pro extension. So anyone should be able to use it with the community edition. Okay, so let's talk about XML signature wrapping. In order to actually understand this vulnerability from a technical perspective, we have to understand a little bit about signatures, okay? So as we mentioned before, signature, the signature tag inside of the SAML response,
+
+is the thing that gives you, gives us cryptographic security when using SAML. So there's a couple tags inside of the SAML tag that we need to be aware of. There's the signed info tag, there's the signature value, there's key info and object. The most important one here is signed info and that signed info also has a sub tag called the reference tag.
+
+Justin Gardner (@rhynorater) (15:25.802)
+And that reference tag is gonna contain a URI attribute. Just like, this is just like HTML, right? Like you have an href attribute for an a tag, right? We have a URI attribute for this reference tag. And this is gonna provide an ID of the assertion or the other tag, could be a response, could be an assertion, that it is signing for, okay? So, you know, let's say you've got a response that has ID 123, and then somewhere you've got a signature that has a reference.
+
+with URI equals one, two, three, that signature is correlated to that response, okay? So you just compare the IDs and you're good to go. And these signatures can live in multiple places throughout the XML document, okay? There's three that you need to really be aware of. There can be an enveloped signature, which is the signature inside of the response, right? So you've got response tag, and then you've got signature tag, and then you've got end signature tag and response tag, right?
+
+So that would be an enveloped signature, because the signature is inside of the response, or the thing that it's signing for. Then you've also got an enveloping signature, right? An enveloping signature, and that is the signature surrounds the response. In this scenario, we've got the signature tag, we've got the signed info tag, and then we've got the end signed info tag, we've got the response tag, end response tag, signature, right? So it goes signature, signed info, response.
+
+and signature, right? And so the response tag is inside of the signature tag itself. And we still have the reference IDs, as mentioned before, that are correlating the IDs of the response tag with the reference ID inside of the signed info section of the signature. So you should be able to correlate them. Finally, the last one we've got is the detached signature. And this is outside of the response, or the assertion, or whatever it's signing. So let's say, for example, you've got
+
+SAML, SAML response, right? And then you've got closed SAML response, signature, and then closed signature, right? So it's just totally disjointed from the thing that it's signing. Okay, and because of these different ways that you can put this signature, there's like a whole mess. I wanna say, let me pull up the article right here. I think there's eight, yeah, there's eight different attacks you can do where you're like, you know, having a specific response.
+
+Justin Gardner (@rhynorater) (17:51.49)
+that has a detached signature, but that detached signature also has an assertion inside of it, and you're just putting all of these different assertions in different spots, and you're putting data inside of it in an enveloping signature that is not correlated at all to this signature and hope that it will get accepted blindly. And so there's lots of different techniques that you can use here.
+
+to try to sneak assertions and responses into this SAML response, okay? And get it parsed by and accepted by the service provider. And like I said before, a SAML rater will largely take care of all of this for you. And there's, I mean, literally, each one of the, I don't wanna sit here and read all of them to you because it's just gonna be too dull for a podcast, but I mean, each one of these attacks has a beautiful graph on it.
+
+and will, and has like three sentences associated with it just explaining what it does, right? So they're really, really simple when you've got the graphics. So definitely check out part two of EpiO5-2 SAML testing methodology if you actually want to understand this stuff a little bit better. But by simply inserting assertions into various spots throughout the SAML document, you may be able to sneak some values in there, which could really affect
+
+the way that the service provider parses this Haml document and maybe even gets you a full auth bypass, which would be super awesome. So that's the XML signature wrapping section. The next one on epi052's list is test whether or not the SP verifies that the assertion came from a trusted IDP. Okay, so is the app verifying that the assertion is coming from a trusted identity provider, right?
+
+And so the way that this would be executed normally is by including a public key that the SP should use to validate the Signature inside of the signature in the key info section. Okay So this is also something you can see in more detail on the write-up But just sort of conceptually you're sending that X5 o9 certificate along with the SAML response and That will then get parsed by the SP
+
+Justin Gardner (@rhynorater) (20:15.258)
+and used to validate the signature on the thing. It's like kind of stupid. Like why would you use the certificate of the thing you're trying to validate to validate it? Like that doesn't make any sense. But it does happen. So that's called a certificate faking vulnerability in CML and so that's something we should be on the lookout for. And like I said, you know, maybe this isn't gonna be vulnerable to one of the applications a company uses, you know, in their infrastructure.
+
+But if they're using SAML over the whole organization, then some application has got to be vulnerable to something, right? So really good attacks to deep dive here, I think. All right, so the next one that he's got on his list is like test whether or not the SP creates more than a single session per assertion, okay? So maybe you like take the SP response, you send it multiple times if you get two unique sessions, then you know, it's a replay attack. You know, this one I just kind of skipped over because it's like, this isn't really a bug.
+
+But it could be indicative of other problems with their SAML parsing. So, you know, maybe poke around at it. Okay Next one is test whether or not the SP is vulnerable to XXE. Now, this is the one that I've been doing for years, right? Whenever I see SAML, I'm like, all right, you know what SAML Justin's brain goes, okay SAML, that's XML, right? Well XML is vulnerable to XXE So let's just try that and that's pretty much the extent of the SAML testing I did for a long time
+
+And I found several X60s with this, so definitely do this, not trying to discount the technique at all, but you know, go and essentially to exploit this, you just have to base64 decode and XML inflate the SAML response, and then insert the X60 payload, go ahead and re-encode it with SAML deflation, and then base64 encode it.
+
+And then send it over to the SP and if they accept it and it pops then great and I'm not gonna go ahead and explain all the different ways that you could text xx e because You know, there's lots of ways that you could do that But I'm gonna leave that as an exercise to you guys We will I will say here we will talk about a little bit later in this episode about something called transforms or transformations Which will modify the XML document
+
+Justin Gardner (@rhynorater) (22:31.018)
+when it's being parsed by the service provider. And there is a really cool bug that we'll link in the description. Of course it's project zero because those guys are total badasses. And they found a way to like use transforms to get past the entity, XML entity being disabled on a library. And it was actually only like last year in 2022. So actually this is something that could be really applicable to lots of bug bounty programs still if they're not patching.
+
+So definitely check that out. All right, so check for X6C and I will add as well, you may wanna check for X6C on the service provider side and on the IDP side, right? Because the IDP is also, you know, if it's like one login or like, you know, some of these other well-known SSO providers, then, you know, well, I shouldn't say that you shouldn't test those because you definitely should. And most of them do have bug bounty programs. But, you know, once you've tested it, you may not have to test it every single time you see it.
+
+But if it's some janky SSO provider, then you may wanna just try it there too. So you can try it on the service provider side and on the identity provider side for X6E. Okay, the next one on the list is actually test whether or not the SP is vulnerable to SSRF via certificate. Okay, and I'm actually, I'm gonna go ahead and look at the blog post really quickly here. Yeah, okay, so this one actually is not in
+
+um, uh, right up. This is actually an addition that I did to, to this list. Um, thanks to, to green dogs, um, right up. And essentially in his, uh, in the slides, he talks about certificate validation to SSRF. Okay. And this is something that I just think is really cool and something that I've, I've tried recently with, um, with a couple of programs that I have been working on that accept, uh, X five and on certificates as input from the user.
+
+And essentially it's some research that came out in black hat of 2023. So just a couple months ago that and it was released by a guy named Michael Stepanekin and There's just a couple fields inside of an x509 certificate specifically the extensions of the x509 certificate That could actually cause SSRF when the certificate is being parsed. Okay
+
+Justin Gardner (@rhynorater) (24:56.786)
+So specifically, there's a extension called the Authority Information Access Extension. I'll actually just go ahead and read it right here. For instance, the Authority Information Access Extension contains a URL pointing to the issuer certificate. If this extension is used for validation, there's a high chance that you can exploit it to perform an SSRF attack, okay? So there's a field inside of this extension.
+
+that you can put a URL in, and when it's validating that certificate and maybe the certificate chain associated with it, then it might reach out to that URL to grab the issuer's certificate, right? And so that could result in SSRF, and likely it would be blind SSRF, but blind SSRF is better than no SSRF, and blind SSRF can often be, well, I shouldn't say often, can sometimes be turned into full read SSRF, depending on the amount of error logging that is in place. So...
+
+Definitely keep that technique in mind. I think there's a decent amount of attack surface that I've seen recently by doing weird stuff with X.509 certificates. Like you can craft a certificate, I'm getting a little bit off topic now, but you can craft a certificate that has some cryptographic problems with it, right? And when they try to use it, it will use up a whole mess of memory. So I'll see if I can find that article and put it in the description as well.
+
+but definitely be on the lookout for X.509 parsing problems because I think that is something that we'll see grow over the next couple of years. Okay, next one is test whether or not the SP is vulnerable to XSLT, that's Extensible Style Sheet Language Transformation, via SAML. And to be honest, in my SAML deep dive that I did, this is the most like mind blowing.
+
+thing that I found because I'd heard of this before actually at one of my first live hacking events some legend, I think it was Sam Herb of course because this is such a Sam Herb thing, used this to hack some XML related thing, right? It might have even been Samel. But this isn't something that I had thought about for years. And here it is. And it's so much easier than... Excuse me. It's so much easier than I thought.
+
+Justin Gardner (@rhynorater) (27:23.794)
+This is pretty much very much like AXXE, okay? The language at XSLT is extremely flexible. There's so much you can do with it. And it's actually, if I remember correctly from the notes, I think it's a Turing complete language. So you can write, I mean, you can write a lot of code in here.
+
+And you can do stuff like just read files and then exfiltrate them to the attacker's server, just like in XXE. And actually it might even be more powerful than an XXE in that capacity. So definitely something cool to look into here. So let me tell you a little bit about how it works. I mentioned transformations before. I'll read a quick quote about transformations so you can understand what kind of role they play in SAML. So it says...
+
+Transformations are a very powerful tool to transform SAML user attribute values transmitted through the SAML response, alright, so that's the thing coming back from the IDP to the SP, right, to the app, transmitted through the SAML response or assertions from the identity provider. Mainly, they are used to transform not changeable values within the identity provider so the transformed value fits the required or desired attribute format in the application, okay?
+
+So good old, you know, identity provider doesn't want to change, service provider doesn't want to change stuff right here, right? You know, there has to be this whole language that we've created just to like make the names line up so that people don't have to actually modify their code. And that's what this is. And so essentially how it works is you can add a transform tag inside of your signature.
+
+which will be parsed before the signature is actually validated, okay? This is the crazy thing. Let me see if I can find this other quote here. Yeah, the reason for this is that the XSLT transformation occurs before the digital signature is processed, right? So this should really be like setting off fire alarms in your head right now, right? There is something, there's a token that is being taken and used for authentication, and there is a whole
+
+Justin Gardner (@rhynorater) (29:40.042)
+you know, Turing complete language that you may be able to use in this, the parsing of this token, which gets processed before the cryptographic signature gets processed. Right. That, I mean, I can feel my, I can feel my pulse rising right now. Just, just talking about it. Right. So very cool stuff here and something that we should definitely be looking at anytime we see SAML because you know,
+
+Even signature validation isn't going to stop us here because it gets parsed before signatures get validated. So very cool. So essentially you know, I've got a payload here right in front of me and I'd like to just sort of read it out to you but It's gonna be kind of hard to process. So essentially I'll tell you how it goes inside of this transform tag, you know, you define that there's going to be a Style sheet that is and you reference the w3 org transform
+
+spec, okay, so it knows what this is. And then inside of that you have this template that you define that applies to specific XML tags. You can say, all right, I only want this to affect whatever tag, you know, if this was HTML you could say, all right, I just want it to affect the H1 tag or whatever, right? And then you can define a whole set of things to do to that tag. And from looking at right here, from the example that is in
+
+Epi 052's write-up, he essentially just says, okay, assign a variable file to the value for Etsy password. Go ahead and URI encode that file. You can see the power of this language right here, right? Go ahead, it has a function for encode to URI. And then concatenate it with the attacker URL, and then go get that URL, right? And so it's like, this is such a powerful language that I didn't know existed. So really,
+
+blew my mind when I started learning about it. I will add one caveat here and I'm a little bit hesitant to even point this out because like clearly epi052 knows their stuff super well and I could be wrong about this but if I'm not wrong about it then it's something that could mess up a lot of people's testing which is that if you copy and paste epi052's payload specifically from the article, the template tag
+
+Justin Gardner (@rhynorater) (32:03.062)
+that I mentioned in the beginning, has an attribute called match, and it's set to the value doc by default. And maybe it's something I don't know about, you know, XPath stuff, but this seems to me that this should only apply to an attribute called doc. And lots of the other, you know, payloads that I've looked up for this XSLT thing has a match equals slash in the template tag, okay? So that would be matching
+
+the root tag of this whole XML document. So it would always apply, right? And so it could be that you may need to modify this payload that's mentioned in epi052s right up here, or I could have something wrong. So if any of you guys know that's listening, or if you like deep diving the explanation, definitely let me know if I'm off on this one. But you may wanna do your research before you just copy and paste this payload.
+
+which is good advice for any payload, to be honest. But yeah, in conclusion, super cool thing here. If you're gonna take anything, if you wanna do any XML deep diving, it could be really cool to look at extensible stylesheet language transforms. And it also could be good to look at transformations themselves. There's also a whole section of this referenced on slide 26 of Green Dog's presentation that I mentioned before.
+
+where he's talking about all sorts of different transformations that you can do. And this is just such a cool thing because they're processed before the actual you know, parsing of the signature. So really, really cool stuff there. Definitely check that out. Okay, I'm gonna take a sip of water and then we're gonna we're gonna close this one out.
+
+Justin Gardner (@rhynorater) (33:50.486)
+Alrighty, so the last one that we wanted to talk about here, that's on FB052's list is, if the target SP is serviced by an IDP to which you have a legitimate account on a different SP serviced by the same IDP, test whether or not the target SP accepts a valid assertion meant for the valid SP, okay? So that was a lot of acronyms and stuff in there.
+
+But the TLDR of this is, this is an attack called token recipient confusion, okay? So let's say you have an account on app A that is serviced by the SSO provider, right? Can you use the assertion from app A in the same response used to log into app A on app B, right? So it's sort of like a token reuse sort of thing. Well, really it's a token recipient problem, right? A token, because ideally the SP should be looking at the recipient field.
+
+of the subject confirmation data element, which is a, I'm reading this now, which is a child of the subject element in the SAML response to determine whether or not this SAML assertion is meant for them, right? As opposed to some other recipient. So if they're not validating this, then you may be able to do some weird stuff by pulling a valid token to, and like we see this, we mentioned sort of a similar thing.
+
+affecting Tesla a couple weeks ago, found by, I want to say it was Evan, Evan Connolly. And using this sort of IDP, taking a token from here and using it over there, that sort of thing. So the same sort of thing can happen with SAML with this token recipient confusion bug here. So that wraps up the attack vectors that I wanted to cover under specifically SAML-related attacks.
+
+Now, I just wanted to close out this episode by recovering some HackerOne reports. And of course, my session died to HackerOne, so I'm going to have to go ahead and put in my auth code right here before I can load up the report, because the report that I'm going to cover first is a report by yours truly, and it's an XSS, like I mentioned before. And so let's go ahead and take a look at that.
+
+Justin Gardner (@rhynorater) (36:17.442)
+once I log in. Alright, here we go. So this is a private program, so I can't tell you who it is. But it's a pretty textbook XSS when it comes to XSS plus SAML. And so the situation was this. There was a service provider or an app that I wanted to log into. And it was using SAML. So I took the SAML response that I had from a valid login. And I modified some of the...
+
+attributes within that SAML response values. And actually I believe I was subbing every single, excuse me, I believe I was subbing every single URL in there for my callback server so that I could try to find SSRF, which is also not a bad idea. But one of the responses I got from that was a message from the...
+
+service provider saying, hey, invalid response, the response was received at the current URL of the app instead of at my callback URL, right? And so, and it was serving that up in text HTML. So I was like, hmm, I wonder if I can inject some HTML characters in there. And so I went back and I modified, and this is actually in the destination.
+
+Attribute of the assemble response so it was checking that to confirm You know who should be receiving this token kind of like we talked about earlier with the with the destination and the recipient stuff, right? So there's multiple areas where you can check for that So I went to the destination attribute of the response of the response tag, which is the parent tag and just sort of inserted a HTML encoded payload because like I mentioned before
+
+Sometimes you have to put HTML encoding inside of that. If you're putting HTML control characters inside of an attribute in XML, you have to encode those with ampersand less than or LT colon, right? Or ampersand GT colon, right? So we put those in there, and I submitted the SAML response back to the service provider, and boom, it reflected into the...
+
+Justin Gardner (@rhynorater) (38:35.178)
+into the response and I was able to get XSS. Now when you get XSS on an app like this, a lot of times it will result in account takeover because you can leverage that position in the SAML flow, in the auth flow to hijack that page and hijack the user session. So very impactful stuff here. Definitely be on the lookout for XSS, like I mentioned.
+
+And then the last report that I wanted to cover was the one login authentication bypass on WordPress sites reported by Jokel, a hacker that reported this bug in May of 2016 to Uber. And this is just sort of a textbook auth bypass via SAML, right? He found this newsroom.uber.com and it was using one login SAML SSO. I assume it's a plugin. Yeah, it is. It's a plugin.
+
+And this report is public so you can go see it. It's report number 136169. That's 136169 and He essentially just did what I mentioned before which was he took a SAML response and he you know sort of like a vanilla SAML response and he sent it to that endpoint and Then the endpoint was like yo, bro, you're missing this attribute and he's like, okay and so he puts in that attribute and then he's like
+
+yo, you're missing this other attribute. And so he keeps on doing that until he fills out all the attributes that he needs. And then it's like, all right, cool, got all the attributes, log you right on in. There's not even a signature tag in this whole payload that he mentions here, okay? So this is a textbook example of the first type that we talked about, which is the assertion without a signature, okay? So definitely know that this does exist out there. And like I mentioned, when organizations are using SAML,
+
+They have to, you know, there's so many different apps that are using it to log into it, right? And so there's gotta be a bug somewhere, there's gotta be. So hopefully going, you know, using that methodology, using that mentality, you guys will go out there and find some SAML bugs. If you do, definitely DM me, it'd be super cool to know that you guys found some SAML bugs because of this episode. So let me just do a quick review, keep an eye out for the XSS's in any sort of SAML environment, because...
+
+Justin Gardner (@rhynorater) (40:56.17)
+for some reason they're particularly prevalent. There's the assertion without a signature, the signature exclusion bug, which you just delete the signature tags from a SAML response. There's the XML signature wrapping bugs, which there are eight of them, by placing the signature in different spots throughout the SAML response and trying to trick the application into getting to trust your assertion even though the signature is not valid for it, okay?
+
+So there's that one. There's assertion, check that the assertion is coming from a trusted IDP, that's the signature faking bug. There's the assertion replay bug, which is like kind of a bug, but not really that you could check for. And if there is, it could indicate sort of a less strict SAML implementation. There's XSEs inside of SAML. There's SSRF inside of SAML, either by them hitting some sort of URL from within the SAML response directly.
+
+or by parsing a maliciously edited x.509 certificate and calling out to your server to validate the certificate. And I think there's a couple other things not just the not just the authority information access extension. There's a couple places where you can put the SSRF payload inside the x.509 certificate. So definitely check out that blog post that I'll have in the description from the GitHub blog by Michael Stepankin.
+
+So there's the SSRF and then there's the XSLT vulnerabilities inside of SAML that we spent a lot of time talking about. Definitely research these super exciting stuff here, could really result in some crazy bugs. And then finally there's the token recipient confusion bug, which would be kind of a specific scenario you need to have this happen, but if you do it still could result in auth bypass. So definitely some really interesting bug types here.
+
+Alright, I think that's it. Hopefully you guys have learned some stuff about SAML and if you find anything, like I said, let me know. Hopefully you're feeling a little bit more confident going into your SAML testing. Alright, go find some bugs.

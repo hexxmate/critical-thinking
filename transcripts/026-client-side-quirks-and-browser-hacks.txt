@@ -1,0 +1,1470 @@
+Episode 26: Client-side Quirks & Browser Hacks
+Source: https://www.criticalthinkingpodcast.io/episode-26-client-side-quirks-browser-hacks/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:00.686)
+Yo yo yo. Dude, you look like you just got hit by a train. Ha ha ha.
+
+Joel Margolis (teknogeek) (00:02.246)
+How's it going?
+
+Dude, I'm so tired. For context, yeah, I'll give a little context here. I did two live hack events back to back. Uh, one week and then the other week. So two weeks ago I was in London with you. We did, uh, the hacker one live hack event, talked to Cosmin. Then I went right from there. I flew to Seoul, South Korea, and I was there for another week. And I did, uh,
+
+Justin Gardner (@rhynorater) (00:09.446)
+Did you say you? Yeah.
+
+Yeah. Yep.
+
+Justin Gardner (@rhynorater) (00:29.97)
+Oh my gosh, dude.
+
+Joel Margolis (teknogeek) (00:33.998)
+a meta live hacking event and I participated with Nagley, former podcast guest, and you know, we found some really cool bugs on there. And then yesterday I flew home. So I am like, my body is screaming at me about time zones and all that stuff.
+
+Justin Gardner (@rhynorater) (00:52.747)
+Yeah.
+
+Joel Margolis (teknogeek) (00:55.414)
+Seoul is 16 hours ahead of here and London is 8 hours ahead of here. So it was just from like one 8 hour time difference into another 8 hour time difference and then back to my normal time. So I'm, uh, I'm, I'm like half asleep right now, so you'll have to forgive, uh, any latency that I've got in my brain.
+
+Justin Gardner (@rhynorater) (00:57.756)
+Oh my gosh, dude.
+
+Jeez man, yeah.
+
+Justin Gardner (@rhynorater) (01:13.342)
+Yeah, no worries, man. I'm sorry I picked such a tricky episode to prep for, for when you come back. But yeah, I haven't seen you this tired looking in a long time. But yeah, I mean, I was gonna ask you, because we haven't really had the chance to catch up either. How was the meta event, dude?
+
+Joel Margolis (teknogeek) (01:30.974)
+Yeah, the meta event was really cool. We found a zero day. I think that's all I can say. We found a zero day in an open source piece of software. Um, and it ended up in an XSS. I think that's, that's about as much as I could say.
+
+Justin Gardner (@rhynorater) (01:35.754)
+Whoa, nice dude.
+
+That's that's big on Facebook man. They pay big for those
+
+Joel Margolis (teknogeek) (01:50.062)
+Yeah, yeah, it was a pretty cool, pretty cool bug. Uh, I was actually very surprised that we were able to find it. Uh, a lot of the people that I talked to there who are like big time Facebook hackers were also quite surprised. They said that the next success on Facebook, especially Facebook core is something that really, uh, it's like a once a year type of thing. It really almost never happens. So I was, I was pretty stoked that we found that and then it worked and then it popped and all that. And, uh, yeah, it was super awesome.
+
+Justin Gardner (@rhynorater) (02:13.066)
+Yeah, you guys popped it pretty quick too. I think I saw like the, I think I saw Nogli flexing in a hacker chat, like, like two or three days into the event. And I was like, oh shit.
+
+Joel Margolis (teknogeek) (02:23.158)
+Yeah, yeah. So shout out to Space Raccoon. Space Raccoon, we also collabed with that event. And Space Raccoon had explored a very similar bug, probably within the last year. He exploited a very, very similar bug to this. And so when we added him to the group, we were just talking about like the leads and stuff that we were looking at and all that kind of stuff. And I mentioned, I was like, yeah, we have this, we have this potential like zero day, but I've been looking at it. I haven't really gone into like the full details on how to exploit it.
+
+Justin Gardner (@rhynorater) (02:26.211)
+Oh yeah, oh yeah. The guy's a beast.
+
+Joel Margolis (teknogeek) (02:52.022)
+And he was like, oh, I'm pretty sure I know how to exploit this. And in like an hour he popped it and I was like, ah, that's amazing. So that's like the whole, like, I mean, that's like a perfect example of collaboration and how like you can merge like past experience together by like working with other hackers, because I I'm sure we could have exploited it, but it would have taken us significantly more time. And, you know, it was just so much easier to bring somebody in who knew what they were doing and have them.
+
+Justin Gardner (@rhynorater) (02:55.942)
+Nice. Dude.
+
+Oh yeah.
+
+Justin Gardner (@rhynorater) (03:16.542)
+Yeah, for sure. Space Raccoon is also a previous podcast guest. He was, I think, I think he was the first guest we had on the pod. Yeah. So definitely. Well, we'll link those episodes down in the description. Both Nogli and Space Raccoon. Mega good hackers.
+
+Joel Margolis (teknogeek) (03:21.382)
+True.
+
+i think i believe he was there
+
+Joel Margolis (teknogeek) (03:34.051)
+Supreme hackers, yeah.
+
+Justin Gardner (@rhynorater) (03:35.358)
+Yeah, how are the vibes? Like, you know, we've done a lot of Hacker One live hacking events together, you know, and I feel like Hacker One's got it down pat pretty well now. But how are the meta live hacking event vibes?
+
+Joel Margolis (teknogeek) (03:47.63)
+Yes, I think it's important to remember that Meta runs their own Bug Bounty program. And Meta also isn't a Bug Bounty company. So for Hacker One, the live hacking events are both a marketing opportunity as well as something that is core to their brand. For Meta, it's a security event. You know what I mean? It's like a meetup. So.
+
+Justin Gardner (@rhynorater) (03:54.28)
+Yeah.
+
+Right.
+
+Joel Margolis (teknogeek) (04:12.09)
+For meta, the swag and stuff is significantly less over the top. Like all the ceremony and stuff is significantly less over the top and all that kind of stuff. Because all they really care about is finding cool bugs, paying for those bugs, and having people on site and showing them a good time. And for Hacker One, it's like, how do we make this amazing hacking event experience? And so I think it's two very different things.
+
+Justin Gardner (@rhynorater) (04:17.634)
+Yeah.
+
+Finding the bugs and paying them. Yeah.
+
+Justin Gardner (@rhynorater) (04:33.566)
+Mm.
+
+Joel Margolis (teknogeek) (04:35.846)
+But overall, the core of the event, in terms of having hackers on site, being able to talk with all these amazing people I got to talk with, like Youssef, who's an amazing Facebook hacker. I'm pretty sure he focuses only on meta and that kind of stuff. And a lot of the people there are people who dedicate all their time to hacking on meta, which is something that I barely spend any time hacking on. So it was a very interesting perspective shift to get to talk to those people and see how they approach.
+
+Justin Gardner (@rhynorater) (04:46.186)
+Yeah, dude.
+
+Mm-hmm.
+
+Joel Margolis (teknogeek) (05:04.566)
+a platform like Meta and the types of stuff that they find and all that kind of stuff and it was really impressive to see the bugs that people will find.
+
+Justin Gardner (@rhynorater) (05:12.382)
+Nice dude. Wow. Not gonna lie, man. Not gonna lie, I'm a little jealous. It sounded like an awesome event. I had a bachelor party that weekend, which was also awesome. But, you know, South Korea live hacking event. Sounds pretty freaking lit, man.
+
+Joel Margolis (teknogeek) (05:23.803)
+Nice.
+
+Seoul is a very cool place. I'd never been to South Korea, so that was an awesome experience. Yeah, we did a day or two ahead and a day or two after as well just to get to see sights and explore and go shopping and experience the country and the city. So, definitely would recommend going to South Korea. It's an amazing place and you should experience it for yourself.
+
+Justin Gardner (@rhynorater) (05:31.882)
+Yeah, you had a decent amount of time there too, right?
+
+Mm-mm.
+
+Justin Gardner (@rhynorater) (05:52.63)
+Nice man. Well, Joel, you're six minutes in, you're still alive, so hopefully you won't fall asleep as we talk about all the mega technical stuff we're gonna talk about today, because unlike some of the past episodes that we've had, this one is gonna be pretty in the freakin' weeds. So, yeah.
+
+Joel Margolis (teknogeek) (05:58.433)
+I
+
+Yeah, I was just mentioning, I sent you a message like five minutes before we started that this whole episode could be a news episode because of the amount of like news and links and new, very relevant stuff that's happened in the last like week or two around this topic being, you know, like browser quirks and behaviors and restrictions and that kind of stuff.
+
+Justin Gardner (@rhynorater) (06:19.914)
+Yeah dude, there's so much news.
+
+Yeah. Yeah, there's been a bunch. And and yeah, I messaged Joel and I was like, hey, man, you might want to like, you know, allocate a little extra prep time for this episode. And I'm sure he was like, you know.
+
+laying in bed trying to get every last little bit of sleep. But I was like literally adding stuff to this episode up until the last minute. So sorry if you didn't get the chance to review all of it. I, you know, there's some grace. I know you're coming right back from the, from the life hacking event. So.
+
+Joel Margolis (teknogeek) (06:52.31)
+Ha!
+
+Justin Gardner (@rhynorater) (07:05.694)
+Yeah, I guess we'll just kind of hop into it. The first one that I wanted to talk about, I don't know if you saw this one, but it's titled hunting. So new stuff, right? This is a hunting for NGINX alias traversals in the wild. This was released just yesterday by, I don't know how to pronounce, like I want to pronounce this Hawkeye labs, but I'm not sure if that's exactly how you pronounce it, but dude, this is just such a beautiful example of like taking
+
+applying it and just popping crazy bugs, right? Like this research has been out here. This NGINX research was released by Orange in Black Hat 2018. This is five year old research, right? And then, you know, if you read through the blog post, Homie's just like, okay, well, let's apply this. So he goes to GitHub search and just writes a regex and then pops like multiple bounties with it. And I'm just like, what a G.
+
+Joel Margolis (teknogeek) (08:05.538)
+Yeah. So I was talking with, with Nagley a lot. We were hanging a lot at a lot while on the, on this whole trip. And I think this is like a perfect use case for nuclei, right? Where like, this is probably something that doesn't exist in a rule already. Maybe it does. Right. But I mean, if, if it did, it probably would have been found by more things. But if you see research like this, like some, like if you were to have noticed like Orange's blog post back in 2018.
+
+Justin Gardner (@rhynorater) (08:08.747)
+Mm-hmm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (08:35.074)
+Mm-hmm. Yeah.
+
+Joel Margolis (teknogeek) (08:35.41)
+or their presentation back in 2018. That would be a great use case for something that you can get an advantage on or an edge against everybody else by turning that into a query, putting it into your own nuclei setup, and then running it across all the targets that you're monitoring, and then using that to your advantage as sort of, you know, nobody, like it's out there, but it's not out there. You know what I mean?
+
+Justin Gardner (@rhynorater) (08:56.522)
+Yeah, no, for sure. And I think that's true. And I think there's, I've actually personally done some scanning for this exact vulnerability. But I think what's really interesting about the way that this guy applied it was he went after open source stuff with this, which I think is really smart, because by nature of this...
+
+And I know we actually haven't said which research we're talking about. This is the off by a slash research by Orange in 2018. So essentially if you have a NGINX location defined and the location does not have a slash at the end, and then the alias that it's pointing to or the, or the, I think there's one other one. Well, yeah, the alias that it's pointing to does not have a slash at the end.
+
+you can actually, it can actually result in a path traversal.
+
+Joel Margolis (teknogeek) (09:55.182)
+I think it's the other way. It has the, so, yeah, yeah. So the location doesn't have a slash, but the alias does have a slash and then that makes it vulnerable.
+
+Justin Gardner (@rhynorater) (09:58.364)
+Oh yeah, yeah.
+
+the location does have... Wait, hold on, hold on, hold on, hold on, hold on.
+
+Joel Margolis (teknogeek) (10:11.566)
+Yeah, so it says for the technique to be applicable, the falling conditions must be met. The location directive should not have a trailing slash in its path, and an alias directive must be present with the location context, and it must end with a slash.
+
+Justin Gardner (@rhynorater) (10:19.405)
+Right.
+
+Right, right, because that slash is what's getting passed through. Okay, gotcha. Okay. Yeah, so, um, and then thanks for clearing that up, man. I love how like your brain operating at 50% still like, you know, no, um, that's clutch, man. Yeah, you got, you got that one on me, Joel. Um, no, yeah, so, uh,
+
+Joel Margolis (teknogeek) (10:34.066)
+hehe
+
+Hey, at least I can still read. I've got that going for me.
+
+Justin Gardner (@rhynorater) (10:48.846)
+And like I said before, I'd actually played around with this specific vuln and I wrote my own sort of nuclei module for this. It's not nuclei, it was my own custom thing. But I think the open source approach is really, really smart because by nature of this vulnerability, you only have one path traversal, right? You only get to go up one directory level. And so you kinda gotta know what is in that directory in order to be able to fully exploit this vulnerability. And so in the, in the,
+
+blog post he talks about exploiting this against Bitwarden, self-hosted Bitwarden, and it resulting in the database being leaked, which is like a big L. Yeah, yeah, so that's great. And he said that they fixed the issue and give it the max bounty for their book bounty program, so love to see that. And then I think they also found something similar on Google.
+
+Joel Margolis (teknogeek) (11:32.802)
+Yeah, yeah. Bit1's a password manager, right? Yeah.
+
+Justin Gardner (@rhynorater) (11:47.758)
+It seems like that one got a little bit less rewarded, but it definitely seems like, yeah, it's only 500 bucks for that. It seems like that should have a bit more, but maybe there were some mitigating factors. But yeah. Either way.
+
+Joel Margolis (teknogeek) (12:01.462)
+Yeah, I'm sure that there were. I feel like, and this is a little bit of a tangent, but having looked at like the Facebook and Microsoft and Google programs a little bit now, it's really crazy how much money they pay. I mean, we're talking like for perspective here, Zoom, probably the second most.
+
+Justin Gardner (@rhynorater) (12:07.191)
+Mm-hmm.
+
+Yeah, yeah.
+
+Joel Margolis (teknogeek) (12:23.554)
+Hi, Paying Program would be my guess on HackerOne Public Program. They paid, I think, like seven or eight million total. Salesforce, number one, I think they paid 14, 12 or 14 million. Google and Facebook and Microsoft, I believe all paid at least $1 million last year alone.
+
+Justin Gardner (@rhynorater) (12:25.189)
+Mm-hmm.
+
+Mm-hmm.
+
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (12:42.358)
+Wow. Dang, dude.
+
+Joel Margolis (teknogeek) (12:44.942)
+And that's without running live events.
+
+Justin Gardner (@rhynorater) (12:47.722)
+Wow, that's some serious, that's some serious output.
+
+Joel Margolis (teknogeek) (12:51.362)
+Yeah, it's, I mean, it's, it's kind of crazy. Um, and I think part of that is that like some of the bugs they pay for are very, very high bugs. So I know like Google had this one bug that they paid like over a half a million for. It was like a really bad pixel bug. Um, and like, you know, some of the hackers at the Facebook event, for example, like Yusef, he walked away with like a couple hundred K by himself. So, you know, yeah, yeah. So like,
+
+Justin Gardner (@rhynorater) (13:05.202)
+No way. Wow.
+
+Yeah, yeah, he posted about that on Twitter.
+
+Joel Margolis (teknogeek) (13:19.642)
+Definitely there are some like high earners and stuff and some categories but I think it's important to realize that even like some of the largest programs on hacker one are kind of dwarfed by these mega companies who are doing their own programs and Yeah, I mean it's really wild like it generally speaking like if they're paying low it's because they it's like there's some like crazy confounding factor because they're pretty they're pretty liquid and they like to pay bounties
+
+Justin Gardner (@rhynorater) (13:43.426)
+Gotcha. Yeah, pretty liquid, I like that. Yeah, I always, I look for the programs that are really liquid, if you know what I'm talking about, huh?
+
+Joel Margolis (teknogeek) (13:48.946)
+Yeah
+
+Yeah, yeah, yeah.
+
+Justin Gardner (@rhynorater) (13:54.382)
+Yeah, so, but yeah, I just wanted to highlight this one because I thought this was a really cool application and just encouraging that like you can go find all the research that you know has been around for a while and you know go and apply it write your own tool write your own way to look to come up with your own way to look for it and It'll it could result in some really cool bugs
+
+Joel Margolis (teknogeek) (14:16.226)
+Yeah, well, and I also like that in this blog, like the first thing that they tried was just using a GitHub code search, which is a super accessible way to search for stuff because it's open, it's free, it's available. You can just literally go to cs.github.com and, you know, go ahead and search for your Redgex that's going to find the vulnerabilities and make you money right out of the bat. You don't even have to spin up a special tool or anything like that. So.
+
+Justin Gardner (@rhynorater) (14:22.79)
+Yeah. Yeah, for sure.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (14:39.366)
+And does code search, I know that they just pushed this out not too long ago, I guess I can't say just recently. Does it have 100% indexing now or no?
+
+Joel Margolis (teknogeek) (14:50.01)
+that I'm not sure about. I know that it was limited in the beginning. Yeah, but source graph, which is like probably the main competitor, or I guess code search is probably the competitor to source graph because source graphic kit was there first, but source graph, you could always spin up your own source graph instance as well. And then you can tell it to index a bunch of repos, or you can tell it to index. I don't think you can have it indexed like all of GitHub, just because. Yeah, but if you have like
+
+Justin Gardner (@rhynorater) (14:53.126)
+Yeah, I think they probably expanded it all the way now. Yeah.
+
+Right.
+
+Justin Gardner (@rhynorater) (15:08.48)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (15:15.622)
+Yeah, that would be pretty intense.
+
+Joel Margolis (teknogeek) (15:19.746)
+a list of organizations, right? So if you take a list of public bug bounty programs, go get their GitHub organization names, put them in a list, index all of their repos, that would probably be a good strategy.
+
+Justin Gardner (@rhynorater) (15:22.809)
+Mmm. Yeah.
+
+Yeah, no, totally agree there. Next on the list is this.
+
+Another banger from Portswigger Research. I have to say, I really appreciate that account, man. Like, they've really put out some good stuff. And the tweet that I'm talking about is the one regarding popovers, which is a new feature in Chrome. And just as Chrome releases it, Portswigger Research finds a way to pop something with it. And essentially, there's a new way to trigger XSS on any...
+
+Joel Margolis (teknogeek) (16:05.97)
+I think it's any element, right?
+
+Justin Gardner (@rhynorater) (16:07.219)
+any tag. Yeah, that's what I was trying to come up with arbitrary. Yeah, any arbitrary tag.
+
+Joel Margolis (teknogeek) (16:10.658)
+Yeah, it doesn't even have to be an element, right? It's just any tag.
+
+Justin Gardner (@rhynorater) (16:13.726)
+Yeah, yeah. So that's really cool to see. And then it was also really cool to see the surrounding research on that too, that kind of everyone, like Cure53 commented on it. I don't know how to pronounce this guy's name, Erstel commented on it with some really sort of, yeah, sort of brain.
+
+Joel Margolis (teknogeek) (16:29.146)
+Yeah. Yeah, Seroosh.
+
+Justin Gardner (@rhynorater) (16:32.918)
+boggling stuff. Yeah, that's definitely a cool technique to be on the lookout for. I'm not sure how often this will be useful as opposed to a different XSS vector. Maybe helpful for bypassing some WAFs and stuff like that, but still something cool to be aware of nonetheless.
+
+Joel Margolis (teknogeek) (16:53.102)
+Yeah. So I, when I was looking at it, I think it, it's like at minimum one click, right? There are two clicks. Yeah. So there's definitely some, some confounding factors here that it's going to lower the impact a little bit, depending on how the company looks at it. Like some companies might just say any XSS is valuable to us, even if it's two click. Maybe you can also craft a POC that would make it plausible, kind of like a click jacking type of thing, or you can, you know, create a scenario that would make sense for the user to be clicking twice or something like that.
+
+Justin Gardner (@rhynorater) (16:59.37)
+Yeah, yeah, one click, yeah.
+
+Hmm.
+
+Justin Gardner (@rhynorater) (17:17.642)
+Yeah.
+
+Joel Margolis (teknogeek) (17:22.814)
+Um, but even still, I think like over the last couple of months, we've seen a lot of things get removed from Chrome and a lot of, uh, changes that have made things more secure. And it's been almost, almost disheartening as a bug bounty hunter to see that all these XSS vectors disappear. And, uh, they're looking out for us. They're, they're adding new XSS vectors for us. It's nice. Thank you. Yeah. Just what I thought that I was going to have to stop filing these bugs now.
+
+Justin Gardner (@rhynorater) (17:41.226)
+Yeah. There we go. It warms the heart, doesn't it? Just the internet's becoming more vulnerable.
+
+Right. Here we go.
+
+Joel Margolis (teknogeek) (17:52.602)
+there are new methods.
+
+Justin Gardner (@rhynorater) (17:54.674)
+Yeah, yeah. So, um, and I think it's also really cool that it triggers, it's sort of a multi-element sort of thing, right? Cause there's like the button that you click on and then there's this custom attribute pop over target, and then you provide the ID for a different element. And then it triggers something on that element. And as Cure 53 pointed out, that element can even be hidden or, um, uh, disabled. Yeah. Which I think is, is really cool as well, because there are some fringe circumstances and you, we really get down in the weeds.
+
+Joel Margolis (teknogeek) (18:16.506)
+Disabled, right? Yeah.
+
+Justin Gardner (@rhynorater) (18:25.028)
+with some of these technicalities sometimes. But when you have all of these things floating around in your head, as you see these scenarios pop up over time when you're hunting, it's really great when you can use some really fringe research to pop a bug. And that's how you avoid dupes as well, because not a lot of people are on top of this stuff.
+
+Joel Margolis (teknogeek) (18:43.398)
+Yeah, you know, the first thing that popped into my mind about the hidden value thing is a pattern that I see a lot in web, which is that there'll be either like a state or maybe a token or something in the URL parameters. And that'll get reflected into an HTML form for like submission. Like it'll be like a token and then you'll click a button in the page and it'll submit that value again. And I think if you could find, obviously you need kind of a second injection point to make it so that you can trigger the popover target.
+
+Justin Gardner (@rhynorater) (18:47.359)
+Yeah.
+
+Mm-hmm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (19:04.629)
+Yeah.
+
+Joel Margolis (teknogeek) (19:13.486)
+But if you can inject this even into a hidden form element, then you can take advantage of that excess.
+
+Justin Gardner (@rhynorater) (19:17.781)
+Mm-hmm.
+
+Yeah, yeah, for sure. And that's a good XSS tip in general is that, and you can even work backwards from it, right? Like if you're trying to figure out what query parameters could go into, could be used in this specific page, you can go into the source, look at the hidden input parameters, right? And see what the name or ID of those are, and then try those in the URL. And that may allow you to set some malicious defaults by a URL parameter if it's reflected down in there,
+
+success. So, yeah.
+
+Joel Margolis (teknogeek) (19:51.046)
+Yeah, yeah, for sure. So definitely check out like the quote tweets and stuff on that port Swigr research and also just set your tweet alerts up for port Swigr research. Cause I don't think there's ever been a tweet that they've made that's been like, ah, this is not a good tweet. But like, yeah, I feel like every time, every single thing that they push out is, is very like high quality research. Just generally speaking. We've also talked about the port Swigr web academy stuff, which is also really high quality. It's always like very on the front edge of like what's
+
+Justin Gardner (@rhynorater) (19:56.235)
+Yeah.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (20:05.998)
+This is a disappointment. Yeah.
+
+Justin Gardner (@rhynorater) (20:15.904)
+Yeah.
+
+Joel Margolis (teknogeek) (20:19.282)
+actually exploitable and all that kind of stuff and good for training and getting new people accustomed to exploiting XSS and other web vulnerabilities. So definitely go check that out. Check out their account and their website.
+
+Justin Gardner (@rhynorater) (20:30.946)
+for sure. Okay, so before we move on from this section, check out the tweet by Sush, or still.
+
+Joel Margolis (teknogeek) (20:39.117)
+First of all, yep.
+
+Justin Gardner (@rhynorater) (20:40.782)
+This is really interesting to me. I was kind of looking at this for a while before I could figure out what the heck was going on here. And this is not even really anything crazy to do with the popover target thing. The thing that's really crazy for me with this is that he uses two equal signs after popover target. So the code we're talking about here is button space popover target equals and then it's a double quote. So he's defining an attribute.
+
+Joel Margolis (teknogeek) (21:06.439)
+Mm.
+
+Justin Gardner (@rhynorater) (21:07.958)
+but this attribute is not using the double quote as the beginning of the attribute, like you would normally see in HTML. It's actually using two equal signs. So the first equal sign defines the attribute, and the second equal sign is just a content of the attribute, right? And then inside of that content of the attribute is a double quote.
+
+Joel Margolis (teknogeek) (21:22.448)
+Yeah.
+
+Justin Gardner (@rhynorater) (21:26.494)
+Right? And I think this is really, really nifty. And I think you can use this in a bunch of different situations for WAF bypasses or XSS filter bypasses, because I imagine that there will be a regex that is looking specifically when it's parsing HTML attributes, looking specifically for that.
+
+Joel Margolis (teknogeek) (21:26.8)
+Yeah.
+
+Justin Gardner (@rhynorater) (21:44.426)
+for that equal sign and then double quote, right? So if you have two equal signs, that might continue the regex, and it will assume that the double quote is the beginning of the attribute, but actually the second equal sign is the beginning of the attribute, which I think that was really cool. I hadn't seen that technique before.
+
+Joel Margolis (teknogeek) (22:02.262)
+Yeah, I didn't really realize this was possible. And yeah, reading it, it's very confusing to understand what's actually going on here. Am I correct that it's using the equals as the value of the attribute? So basically, your popover target is something that's called equals.
+
+Justin Gardner (@rhynorater) (22:05.77)
+Mm-hmm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (22:17.215)
+Yeah.
+
+Justin Gardner (@rhynorater) (22:21.586)
+Yeah, yeah, it looks like it, yeah. And so you see, look at the ID down there. It's a, so if you look at input, right, the input tag, the ID for that is equals, equals quote, you know, less than.
+
+Joel Margolis (teknogeek) (22:31.891)
+equals yeah
+
+Justin Gardner (@rhynorater) (22:36.354)
+bang, dash, right? And that matches the popover target from above, which looks like an HTML comment to a parser, but actually this is just a part of the attribute because of the way it's set up. So really, really cool stuff there. And I think cross applicable in a lot of other XSS scenarios.
+
+Joel Margolis (teknogeek) (22:56.078)
+Yeah, I have a feeling this will probably come up with some like third party HTML parsers and stuff that are going to be checking for XSS by parsing the HTML elements, just like you said. And we'll be handling that incorrectly because it's going to look like an HTML comment in there or something like that. Or it might not one-to-one meet the spec and they might just like have like a one character slip up and that's all it takes.
+
+Justin Gardner (@rhynorater) (23:01.599)
+Oh yeah.
+
+Mm. Yep.
+
+Justin Gardner (@rhynorater) (23:18.238)
+Yeah, for sure. So definitely, this one's a little bit easier to see than to hear about, so definitely check out this one. We'll link it in the description. All right, so speaking of cool XSS stuff, we have another one here, which was kind of surprising to me.
+
+the RCE man, ironically, because it's a client side bug, tweeted this out and he said, "'Don't forget about the magical math element, "'which can make any HTML element clickable "'within the Firefox browser.'" And so he defines a math element, and then inside of that defines an XSS tag, just a less than XSS space, defines that tag, and sets the href to that, to a JavaScript href,
+
+Joel Margolis (teknogeek) (23:39.858)
+Hehehe
+
+Justin Gardner (@rhynorater) (24:06.808)
+on that and it triggers in Firefox. Which, and I tried to figure out why this is, like what is it about the math tag that makes everything clickable? And I couldn't figure it out. So it seems like this is just one of those weird quirks it might help to know in some pertinent circumstances.
+
+Joel Margolis (teknogeek) (24:24.53)
+Yeah, it's super, super weird. And I will add a little caveat here. Firefox, I think like in tech, a lot of people use Firefox and like, it's, it's an easy misconception to think that Firefox is probably one of the largest browsers out there. However, if you look up the browser market share stats, the top browser is Chrome.
+
+Justin Gardner (@rhynorater) (24:29.965)
+Mm-hmm.
+
+Wait, hold on, hold on, hold on, let me guess. I wanna say it's like, I wanna say it's around 12%.
+
+Joel Margolis (teknogeek) (24:51.41)
+12% Firefox? No, not even close. Not even close. Yeah, not even close. Okay. So it's like 60% Chrome, 20 to 25% Safari. And Firefox is at about two and a half percent. Yeah, it's yeah, it's underneath edge. Right? So like out of the box. Yeah. Under edge. So like the reality is that like the majority of people who are using a computer are using the built-in browser or, or.
+
+Justin Gardner (@rhynorater) (24:52.818)
+Yeah, I don't know. What? Really? What?
+
+Right.
+
+Justin Gardner (@rhynorater) (25:06.614)
+No way, really? Wow. It's under edge? Oh my gosh.
+
+Justin Gardner (@rhynorater) (25:19.15)
+Mm-hmm. Right. So, I'm going to go ahead and do a little bit of a quick review of the
+
+Joel Margolis (teknogeek) (25:20.082)
+Chrome just because of its dominance in the market. So like Chrome, obviously number one buyout long shot, but then it's Safari and Edge as the two next browsers because those are the ones that are built into Mac and Windows.
+
+Justin Gardner (@rhynorater) (25:31.722)
+Wow, dude, that is definitely surprising to me. I will say though, I feel like Edge is gonna gain some popularity back because you can only use Bing search AI stuff in Edge. I tried to do it in Chrome the other day and it was like, no, go to Edge. And I'm like, what is wrong with you? Like stop.
+
+Joel Margolis (teknogeek) (25:44.902)
+That's...
+
+It's true. That's true that I launched Edge like for the first time in probably five years because I wanted to use the Bing AI to search for something.
+
+Justin Gardner (@rhynorater) (25:55.694)
+Exactly, man. So I don't know. I you know, Microsoft is really leaning into trying to claw back some of that You know browser real estate But I don't know if this may I mean I wouldn't be surprised if this pulled a percent or two away from them And at the end of the day it is using chromium, you know as a base now, so You know may not be too bad. Who knows?
+
+Joel Margolis (teknogeek) (26:17.978)
+Yeah, it might not be too bad. I think like the biggest thing is just like how integrated Chrome is with your accounts and just extensions and all that kind of stuff.
+
+Justin Gardner (@rhynorater) (26:23.01)
+Yeah.
+
+Yeah, yeah, for sure, man. Dude, we just have so much XSS stuff today.
+
+Joel Margolis (teknogeek) (26:33.262)
+So many weird, yeah, we, I feel like HTML parsers are really taking a beating this week.
+
+Justin Gardner (@rhynorater) (26:38.794)
+Yeah, so the next one that's on the list, and I linked a YouTube video in the notes, like a genius, but the YouTube video is Live Overflows.
+
+Summary and we'll link this in the description. Of course is live overflows Summary of some research that he did based off a weird tweet He saw and i've actually seen him do this a couple times where he like sees some weird tweet and he's like Oh, that's kind of odd. I bet that has security implications And then he like creates a video of him like sussing that out and I think that's gold Right, like if anybody is trying to you know, this isn't a particularly beginners oriented podcast But if there are, you know beginners out there trying to learn how to you know
+
+up your research game, that is a great example of what to do and what the pros do when trying to conduct some security research. So definitely check out LiveOverflow's video. In this one, he's talking about a tweet that he saw where it said there's something weird about the less than and then number tags, right? Because numbers aren't valid HTML tags. And somehow the first... So if you have an open tag...
+
+it gets HTML encoded because it's not a valid thing. But if you have a close tag, it gets stuck inside of a comment, right? So it's like, this is kind of weird.
+
+Joel Margolis (teknogeek) (27:57.83)
+Right. Yeah.
+
+Justin Gardner (@rhynorater) (28:02.202)
+So he kind of goes through there and comes up with this way to like this, this theory that he's got that this is going to bypass a bunch of HTML sanitizers. And then he goes and puts them in the HTML sanitizers and nah, you know, people have known about this for a long time. But it was a really cool exercise in how to research some quirky behavior. So I figured I'd give it a shout out anyway.
+
+Joel Margolis (teknogeek) (28:24.454)
+Yeah, yeah, and Lupin had a follow-up about, you know, about this weird behavior. And they were talking about in a video that this might be an interesting way to bypass a WAF. And then somebody had left a comment linking to the source code in the Chromium engine, like where this parsing actually happens and like what it's looking for in terms of like a comment tag. And it was super, super interesting to see.
+
+Justin Gardner (@rhynorater) (28:27.714)
+Dude.
+
+Right.
+
+Joel Margolis (teknogeek) (28:50.922)
+You know, the kind of quirks that you can do because of this sort of edge case behavior where it's like a closing tag with a number in it that gets then converted into something else.
+
+Justin Gardner (@rhynorater) (28:59.478)
+Yeah, yeah, for sure, man. I love the, you know, those people in the YouTube comments that read the Chromium source code, they the real MVPs, man. Like, that's the real shit out there. Yeah, dude, I love that. I know. Legendary, like, what an absolute legend, right? So yeah, like you said.
+
+Joel Margolis (teknogeek) (29:08.391)
+Yeah, just leave it out at a YouTube comment instead of like tweeting it or something. It's got one like, you know, it's crazy
+
+Justin Gardner (@rhynorater) (29:19.934)
+really awesome stuff there. I actually double clicked into the Google Chromium source code, and yeah, it was really cool about, and this is, the comment specifically was, it wasn't about the numbers like I was talking about before. This was about the question mark. And so if you put a question mark in, so you do less than sign question mark, right, this is no HTML encoding here, this is just raw, you know, no entities or anything, then that
+
+into a comment, which I thought was really interesting. And a little bit later in the episode today, if we don't talk to the end of the episode about new stuff, I'm gonna talk about some other cool ways to do comments in JavaScript. But this is a really interesting one that kinda, I didn't realize you could trigger an HTML comment this way. And who knows when this stuff is gonna be useful? Maybe there's a scenario when you really need
+
+Joel Margolis (teknogeek) (30:18.968)
+Yeah.
+
+Justin Gardner (@rhynorater) (30:19.728)
+to comment something out and you can't do it because the stuff is sanitized. Or maybe you can't put a, maybe it needs to be URL, oh, this is actually a viable scenario. Like if you have, for some reason it doesn't want you to have a bang in the URL, I've seen that before. But you can have the question mark. So that could be a cool way to smuggle in a HTML comment without using the bang.
+
+Joel Margolis (teknogeek) (30:47.514)
+Yeah, and we also showed like, you know, with this other XSS vector that just came out, like you can do some weird stuff with an HTML comment, like in the tag as like part of the ID or part of the attribute, right? And so you could potentially combine all these things together and chain it into one crazy bug that bypasses a lot of WAFs or, you know, yeah, bypasses everything. Yeah, yeah.
+
+Justin Gardner (@rhynorater) (30:51.308)
+Mm-hmm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (31:07.01)
+bypasses everything. Even the HTML parser, the HTML parser is like, what the frick is this? Yeah, right.
+
+Joel Margolis (teknogeek) (31:13.118)
+Yes, yeah, I can sense Dom Purify bypass coming. It's like right on, yeah, next week or something.
+
+Justin Gardner (@rhynorater) (31:21.206)
+It's funny, dude, the live overflow video, he's like, ah, you know, I'm gonna go straight for the super boss Dom Purify, right? And Dom Purify's like, nope, check. Exactly, yeah, no, that piece of software is pretty freaking solid. It would be really cool to get a bypass in that, though.
+
+Joel Margolis (teknogeek) (31:29.582)
+Yeah. Nope. Yeah. Better done that. Yeah.
+
+Yeah. So I don't know if you saw Mr. Tux Racer. He had tweeted out, going on to the next thing, Mr. Tux Racer had tweeted out a couple days ago, I think he said, you know, would there be any interest in a blog post about patch diffing? I've been doing a lot of patch diffing lately, and it seems like something that might be an interesting topic, like let me know. And so people replied and said, yeah, for sure. And yesterday, he published a post on his blog, rcesecurity.com.
+
+Justin Gardner (@rhynorater) (31:44.003)
+Ah, dude. Yeah.
+
+Yeah.
+
+Joel Margolis (teknogeek) (32:10.054)
+And it goes into how he patch diffed a CVE in WooCommerce and actually exploited it on a target. And so this, I think is a great case study about sort of how to approach these types of things. Patch diffing is like a great way to find sort of hidden attack surfaces. Those like end day, one day, two day type vulnerabilities that exist. Maybe they've been talked about in like release notes or something, but you haven't ever seen a public.
+
+Justin Gardner (@rhynorater) (32:15.65)
+Mmm.
+
+Yeah.
+
+Joel Margolis (teknogeek) (32:39.666)
+blog detailing and what the actual vulnerability is, or there's no POC. And again, this is like a great way to get that edge against like the other hackers, especially if you're a full-time hacker, or you're just looking for some new attack surface, keeping your finger on the pulse. Like now, anytime you see WooCommerce, you're going to be like, hang on a sec. I didn't, there's, there's a bug for that. Um, I'm not sure how exactly he found initially the, like the post. I guess there was just a security advisor. He said he like just mentioned like that there was this.
+
+He noticed there was an advisory published on WordFence for this bypass. And if you look it up, the CV is like a 9.8 critical. So I think that would probably catch most people's attention. WooCommerce, I think, is also pretty common. It's pretty widely used. Yeah. So he went, he got the source, he diffed it against the old version, sure enough, figured out how to exploit it. And it's...
+
+Justin Gardner (@rhynorater) (33:13.696)
+Mm-hmm.
+
+cheese.
+
+Justin Gardner (@rhynorater) (33:25.519)
+It's everywhere dude, yeah.
+
+Joel Margolis (teknogeek) (33:36.878)
+It's crazy. It's just like one header, right? It's xwcpay platform checkout user equals one. And with that header, you can create new users and set them as an admin and just escalate immediately to WordPress account admin. It's super, super wild.
+
+Justin Gardner (@rhynorater) (33:38.728)
+So simple, dude.
+
+Dude, yeah, I read this blog post and I was like, you know, I know that Julian does a decent amount of like.
+
+WordPress related stuff, which I think is cool because not a lot of people do, because I don't know. I really honestly don't know why people don't go after it more. Core, WordPress core is really solid. Like if you can find a bug in WordPress core, you're pretty much, you know, you're set because that's like 70% of the internet or whatever. But the plugins are pretty whack and you can enumerate the plugins really easily.
+
+Joel Margolis (teknogeek) (34:17.445)
+Yeah.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (34:31.118)
+So, it's a, there's a lot of scope there, if you're willing to do some source code review. And this one, you can see just how well this paid off. Just a real, I mean, and this is a good case study as well of like how patch shifting doesn't have to be super mega hard. Like I mean, he literally just diffed it and he was like, there's like three things different about this specific commit.
+
+Joel Margolis (teknogeek) (34:31.3)
+Yeah.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (34:54.478)
+And then he dives in and it's literally just like add a header and it just destroys everything.
+
+Joel Margolis (teknogeek) (35:01.658)
+Yeah. Yeah, I think for me, like a lot of the reasons why I've like not exploited something on WordPress is there's like two main reasons. One is that it's really hard to get the plugin source code without paying for it or like doing some jumping through a lot of hoops to like get your hands on the actual plugin, which we talked about it, like pay for stuff. You'll get an advantage generally speaking, but that can also be risky depending on how much the plugin costs. The other side of it is that.
+
+There's a really common WordPress plugin, like scanner thing, tool. I can't remember the name. I'm like, yeah, WP scan. Yep. And that generally just looks for like public vulnerabilities that are like, are known to be exploitable. And so if it's not showing up in there, then you may not know to even look for it. And you may not dive any deeper than that. You might just see, oh, it's got these plugins. Okay, move on. And so going that extra step and getting your hands on the plugin code.
+
+Justin Gardner (@rhynorater) (35:35.294)
+Yeah. WP skin.
+
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (35:49.003)
+Mm-hmm.
+
+Joel Margolis (teknogeek) (35:59.398)
+patching, patch diffing it against a known vulnerability or something like that, and then exploiting it, you know, it takes a little bit of extra effort, but I think it's generally going to be worth it.
+
+Justin Gardner (@rhynorater) (36:03.435)
+Yeah.
+
+Yeah, so I think that the piece about getting your hands on the plugin code, that can be true if it's a pay to play plugin, but like...
+
+In my, I've actually had a lot of luck with just going to work, you know, WordPress.org slash plugins and finding the plugin and then just pressing the download button downloading as a zip and you get the source code, right? Um, and I think, I think, um, I'm not sure if he did it this way in the actual, yeah, it looks like he actually dipped it inside of like his own local machine or whatever, so you, you could go and download the various older versions of it and then dip it, but sometimes they even have like GitHub repos with the full source in there and various, you know.
+
+Joel Margolis (teknogeek) (36:28.776)
+Mm.
+
+Justin Gardner (@rhynorater) (36:49.584)
+commits and stuff like that, which would make it even much easier. So I think if anybody really wants to try to do some source code review related stuff, it would be really cool to kind of go to just go and look at the top WordPress plugin. Maybe like scroll down like three or four pages, right? Like get to the ones that are not like the mega WordPress plugins, but like the semi mega, you know, popular WordPress plugins, and then just do a security assessment of those.
+
+Joel Margolis (teknogeek) (36:49.936)
+Yeah.
+
+Yeah, for sure.
+
+Justin Gardner (@rhynorater) (37:18.534)
+And if you can pop one that's got, you know, like this one has 600,000 plus active installations, I'm sure you'll be able to make some money off of that on a bug, you know, somewhere in Bug Bounty.
+
+Joel Margolis (teknogeek) (37:29.966)
+Yeah, and I believe specifically this was in WooCommerce payments, right? So that's where it's like a little weird, right? Like if you look at the top commercial plugins on WordPress, the third top commercial plugin is WooCommerce, not WooCommerce payments, the WooCommerce. WooCommerce has 5 million active installations, over 5 million, whereas WooCommerce payments is 600,000 plus. So it's just like little things like that, right? Like, but I also think there's probably some really interesting research.
+
+Justin Gardner (@rhynorater) (37:34.419)
+Yeah.
+
+Joel Margolis (teknogeek) (37:59.118)
+If you were to do a deep dive source code review on all of those top plugins in general, I am sure that they're not all up buttoned up nicely and up to security spec. There's, there's gotta be some zero days in there. Uh, I, I can feel it.
+
+Justin Gardner (@rhynorater) (38:13.088)
+Oh yeah.
+
+For sure, and actually that's a really cool pattern actually, Joel, that you mentioned is, that's like a supplemental plugin to a mega, mega popular plugin, right? So WooCommerce is like you said, top five, most popular plugins. Yeah, top three. And so maybe like a plugin that sort of integrates with that or like connects up with that, that could be a really good way to find plugins that are a little bit less security tested,
+
+Joel Margolis (teknogeek) (38:29.266)
+Top three.
+
+Justin Gardner (@rhynorater) (38:44.931)
+have a lot of widespread use.
+
+Joel Margolis (teknogeek) (38:47.118)
+Right. And the same sort of impact, right? Like if you can find like escalate from that secondary plugin into a main plugin, because it's used as a dependency that, you know, it's not, it may not have the same amount of scrutiny and the same amount of security checks and stuff. Like you said.
+
+Justin Gardner (@rhynorater) (39:00.35)
+Mm. Yeah, no, that's good stuff, man. Good tips. I might actually check that out myself.
+
+Okay, dude, we still got two more news items left to go. Well, in our defense, we haven't done news in a little while because, you know, last episode was with Cosman. So, yeah. Oh, and then the one before that was with was with Rezo and Daniel. So, yeah, dude, we haven't done news in a while. Okay. All right. We're just catching up on some news.
+
+Joel Margolis (teknogeek) (39:11.564)
+We still got, we're almost through the news.
+
+Yeah.
+
+true. Yeah. I don't know if we talked about this with the CBSS4. Yeah. I'm pretty sure we talked about it in person because Ramsexy noticed that in the CBSS4 draft they had made some changes. And I recall this was while we were in London and I was like, oh, that's really cool. Like Ramsexy just like tweeted this out. So back June 21st, Ramsexy, Pierre-Luc,
+
+Justin Gardner (@rhynorater) (39:36.85)
+Yeah, I don't know if we, did we talk about it in person at the live hacking event or? Yeah, yeah.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (39:59.874)
+Yeah.
+
+Joel Margolis (teknogeek) (40:00.762)
+tweeted out that there were changes in the CVSS for draft spec that had said, specifically under the privileges required section, that self-service provision accounts that may be necessary to attack a cloud service do not constitute a privilege requirement if the attacker can grant themselves permission, these permissions as part of the attack. And this feels fairly straightforward. Like this feels logical. Like that feels like how it should be that.
+
+it feels like it shouldn't need explanation or need to be explicitly written. But if you look at how CBSS3 is scored, that is not the case. Oftentimes having to create your own account does count as privileges required. So like, even though you could just go self-register and give yourself these perms, for some reason in CBSS3, it gets graded as, oh, you need privileges to do that instead of just being like a completely un-auth like, you know, which is like, I get it. Like that's the worst case scenario, but when the,
+
+when the worst like when the next step is having to walk through an open doorway like that's not i don't really count that as like having to pick a lock you know what i mean it's like yeah
+
+Justin Gardner (@rhynorater) (41:01.875)
+Yeah, yeah.
+
+Totally, wow, dude, you just made a pretty good analogy on air, on the fly. Amazing. I don't know, maybe that's my own weakness, but I just can't do analogies on the fly like that. You know what? That gets a slow clap for you too. Very good, very good. Yeah, no, dude, you're killing it today. I couldn't even tell. But yeah, no, I agree, and it's kind of a shame that
+
+Joel Margolis (teknogeek) (41:12.738)
+Yeah, yeah, yeah. Yeah, I mean that-
+
+Thank you, thank you, thank you, thank you. I am half asleep still. Yeah.
+
+Justin Gardner (@rhynorater) (41:34.97)
+CVSS 3 and 3.1 didn't address this a little bit earlier because it would have saved a lot of bug bounty hunters a lot of money But I was glad to yeah exactly. Yeah, I was glad to see CVSS 4 did have that but Here's the thing. So go to that tweet Click the quotes, man
+
+Joel Margolis (teknogeek) (41:43.31)
+Made them a lot of money.
+
+Yeah, a couple of days ago yesterday, somebody tweeted out. So apparently, and I actually went and I checked this because I was like, oh, maybe it's just like a bug. Nope, indeed they removed it. At least in the current draft spec for CBSS4, they have removed that sentence from the privileges required section. It's just, it disappeared like a week after Ramsexy tweeted that out and...
+
+Who knows, maybe, maybe somebody just like hit delete on the wrong commit. Or I don't know. I don't know. It's, um, so I think it'll be interesting to see what happens. I know a lot of people are pinging them on Twitter being like, what's going on? Like, why did they change this? So I don't think they've, they've actually said anything yet as to what the reason was for removing that from the draft spec, but I'm sure that people will demand some sort of an answer, so it'll be good to see.
+
+Justin Gardner (@rhynorater) (42:50.157)
+Yeah.
+
+Yeah, I'd like to use the power of the critical thinking audience real quickly here. Like, we're gonna put this tweet by ReefBR in the description, okay? We need to go to this tweet and we need to tag the freaking first.org Twitter account and be like, what the heck is going on? Because this is like taking money right out of our pockets here, right? And yeah, I would really like them to put that sentence back.
+
+someone made a joke I think in the comments that was like, this is big bug bounty lobbying for like, you know, changes in the spec. But yeah, I would really like an explanation at least about why that decision was made and hopefully we can get it reverted.
+
+Joel Margolis (teknogeek) (43:39.194)
+Yeah, yeah, I'm about I'm actually quote tweeting them now go I'm going what's up with this at first org thinking emoji
+
+Justin Gardner (@rhynorater) (43:44.67)
+Yeah, yeah, we absolutely need to do that. So we should, I think, I don't think that tweet even, yeah, so Pierre-Luc's tweet got like a bunch of interaction on it, like 230 likes or something like that, and a bunch of retweets, and then this other guy like has only got like 22 likes or whatever in retweets, and this is the one that needs to be like smacked upon, you know, so hopefully we get some clarification from first.org soon.
+
+Joel Margolis (teknogeek) (44:03.546)
+Yeah.
+
+Yeah, 100%.
+
+Joel Margolis (teknogeek) (44:12.946)
+It's also really funny because there are so many familiar names in the replies on the Ramsexy tweet just celebrating the change. And I don't know how many of them have realized that they're getting bamboozled here.
+
+Justin Gardner (@rhynorater) (44:18.175)
+Mm. Yeah, yeah.
+
+Yeah, we need to go into that original thread and ping all the people and be like, look at this, look at this. Yeah. Alrighty, man. The last and final news entry for today is, and we saved the best for last, not gonna lie. A Tom Nom tool, that's like mega bug bounty news right there.
+
+Joel Margolis (teknogeek) (44:30.899)
+Yeah, yeah, cool. Last thing.
+
+Yeah.
+
+Joel Margolis (teknogeek) (44:42.911)
+Ugh. Yeah, yeah.
+
+Justin Gardner (@rhynorater) (44:45.99)
+Yeah, so Tom has not actually been putting out a bunch of tools lately, but he drops this one on us, which is great. And I think it's pronounced J-sluice? J-sluice. I, dude, before this episode, I went online and tried to find a video of someone talking about it. So I could like, I don't know. I just I give up, you know.
+
+Joel Margolis (teknogeek) (44:59.65)
+Yes. Yeah. Jay Sluice. Yeah.
+
+So Tom Nom actually tweeted about like the way to pronounce this. Yeah. So let me find the exact tweet, but yes. So somebody, yes. So he tweeted out like that he had announced a new tool at B-Sides Leads in the UK. It's called J-Sleuths. Basically what it does is it takes in like a giant string of JavaScript and it will parse it out and it will do a bunch of.
+
+Justin Gardner (@rhynorater) (45:16.986)
+Oh, did he really? Oh my gosh.
+
+Dude, I freaking love Tom that he would do that, man. Ah.
+
+Joel Margolis (teknogeek) (45:41.338)
+heuristics and AST and that kind of stuff to identify all the URLs and paths and secrets within it and Output that to you and somebody actually replied it was like this is awesome But how do I pronounce the name and so he replied to J dash sluice? SL o se J sluice, so I think sluice is like Like a term for some that sluice is a an act of rinsing or showering with water
+
+Justin Gardner (@rhynorater) (45:59.579)
+Nice.
+
+Joel Margolis (teknogeek) (46:08.53)
+I think, I dunno, this might be a UK term or something, cause I was like familiar with it, but yeah.
+
+Justin Gardner (@rhynorater) (46:11.538)
+Yeah, he commented under another one too, and he says it's named after Sluicebox, a thing you use to find gold. So I guess that's like the little sifty thing that you use to like...
+
+Joel Margolis (teknogeek) (46:19.218)
+Ah, oh, ah, yeah, the little, yeah, when you're panning for gold. Yep. Cool.
+
+Justin Gardner (@rhynorater) (46:26.334)
+Nice, nice, okay, solid, that makes a lot more sense. But yeah, so the tool is really cool. It does something which I think has been needed in the industry for a while, which is it helps us to extract URLs from JS files. And there are some really cool tools out there. I think the one, I think Link Finder is it by, let's see.
+
+Joel Margolis (teknogeek) (46:47.81)
+Yeah, dude, I was trying to remember what it was because it was actually crazy timing. A couple days before this came out, I was talking with somebody in person at the live hacking event, and I was like, yeah, isn't there some tool that parses the JavaScript and it pulls out the string constants and looks for URL paths or something like that? And this is basically exactly that, but better. So.
+
+Justin Gardner (@rhynorater) (46:52.031)
+Yeah.
+
+Yeah.
+
+Joel Margolis (teknogeek) (47:10.134)
+Yeah, for some context, like for those who don't know, Tom Nom is like an incredible bug bounty hunter. He was a bug bounty hunter for many, many years, one of the OGs I would consider. And a couple of years ago, he left and he started working at Bishop Fox as doing like security tooling and that kind of stuff. Yeah, and he's been a little bit quiet since then.
+
+Justin Gardner (@rhynorater) (47:14.656)
+Amazing.
+
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (47:24.044)
+Mm-hmm.
+
+Engineering, yeah.
+
+Joel Margolis (teknogeek) (47:31.646)
+I imagine just because he's been building cool stuff like this. And yeah, here we go. This is an awesome tool to see from Tom Nom Nom. Awesome to see that he's still doing that kind of like the security and the bug bounty type stuff. And this is going to be an awesome contribution to the bug bounty community because this is such an amazing tool that's useful for parsing the JavaScript. Instead of having to like dig through a million lines of obfuscated minified JavaScript, you could just...
+
+Justin Gardner (@rhynorater) (47:35.411)
+Yeah, exactly.
+
+Joel Margolis (teknogeek) (47:59.866)
+throw it through Jsluse and see what it outputs.
+
+Justin Gardner (@rhynorater) (48:02.937)
+Yeah.
+
+Absolutely, yeah. And so unlike link finder, which is what I had been currently using up until this point, as well as just my own set of regexes, this actually uses Go TreeSitter, which is I guess a library which allows you to parse sort of syntaxical grammars a little bit easier, right? And it uses that in order to parse out the whole JS file and do a little bit more intelligent matching on what sort of
+
+what sort of lines or what sort of variable assignments and stuff like that are gonna be resulting in a URL being formed and then passing that back to you with a little bit more information. So I really like that because it does take that little bit out that I would have to do with a different tool of like going back to finding the JS source code and then reading it and being like, oh, it truncated this URL parameter that I really need or something like that. And it kind of makes it a little bit more cohesive
+
+put together, which is really cool.
+
+Joel Margolis (teknogeek) (49:05.166)
+Yeah, yeah, super cool. I mean, Tom Nomad is like an amazing, uh, I mean, his brain is just like off the chart. It's like, yeah, he's like five X, like what most people are doing. And so it's, um, I didn't even know what this, this tree sitter was, uh, but it's like, uh, it's a syntax, like tree part, like a generic sort of like tree parsing tool. And then the goat trees tree sitter is basically going bindings on top of that. And there are other.
+
+Justin Gardner (@rhynorater) (49:11.766)
+A great programmer too, man. Yeah.
+
+Yeah, I had to look this up too.
+
+Justin Gardner (@rhynorater) (49:26.69)
+Yeah.
+
+Joel Margolis (teknogeek) (49:31.234)
+language bindings as well. So if you wanted to write your own version of this in a different language, like Rust or something, for example, there is a Rust library that binds to TreeSitter as well. Um, so I think this is a super awesome to see this kind of work in this space. Uh, oftentimes so much of security research is just like regex instead of actual parsing and like technical, like low level type stuff. So it's really, really cool to see something like this come out. And I think it's a great.
+
+Justin Gardner (@rhynorater) (49:50.794)
+Yeah, seriously.
+
+Joel Margolis (teknogeek) (49:58.814)
+A great example case if you want to just read through the code and see how it works about how something like this, you might be able to make a different version of it or another version of it.
+
+Justin Gardner (@rhynorater) (50:07.678)
+Yeah, for sure. All right, man, we made it through the news. Just take a breath.
+
+All right, yeah, right, okay. So what I was hoping to do today with the direction for the pod is just kind of go through a bunch of client-side related stuff. Yeah, it's all client-side, I think.
+
+Joel Margolis (teknogeek) (50:16.05)
+I have to oxygenate my brain again.
+
+Justin Gardner (@rhynorater) (50:30.55)
+that people, I feel like people should know about that are kind of at the fringe of stuff or specifically stuff that I've learned at live hacking events, just from other like really crazy good researchers. So let's kind of hit this list. The first one, actually we talked about this a little bit before, personally, but there's this function in JavaScript called import, right? And this allows you to import,
+
+Joel Margolis (teknogeek) (50:47.087)
+Yeah.
+
+Justin Gardner (@rhynorater) (51:00.904)
+It's a module import functionality for ECMAScript. And it kind of blows the mind how it actually works in the browser because I didn't really think that would, yeah, like.
+
+Joel Margolis (teknogeek) (51:12.31)
+Yeah, I remember when you first showed me this and I was like, are you sure that this were like I had, I had you actually walk me through, like showing me that it was actually functioning in the browser. Cause I was a hundred percent sure this was a no JS thing and that this was not going to be possible and just like standard JavaScript within the browser. And it works. I mean, it's so weird. It's the strangest functionality that I've seen. Like it's extremely counterintuitive because you would expect that this type of stuff just.
+
+Justin Gardner (@rhynorater) (51:22.176)
+Yeah.
+
+Yeah.
+
+Joel Margolis (teknogeek) (51:40.034)
+wouldn't exist in standard JavaScript for security reasons. And yet it does.
+
+Justin Gardner (@rhynorater) (51:45.79)
+Yeah, I feel like I learned about this originally from file descriptor, because whenever, like I met file descriptor at a live hacking event a long time ago, and whenever I had like a weird JavaScript situation, I would just be like, I was just paying him and we'd get on a call and he'd like figure it out for me. And I was like, oh, this is great. So I saw him use this once when we were talking about code golf, right? Like how to minimize the amount of code that you have and accomplish a goal. And he used this to like import from an external, you know, script.
+
+and I was like, oh, this is pretty sick. And yeah, it saved my butt a couple times because a lot of times, you know, even if you can get an alert to pop, if you have a...
+
+sort of a length limit on your input for an XSS, it's not actually possible for you to get, or I guess, I won't say it's not possible, let me retract that statement, because it's been proven time and time again that you can do a lot of crazy stuff, but a lot of times you're asked to prove arbitrary JavaScript execution, normally by importing a script, or show that you can execute long-form JavaScript for an exploit, right?
+
+Joel Margolis (teknogeek) (52:41.042)
+Hehehe
+
+Justin Gardner (@rhynorater) (52:57.84)
+And this is a really cool tool for that. And so, yeah, I just wanted to make sure the folks knew about this, because I think I kind of took this for granted working with File Descriptor, and I think most of the people that I've showed it to have actually been like, wait, what?
+
+Joel Margolis (teknogeek) (53:10.966)
+Yeah, yeah, super crazy. And also, if you actually go into the Mozilla docs, the reference docs about this, the MDM web docs, that talk about this, there's a specific warning that they call out that says, warning, do not export a function called then from a module because this will cause the module to behave differently when it's imported dynamically than when it's imported statically. And so I think this is a really interesting attack scenario where it's...
+
+Justin Gardner (@rhynorater) (53:17.047)
+Yeah.
+
+Weird.
+
+Joel Margolis (teknogeek) (53:37.326)
+It's a bit of an edge case, but if you're able to do some sort of a file, right, or something like that, where you can then get to an import, if the code, say you have like some dynamic import that's importing from a file that you can then control, but it's calling.then on it, just like how with deserialization bugs, where there's like a function that's going to be called implicitly just by how it's functioning, you can hijack that by defining a then function in your module that's going to be exported.
+
+Justin Gardner (@rhynorater) (53:42.498)
+Yeah.
+
+Mmm. Can hijack something.
+
+Joel Margolis (teknogeek) (54:05.586)
+and then it'll run when it's imported on the site.
+
+Justin Gardner (@rhynorater) (54:07.874)
+Yeah, no, that's really cool. I didn't see that. I didn't scroll down there to see that. So that's definitely another interesting attack vector. But yeah, no, this is really sweet and it does allow my XSS payloads to get a little shorter, which I appreciate, because it's actually not very trivial to get XSS. Like for example, if you have an image tag or an SVG tag, XSS, it's not trivial to get.
+
+Joel Margolis (teknogeek) (54:27.876)
+Yeah.
+
+Justin Gardner (@rhynorater) (54:35.762)
+a script imported in that scenario, because you can't just use script source, right? That doesn't work after the DOM has already been loaded. And so, yeah, this is a cool tool for getting you there.
+
+Joel Margolis (teknogeek) (54:37.393)
+Yeah.
+
+No.
+
+Joel Margolis (teknogeek) (54:46.746)
+Yeah, yeah. And I think it still adheres to CSP and stuff, right? Like there's still, there are still like limitations and stuff that, that it's not like just a complete like bypass of the security features, but it's just another way to basically get your JavaScript into the page.
+
+Justin Gardner (@rhynorater) (54:49.63)
+Yeah, it does. Yeah, of course.
+
+Yeah.
+
+All right, cool. Next one was, and this is one we've talked about before, but Gareth Hayes' book JavaScript for Hackers. I kinda took a read through it and noted down some cool sections. And I was just gonna shout out a couple of these. Let me pull up the book here. Okay, so the first section that I thought was really interesting was, he talks about how to do,
+
+types of JS comments that there are. And there are way more than I thought. The particularly interesting one was that sort of a legacy piece from before the browsers actually used, before they used JavaScript, all of the browsers used JavaScript, there was sort of a legacy implementation of where you can use an HTML comment inside of JavaScript as a comment, which I totally didn't know.
+
+Joel Margolis (teknogeek) (55:54.178)
+Yeah, definitely didn't know about this. And just generally speaking, this book is like an insane resource. It's kind of the pinnacle of the kind of stuff that we're talking about in terms of documenting strange behaviors that you can, that aren't necessarily vulnerabilities by themselves, but you can often tie these behaviors together to exploit different scenarios easier or more effectively. And it's $20 on Lean Pub.
+
+Justin Gardner (@rhynorater) (56:00.905)
+Yeah.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (56:23.265)
+Yeah.
+
+Joel Margolis (teknogeek) (56:23.566)
+So that's like not even, that's like a fraction of one XSS that you could definitely get with this book. So definitely I would recommend investing in it and buying it and giving it a thorough read and take some notes in your notes.txt file as an inhibitor would do. And, and definitely take some, take some learnings from this because there's so many interesting weird behaviors that the browser does to accommodate for like old
+
+Justin Gardner (@rhynorater) (56:32.482)
+Yeah.
+
+Right, right.
+
+Justin Gardner (@rhynorater) (56:53.551)
+legacy shit, yeah.
+
+Joel Margolis (teknogeek) (56:54.022)
+old browsers or legacy behavior and that kind of stuff to make stuff work across like new old stuff work in new browsers that you can then exploit to your advantage.
+
+Justin Gardner (@rhynorater) (57:04.286)
+Yeah, for sure. And so I'm gonna tell you, scroll to page 66 in the book. And then he also mentions, so there's four types of comments he mentions in here, and I'm not gonna read them all out because you guys gotta go buy the book. But the last one there, number four in that list, I couldn't get that one to work, so I thought that one was a little bit interesting.
+
+Joel Margolis (teknogeek) (57:32.55)
+Yeah, I feel it. I'm gonna double check because that looks like it's a non ASCII character
+
+Justin Gardner (@rhynorater) (57:38.578)
+It could be, I copied it, but I don't know. I couldn't get it to work. But I will tell them about the first one on the list. Another, so I already mentioned that you can use an HTML comment inside of JS. But also there's another comment which is hashtag bang.
+
+which I did not know about. And that only, he says, the first example will only work if it's the first JavaScript statement. If it appears elsewhere, a syntax error will be raised. And so I just didn't know about that. And I think that's another really cool edge case that you can use to comment some stuff out in the beginning of a JavaScript block.
+
+Joel Margolis (teknogeek) (57:56.928)
+Uh.
+
+Yeah, okay, so yes, I did check that character. It looks like a standard character. It's actually a Unicode character. It's the en dash. So on Mac, it's like if you do option that, it's like the long dash, you know what I mean? Like sometimes it gets auto corrected if you type. Yeah, like sometimes if you do a dash dash, it'll get converted into an en dash where it's like a long dash. It's really more of a writing formality than anything. But yeah, that's super, super interesting.
+
+Justin Gardner (@rhynorater) (58:30.15)
+Okay. I think that's a normalization thing, man.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (58:41.154)
+Yeah.
+
+Joel Margolis (teknogeek) (58:46.286)
+like backwards compatibility type stuff where the two dashes, it's like equivalent to the EN dash and then yeah.
+
+Justin Gardner (@rhynorater) (58:48.226)
+Yeah.
+
+Yeah, nice. Yeah, I think there might be, that might have just gotten extended to a, that might should have been two dashes because that's the end of the HTML script. Yeah, and we said we weren't gonna mention it. Sorry, Gareth, now we're just, you know.
+
+Joel Margolis (teknogeek) (59:04.254)
+Oh yeah, maybe it's a typo in the book.
+
+Justin Gardner (@rhynorater) (59:10.326)
+But yeah, apparently there's a way for you to actually comment out a whole line with the closing HTML comment. But yeah, that seems a little bit weird. I'm gonna have to suss that out a little bit more. I tried it before. It might be something that the browsers have stopped implementing as a security measure or not. But still, a couple really cool pieces in here. How to smuggle.
+
+Joel Margolis (teknogeek) (59:34.02)
+Yeah.
+
+Justin Gardner (@rhynorater) (59:40.28)
+in JavaScript comments because those can be useful in JavaScript scenarios where you're injecting directly into a JavaScript block and you've got to comment out the rest of the block.
+
+Joel Margolis (teknogeek) (59:51.418)
+Yeah, little bit of a side tangent here. At the meta event, so meta has this thing called Hermes. It's a JavaScript engine that they wrote. And it's super, super interesting. It's similar to V8 in what it does. But there's a whole community of researchers who only focus on testing and finding bugs in Hermes, just like how there is for V8 as well, how there's Chrome hackers or whatever, people who find JavaScript engine bugs. And it's the same thing for Hermes.
+
+Justin Gardner (@rhynorater) (59:57.184)
+Okay.
+
+No way, really?
+
+Justin Gardner (@rhynorater) (01:00:18.72)
+Yeah.
+
+Joel Margolis (teknogeek) (01:00:20.658)
+And this type of weird syntax stuff makes me wonder like where that parsing is actually happening within a JavaScript engine and sort of like how that functionality is working and whether or not you could actually pinpoint within the engine, these types of edge cases for how the, how the engine is identifying a comment and like what qualifies as a comment, and then use that to your advantage to find either new exploit exploitation cases or other exploitation cases that may not even be mentioned here.
+
+Justin Gardner (@rhynorater) (01:00:27.755)
+Yeah.
+
+Yeah, dude, I have endless respect for those people that just like pick this one project or like this one focus and then just like.
+
+just like smack it into the ground, you know? Like, it takes so much dedication and the knowledge does compound though. So it kind of makes sense why they would want to keep that snowball rolling of knowledge on that specific project. And while you were talking about that, I actually did go back and, you know, I was not able to reproduce that before because it got normalized into the elongated dash, like you said, but.
+
+Joel Margolis (teknogeek) (01:00:57.286)
+That's so crazy.
+
+Yeah.
+
+Yeah, for sure. Yeah.
+
+Joel Margolis (teknogeek) (01:01:22.374)
+You have the EN dash.
+
+Justin Gardner (@rhynorater) (01:01:23.318)
+the en-dash, but actually if you put two dashes, I think that's what it should be, that becomes the closing HTML comment, and that actually does work as a comment in JavaScript. So, I'll, yeah, we'll have to message Gareth.
+
+Joel Margolis (teknogeek) (01:01:28.421)
+Uh...
+
+Okay. We might have to tell Gareth because he'll need to update his book that he has a little typo in there from he probably typed it on a Mac or something and it got auto corrected.
+
+Justin Gardner (@rhynorater) (01:01:42.962)
+Yeah, well, you know, these are just the secrets you get for listening to Critical Thinking Podcast, you know? Even Garrett's book, we're hacking it. Everything. All right, so next one was, okay, dude, this one's actually really interesting. This is another one that I just kind of took for granted, I think just because of like something I saw early on in my bug bounty experience, but.
+
+Joel Margolis (teknogeek) (01:01:47.302)
+Oh yeah.
+
+Yeah, now you know.
+
+Justin Gardner (@rhynorater) (01:02:08.054)
+This is regarding a specific context where you are injecting into, oftentimes what it ends up being is a JavaScript variable. So you're inside a script tag, you're in a JavaScript variable, and your input is going inside of that variable. Now that variable is being defined with either single or double quotes per JavaScript. It could be a templating string as well, but that's rare. And if you're inside that,
+
+The initial instinct would be to try to use double quotes or single quotes to escape that variable and get an XSS.
+
+just by injecting JavaScript in there. And then the second sort of route, if that fails, would be to try to do something funky with like backslashes, right? And escaping the end of that double quote or the single quote and seeing if you can link it together with another injection point to kind of get an XSS. But another one that I feel like people miss at EZimpt bit is you have to still sanitize the HTML elements because at the end of the day, you're inside of a script tag.
+
+the only way that the browser's gonna know that script tag is gonna end is like with an actual less than slash script end tag. And so if you do that inside of the JavaScript context, it's gonna just cut off the rest of the JavaScript and then you have HTML injection and you can get XSS from there. So yeah.
+
+Joel Margolis (teknogeek) (01:03:28.998)
+Yeah, I mean, there's nothing in the browser spec or anywhere that states that you have to have valid JavaScript in your script tags. You can have an open quote that never ends, and then you just close it with a script tag. And so in that same sense, if you have something that's being injected directly into a string, you don't have to end that string. You could just close the script tag and put elements in the page.
+
+Justin Gardner (@rhynorater) (01:03:35.382)
+Right, yeah.
+
+Right. Yeah.
+
+Justin Gardner (@rhynorater) (01:03:49.593)
+Mm.
+
+Yeah, yeah, and then, you know, get XSS via like, you know, an onclick or an onhover, an onloadevent handler.
+
+Joel Margolis (teknogeek) (01:03:56.922)
+Right, right. Which is gonna have a different CSP as well because the CSP for script source is not the same as, you know, like, including other, for example, an import, right, like that's gonna go to a different CSP.
+
+Justin Gardner (@rhynorater) (01:04:10.003)
+Yeah, that is a little bit tricky though if you have a nonce-based script tag and that script has a nonce on it, right? If you close off that script tag, then you're not gonna be able to smuggle your, you know, payload inside of that scripted nonce. So, CSP, it's kind of a double-edged sword sometimes with that sort of thing.
+
+Joel Margolis (teknogeek) (01:04:30.446)
+Yeah, yeah. I wonder if maybe that's something that we could talk about in the future is, there's the CSP evaluator tool that Google made and that's pretty good. You can basically just paste the CSP in there. We'll link it, but you just paste a CSP full directive in there and it'll tell you if it's vulnerable to things. They have a list of known domains and paths that have...
+
+Justin Gardner (@rhynorater) (01:04:39.22)
+Mm-hmm.
+
+Joel Margolis (teknogeek) (01:04:57.754)
+What is it, the JS, the callbacks basically, the JSONP endpoints?
+
+Justin Gardner (@rhynorater) (01:05:02.782)
+Are you talking about? I'm not sure what you're talking about.
+
+Joel Margolis (teknogeek) (01:05:07.558)
+Yeah, so Google has the CSP evaluator. CSP evaluator.withgoogle, right? And if you put a whole content security policy string in there, it will check it and it'll tell you whether or not each part of it is safe and whether or not there are certain bypasses. So certain domains like youtube.com and stuff, they have alert, like poppable, basically like, gadgets that you can exploit that still
+
+Justin Gardner (@rhynorater) (01:05:12.484)
+Oh yeah.
+
+Mm-hmm.
+
+Joel Margolis (teknogeek) (01:05:37.842)
+They'll still adhere to the CSP, but you can use them to get an XSS. And I'm wondering if there's anything that goes beyond that, that does more of a deep dive in terms of like, not necessarily a problem with the CSP, but ways that you could work within the CSP outside of like, you know, just, oh, this domain, you could use this domain as a gadget to then pop an XSS. Maybe you could also say, oh, you would have to put something within a script tag.
+
+Justin Gardner (@rhynorater) (01:05:40.301)
+Yeah.
+
+Mm.
+
+Joel Margolis (teknogeek) (01:06:06.03)
+in order to adhere to this nonce that's in the CSP or something like that. And I don't think I've seen any tool like that.
+
+Justin Gardner (@rhynorater) (01:06:09.27)
+Yeah, dude, CSP is like a whole episode of its own probably. Actually originally had it in this episode to talk about some stuff about CSP and cores. And I was like, especially after all the news we added, there's just no way we're gonna get to any of that today. So.
+
+Joel Margolis (teknogeek) (01:06:15.498)
+haha
+
+Yeah, yeah, yeah. And for what it's worth, the CSP evaluator is based on research that was done in 2016. So it's been almost, oh my God, it's getting, we're getting old, dude. It's been almost 10 years. So, you know, there's, there's definitely been some bypasses and stuff that are not going to be in that list. And some other like confounding factors that are there that are not going to be in that list that are worth looking at. So I don't think the CSP evaluator.
+
+Justin Gardner (@rhynorater) (01:06:39.018)
+Yeah. Oh my gosh. Wow, dude.
+
+Yeah.
+
+Joel Margolis (teknogeek) (01:06:56.65)
+evaluators that sort of end all be all when you're looking at a CSP and there are going to be some other sort of knowledge things that you're going to want to keep in mind when you're looking at a CSP that won't get called out by the evaluator.
+
+Justin Gardner (@rhynorater) (01:07:08.67)
+Yeah, yeah, for sure. And it.
+
+I feel like those endpoints though, like you were saying before, the JSON PM points in particular, I've thought about reporting endpoints where you can, for example, you can smuggle in a semicolon or a comma or something that will allow you to actually inject arbitrary JS code into the callback parameter for those JSON PM points. And I totally feel like that's a bug, especially for big companies where it's like, you know, you're gonna,
+
+have other people approving your site as a CSP bypass, right? As an allowed site within CSP, like you've gotta use that power responsibly and make sure you're taking care of those JSONP endpoints. And there's just a lot of, like you mentioned, there's a lot of gadgets out there that'll still allow you to just bypass it, unfortunately.
+
+Joel Margolis (teknogeek) (01:07:47.632)
+Right.
+
+Yeah.
+
+Joel Margolis (teknogeek) (01:08:04.61)
+Yeah. And again, I think this is one of those, those artifacts of like legacy support where they're now in a place where if they were to change how that endpoint works for like a JSON P endpoint, then stuff that's using it in the past may break because they're using it incorrectly. And, and so now it's like vulnerable by design, but they can't fix it because they can't migrate people away from it because it's like hard coded and other people's websites.
+
+Justin Gardner (@rhynorater) (01:08:17.623)
+Mm-hmm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (01:08:30.11)
+Yeah, but who's using a semicolon in their JSONP callback? You know, like, nobody's using that.
+
+Joel Margolis (teknogeek) (01:08:34.787)
+Amen. I've seen a lot of really sketchy, a lot of really sketchy engineer behaviors. So I put nothing past them.
+
+Justin Gardner (@rhynorater) (01:08:39.086)
+Dude, if they engineered it like that, if they engineered it like that, their site deserves to break, you know? Like...
+
+Joel Margolis (teknogeek) (01:08:44.115)
+Okay. Yeah, it deserves to be a JSONP endpoint at that point.
+
+Justin Gardner (@rhynorater) (01:08:47.618)
+Exactly. Okay, the last thing I wanted to talk about from Garrett's book is his notes on prototype pollution, which I feel like was sort of a bug that I just kind of thought was like, researchy, you know, like, I've seen it, I've seen it in like one live hacking event, someone got like a crazy bug with it. But
+
+Joel Margolis (teknogeek) (01:09:07.302)
+Man, it's everywhere.
+
+I think I know the one you're talking about.
+
+Justin Gardner (@rhynorater) (01:09:15.59)
+Yeah. And I'm not going to go down the rabbit hole too much of like trying to explain all of this on the pod today, but the section of this book, it was really interesting to me and actually helped me understand prototype pollution a lot more and actually gave me some good hands-on tips for scanning for it and for how to identify it within a, you know, an organization or within an application. And so I feel like this is one of the things where it would be a lot of work
+
+because they're kind of hard to exploit even once you find them, but this could be something where you could set up a headless browser, you could put this sort of payload in the URL that he mentions in the book, and then you know, spam that across all of the websites and all of the endpoints that you know about, you know, through Recon, and I think that would probably kick out some pretty quality results.
+
+Joel Margolis (teknogeek) (01:10:08.878)
+Yeah, and for what it's worth in, in a, Gareth works at port Swigger. Um, but the port Swigger web academy, web security academy has an awesome section. It's all about prototype pollution. It goes into, um, both the like server side and the client side aspects of like identifying what it is, how it works. Um, just like all the intricacies of like what prototype pollution is and, and what's going on.
+
+Justin Gardner (@rhynorater) (01:10:13.855)
+Yeah.
+
+Mm-hmm.
+
+Joel Margolis (teknogeek) (01:10:35.338)
+underneath when you're sending like an underscore, proto, underscore, underscore in your payloads. And I would encourage you to just read about it because it's definitely one of those things that doesn't get looked at as much as it should. And if you think about, or you just read, just read some developer code and you'll realize how many places it's possible to get prototype pollution just by writing JavaScript, you don't have to be using like Lodash and stuff.
+
+to get prototype pollution, it definitely exists in normal developer patterns. And I think it's a lot more common than people think. It's just another one of those things that kind of like an XSS, you need to kind of like spray it and see if it's going to pop anything kind of weird. And it'll be pretty noticeable if it's behaving with prototype pollution sort of behavior. There'll be indicators for sure.
+
+Justin Gardner (@rhynorater) (01:11:04.458)
+Mm-mm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (01:11:27.658)
+Yeah, and the server side stuff as well, like with node, that's really interesting as well. I'm sure that's a lot trickier to actually exploit because you don't have the source code, but I've seen at least one server side prototype pollution that just like, it was amazing, yeah.
+
+Joel Margolis (teknogeek) (01:11:42.85)
+Yes. In my own job experience, I've seen one, not at my current company, but at a previous place, I've seen a really bad server-side prototype pollution. And it was like a systemic problem because it was like a common pattern that was being used in like a lot of different places. And it was just like, honestly, just like a pitfall that the engineers thought that this was going to be fine, but it wasn't. And the thing with prototype pollution, right, especially on the server side, is that you're...
+
+Justin Gardner (@rhynorater) (01:11:47.263)
+Yeah.
+
+Wow.
+
+Joel Margolis (teknogeek) (01:12:11.194)
+you're polluting the object itself, right? And so that means that every single object from then on is gonna be tainted, which means that it has way widespread implications in terms of like how it can be exploited and the things that it can do. And it'll affect all parts of the application, not just one part of the application. And so the impact can be insane if you get a server-side prototype pollution.
+
+Justin Gardner (@rhynorater) (01:12:12.907)
+Yeah.
+
+Yeah, and I imagine that could even cause DOS as well, depending on how the server side deals with all of those, you know, objects that are sort of corrupted via the, by corrupting the prototype. So really cool stuff there. Let's, since we just mentioned Portswigger Academy, let's jump down to the DOM clobbering section. This is another really cool, interesting sort of fringe bug type that I really actually, I was gonna talk to you guys, you know, talk to you guys about it on the pod.
+
+Joel Margolis (teknogeek) (01:12:35.792)
+Oh yeah.
+
+Yep.
+
+Justin Gardner (@rhynorater) (01:13:01.976)
+And then I was like, oh wait, actually, I feel like I don't actually fully understand how this gets exploited. And I clicked on the Portswagger Academy link for this, which we'll put in the description. And there's just a beautiful example. Look at this code. I don't know if you got a chance to review this, but look at this code. I totally did not see the way that you could exploit this. And so essentially what they've got going on here is that they're accessing an arbitrary window object.
+
+a window.someobject, and they're accessing an attribute of that object, someobject.url, and they're setting that as the source for a script tag. It actually doesn't seem like that far out there of a code pattern, right? And it's saying if with just HTML injection above this script.
+
+you can hijack this in getXSS on the page. And it does this via injecting two A tags, one that has the ID some object and another one that has the ID some object. But the second one also has the name, URL, and an href. And what ends up happening here, I did break it down in my browser.
+
+when those two A objects both have the same ID, they get sort of clustered into a DOM collection. And that DOM collection allows you to, when they try to access it via window.someobject, the some object ID, the ID for that DOM collection gets put into that window, it gets defined at the window level within the application. So now you've kind of snagged access to that variable. And then the piece that I didn't know about
+
+define sub attributes for that object. I knew you could, yeah, I knew you could, you know, hijack essentially a variable in the window with DOM clobbering, that's like traditional DOM clobbering that I would think about. But then, not only can you do that, but you can also snag sub attributes of that using this, using the DOM collection and then the name attribute inside the second element. And then, so it then selects that second a tag, right?
+
+Joel Margolis (teknogeek) (01:14:47.578)
+Yeah, with a name.
+
+Justin Gardner (@rhynorater) (01:15:14.432)
+use some object.url and then it abuses the a tags dot to string when you do to string on an a tag it takes the eight it returns the href
+
+Joel Margolis (teknogeek) (01:15:25.87)
+Yeah. I mean, it's like, again, these are like the edge case, like weird stuff that you kind of wouldn't necessarily know about or even expect, right? Like the fact that you can access any element by its ID off the window object is like already uncommon. Like just like it's super counterintuitive behavior that would be a thing because.
+
+Justin Gardner (@rhynorater) (01:15:27.542)
+It's amazing.
+
+Yeah.
+
+Super weird.
+
+Joel Margolis (teknogeek) (01:15:48.846)
+It seems fairly arbitrary that just like defining an ID would make it accessible on the window. Normally you'd expect to have to do like document.queryselector or something like that. And the fact that it just implicitly does that already opens up a lot of windows for opportunity for exploitation that you may not have expected originally where you can now, oh, if I can just insert an HTML element or if I can put something in the URL on an HTML element that I don't...
+
+Justin Gardner (@rhynorater) (01:15:55.852)
+Mm-hmm. Right.
+
+Joel Margolis (teknogeek) (01:16:16.138)
+I can't escape out of it, but I can control what's in the href value or something, right? Well, now you can exploit that potentially depending on how it's being used. And those types of edge cases are really important to know.
+
+Justin Gardner (@rhynorater) (01:16:26.826)
+Yeah, it's just amazing to me how they combined the two-string manipulation, the DOM collection thing when you have multiple IDs with the same, or multiple tags with the same ID, and then this whole weird window, window dot whatever the ID is functionality here to actually trigger a very exploitable scenario in DOM clobbering. I kind of thought DOM clobbering was mostly used for sandbox escapes and weird stuff like that, but yeah, it actually seems
+
+seems like it has some very real XSS implementations.
+
+Joel Margolis (teknogeek) (01:17:01.331)
+Super, super strange behavior.
+
+Justin Gardner (@rhynorater) (01:17:04.138)
+Alrighty, man, we are at, I guess, an hour 17 here. Where do we wanna go? Because we got a bunch of stuff left to talk about, but we could push some of this to a different episode.
+
+Joel Margolis (teknogeek) (01:17:09.21)
+Oh man, okay. Ha ha ha. Ah.
+
+Yeah, um, do you want to let, I'll leave it up to you. I think we could talk about these last couple of things, the meta tags and stuff, or we can, uh, we can save it for another episode.
+
+Justin Gardner (@rhynorater) (01:17:26.31)
+Yeah. You are looking like you're going downhill, just a little bit.
+
+Joel Margolis (teknogeek) (01:17:33.114)
+I started out strong. My jet fuel's running out.
+
+Justin Gardner (@rhynorater) (01:17:35.462)
+Yeah, yeah, so let's, we'll hit the meta and base tags and then we'll call it a wrap for this time around and maybe we'll do another episode on like weird browser quirks because there's a lot of other stuff that we had in the doc here that I think the people need to know about.
+
+But yeah, so the other thing that I kind of want to mention, and this was actually sparked by a bug at a live hacking event, which you probably know the one that I'm talking about, but a friend of ours used a meta tag to get a really, really crazy bug at a live hacking event because he had an HTML injection.
+
+And so this is something that I just kind of wanted to make sure everyone was aware of, because whenever you have HTML injection, it feels kind of bad, you know, if you can't get it to XSS. But depending on the context, there's still a lot you can do. And meta and base tags are two of the primary tags that you can use to really do something cool with.
+
+Joel Margolis (teknogeek) (01:18:32.942)
+Yeah, I mean, this cheat sheet is awesome. There's a ton of cheat sheets out there, but I think, you know, uh, keep some of your own notes, I think is like the key I would say, because like, otherwise you're going to have a folder that's got 50 different cheat sheets that are bookmarked in it and when you're trying to think of that one thing, you're going to have to click through all of them to find them. Um, but yeah, this is really, really interesting. I didn't actually. Um,
+
+Justin Gardner (@rhynorater) (01:18:38.293)
+Mm-hmm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (01:18:56.107)
+Yeah.
+
+Joel Margolis (teknogeek) (01:19:00.622)
+I don't really fiddle with meta tags very much, and I think it's kind of underrated. Like early on, like way back in the day, like meta tags used to be like a much easier exploit scenario where you could just like set like base URLs or something like that, that would allow you to exploit them. I don't know how much that's still possible.
+
+Justin Gardner (@rhynorater) (01:19:10.764)
+Mm-hmm.
+
+Right.
+
+Mm-hmm.
+
+Yeah, so some of the functionality, because you used to be able to, I think, trigger XSS via a meta tag, and according to this cheat sheet, it's still possible using a data URI. This was not something I got to test before the episode. It says here that it only works in Safari, so I can't test it right now. Joel, I don't know if you've got, yeah, exactly, seriously. If you've got your, you know, I don't know if you're on your Mac right now, but if you wanna just throw that little data scheme
+
+Joel Margolis (teknogeek) (01:19:39.214)
+Second most popular browser.
+
+Justin Gardner (@rhynorater) (01:19:48.996)
+and to Safari and see if it works, then go for it. But Meta essentially has a bunch of functionality, and one of the cool attributes of it is this HTTP equiv attribute. And originally it was designed to allow you to essentially set HTTP headers inside of the page.
+
+like sort of, I guess sort of retroactively because it's like you've already loaded the body of the request. And I feel like there's a lot more potential for that.
+
+than is possible right now. But if you look at this, let's see if I can pull up this picture that I had in the doc, the current values that are accessible for that are content security policy, content type, default style, and refresh. And each one of those are all pretty freaking interesting, I think. Because with content security policy, you can trigger content security policy to execute inside the browser using that meta tag.
+
+that pretty often. That's pretty common. But setting the content type, this includes encoding. That's another thing that I hadn't really thought about before researching for this episode is like you may be able to use the meta tag to change the encoding for the content body and trigger some XSS further down in the page if you've got some weird injection points. So that's one that I hadn't really thought about.
+
+Joel Margolis (teknogeek) (01:21:13.702)
+super interesting. Yeah, so I just tested this on Safari. Let's see what version, the latest Safari version 16.5.1 and what it does, it throws an error. So I don't know if it's actually exploitable or maybe you might need to do some modifications, but it does say not allowed to navigate top frame to data URL, data colon text HTML. So it does like it's parsing it and it's like skipping over that zero, zero semi-colon thing.
+
+Justin Gardner (@rhynorater) (01:21:18.375)
+Yeah.
+
+Mm-hmm. Okay.
+
+Justin Gardner (@rhynorater) (01:21:34.586)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:21:41.801)
+Yeah.
+
+Joel Margolis (teknogeek) (01:21:42.406)
+And it does seem to like try to do it, but maybe this is something that they added recently as a fix. Cause I know that like some of the things that are in this cheat sheet are definitely for older versions. Like it talks about like Chrome 65, which is probably five plus years old, yeah.
+
+Justin Gardner (@rhynorater) (01:21:49.366)
+Yeah.
+
+that's way out there. Yeah, for sure. And so, it said there used to be a set cookie instruction, which is like, oh my gosh, that would be lit, you know? That'd be so fun. But the way that I see meta tags used most commonly now for exploitation purposes is for this content security policy stuff, and then also primarily for this redirection piece, right? Because, like, think about it, it's very hard to get, actually, I can't even really think of another way.
+
+Joel Margolis (teknogeek) (01:22:06.27)
+Ah, the good old days.
+
+Justin Gardner (@rhynorater) (01:22:26.754)
+to redirect a page with no user interaction, with just HTML without using JavaScript, right? And so, mm-hmm.
+
+Joel Margolis (teknogeek) (01:22:34.99)
+Yeah. And for what it's worth, that works on Safari, at least. I just tested that, like the meta redirect through the language tag. Like that works totally fine. But redirecting it to a data URL, it doesn't want to do.
+
+Justin Gardner (@rhynorater) (01:22:40.885)
+Oh yeah.
+
+Yeah, for sure.
+
+Yeah, so you've definitely got that in your pocket, and this can be useful in a bunch of different scenarios. It can be useful on embedded devices. It can be useful inside of headless browsers.
+
+the open redirect piece by the meta tag is really cool. And I would love to see some research surrounding the content type piece, because I feel like there's definitely some interesting functionality there. I was trying to think about the default style piece. I couldn't really come up with anything, but it seems weird to me.
+
+Joel Margolis (teknogeek) (01:23:18.67)
+Yeah, so I mean, there's always the scenario that always comes to mind with like style stuff for me is the key, like the key press, like sniffing, where I think that's always been like a really solid attack scenario where if you can inject styles, like you can either you can create a really plausible fishing scenario because you're on an SSL signed website that's looks completely different and might have different content and stuff. But you can also do like
+
+Justin Gardner (@rhynorater) (01:23:29.055)
+Mmm, yeah.
+
+Joel Margolis (teknogeek) (01:23:48.87)
+key input changes where you hit a background URL or something. And I think it still goes through some sort of CSP. But depending on the scenario, you can sniff key binds within the website purely through CSS, which is just insane.
+
+Justin Gardner (@rhynorater) (01:23:57.066)
+Mm-hmm.
+
+Yeah.
+
+Yeah, I love that bug so much. There's been some really cool stuff with that. And I'm actually, I'm looking at, because W3 Schools is a great resource and I use them all the time for this sort of thing.
+
+Joel Margolis (teknogeek) (01:24:18.061)
+Yeah.
+
+Yeah, there's also, I'm just thinking about it right... Oh, okay. You good? Can you hear me? Okay. Okay, cool. Yeah, so I was just thinking about this right now, like as we were talking about CSS. A couple years ago, there was a project that came out called Doom Nukem CSS,
+
+Justin Gardner (@rhynorater) (01:24:23.914)
+Whoa, my computer's freaking out.
+
+Jeez. Yeah, I'm back, sorry. It like totally went crazy for just a second.
+
+Justin Gardner (@rhynorater) (01:24:40.16)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (01:24:46.905)
+Oh, dude.
+
+Joel Margolis (teknogeek) (01:24:51.962)
+HTML and CSS. And maybe it uses TypeScript too. I don't actually, I don't actually know, but I'm pretty, I've, if I recall correctly, I kind of sworn it was like all CSS, which is like the craziest thing, but it looks like there's a decent amount of TypeScript in here. I might be wrong.
+
+Justin Gardner (@rhynorater) (01:24:53.36)
+No way.
+
+What? Yeah.
+
+Well, Gareth Hayes, we mentioned him a couple times on this episode, his personal website, if you go to his Twitter profile and you click his bio link, that's like a CSS-based, like fricking interactive game masterpiece of a website. And it's just kind of like an ongoing project for him. And I'm like, wow, that's like such a cool hobbyist activity of like just mastering CSS stuff. And he tweets about like CSS-related quirks all the time, which I think is really helpful as well.
+
+Joel Margolis (teknogeek) (01:25:19.526)
+Hehehehe
+
+Yeah, what is it? garethhays.co.uk? Yeah. Oh man, this is yes. No, this is exactly what I was thinking of actually. Yes.
+
+Justin Gardner (@rhynorater) (01:25:41.138)
+Yeah, check it out for sure. But while you're checking it out, I wanted to mention. Yeah, yeah, yeah.
+
+And so there's some really crazy stuff you can do with CSS, with just pure CSS, which is nuts. But what I was gonna say before my computer started losing its mind was that I went to W3 schools and it says that there's only four attributes that can go inside of, or values that can go inside of the HTTP equiv header, or I mean, HTML attribute. But actually I'm looking at some other stuff and I think there's more. So like I've seen other references to window.target
+
+Joel Margolis (teknogeek) (01:26:14.13)
+Hmm.
+
+Justin Gardner (@rhynorater) (01:26:17.032)
+and content encoding as well. So I'm actually, after this episode, I'm going to go try to suss that out because I think there might be some other things we can put in HTTPEquiv that could really, really mess with the DOM that's being loaded up. So definitely some cool stuff to research there.
+
+Joel Margolis (teknogeek) (01:26:32.43)
+Yeah, I also wonder if there's like undocumented features and like functionality, because I feel like a lot of browsers will create, just like they'll create weird edge cases that they use internally, that are only really designed to be used by them, that may not adhere directly to the HTML spec or what the public spec says should be possible, but is actually still possible. And it's important to remember that
+
+Justin Gardner (@rhynorater) (01:26:38.763)
+Yeah.
+
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (01:26:49.255)
+Mm-hmm.
+
+Joel Margolis (teknogeek) (01:26:59.162)
+Just because the spec says that it should be this way doesn't mean that it's actually implemented that way.
+
+Justin Gardner (@rhynorater) (01:27:03.714)
+For sure, yeah, there's definitely some, I'm looking through it right now, there's some weird stuff there. So I'm gonna check that out afterwards. But for those of you listening right now, what we can confirm right here is it is helpful for exploitation in a content security policy scenario if you wanna make the content security policy stricter to lock out, like for example, if they're loading up a JS library that does purification or something like that, then it's helpful there.
+
+And then it's also possible to use it for a no additional click redirect if you have an HTML injection. So that's helpful as well.
+
+Joel Margolis (teknogeek) (01:27:40.218)
+Yeah. Super cool.
+
+Justin Gardner (@rhynorater) (01:27:41.998)
+So the other thing that we were gonna talk about here was the base tags and base tags This is something that I didn't know about till recently. I think these have to be in inside the head Sort of section within the browser Or within the DOM, so I'm not sure how often we're getting injections up in there But yeah, there's some really cool stuff you can do with this essentially it allows you to turn relative URLs into
+
+fully qualified URLs with your domain, which is super helpful for hijacking stuff further down in the flow of the page and maybe even bypassing CSP in some scenarios. So I guess, I don't know if you can nonce an external import, but yeah, that would be helpful in that scenario.
+
+Joel Margolis (teknogeek) (01:28:33.402)
+Yeah, I'm just testing this one on Safari as well, just to double check, because I'm pretty sure you're right that it has to be, I'm almost certain it has to be in the head.
+
+Justin Gardner (@rhynorater) (01:28:42.826)
+Yeah, yeah, I think it has to be. But yeah, I didn't know about this, and this is just another really cool piece that you can use in HTML injection. It doesn't have to be in the head. Maybe Safari's doing something weird. Check your DOM. Yeah.
+
+Joel Margolis (teknogeek) (01:28:52.407)
+No, it doesn't.
+
+Wait, yeah, this could be something that Safari's doing weird, but I did just double check and in my body element, I put a base href and a script tag and it is trying to load it from the base URL that's in the body tag.
+
+Justin Gardner (@rhynorater) (01:29:13.966)
+Wow, I stand corrected, man. Yeah, this has a lot of power, this element. And HTML, like we mentioned, HTML injections can be kind of tricky, but this is definitely something that you can use to kind of try to turn the tides in your favor.
+
+Joel Margolis (teknogeek) (01:29:17.767)
+So.
+
+headers. Chrome is doing it too.
+
+Justin Gardner (@rhynorater) (01:29:33.137)
+I've nerd sniped Joel is just like staring wide-eyed at his computer right now like
+
+Joel Margolis (teknogeek) (01:29:35.218)
+I, yeah, the Chrome does it too. So yeah, if you put the base tag, even in the body, dude, I could have sworn that it was a head only thing, but okay. Yeah. So a base, a base tag anywhere, um, will change where it tries to load from, even if it's in the body.
+
+Justin Gardner (@rhynorater) (01:29:40.854)
+Maybe I'm just making that up, yeah.
+
+Yeah, very cool.
+
+Justin Gardner (@rhynorater) (01:29:55.126)
+Very solid, man. Yeah, I think that's all I've got for bass stuff. Dude, we skipped over so much stuff. We're gonna, I'm just gonna, yeah, we've already prepped, we've already prepped for another episode. I'm just gonna copy this over into the other doc, because this is, yeah, a lot of stuff. But anything else you wanna add before we wrap this one up?
+
+Joel Margolis (teknogeek) (01:30:03.687)
+Yeah, we have a whole second episode worth of content that we didn't even talk about.
+
+Oh no, I think that was it.
+
+Justin Gardner (@rhynorater) (01:30:17.514)
+I love how this is like one of our longest episodes and it was like on a US holiday and after you just flew back from Korea.
+
+Joel Margolis (teknogeek) (01:30:27.196)
+Yeah, yeah, another banger, but yeah, thank you for putting together all these links because there's no way I would have been able to find all this stuff. And I've got some notes I need to take now, I think, just for my own personal stuff.
+
+Justin Gardner (@rhynorater) (01:30:38.026)
+Yeah, for sure. Good, I'm just gonna say good luck to our producer trying to fit all this in the episode description because there's like 50 bajillion links, but. All right, cool, that's a wrap, yeah? Sweet.
+
+Joel Margolis (teknogeek) (01:30:48.118)
+awesome alright yeah catch you later peace

@@ -1,0 +1,879 @@
+Episode 97: Bcrypt Hash Input Truncation & Mobile Device Threat Modeling
+Source: https://www.criticalthinkingpodcast.io/episode-97-bcrypt-hash-input-truncation-mobile-device-threat-modeling/
+======================================================================
+
+Justin Gardner (00:01.153)
+Alrighty my man, we are rolling on this beautiful fall day. How's it going?
+
+Joel Margolis (00:04.904)
+yeah, good, how about you?
+
+Justin Gardner (00:07.512)
+Pretty good, man. The size of the to-do list is growing and growing. I'm going to Grenoble next week for Gray Hacks, and I'm gonna be presenting on some Kaido stuff out there. And let's just say that presentation is not fully completed yet. I don't know, I feel like I hear a lot of hackers talk about how they'll be going to this conference and they're in their hotel room the night before prepping the slides and stuff like that, and I've never been that sort of guy.
+
+Joel Margolis (00:17.733)
+Nice.
+
+Joel Margolis (00:34.224)
+Yeah.
+
+Justin Gardner (00:35.532)
+Like I'm always the guy that like has it done way in advance, has it rehearsed, that sort of thing. But like, I felt like I should try it this time and it is not working for me dude.
+
+Joel Margolis (00:45.943)
+No, dude, no, that's stressful. I mean, I'm up for grass-nudity to some extent, but like for stuff like that, I definitely, I wouldn't want to really be winging it.
+
+Justin Gardner (00:51.245)
+Yeah.
+
+But you've got that ADHD brain where you can procrastinate and then trigger superpower mode,
+
+Joel Margolis (01:00.694)
+Yeah, but that doesn't make the presentation good. So that's trick for it.
+
+Justin Gardner (01:03.31)
+I don't know. Yeah, I suppose so. All right. All right. What we got on the news for today? Let's see. dude, this B crypt thing is insane. Okay. So let me, let me just give a little bit of a, let me just read this, this release from that octa put out. Okay. So it says for octa orgs without MFA sign on policies.
+
+Joel Margolis (01:16.376)
+Yeah, that was pretty interesting.
+
+Justin Gardner (01:30.176)
+and using accounts with usernames of 52 characters or more, this could allow users to authenticate by providing only the username and no password entered, or regardless of the password entered. What the heck,
+
+Joel Margolis (01:39.44)
+Yeah.
+
+Joel Margolis (01:44.358)
+Yeah, so super interesting stuff. Somewhere, I guess in the bcrypt spec, it says that it truncates inputs beyond, is it 72 characters or 72 bytes? 52, 52 characters? Yeah, so it only takes up to a certain point and then the rest of it gets truncated during like hashing, I guess. And they were.
+
+Justin Gardner (01:55.598)
+52 characters or more. Yeah.
+
+Justin Gardner (02:04.366)
+Jeez.
+
+Joel Margolis (02:07.846)
+recatenating username and password together and then hashing that in bcrypt. So if your username was too long, then it would just create a predictable hash that would never get changed by your password. yeah, very, very oops.
+
+Justin Gardner (02:12.035)
+Gosh.
+
+Justin Gardner (02:20.728)
+Jeez, dude. Could you imagine? This is one of those things, I wanna say a couple years back, there was this scenario with Apple where you could just press enter a couple times or something like that and it would log you in as root. And yeah, yeah, yeah. I forget what it was called. Let me see, Apple press enter root. It was something.
+
+Joel Margolis (02:34.552)
+Really?
+
+Joel Margolis (02:44.176)
+will blame others in twenty seventeen
+
+Justin Gardner (02:45.838)
+yeah, blink password, yeah.
+
+Justin Gardner (02:50.498)
+Yeah.
+
+Joel Margolis (02:51.088)
+Click the lock, type root in the username field.
+
+Justin Gardner (02:55.606)
+And it would just...
+
+Joel Margolis (02:56.04)
+because root had no path, that's funny. Yeah, I used to use this quite a bit actually back around that time as well, just for like logging, like I had like a secondary user account and I would use that. So it's really interesting.
+
+Justin Gardner (02:58.592)
+Yeah.
+
+Justin Gardner (03:05.261)
+Yeah.
+
+Justin Gardner (03:09.856)
+It's just one of those things where it's like, you would never expect that to happen to Apple and you would, I personally would never expect this to happen to Okta where it's like, there's just no, it just doesn't take a password. It's just like one of those brainfuck things that's like, what is going on here?
+
+Joel Margolis (03:22.374)
+Yeah, yeah, yeah for sure. It's a very, very interesting bug. it's, I mean, it's good that it got caught. How did they find it? like, did it, like what happened?
+
+Justin Gardner (03:34.764)
+I didn't see the way that they found it. Ideally, their bug bounty program would have caught something, this is just one of those things that I think it, for me, is like, really, discovered internally, wow. Well, that's good for them.
+
+Joel Margolis (03:45.936)
+it's discovered internally.
+
+Yeah, and their timeline. July 23rd, it was introduced as part of a standard release. And then on October 30th, it was discovered internally. And then they switched from Bcrypto PBKDF to...
+
+Justin Gardner (04:01.922)
+Yeah, and actually it says down in the comments here that php.net even mentions that inputs above 72 characters get truncated. So you had 72 in your head, but they say 52 in the actual disclosure. So it's one of those two.
+
+Joel Margolis (04:16.634)
+Well, it could be that they have an additional path. like, you know, the speculation I think is that it was username and password, but they probably have like a timestamp or some other thing in there that's like, or who knows? Right, exactly. Yeah. But either way, very, very interesting.
+
+Justin Gardner (04:21.485)
+Right.
+
+sure, that's like 20 characters of padding. Gotcha. Yeah, definitely got to be on my radar because bcrypt I think is like something that you see from time to time when doing white box source code review. So if you see, if you see bcrypt at all, I just going to have it in my head like, okay, there's truncation happening here. How might I trigger that truncation? And I think if the username was an email in a lot of scenarios, this becomes a lot.
+
+Joel Margolis (04:45.829)
+Yeah.
+
+Justin Gardner (04:51.158)
+a lot nastier, right? Like I feel like the length of that could be dramatically longer and result in this sort of truncation.
+
+Joel Margolis (04:59.716)
+Yeah, for sure. It's, I mean, it's one of those things where I don't know how you would find it, I guess, from like, I would be kind of interested in how they found it. Like what caused them to find that? That might be interesting.
+
+Justin Gardner (05:05.004)
+Yeah.
+
+Justin Gardner (05:10.732)
+Yeah, I feel like somebody should have just found it, right? Like if somebody has a super long username and then they just like fat fingered their password and then it logged you in, like I would be like, the fuck, like what is going on here?
+
+Joel Margolis (05:16.858)
+Well, the thing is like, if you think about it, well, I think, I think more of it is like, you know, from like a security perspective, like you look at that code and you'd like, okay, they're hashing it. Yep. Looks good. They run it through Bcrypt. They call the standard Bcrypt function. Okay. They compare it, blah, blah, whatever. Right. But unless you know that like Bcrypt has that quirk or that you've read into the spec that like Bcrypt, like, I don't think most security engineers would second guess like how Bcrypt works. Right.
+
+Justin Gardner (05:28.236)
+Yeah. Yeah.
+
+Justin Gardner (05:37.475)
+Yeah.
+
+Justin Gardner (05:44.322)
+Yeah, Bcrypt, yeah. Yeah.
+
+Joel Margolis (05:46.616)
+So it's very interesting. It's like a very, very bad edge case.
+
+Justin Gardner (05:52.364)
+Yeah, that's not great functionality. I wonder, yeah, there's not really much. I mean, from an attacker's perspective, I think it's not super exploitable because the username has to be so long. So you can only attack victims with super long usernames or whatever.
+
+Joel Margolis (06:08.036)
+Well, and it depends on like how it's being done, right? So like in this case, it's bad because it's username then password. If it was password then username, that'd be completely different.
+
+Justin Gardner (06:15.254)
+Mm-hmm.
+
+True, true. But then, yeah, man, they wouldn't, yeah, that's a good point. So really, you have to see that same pattern where they're concatenating something that is a part of the account identifier, but yeah. Right. Or static, like a salt or whatever that's associated with it.
+
+Joel Margolis (06:31.43)
+Yeah, that's like guessable or like knowable like more than a password or like, you know, is nonprivileged. Yeah, like an email, like knowing the email, not a big deal. Knowing the email and password is a big deal. Knowing the email and being able to get it without a password also a big deal.
+
+Justin Gardner (06:47.008)
+Massive deal. Okay, solid. So I mean, a little bit of an edge case there, but definitely something to be considering if you're auditing the auth flows of these sort of environments where they're dealing with this like password hashing or using bcrypt. I've been diving a little bit deeper lately when I've been hacking stuff. I've been trying to look at least cursorily, cursorily, I've been looking at least a little bit.
+
+Joel Margolis (07:13.026)
+Cursorly?
+
+Justin Gardner (07:16.75)
+at like the implementation of crypto stuff and bugs keep on falling out, man. I had a bug yesterday where I could bypass the signing, some signing that was being passed from the server side into the client side and then the validation was being done in a JS library. I bypassed something there and then let's just say at a live hacking event in the past six months, there was some crypto related bugs too. So I think I was scared of those for a long time.
+
+Joel Margolis (07:20.25)
+Mm-hmm.
+
+Justin Gardner (07:46.22)
+But I think if you understand some of the basic concepts and then you look a little bit deeper at the implementation, I think a lot of times those sort of issues kind of pop out.
+
+Joel Margolis (07:55.686)
+Yeah, I you'll find that most of the time it's not super home-rolled. Like sometimes it is, and that can lead to its own problems, but it's mostly just like in functionality, like how it's being used or like they're generating this hash and then they're trusting it and maybe you can poison that hash or whatever. It's more of like the fundamental principles more than it is like needing to be a math major to break SHA-256 or whatever.
+
+Justin Gardner (07:59.982)
+Yeah.
+
+Justin Gardner (08:18.338)
+Yeah. The one that I looked at the other day was there was a JWT token that was being passed and it was hard coding. The way that they had written the code, looked like it was hard coding the algorithm that it should be using to validate. It wasn't even using the header, right? But then if you look a little bit deeper into the code, it wasn't. It was trusting the algorithm that was in the JWT header. So you could just provide the non-algorithm and it would still pass.
+
+Joel Margolis (08:42.694)
+Mm.
+
+Joel Margolis (08:47.247)
+Interesting.
+
+Justin Gardner (08:47.47)
+So a lot of libraries have that built in. yeah. All right, let's jump over to this next one. This is by NdevTK. And this is just a write-up of a bunch of Android-specific Chrome behaviors and compatibilities and incompatibilities. I just thought this was super fascinating because I think there's a lot of attack vectors that I didn't really think about.
+
+Joel Margolis (08:49.926)
+So you're very interesting.
+
+Justin Gardner (09:13.656)
+from an Android and Chrome perspective that he seems to be really aware of the threat model with. So I wanted to your thoughts on all these, Joel. What do you think?
+
+Joel Margolis (09:22.98)
+Yeah. So, I mean, I think a lot of people just sort of jump from like, you know, you click a link and then it opens the app or whatever, but that has to happen from somewhere. And so there's a lot of like browser specific behavior, like Android out of the box ships with Chromium as like the Android web view. And then I think it probably, most of them ship with the Chrome app too. Most people are probably using the Chrome app as well. and so there's a lot of like, you know, intent URLs. I'm pretty sure that is not like an implicit.
+
+Justin Gardner (09:30.134)
+Mm-hmm. Mm-hmm.
+
+Justin Gardner (09:39.907)
+Mm-hmm.
+
+Joel Margolis (09:52.87)
+feature it's like implemented specifically by Chrome and Chromium into the browser so that you can launch stuff with this intent schema. So there's like a lot of nuance to how that stuff works, the parameters, what's allowed, what's not allowed, what stuff you can launch, like how it gets parsed, all that kind of stuff. this is a really good in depth, like look at that kind of stuff as well as it seems there was a number of.
+
+issues with like just the format of it how how it was being parsed and all that kind of stuff as well like separate from how it's supposed to work so very very interesting stuff they got quite a number of bounties
+
+Justin Gardner (10:24.59)
+Mm.
+
+Yeah, like, I like here how they mentioned some of the attack vectors that I wouldn't really have known about without going through and reading like the chromium issues. For example, apparently it's a problem that can be awarded $3,000 because that's what happened here. If you can force another browser to pop up from Chrome without a prompt, apparently there's supposed to be some sort of prompt saying, Hey, we're going to open.
+
+Joel Margolis (10:53.414)
+Mm-hmm.
+
+Justin Gardner (10:56.354)
+this URL in Samsung browser. And the reason for that is because like, you, like Samsung browser is running on a much older version of Chromium as a base, right? So if you can pivot from Chrome and force it to open up Samsung browser, then that makes it, you know, your chain there becomes a lot easier to do some, something like a, like a browser end day attack on that older version. Is that accurate? Is that what you saw as well?
+
+Joel Margolis (10:56.922)
+Yeah. Correct.
+
+Joel Margolis (11:10.832)
+Yeah.
+
+Joel Margolis (11:16.816)
+Yeah.
+
+Right. Well, I mean, like that, that's true. Generally speaking, you don't want to make it so that you can open other apps or like spawn intense from one app to another app. And especially not without that confirmation dialogue. So there's this, like this, this concept of registered schemes, right? And so let's say you have two browsers on your device and they both register the HTTP scheme and you open a link. It should prompt you and say, do you want to open this in Chrome? Do you want to open this in opera? Do you want to open this in whatever?
+
+Justin Gardner (11:23.502)
+Mm-hmm.
+
+Justin Gardner (11:27.278)
+Mm-hmm.
+
+Justin Gardner (11:38.977)
+Mm.
+
+Joel Margolis (11:46.21)
+And if it does it implicitly by like directly opening a specific app instead of prompting the user to do it, then that's, you know, obviously a vulnerability just like manifesting itself within the browser application. Right. So, yeah, it's, it's, it's awesome research and, definitely a lot of good snippets in here, just generally speaking about like the intent URL, schema, like format and like how that stuff works and what stuff you can do with it, what, like the parameters are all that kind of stuff. this is a really good piece of.
+
+Justin Gardner (11:55.788)
+Yeah.
+
+Justin Gardner (12:03.022)
+Mmm.
+
+Justin Gardner (12:08.461)
+Mm.
+
+Justin Gardner (12:12.534)
+Yeah, yeah, we talked about that a little bit, I think on the mobile episode where we were talking about intent URLs and how all that works. But I think that is something that like, if you want to level up as a mobile hacker, like I think one of the next things on my docket as a mobile hacker would be I need to understand how all of those work so that I can make my exploits more reliably. Like, I guess, what would it be? Network? I guess it'd be network, right? It'd be user interaction required, but it'd be network.
+
+Joel Margolis (12:36.27)
+I mean, you can raise the, yeah, like you can raise the severity of them because, you know, even if it may be a more complex attack, you might be able to launch it from the browser instead of like having to rely on another app on the device. Right. And that that's going to raise the severity. Yeah.
+
+Justin Gardner (12:45.677)
+Right.
+
+Right, so then it goes from like adjacent to like remotely exploitable, right, if they click a link in their browser. So it still requires user interaction, but it still, it allows you to access some of those like more intent, some more core Android exploitation techniques, if you understand how those work. That's pretty rad. Yeah, and I feel like there's a lot of crap that ships with Android devices and with like Samsung devices and stuff like that, like a lot of apps.
+
+And so I think there's probably a lot of more ripe attack surface than I actually gave it credit for actually attacking like vanilla Android devices and say like, all right, let's grab all of these apps that come pre-installed and develop exploits that do things like, for example, opening up specific apps without a prompt.
+
+Joel Margolis (13:35.898)
+Yeah. Well, and you'll see that like, you know, nine times out of 10, when there is a vulnerability in like Samsung or something that's like not a kernel exploit, it is that it's like, there's a permissions issue in one of the system apps that's installed at a system level that has additional privileges. And you can escalate through that by doing something insecure through just like a standard Android mechanism.
+
+Justin Gardner (13:42.574)
+Mm-hmm.
+
+Mm-hmm.
+
+Justin Gardner (13:57.922)
+Hmm. Very cool. Yeah. I'm looking through some of these other ones, man. And there's like, add to home screen spoof. There's like, an iframe escape and some of these haven't been fixed yet. It says asked and not fixed, controlling Google assistant asked and not fixed. The controlling Google assistant one is actually kind of scary to me, man, cause it looks like you can, you know, trigger the user to go to a deep link or whatever and it will.
+
+invoke specific routines or workflows in inside of Google Assistant, which I would not want that to happen. Right. Like I have some, I mean, my offset is so bad, dude, but I have, I have some, some routine set up at my house that will, that will do things with my home automation. Right. And I'm like, I don't want people invoking that remotely. So I'm, kind of confused about why this Google app colon slash slash deep link, and then passing in this whole URL. I'm kind of confused as to why that wasn't fixed by, by Google.
+
+Joel Margolis (14:58.374)
+Yeah. Yeah. It's very interesting. mean, it might be the it's part of, I mean, you never know. Like I'm sure Google is not the kind of team that I generally am like worried that they're mishandling vulnerabilities. So usually if they have like taken a stance on something, it's very,
+
+Justin Gardner (15:10.024)
+Yeah, yeah, that's true.
+
+Joel Margolis (15:15.628)
+specific for a valid reason and like either they're working on fixing it or there's a threat model like Or there's mitigating factors or whatever. I'm sure that there's some reason You know, I don't think I've ever really seen an instance where the Google security team has like Miss Valued something or like on not paid something properly. There was that YouTube thing look a little while ago, but but I don't know if that was like I don't know if that was necessarily like
+
+Justin Gardner (15:38.444)
+Yeah, it's pretty rare, I agree.
+
+Joel Margolis (15:44.354)
+mispayment per se but I think could have maybe put it higher.
+
+Justin Gardner (15:45.74)
+Yeah. Yeah, I mean, to be honest, I often see like we talked about on the podcast, I think a couple of weeks ago, or maybe I was just tweeting about it. I forget. But there's there was a vulnerability that was essentially a click jacking that worked out and got paid or an iframe injection. That's what it was. It was like an and then it got paid 15 grand. Yeah, I want to know. I don't know if I have an.
+
+Joel Margolis (16:04.513)
+Yeah, the
+
+The Zendesk one. Yeah. Was it Zendesk?
+
+Justin Gardner (16:12.384)
+No, no, no, no, no, it's a different one. This is for Google. So it was was a, it was a, a iframe injection. So you were able to control what site gets injected into an iframe. And then somehow he used it to get account takeover apparently, but 15 grand for that. Yeah. I think the, the result of that was very similar to like the, the person wasn't very explicit about it. I commented on that and, and they responded and said, the result of that was
+
+Joel Margolis (16:20.406)
+yes, I remember we talked about this. Yeah.
+
+Joel Margolis (16:26.586)
+Did you ever get clarity on?
+
+Justin Gardner (16:40.27)
+something similar to that Google Drive one we saw a while back where it's like you could embed, there was like 15 client side chains. Yeah, it was kind of similar to that where you could force share some Google Drive or your root Google Drive folder, but I think he was able to get his two account takeover. So 15 grand sort of makes sense for that, I guess.
+
+Joel Margolis (16:46.435)
+Yeah, that's the one I was talking about.
+
+Joel Margolis (16:52.325)
+Mm-hmm.
+
+Joel Margolis (16:58.744)
+Okay. Yeah, I mean, I think if you can figure out how to open arbitrary URLs within a Google product, that's usually like a really good foothold. And probably one of the more common footholds you're gonna like see like, know, cause they have fairly strict like CSP and like, like CSP evaluators written by Google.
+
+Justin Gardner (17:06.53)
+Yeah. Yeah.
+
+Justin Gardner (17:15.147)
+Mm.
+
+Justin Gardner (17:18.508)
+Yeah, yeah. So I'm looking through this whole thing. We'll link it down below. I would actually recommend any of the listeners that are trying to understand a little bit more about, I guess, intermediate to advanced, like mobile attack vectors. I think this writeup is really good, not only because it talks about some of these more fringe features like the intent URLs and that sort of thing, but also because it talks about understanding the threat models of...
+
+these various apps and ecosystems, right? I did not know that if you could bypass that little pop-up that says, all right, we're gonna open Samsung browser now, press approve, that that was gonna result in a bounty. So understanding those threat models is one of the ways you can really stay on top of finding vulns in these sort of more complex environments.
+
+Joel Margolis (18:06.82)
+Yeah, for sure. And I think what I'd say is like to that specific instance, just think about it like as if it's any other app, right? If you can open another app from PayPal, that's an issue. If you can open another app from Chrome, that's also an issue. Like without user authorization, right?
+
+Justin Gardner (18:11.266)
+Mm-hmm. Yeah.
+
+Mm-hmm.
+
+Justin Gardner (18:23.5)
+Really, I didn't know that. So that little box that pops up from the bottom, is that what you're talking about where it's like open with that? So if you can bypass that, that's a problem. Okay, today I learned. Cool, well, we'll link this NDEVTK right up in the description, so check that out if you want some more details on that. Dude, another Portswinger research drop. You see me, I'm the hands together, guys. I'm excited.
+
+Joel Margolis (18:51.722)
+I wonder how much they're paying these guys
+
+Justin Gardner (18:53.89)
+Dude, they crank out some serious stuff, man. They really do.
+
+Joel Margolis (18:57.414)
+James Kettle just hit like 10 years, right? At Portswigger. He was like, I love it here. I was like, dang bro. I always hear these Europeans, or wait, UK's not part of Europe. I always hear these people over the seas, on the other side of the Atlantic Ocean, talking about how they don't get these Bay Area engineering salaries. But somehow they managed to capture James Kettle and Gareth Hayes for.
+
+Justin Gardner (18:59.542)
+Yeah.
+
+Justin Gardner (19:03.17)
+Yeah. It's a good model too. Yeah.
+
+Justin Gardner (19:11.146)
+Over-
+
+huh, exactly.
+
+Justin Gardner (19:22.456)
+Yeah.
+
+Justin Gardner (19:25.91)
+Yeah, I feel like you gotta just write a blank check to Gareth Hayes and Kettle, man. Those guys are so valuable. Yeah, maybe.
+
+Joel Margolis (19:27.267)
+so many years.
+
+Joel Margolis (19:32.934)
+Maybe that's why they raised money. They raised funding so they could pay their salaries.
+
+Justin Gardner (19:40.396)
+Yeah, seriously. This one was really cool though. It's titled Concealing Payloads in URL Credentials. And I've got a couple comments on this. One, it's, you guys know me. You guys know me and my client's love of client-side stuff. So I see this and I just wanna give Gareth a hug because this stuff is so nice. But actually, it originated from Johann Carlson talking about how this sort of similar functionality on Twitter a while back.
+
+and it's not visible in the URL. No, no, he was talking about it on Twitter. And essentially what this is, is it's using the username and password parts of the URL, right? So you've got HTTP, HTTPS, know, colon slash slash, and then username, colon, password. Yeah, exactly, so that. And you you can navigate to those URLs in Chrome, and it just won't show anything in the URL, in the URL bar.
+
+Joel Margolis (20:11.972)
+function I was in Twitter or he was talking about it on Twitter? okay.
+
+Joel Margolis (20:23.726)
+Right? Username, yeah, like username, colon, password, ad.
+
+Justin Gardner (20:37.122)
+But, and it won't show anything in window location.href, but it will show something in document.url. So this is another way that you can smuggle payload information into a page without affecting the actual URL of the page or putting anything in the hash or giving the WAF anything to work with, because it's client-side. So it was surprising to both Gareth and to me that location and document.url
+
+Joel Margolis (20:44.101)
+Hmm.
+
+Justin Gardner (21:06.422)
+are different. And that definitely provides some ability to play around with this. And he pointed out really well that if that URL is actually being embedded into an ATAG or something like that, and that ATAG has an ID associated with it, then you can very easily access that value by using ID with dom clobbering functionality, by using
+
+ID, in this case it was x.username or .password and that will return that string that you smuggled in.
+
+Joel Margolis (21:40.824)
+Yeah, so I have a suspicion as to why this is the case. And if you look kind of closely at it, document.url is a string. So either it's crafted or it's set or somewhere. Document.location and window.location is a location object. So it's parsed. because I was curious if there was like a username property on the location object or something, but it doesn't appear there is. But you'll notice that it's an object.
+
+Justin Gardner (21:48.717)
+Mmm.
+
+Justin Gardner (21:57.886)
+Justin Gardner (22:04.17)
+Mm-hmm. Yeah.
+
+Justin Gardner (22:09.262)
+Mmm.
+
+Joel Margolis (22:09.35)
+it's a location object, it's not like document.url is literally just a string. So I'm wondering, there might be other instances where that exists as a proxy or something. Like I said, maybe there's another object that has a URL property on it or something that's nested somewhere else. So that might be some interesting research.
+
+Justin Gardner (22:15.478)
+Yeah.
+
+Justin Gardner (22:28.727)
+Well, window.location.href is also a string, that href does not, yeah, it does, and it doesn't contain that username and password there either. So I think maybe, hmm.
+
+Joel Margolis (22:33.712)
+Well, but that's going to come from the location object, right?
+
+Joel Margolis (22:39.357)
+Right. Yeah, so my guess is that the location object constructor probably like parses it out specifically. And then when you do .href, it basically like goes back. It like parses it and then turns it back into a string.
+
+Justin Gardner (22:45.742)
+pulls it out.
+
+Justin Gardner (22:51.948)
+Yeah, yeah, no, absolutely. And I think that, just as a note, I'm just gonna mention this before I forget, Safari does discard the URL. So this only works in Chrome and Firefox, which is crazy. Normally you see it the other way around where Chrome does something and Safari's like, hmm, let me do something insecure. Yeah, so I did wanna mention a couple other things, you because we talked about last week how Safari has some weird cookie attribute commenting out functionality. But the...
+
+Joel Margolis (23:02.266)
+Hm. Huh.
+
+Joel Margolis (23:07.524)
+Safari is the new security champ.
+
+Justin Gardner (23:21.986)
+This whole concept of smuggling data through in such a way that the WAF cannot see it, I think is really valuable. And there's a lot of really unique payloads out there for XSS, but my favorite one, which is in line with this, is simply JavaScript colon name, okay?
+
+That is a full XSS payload. And the reason for that is that you can assign the name value, that name attribute, window.name, persists across, it's not clobbering, it actually persists across window refreshes, right? So I open a window and I name it whatever I want. I can name it svg onloadalert1, right? And then when I redirect to that JavaScript URL, JavaScript colon name, what it does is it returns from that JavaScript URL the name string, right?
+
+Joel Margolis (23:58.715)
+through clobbering.
+
+Justin Gardner (24:20.118)
+And then that name, the value of the name string gets considered to be the DOM of that page under the same origin that it came from. So if I put SVG onload alert one into the name and then redirect to that via JavaScript colon name, it will actually render the SVG tag on the page in pop alert. And there's no way that the WAF can see that.
+
+Joel Margolis (24:38.512)
+Yeah, because name is actually always exists. It always exists. There's also, I mean, there's a lot of things that actually fall under this. So window.persistent all caps is a one. It just holds the value one. So if you did like JavaScript colon all caps persistent, would, or alert persistent, I guess.
+
+Justin Gardner (24:42.636)
+Yeah, persists.
+
+Justin Gardner (25:00.96)
+Yeah, no, no, no. I mean, yeah, you could do, there's lots of variables that are accessible, you know, at that capacity.
+
+Joel Margolis (25:09.766)
+Can you just do JavaScript colon one? Does that work?
+
+Justin Gardner (25:13.694)
+Well, yeah, that'll put one on the page. Isn't that weird? That was what freaked me out one time, is I did something that returned one or whatever, and then I saw it appear on the page, and I'm like, what is going on here? And it's well-documented. I thought for a second that I had found something weird here, but if you look at it, JavaScript colon name is a pretty popular payload. It's well-documented. But it's just crazy to me that you don't have to do any assignment.
+
+You don't have to do anything like that, right? If you control the location that it's being directed to, you can just do JavaScript colon name, and you don't have to do any function calls, anything like that, because a lot of times the WAF block, they block the backticks and they block the parentheses, right? So it makes it really hard to actually call functions. In this scenario, you can smuggle everything through window.name, which is something the WAF never even sees.
+
+Joel Margolis (25:51.588)
+Yeah.
+
+Joel Margolis (25:58.384)
+Yeah.
+
+Joel Margolis (26:03.512)
+Yeah, and interestingly, because name is an empty string by default, you could concatenate to it with plus as well. So if you did like name plus one, you would get one in a string. So you could potentially pivot off of that as well.
+
+Justin Gardner (26:10.508)
+Yeah. Yeah.
+
+Justin Gardner (26:15.404)
+Yeah, there's lots of cool quirks there. then, so bringing this back around to the research that they were talking about with the URL stuff, this is another way to smuggle in data that the WAF never even sees, right? So you can smuggle in by a name, you can smuggle it in by a hash, or you can smuggle it in via this username and password functionality. And if that username and password gets embedded into an a tag,
+
+then you have a really easy way to access that with whatever ID dot username or dot password. So pretty, pretty cool stuff. I dig it.
+
+Joel Margolis (26:49.264)
+Yeah, yeah. Super interesting.
+
+Justin Gardner (26:53.774)
+All right, now we got the monster, man. You ready? You ready for this guy? I don't know if I'm ready for this guy. This is a pretty intense one. Okay. Dude, we gotta talk about it though. So there's this tool that got released this past week called Lightyear. And this is one of those things that, like, I feel like I should probably read through this and understand it fully, but when I read through it and I try to understand...
+
+Joel Margolis (26:56.934)
+you
+
+Joel Margolis (27:01.894)
+php strikes again
+
+Joel Margolis (27:19.232)
+This is one of those things that I'm gonna put a pin in it until I need it next time I see a PHP page I'm gonna be like, okay. I'll do it. Here we go
+
+Justin Gardner (27:22.702)
+Dude, that's a good, that's a good, thank you. That's what I'm doing too. That makes me feel a little bit better about this, right? But the TLDR of this, and I wanted to give it some publicity because, I mean, this is a shit ton of work and a shit ton of, you know, code that they had to write and intricacies that they had to understand to get us this tool. This tool allows you to abuse those PHP filter change that we talked about on the pod a while back.
+
+And the current state-of-the-art tool for that is, or prior to this one, was PHP filter chains Oracle exploit. And they outline in the beginning of this that there's a pretty big downside to this, which is that if your primitive is via a get parameter, right? So if you're injecting into an open or whatever where you can use the PHP schemes, then if you're doing this via get parameter,
+
+then the size of that get parameter inflates pretty quickly if you're trying to get data out. So you can only get about 135 characters out before you start hitting the URI too long problem, right? And this tool, Lightyear, not only fixes that, can dump files of tens of thousands of bytes with just small payloads of a couple thousand characters, but it also does it a lot faster.
+
+And it does it more efficiently and doesn't produce any PHP warnings or errors which will sometimes break the whole the whole flow so I think
+
+Joel Margolis (28:54.16)
+We don't want that pesky IR team knowing what we're doing.
+
+Justin Gardner (28:56.8)
+I know exactly, right? So this is an awesome tool if you're able to actually inject into any of those sort of functions that allow you to utilize those PHP schemes. For me, I don't do a lot of PHP hacking, so this is, I think I'm gonna do exactly what you said, Joel. That makes so much sense to me. It's just, next time I'm hacking PHP, next time I need this, I know exactly where to find this bookmark. But it's nice to know that they've got something that really allows you to read arbitrary files.
+
+Joel Margolis (29:21.925)
+Yeah.
+
+Justin Gardner (29:26.925)
+with that.
+
+Joel Margolis (29:28.358)
+I think it's a really important part of learning is like knowing when you should really learn something and when you should have it ready to be learned, you know, because there's only, there's a certain point when I was young and invincible, I had infinite brain space. I am now old and no longer invincible and have limited brain space. And so I have to, I have to really pick and choose what I decide to keep.
+
+Justin Gardner (29:30.574)
+Hmm.
+
+Yeah.
+
+Justin Gardner (29:37.603)
+Yeah.
+
+Justin Gardner (29:47.873)
+Right. Right.
+
+Justin Gardner (29:53.602)
+Yeah, yeah. And well, I mean, I think that's absolutely necessary in this environment as well in the, in the IT environment, right? The, particularly the security environment where there's so much like onslaught of amazing research and stuff, you know, we're in this very small niche of bug bounty and I can't even keep up, right? Like, and it's my job to keep up, you know? And so I think having these sort of categorized and knowing where to find them when you need them is important. So Lightyear is the new go-to tool for that.
+
+It seems like they've solved a lot of the problems. We can use small payloads. We can do it really fast. There's no errors or warnings. So that's a good one to have in your back pocket for sure. But Joel, did you see the little thing I added underneath this in the docs?
+
+Joel Margolis (30:36.79)
+I didn't actually that was the one link I didn't there's a wait, but this is old
+
+Justin Gardner (30:38.976)
+Nah, dude, so it's like...
+
+They're, no, so they're, think they're gonna implement it now though. yeah, so back in 2023 when this whole PHP filter chains research came out, someone was like, hey, we gotta fix this in PHP. And they're like, nah. And then when this new research came out, they're like, all right, we gotta fix this. So I think that at some point they're gonna limit the number of,
+
+Joel Margolis (30:47.132)
+I see they reference this issue for disk
+
+Justin Gardner (31:12.585)
+filters that you can apply, which I think would kill a lot of this research.
+
+Joel Margolis (31:17.732)
+Yeah, this guy, some guy mentioned this. I didn't know you could do this. This is one of those annoying things about GitHub that you can like, there's always like ways to like make yourself appear on things. And so I guess he mentioned this issue on his own repo in a commit and it like, it like populated, but some guy has added like a limit to the number of filters into the PHPs. needs to do a fork of the PHP source. So if you want.
+
+Justin Gardner (31:27.639)
+Yeah.
+
+Justin Gardner (31:41.656)
+Yeah.
+
+Justin Gardner (31:46.754)
+We'll see if it actually gets pulled in or not, but...
+
+Joel Margolis (31:47.524)
+to... If you wanna do that yourself, you can, I guess. it's a PR, I'm stupid.
+
+Justin Gardner (31:53.379)
+Yeah.
+
+Yeah, it's a PR. I think it should be, I think they're, yeah.
+
+Joel Margolis (31:59.842)
+Yeah, so somebody at I open a PR chaining filters becoming increasingly popular primitive to exploit PHP applications. Well
+
+Justin Gardner (32:07.214)
+Yeah. So we'll see. mean, it still has to be accepted. I haven't.
+
+Joel Margolis (32:11.8)
+It's just going to be a configurable option, right? Like there's plenty of dangerous things that are in PHP that you have to enable as a configuration option, even though that's a lot of people do turn these things on. It's just going to be, you know, somebody is going to be like, number of filters, negative one or whatever. Like, and, and then you'll have the same problem, but for now, at least it'll be like, you know, secure by default, which is good.
+
+Justin Gardner (32:13.869)
+Yeah.
+
+Justin Gardner (32:19.245)
+Yeah.
+
+Justin Gardner (32:24.354)
+Mm-hmm.
+
+Justin Gardner (32:29.58)
+Yeah, just totally turn it off, yeah.
+
+Justin Gardner (32:37.966)
+Yeah, absolutely, Okay, so moving on to this next one. There's a release from YesWeHack on a tool called Dom Explorer. And its architect, of course, is our boy BitK. And I just gotta say, man, I think I've been sleeping on YesWeHack a little bit. Like, I think YesWeHack is actually putting out some really solid stuff, a lot of which is coming from BitK.
+
+Joel Margolis (33:02.702)
+She's probably not wearing my Yes We Hack hat right now.
+
+Justin Gardner (33:04.378)
+I know, dude, we gotta go get our swag, because this swag they sent out was really high quality too. But it seems like they're actually dumping a lot of really cool toys for hackers, right? Because we mentioned before they've got that XSS exploitation framework, right? That makes it really easy to exploit XSS and Excel information, and it's got a bunch of sort of modulized exploitation vectors. Okay, I'm sorry, hold on. Joel, I have something that...
+
+Joel Margolis (33:31.898)
+modulized.
+
+Justin Gardner (33:34.659)
+something like that but I'm actually gonna just totally deviate from this really quickly because I wanted to mention something that I did the other day that I thought was really cool okay so on the on the concept of XSS exploitation I was in this scenario come story time with Justin let's go I was in this scenario right where I had a page that was triggering a redirect and then
+
+Joel Margolis (33:42.895)
+Okay.
+
+Joel Margolis (33:52.23)
+okay.
+
+Justin Gardner (34:03.87)
+Then writing my my data to the DOM right via inner HTML So it shouldn't trigger right because the redirect will would delete the DOM You know before it actually writes to the DOM and it's one of those things where you're like you're redirecting But then if it's too slow will let you click this button right that that does like a redirect right and I had the injection into this button and so here's what I did I just wanted to put this on on yeltsin radar I I
+
+Joel Margolis (34:21.606)
+Okay.
+
+Justin Gardner (34:33.058)
+The host that I was redirecting to, that the page was redirecting to, was controllable by me to a certain degree, but it had to be whitelisted, right? So what I did is the domains were whitelisted, but the port was not whitelisted. So what I did is I got a valid domain, and I put semicolon one, three, seven. So now it's redirecting to a page that doesn't have an open port on it, right?
+
+So it's trying to set up that TCP connection and it's retrying and it's retrying and it's waiting. And it doesn't remove the DOM of that page until it opens that TCP connection with the next page. The navigation doesn't actually occur, right? So that allowed the delay to be long enough for it to write my payload to the DOM. All right, but that's not the end of it, Joel. Listen to this, okay? So now I've got my payload written to the DOM, but there's a WAF.
+
+There's a WAF dude. And so what do I do? I'm like, okay, of course I just use like location name, you know, just like we talked about earlier. Yeah, there's, there's like, well that, that, that could work too. But, classic move. but the, the, the WAF was really getting in the way and it was, and it was blocking any function call and I can't use location because there's already a location change in progress. Right. So it wouldn't let me override that.
+
+Joel Margolis (35:25.766)
+Okay.
+
+Joel Margolis (35:30.22)
+You send like 80,000 A's.
+
+Joel Margolis (35:35.494)
+I
+
+Justin Gardner (35:54.242)
+So here's what I did, dude. I didn't actually get the full exploit to work. What I did was I set window.name equal to document.cookie. So now I've set name equal to cookie and name persists refreshes. So then from my attacker-controlled tab, because I opened this tab where the exploit is happening, I can control where that tab goes. So then I redirect it back to an attacker-controlled origin. I reach into that DOM and read the name property.
+
+and I can leak the cookies on that page. So it's like, yeah. Yeah, so it's like a way to steal information out of those sort of environments without actually executing any functions, because it's just name equals document.cookie or whatever. Yeah, well, you know, it's a pretty niche scenario, but I just thought I'd mention it as well, because I think there are a lot of scenarios where
+
+Joel Margolis (36:27.365)
+using it as like a holder
+
+Joel Margolis (36:39.554)
+I'll see you in three months when Chrome patches out, You're gonna isolate the name variable.
+
+Justin Gardner (36:51.618)
+where WAFs are kind of a pain in the ass to bypass when you're dealing with execution. You're actually getting JS execution, but you can't trigger function calls. And so having some way to smuggle data back out via the window.name I think could be a pretty useful technique for people. So okay, the reason I went on that was that XSS tools thing. Which was.
+
+Joel Margolis (37:09.669)
+Yeah, for sure.
+
+Justin Gardner (37:17.543)
+triggered by dumb explorer. So now we're gonna talk about dumb explorer. Are you still with me Joel?
+
+Joel Margolis (37:23.022)
+I'm still, I'm Dom Explorer. Inspired by Cyber Chef, but looks nothing like it.
+
+Justin Gardner (37:26.392)
+You
+
+Justin Gardner (37:29.971)
+my gosh dude, I'm sorry. I had to rant there for a second. All right, so Dom Explorer. I guess this one's mine too, because I'm the Dom geek. You want me to talk about this one?
+
+Joel Margolis (37:43.43)
+I mean, it's so basically, I feel like, I saw like a screenshot of something that was very similar to this. Maybe it was during the DOM Purify XSS, like a couple months ago. I don't remember if it was like, yeah, yeah. I think somebody had scrapped together something very simple where you basically just put an input in and then it would like, you click a button and it just runs it through DOM Purify and see the output. So that's basically what this is, right? Where you have,
+
+Justin Gardner (37:50.946)
+Mm-hmm.
+
+Justin Gardner (37:56.214)
+Yeah, I think Matthias Carlsen has something, doesn't he? Yeah.
+
+Justin Gardner (38:07.617)
+Yeah.
+
+Joel Margolis (38:12.698)
+this DOM Explorer tool and you can create a pipeline of, know, that's where it's very much so like CyberChef where you have like steps that you can run an input through. And so you can say, okay, I want to run it through DOM Purify or want to run it through this parser or whatever, the sanitizer, et cetera. And you can have this pipeline of steps that your input goes through. And then you can inspect what the output would be after all of those different pipeline steps. And so that can be really, really helpful when you're
+
+Justin Gardner (38:22.029)
+Yeah.
+
+Joel Margolis (38:41.51)
+you know, trying to exploit an XSS in some specific environment, you know, it's going through X, Y, and Z sanitizer and renderer and a parser and whatever. And you just want to really quickly, rapidly test inputs, see what stuff you can get through instead of sending request, wait three seconds, request, wait three seconds. You can build out that pipeline on the DOM Explorer and test your inputs. And then when you're pretty sure you, you know, if a bypass, you can actually go test it.
+
+Justin Gardner (38:46.648)
+Mm-hmm.
+
+Justin Gardner (39:00.044)
+Hmm.
+
+Justin Gardner (39:05.826)
+Yeah, and I think this is helpful for looking at those sort of scenarios where you've got a stack on an open source software that you want to pwn and it's like, okay, it's using like DOM Purify and then it's putting it into this and then, or maybe it's putting into this like HTML renderer on the server side and then, you know, it's exporting as a PDF or something like that.
+
+And you can chain together these pieces and see how they interact together. And yeah, I did find that thing you mentioned, dude. It's of Lydian Brun, it's Matias Carlsen. It's a tool called multi-HTML parse. And I'll add this to the docs as well so it gets put in the notes. But I think as many of these as we can get, the better because there's so many different frameworks for parsing HTML and rendering stuff.
+
+So I think that's really good. The one thing I like about DOM Explorer, which is the one by SvHack that we're talking about right now, is that it's actually in the browser. And it's set up, and you don't have to do like Docker or anything. It's just like go to svhack.github.io slash dom-explorer. And it will give you this interface where you can play with it. And you can add a ton of different parsers. So DOM parser, parse five, DOM purify, JSXSS, all sorts of stuff.
+
+And so, you know, if maybe if it isn't in this one, this tool Dom Explorer, then, you know, might be in multi HTML parse or vice versa. And I think as we sort of build these tools up, it becomes a lot easier to find mutation XSS, right? Where different parsers are treating things differently and trigger those more universal XSS scenarios where you're bypassing some whitelists that are like absolutely pivotal to security.
+
+Joel Margolis (40:53.21)
+Yeah, yeah, absolutely. And there's like lots of configuration options as well on the, on DOM Explorer. So like, for example, like DOM parser, it has, you know, what's the MIME type that you're feeding into it? Does it have a dock type? What selector are you feeding it? What's the output for? Like, and so you can, you know, you can really get sort of pretty narrow down on it and you can make it very, very.
+
+Justin Gardner (41:03.374)
+Mm-hmm.
+
+Justin Gardner (41:08.616)
+Mm. Mm. Mm.
+
+Joel Margolis (41:20.888)
+accurate to what you're testing against so that it works very very well and it's good for testing.
+
+Justin Gardner (41:22.446)
+Mm.
+
+Yeah, very solid, dude. Yeah, yeah. So definitely I'm going to keep an eye on the, yes, we hack GitHub stuff because they, especially, you know, what big K's been releasing lately has really been kind of putting them on the map for me, I think.
+
+Joel Margolis (41:28.432)
+Super cool.
+
+Joel Margolis (41:40.134)
+Yeah, absolutely. Super, super cool tool. This is another one of the ones. Like everything else, I have bookmark it, it in my tools list, and then I don't think about it again. I don't think about it until I need it.
+
+Justin Gardner (41:46.358)
+Yeah, your mutation XSS. All right, what we got next here? Yeah, let me see.
+
+Joel Margolis (41:55.984)
+This last one? Yeah? Yeah, Jason. Okay, I had a bone to pick with this.
+
+Justin Gardner (42:02.432)
+Okay, all right, well, okay, so I put this in here because I'm like, you know, I feel like JSON is something that we deal with a lot, right? The listeners don't have context to the docs. I put a link in here that essentially allows you to visualize JSON a little bit easier. And the thought was this. Is there a place for JSON visualization?
+
+progress in our HTTP proxy tools because 90 % of the time we're dealing with JSON, right? The request bodies are request JSON. And I feel like, you know, we spend a decent amount of time modifying attributes and like moving things around and that sort of thing. And I wonder if it would be better to have some sort of visualizer inside of the HTTP proxies that makes it easier to work with JSON. What do you think about that?
+
+Joel Margolis (42:55.994)
+I think the only thing I would like to see is jq searching. That's it. You know, jq, jq format searching. So, so like being able to filter by attributes using a jq query and just like put that in a search box. I know you can do it in, paw, now rapid API. but like the paw, like API tool, it's kind of like postman insomnia.
+
+Justin Gardner (43:00.568)
+What is JQ searching? JQ like searching?
+
+Justin Gardner (43:15.203)
+Hmm.
+
+Justin Gardner (43:20.93)
+Interesting.
+
+Joel Margolis (43:21.37)
+whatever you choose to use, but yeah, it has a thing in like the response format where you can filter down, you know, whatever your response is, which is like a query like that. And so you could do, you know, like dot attribute or whatever, and you'll only see that in your output. So I think that would be really nice. You know, this is a, it's an interesting tool, right? So this JSON crack thing, it's like a JSON editor. It's like visualizes JSON graphs, but my problem with it,
+
+Justin Gardner (43:29.605)
+Justin Gardner (43:37.422)
+Mm.
+
+Justin Gardner (43:46.99)
+Yeah, and I feel like JSON crack wasn't, this wasn't necessarily the thing that I was trying to like talk about like JSON, we can talk about JSON crack, but the concept more that I was thinking of is like, do we need this? Like, it make our life, no? Is the answer to that just no? Come on Joel.
+
+Joel Margolis (44:00.76)
+No, no, no, because this takes JSON and it tries to make it into something that it's not. Right? Like it's like, let's take JSON and make it like a structured defined typed like, property. Like it's like that exists. It's called XML.
+
+Justin Gardner (44:12.205)
+Yeah.
+
+Justin Gardner (44:18.494)
+jeez. Yeah, no, and we don't want to go closer to XML for sure. Yeah. Yeah, you know, okay, maybe maybe I'm off base with that. just I just think, you know, it's worth it's worth challenging the status quo on on these sort of things, right? Like, I feel like there should be easier ways to modify the things that we that we need to modify in the request body. And actually, I've got a solution for that that I'm going to be releasing in a couple of weeks. It's not specifically for that, but it can do this as well.
+
+Joel Margolis (44:26.724)
+That being said though, I like, I, agree. Yeah.
+
+Justin Gardner (44:47.198)
+So we'll see when I'll talk about that when that episode goes live and we'll see if we still need to address these sort of the sort of way that we interact with these various content types. I do want to say as well and I told this to the Kaido team and I think this is something that is on the in the pipeline. But I feel like both burp and Kaido should automatically just change the content type based off of what format.
+
+you have in the request body. Does that not make sense? I mean sure it should be a checkbox, you know, where it's like, okay, you know, do you want us to automatically update the content type, like we update the content length? But like, it's very easy to determine whether the request body is JSON, Xform URL encoded, or multi-part.
+
+Joel Margolis (45:26.181)
+Yeah.
+
+Joel Margolis (45:33.56)
+Yeah, I will say like one of my, one of the more annoying things in recent burp updates, recent, I don't know, within the last two years is the JSON, like auto formatting. I think drives me crazy when I'm typing in the request and like, I'll put like a quote and then it like adds a new line because it's trying to format it. And then I put another quote and then it like brings it back because it's closed the string. And I'm like.
+
+Justin Gardner (45:40.066)
+Mm-hmm. Mm-hmm.
+
+Justin Gardner (45:46.875)
+really?
+
+Justin Gardner (45:52.663)
+Yeah.
+
+Justin Gardner (45:56.884)
+It's hard, man. JSON formatting, think, is a really challenging piece. So that's why I'm kind of wondering, is there a better way to approach this?
+
+Joel Margolis (46:04.726)
+Yeah, I don't know. think the visual... the visual editor could be like a nice touch. I just think it kind of overcomplicates things and then like...
+
+Justin Gardner (46:12.962)
+I want to say there was an interface in burp at one point where they were like, where you could switch the way that the request bodies were represented and then it would give you like a text box on the left-hand side and a text box on the right-hand side and like, did you ever see that or am I hallucinating that?
+
+Joel Margolis (46:30.496)
+That's how I use my burp. Is that not how you use burp? That's how mine looks. Is that not what your burp looks like?
+
+Justin Gardner (46:34.861)
+What?
+
+Justin Gardner (46:39.278)
+Wait, no, no, no, when you're manually modifying the request body? Really?
+
+Joel Margolis (46:44.578)
+Yeah, you don't have to... You don't see that?
+
+Justin Gardner (46:49.526)
+Maybe I just need to, to be fair, I haven't opened burp in a long time, but yeah, I think that's nice for, I think that is nice for Xform URL encoded, but I don't, I feel like something like that for JSON could be really helpful as well. I don't know, just a thought.
+
+Joel Margolis (47:09.176)
+Yeah, I know how Hacker Hacker verter does that too with like previews So like you can do like a hack verter preview and then like replay time and stuff and it has like a left like a input output thing and
+
+Justin Gardner (47:12.965)
+cool.
+
+Justin Gardner (47:19.522)
+Hmm. That that's pretty rad. I think that'd be good, dude. Okay. and let me see if I got permission to talk about the thing that I was going to talk about. Yes, I did. Okay. They messaged me back in time. Sweet. All right. So let me just tack this on at the end here of the podcast. And I'll probably talk about a different podcast as well. But, you know, a while ago, you and I talked about on the pod about building somebody needs to build a freaking notes plugin for Kaido and for burp. That is good.
+
+Joel Margolis (47:23.578)
+So.
+
+Justin Gardner (47:49.484)
+Right? That has Markdown rendering, that... I found the guy, man. That guy is static flow, Tanner, and it's good, man. I've seen it. He's been kind of working with me. yeah. Yeah, exactly. You know him, right? Okay. Yeah, I know. I heard that. I heard that. So, dude, he's great. He's great, right? So, anyway.
+
+Joel Margolis (47:50.98)
+I know a guy.
+
+Joel Margolis (48:01.018)
+That's the guy I know.
+
+Justin Gardner (48:19.086)
+Yes, yes, and I did know that, by the way. But yeah, dude, he built out this tool and it rocks. I've been playing with it and it's really well structured. The markdown rendering's really clean. It supports exports. We're working on a sync feature where it'll sync to a specific part of the file system. I'm gonna use it, man. That's where I'm gonna write all my reports and all of my...
+
+Joel Margolis (48:35.397)
+Yeah.
+
+Justin Gardner (48:48.396)
+you notes. And I think that'll be the go-to methodology, because then you don't have to jump in and out of your proxy. You can just say, and he has it tied to a key binding as well. So I'm like, in my report, I click, you know, whatever the key binding is. We just implemented that feature, so I haven't played with that yet. But jump into the key binding, and then you're in your notes, and you type, type, and then, how do you like that? How do you like that? And then the type, type, type. So I'm excited for this.
+
+Joel Margolis (49:09.753)
+Hell yeah.
+
+Justin Gardner (49:17.708)
+I'll link it in the description depending on when this episode airs. I'm not sure if it'll actually be live yet or not. But yeah, I think it will be. So definitely check that out. I think it'll be really... So the Kaida one will be released by the time this episode come out. I don't know that the burp one will, but I know that he's working on a burp version of this as well. And I think this is gonna take over the notes market for the plugins. Yeah, because it's just kind of like, you know...
+
+Joel Margolis (49:20.94)
+Joel Margolis (49:42.596)
+Yeah, yeah for sure.
+
+Justin Gardner (49:45.76)
+It's like your Evernote or your Obsidian, right? But it's just built into to cut, here's the other feature dude that's crazy. You can link replay tabs in it. So you can say like, hey, you this specific replay tab has.
+
+Joel Margolis (49:58.916)
+Yeah, he showed me when he did that. was like, yeah, check this out. And it's like links it and you just click it and just like opens the tab.
+
+Justin Gardner (50:06.183)
+dude, it's so good. Why haven't we had that? I don't know.
+
+Joel Margolis (50:12.23)
+Because burp is swing bass It's so hard to burp
+
+Justin Gardner (50:15.372)
+Yeah, well, that's what he said. He's like, it's so much harder to code this in burp because it's a pain in the ass. yeah, Kaido, think because it's just JavaScript and HTML, there's a lot of libraries you can use for that. So it makes it much easier to dev there.
+
+Joel Margolis (50:28.856)
+Yeah, yeah for sure.
+
+Justin Gardner (50:31.31)
+All right, man. Cool. Is that a wrap? Is that the pod? All right. Peace.
+
+Joel Margolis (50:33.094)
+I think that's it. Peace.

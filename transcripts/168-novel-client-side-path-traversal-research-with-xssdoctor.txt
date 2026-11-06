@@ -1,0 +1,1208 @@
+Episode 168: Novel Client-side Path Traversal Research with XSSDoctor
+Source: https://www.criticalthinkingpodcast.io/episode-168-the-doctor-is-in-devtools/
+======================================================================
+
+Title: Transcript - Thu, 02 Apr 2026 14:52:17 GMT
+Date: Thu, 02 Apr 2026 14:52:17 GMT, Duration: [01:35:57.04]
+[00:00:00.85] - Joseph Thacker
+It didn't look like casting to me when I was watching JD redo it. It looked completely—
+
+[00:00:04.32] - Justin Gardner
+dude, no, it's legit, man. It's freaking legit.
+
+[00:00:06.87] - Jonathan Dunn
+It's legit.
+
+[00:00:29.96] - Justin Gardner
+I'm not sure y'all know this, but two of the most respected hackers in the CTBB community, BusFactor and XSS Doctor, are now running monthly hackalongs on the CTBB Discord. Okay. You've got to check this out. ctbb.show/discord. We find bugs almost every time we hack. It's crazy. And oftentimes it's not even the people running the hackalongs. It's the community members that are hacking along with us. It, you definitely increase your chance of finding a bug by being on these hackathons. So check them out, ctb.show/discord. Join Bus, XSS Doctor, and yours truly, and, uh, let's pop some bugs. All right, let's go back to the show. Alrighty, Doc, it has been a long time in the making. Thanks for joining us on the pod. Um, we got— we're starting like 30 minutes late because we got so distracted talking about all the research and the fun stuff in advance. So we got to bring it to the people as well. But as always, let's start off with a bug and then we'll get into intros. So you put 4 here in the doc. Let's start with the (Redacted) or no, let's start with the (Redacted), I like that one first.
+
+[00:01:41.14] - Jonathan Dunn
+I think we're going to have to mute that one, that word out that you just said.
+
+[00:01:44.67] - Joseph Thacker
+That's good, we like the bleeps!
+
+[00:01:45.21] - Jonathan Dunn
+Thanks for having me on. I'm super excited to be here. I've always wanted to be on this podcast. So fine, let's talk about this bug from a— so I'm going to— the bug is from, let's say, a company that makes home automation software that can sometimes be controlled by an AI.
+
+[00:02:07.46] - Justin Gardner
+Okay.
+
+[00:02:07.79] - Jonathan Dunn
+And that AI is what I was hacking. And so actually, it starts with GrepMy asking me to collab. And I was like, pretty excited. Every time like a big hacker asked me to collab, I say yes. And I get really excited about it. And I, and like, we started hacking and like, he found something immediately, you know, some IDOR and put me on the report. So I was like, all right, I have to like, really show up.
+
+[00:02:32.75] - Justin Gardner
+Talk about motivation. You know, I hate it when that happens.
+
+[00:02:37.34] - Jonathan Dunn
+Oh my God. And I was like, I was kind of busy at work too. And I'm like, all right, enough. Like, like we got, I got to get this bug done. So I'm like looking at this particular AI and the AI, it is a very powerful AI. It has access to basically everything that the user of this has in their whole life, including if they have home automation set up, it is this particular, it can just control the house. You could just type into the AI, turn off my alarm and it will turn off the alarm. So it's extremely powerful. So like the first thing you look at is I'm like, if I can prompt inject into this, AI, I'm like, God, for this situation. So obviously I look for all the parameters, look for a cue parameter. I mean, a cue parameter would be extremely silly to have on this app. And if it was correct, we didn't have it. But there was a post message listener that you could send a post message through this listener and it would just pop up as a prompt injection. Now, I think it was meant for a Chrome extension to use. But the origin check had star.this-target.com as part of the origin check. So if you had XSS on anything in the entire ecosystem of this program, you could send this POST message into this AI and control their entire life. So I'm like, okay, I need to get XSS. I mean, it's a huge ecosystem. So I figured there was probably XSS. I've actually had found XSS before, but didn't know about this gadget. So I'm looking around and I actually, the first thing I look at when I'm looking for XSS is usually file upload. When I'm like looking for easier XSS. And so I actually uploaded a file to this AI and I could upload arbitrary HTML and I could visit it, but it was an attachment. So then I'm like, I think that there are pre-production domains on this AI. So I go to all the pre-production domains, which are identical, and I upload my HTML payload. And one of them did not have it as an attachment.
+
+[00:04:52.00] - Justin Gardner
+That is a good idea, dude.
+
+[00:04:54.73] - Jonathan Dunn
+Yeah. And so I make the bug, I submit the bug, and I get, when I do that, when I do the file upload, I always test it on a guest profile to see if it's not a self-XSS. There are no login CSRFs on this target. It's extremely locked down for login CSRFs. So a self-XSS cannot be escalated or I couldn't find a way. So I tested on the guest profile and it pops. So I'm like, I'm good, I'm solid. Like all I have to do is send this and it sends a POST message. And the setup of the bug was kind of interesting because you couldn't have the AI in the background. You had to have it on the foreground because for some reason it wouldn't send the prompts in the background. So yeah, it was really weird, which actually kind of takes away from the impact of the bug a little bit because they're seeing like, turn off your alarm system.
+
+[00:05:53.06] - Justin Gardner
+I wonder if you could do the same sort of thing we did in that hack along that one time though, where we like popped it up in a little box.
+
+[00:05:59.31] - Jonathan Dunn
+Yes. You know, like, oh yeah. And I did, I popped in a little box and make it, made it a little bit, a little bit better looking. Uh, but it still looks like, and that's what I did. I popped it up in a little box, but I didn't like that popping up in the front thing. So I looked further into it and what was the, what was it doing when you were turning on the alarm system? There was an API. It was calling an API, had the same cores as the post message. And so it had, Access-Control-Allow-Origin *.target.com with the Preflight. So I didn't even need the postMessage anymore.
+
+[00:06:34.87] - Justin Gardner
+But then aren't you gonna hit same site? Same site lacks default cookies or are they same site non-explicit?
+
+[00:06:40.43] - Jonathan Dunn
+It would— no, the auth system of this program is at the level of the TL— you know, like there's not a separate auth for every—
+
+[00:06:50.16] - Justin Gardner
+Oh yeah, of course.
+
+[00:06:50.98] - Jonathan Dunn
+No, no, no.
+
+[00:06:51.55] - Justin Gardner
+Cause you've got an XSS. So you're saying—
+
+[00:06:52.99] - Jonathan Dunn
+I have an XSS, exactly. So I didn't even need the postMessage anymore. I could just— You get the XSS and have it hit this API. So I'm like thinking, this is the greatest bug I've ever found in my life. I submit it. First thing I do is I message GrepMe because, you know, I want him to be impressed with me. And he is. And he is impressed with me. We know that he is. And he is.
+
+[00:07:13.97] - Justin Gardner
+I think around this same time I got a message from GrepMe like, dude, JD is God.
+
+[00:07:18.04] - Jonathan Dunn
+Yeah.
+
+[00:07:18.64] - Justin Gardner
+You see that?
+
+[00:07:19.30] - Jonathan Dunn
+And I message everybody about this. Everybody I know. I'm so excited. I think both of you got messages from me and BuzzFactor, everybody that I know. And about a week later, I get that they couldn't reproduce it.
+
+[00:07:31.23] - Justin Gardner
+Uh oh.
+
+[00:07:32.18] - Jonathan Dunn
+And I'm like, oh my God. It turns out that that guest profile I had tested it on, I had logged into the app on a different window in that guest profile. No. And it was indeed a self-XSS.
+
+[00:07:45.07] - Justin Gardner
+No.
+
+[00:07:45.23] - Jonathan Dunn
+Oh my gosh. Yeah. And yeah. So I'm like, I'm like ready to die. Like I, I, I've never, I, I had told everybody about this bug. It was the best bug I've ever found. And so I messaged them back. Like, listen, give me a week, please, to find another XSS, please. And then I'll close it if you don't find it. And they're like, fine. And so I'm, I am going crazy. I have AI armies out there trying to find XSS. I have everything. I'm messaging Demo.
+
+[00:08:16.92] - Justin Gardner
+Do you have an XSS here?
+
+[00:08:18.06] - Jonathan Dunn
+Like, I need that.
+
+[00:08:19.87] - Justin Gardner
+On the last day, you know how I do the deal?
+
+[00:08:23.39] - Jonathan Dunn
+Yeah. And so on the last day, I had looked at this other AI this company had a lot, and I'm like, I'm just going to do this one last time, and then I'm just going to close it and just tail between my legs. That's the end of hacking for me forever. And I upload the same thing on a different AI. It again is an attachment. And I'm like, you know, I think this also has a pre-production endpoint. But this is a little bit different, this bug, because there was like a parameter that said, path on the bottom. So like if you uploaded it to— but then it said /uploads. Okay. If you uploaded HTML to /uploads, it would, it would fail. But you could put after the word uploads /hello and then it would upload anything you wanted to /upload/hello/whatever this MD5 sum thing was. And it would let me put anything I wanted unauthenticated.
+
+[00:09:25.30] - Justin Gardner
+And that was it.
+
+[00:09:26.50] - Jonathan Dunn
+And I was on authenticating XSS.
+
+[00:09:27.89] - Justin Gardner
+And then you weren't getting attachment disposition?
+
+[00:09:30.47] - Jonathan Dunn
+Nope. On the pre-production endpoint with that path thing, I could, I just visited it. It was the last day of my testing and I got the everything and I submitted everything and it went through and Grettney was again very impressed with me.
+
+[00:09:45.25] - Justin Gardner
+Dude, I love the conclusion of that story.
+
+[00:09:47.33] - Jonathan Dunn
+That was what it was all about in the end.
+
+[00:09:49.09] - Justin Gardner
+JD, you have nothing to prove, man. You've had nothing to prove for a very long time.
+
+[00:09:53.10] - Jonathan Dunn
+No, but still, you know, you got that IDOR, and at least I got— at least I found a fun bug.
+
+[00:09:58.21] - Justin Gardner
+No, I totally get it though. I mean, I feel the same way actually. I'm hacking with Franz and Matias. Every time I hack with Franz and Matias, we have hacked with Franz and Matias for years, but every single time I hack with Franz and Matias, I feel the same way because those bastards pull out like all the vulnerabilities. Like as soon as you start hacking, they're like, oh, I just found this. And I'm like, what? And then I'm like, all right, I got to keep up with that. So, um, yeah, no, I totally get it. And, uh, yeah, I think that there's a couple of really good takeaways from that story. One, which is pre-prod might allow you to bypass the, the content disposition stuff. So excellent, excellent insight. The fact that it worked twice in your scenario is very interesting. And then, um, also that's another really interesting thing to check for content disposition is uploading it to a different directory because maybe directory-specific download rules are in place where it's like, okay, if it's /uploads, then we do it as an attachment. But if it's slash, you know, whatever else.
+
+[00:10:56.21] - Jonathan Dunn
+Anything else. Yeah.
+
+[00:10:58.00] - Justin Gardner
+Very nice, dude. Very nice. Dude, two very solid takeaways on this.
+
+[00:11:02.02] - Jonathan Dunn
+You're impressed too. It was totally worth it. The whole thing was worth it.
+
+[00:11:05.23] - Justin Gardner
+Well, I think that's probably the world's best XSS escalation too. Like, like, you know, XSS to your alarm system's off.
+
+[00:11:12.91] - Joseph Thacker
+I know, like, I know that that was the real, real-world impact is like the best.
+
+[00:11:18.04] - Jonathan Dunn
+Yeah, I do love real-world impact. I— and I— that's my goal for the year.
+
+[00:11:21.58] - Justin Gardner
+Just, just, you know, text your victim, right? Text your victim, be like, your package is here. They click the link, now their alarm's off, you know, like, or they're getting the house and rob the house.
+
+[00:11:30.04] - Jonathan Dunn
+That's exactly right. A real criminal could use that. That, like, I love the idea that a real criminal— that I have stopped a real— like, maybe they could have, maybe they would have Stop.
+
+[00:11:38.44] - Joseph Thacker
+I mean, I actually think smart lock— I think smart lock or smart garage door is even more impactful though. Like, if you can just open someone's garage door up or unlock their door, this could do that too, right?
+
+[00:11:48.52] - Jonathan Dunn
+This could do all of that stuff. It could open everything. I love that, dude.
+
+[00:11:51.80] - Justin Gardner
+I feel like JD's the kind of guy, you know, he's— so context, y'all, he's a doctor already, so he's making good money, right? Yeah, but I feel like he's the kind of guy that would do it and then just rob the house just for like, I exploded it and I did it.
+
+[00:12:04.37] - Jonathan Dunn
+I would do— I wouldn't just rob it, I would put stuff in the house. I would put stuff inside the house.
+
+[00:12:10.21] - Justin Gardner
+Yeah, exactly. Get in the house, still get in there, put a picture of this report as a critical report.
+
+[00:12:17.52] - Joseph Thacker
+Dude, we have to tell that story, JD.
+
+[00:12:19.23] - Justin Gardner
+Oh my gosh.
+
+[00:12:19.97] - Joseph Thacker
+We can't tell the company, but we have to tell that story. That should be the next bug.
+
+[00:12:23.99] - Jonathan Dunn
+Okay.
+
+[00:12:24.33] - Justin Gardner
+All right. Um, JD, I mean, you've got a couple more bugs, man. I'm always, I'm a sucker for a good bug story. What do you want to do next?
+
+[00:12:31.12] - Jonathan Dunn
+All right. I'll tell one more bug that actually is Rezo and I's bug. If you notice, I hack better when High-level hackers ask me to hack with them. I like try to bring my A-game in that situation. So we, Rezo and I, were hacking on another site that is an e-signature platform. And basically the way it works is that you make a contract and the contract, you send it to the person you want to sign it and they get it in an email and then they click that link and then they sign it. And we found that the person who creates the contract, there's another API endpoint that really wasn't that visible that you could get to that would let the creator of the contract see the link that was sent to the recipient of the contract. So you could basically make a contract and then sign it on behalf of the person who you were sending it to. And it just said that they signed it. Like when you clicked the sign thing, It was their name that was, that was signed. And so we, I mean, to me, that's the highest level of impact that this, this app can offer. Right.
+
+[00:13:42.04] - Joseph Thacker
+But when we submitted it to them, they tried to close this thing like 3 times on us, Justin.
+
+[00:13:47.19] - Jonathan Dunn
+Yes.
+
+[00:13:47.49] - Joseph Thacker
+Like no joke. They basically said they're still debating whether or not they're going to accept it.
+
+[00:13:50.86] - Jonathan Dunn
+Yeah. So like they basically said that it wasn't, it wasn't the triager. It was the actual like developers or like we made it like this. So that because we didn't want the recipient to, to anyway, it doesn't matter what they were arguing about.
+
+[00:14:05.37] - Justin Gardner
+It's a design principle thing. It was a design principle, but you do run into these issues from time to time where programs are a little bit more resistant because it's like, okay, well, for the business use case, the ease of access is like, oh, we should be able to sign this unauthenticated or whatever. But at the end of the day, if you're leaking the URL, they shouldn't leak the URL.
+
+[00:14:23.47] - Jonathan Dunn
+That's the bug. The bug is the leaking. They don't want to do that anyway. But so what I did is I used this to create a contract with the security team of the program of the company saying this is a critical bug and will be paid as a critical bug and that you agree to that. And I sent it in the report.
+
+[00:14:45.24] - Justin Gardner
+Oh my gosh. Yeah. You're contractually obligated to get a critical.
+
+[00:14:50.72] - Jonathan Dunn
+Yeah. And I was thinking when they pulled back again of being like, you signed the contract. It says here you signed the contract. I don't know what you're— What we're debating about now.
+
+[00:14:58.63] - Joseph Thacker
+Can you prove to me you didn't sign this contract?
+
+[00:15:00.48] - Jonathan Dunn
+Because if not, you have to. And the audit trail says you signed this contract.
+
+[00:15:04.26] - Justin Gardner
+We can go to court over this.
+
+[00:15:05.32] - Joseph Thacker
+Like, you agreed to it.
+
+[00:15:06.87] - Jonathan Dunn
+Yeah.
+
+[00:15:07.62] - Justin Gardner
+In the, in the contract, like, it shows what, their email or like what?
+
+[00:15:11.63] - Joseph Thacker
+Yeah.
+
+[00:15:11.79] - Jonathan Dunn
+Their email and their name. Their email and their name. There's nothing that identifies the creator of the contract as the signer of the contract.
+
+[00:15:17.99] - Justin Gardner
+Do they need to have an account on that website? Or is—
+
+[00:15:21.37] - Jonathan Dunn
+That's why they say, that's their argument, that they don't want the recipient to have an account on the website. They want anybody to be able to sign it, but that's great. But then the link should be private.
+
+[00:15:31.96] - Joseph Thacker
+Then the link, the link is the security feature.
+
+[00:15:34.84] - Jonathan Dunn
+Yeah.
+
+[00:15:35.25] - Justin Gardner
+The security mechanism then is that you got that link via email. Right. And then the only reason that it's not just anybody signing it is because you got that link in your email. Right. So if you, thus you have access to your email and nobody else does, thus it must be you signing it. Right.
+
+[00:15:52.16] - Jonathan Dunn
+So that's it.
+
+[00:15:52.88] - Justin Gardner
+That's exactly the sense, man. That makes total sense. It's a good bug.
+
+[00:15:56.08] - Jonathan Dunn
+I like, I said that in the contract, that was part of the contract.
+
+[00:16:00.80] - Justin Gardner
+Oh my gosh. Very good, man. Well, I feel like, uh, I feel like we could kind of go back and forth all day on, um, on stories, but let's, uh, let's actually intro you. Um, so, uh, guys, this is XSS Doctor. He's been running hackathons for us for a while now. So most of you guys that are like hardcore in the community know him. Um, but I will just say, I'll brag on you a little bit and then I'll let you do a self-intro as well. But I think XSS Doctor. Is like one of the people that has kind of grown up in bug bounty in this community, in the CTBB community that I am most proud of. Like if I think of like, oh, you know, what effects has the CTBB community had, you know, had on bug bounty at large and the fact that Access Doctor has, you know, grown up in this environment is like one of my proudest, you know, things. And yeah, I just have so much respect for you as a hacker, man. Like the amount of passion you bring. Very, very rarely does the amount of passion somebody brings to bug bounty actually rival my own, but I, I feel, I feel like, uh, you know, we have very, very similar, very compatible levels of passion for bug bounty and it's very contagious and passion for frontend and passion for frontend. Right. And, uh, just seeing the way you, you tear apart frameworks and apps and like, and just get right to the meat, um, is just, it's very inspiring, man. So you're definitely a hacker I respect a ton and I'm very glad to have you on the podcast.
+
+[00:17:26.98] - Jonathan Dunn
+Well, I mean, I'm only for real. I only learned frontend because of you. Like I, I'm not, I'm not, that's not a joke. Like I, I didn't even know about it. Like I would listen to the podcast and I'm like, this guy seems, it seems fun what he's doing. And then that's why I learned all this stuff, dude.
+
+[00:17:43.51] - Justin Gardner
+That's, I'm so glad to hear that, man. Um, You're also, also a doctor, right? Your name is XSS Doctor. So give us a little bit of background of like how you landed on Bug Bounty as a cardiologist and where you're at in life now, I guess.
+
+[00:17:58.18] - Jonathan Dunn
+Like, oh yeah. So I basically, I was, I started practice in 2019, I finished fellowship and then like I was like all about, you know, being a cardiologist and then like COVID happened in 2020, 2021. And like COVID, it was really crazy time in medicine for a lot of reasons. But like for me, it was weird because like everyone was dying of COVID and nobody was coming into the hospital for heart disease. But I was still consulted for all the COVID patients 'cause they had high cardiac enzymes. That's kind of beside the point, but anyway, and so I was like both very stressed and depressed about everybody dying that I was seeing and kind of bored because I wasn't doing any cardiology. And I had a very small child that might, that like when you have one kid, it's mostly your, my wife, now I have two kids and it's like kind of half and half. But so I was like getting home early and I was bored and depressed and kind of like, didn't, you know, and I'm like scrolling on my phone and I see this like learn to be a hacker in 12 hours, go from beginner to intermediate level is what it said. I'm not going to say the name. And this was like one of these fake classes. Yeah, but I, I'm like, I want to— that sounds awesome. Like, that's the coolest thing I've ever heard. And I freaking—
+
+[00:19:14.24] - Justin Gardner
+algorithm showed you that? Like, that's my—
+
+[00:19:16.26] - Jonathan Dunn
+I know, right?
+
+[00:19:16.99] - Justin Gardner
+Like, I just want to know what was in the algorithm of like Instagram or whatever that's like, okay, JD is the most nerd snipeable human, uh, and what could we get him to think that is cool? That, you know, like, and they're like, hacker. That's amazing.
+
+[00:19:31.58] - Jonathan Dunn
+It was on Flipboard. Yeah. Oh, have you ever heard of Flipboard?
+
+[00:19:34.57] - Justin Gardner
+No.
+
+[00:19:35.60] - Jonathan Dunn
+That's like, that's because I'm old. That's like predates. I still have it on my phone. It's like when you flip and it like will show you a different article every time. And so I took the class. It was obviously fraudulent, but, but it was, I was like obsessed. I like didn't know about Kali. I downloaded Kali Linux and I'm, and then like, I'm like, all right. I even realized then this was BS, but I'm like, I go on Reddit, r/hacking, and I'm like, you know how they had that like thing on the top where they were like, how to be a real hacker? Like, and it's like, don't be a script kiddie, do CTFs. That's what that posted thing said, that CTF players, if you could be CTF player, you could hack anything is what that thing said. So I spent the next like year and a half doing CTFs. Mostly Hack the Box and like obsessed with IPSec, which I still am, by the way. I love IPSec. And doing like, if I'm like, I don't even care about hacking. If I could just do an extreme box, I'm— that's all I care about in life. You know, like I was just so into it and like I spent that time, I'm like learning Python and like, I'm like, I'm like trying to do these boxes and I'm— and then by the time I could do an extreme box, I'm like, all right, Reddit post said I'm a hacker. I am a master hacker. In fact, you know, I'm an extreme hacker. And so I'm like, I think like, what kind of hacking am I legally allowed to do? And I knew about bug bounty. So I started to look at bounty. Dog values and I'm like, I don't even know what I'm looking at right now. Like, I've never— what is this? You know, like, it's— I don't know how many people have had that experience. Like, were you doing CTFs and the Hack the Box and TryHackMe? When you look at the Kaido output or the Burp output of a real website, it looks drastically different than—
+
+[00:21:15.86] - Justin Gardner
+Oh yeah, totally.
+
+[00:21:16.82] - Jonathan Dunn
+And the types of bugs you look for are drastically different. Like, I thought everything was going to be like PHP to RCE. Yeah, you know, PHP LFI to RCE. To me, that was— I was going to find that every day.
+
+[00:21:27.61] - Justin Gardner
+Yeah, great.
+
+[00:21:31.91] - Jonathan Dunn
+And then I took Jason Haddix's Bug Bounty Methodology course, and I found my first couple bugs during that. Um, and I started hacking sort of in that method for a while, but it— with that, um, type of wide scope hacking, you need a competitive— I find that you need a competitive advantage extremely good automation or like some, something that makes you better than the people with the automation, which I did not have. And then I started listening to podcasts and that's kind of where I, and I realized, I'm like, why am I finding that many bugs? And, and then you were finding a lot of bugs. So I'm like, let's, let's see what hacking like this guy would be like. Yeah. And that's kind of how I got into client side, dude.
+
+[00:22:19.33] - Justin Gardner
+That's, that's amazing, man. Yeah, that is a, that is such an amazing journey. And I'm so glad that I was a part of that. That just gives me goosebumps. That's why we do the pod. I do want to jump back to, I guess, a function of your rhetoric that keeps coming out, which is, and this was the most important thing in my life, you know, and like, and you're like, this was, and then I felt like, you know, that I, if I could just solve an extreme box, then it would just be like the whole purpose of my existence, you know? Like, and I often find, you know, myself talking like that as well. It's like, if I could just like pop this, this bug, this would like make my life, you know?
+
+[00:23:00.60] - Jonathan Dunn
+I can't sleep.
+
+[00:23:01.89] - Justin Gardner
+Yeah, I think, I think that is— if I had to, to— if I had to guess, I think that is probably one of the reasons why you have the success that you've had is that like super strong passion, all in, like this is what is— this is the thing. I am very decided and focused that this is the thing that is the most important to me right now, you know?
+
+[00:23:23.36] - Joseph Thacker
+Yeah, it's very goal-oriented too. And I think that it is. And it's also kind of hopeful, like it's optimistic. I think the mix of passion, optimism, and goal-oriented thinking is like a really, really strong mix for success. And a lot of top hackers have that.
+
+[00:23:37.79] - Jonathan Dunn
+That's a really good way to put it. I agree with that. And I see a lot of hackers like gearing towards negativity. And I think that hurts them a lot when they don't find bugs or when they, when they get some bad situation with triage, bug bounty is terrible. I hate bug bounty. And then it's like hard to act like that.
+
+[00:23:54.43] - Justin Gardner
+Yeah.
+
+[00:23:55.13] - Joseph Thacker
+JD's a yes man. Anytime I message him an idea, JD is always like, yes, let's do it. Yes, let's do it.
+
+[00:23:59.54] - Jonathan Dunn
+Even, even if it's literally more hacking. Are you crazy? He's working all day.
+
+[00:24:04.36] - Justin Gardner
+Oh my gosh. I love you guys. Uh, I think that that is definitely a part of the secret sauce, but I also think it puts us all in a very unique position for burnout. And it's possible that your passion is just, you know, bottomless and endless. But I also heard a little bit of like, if I don't pop this bug, I'm going to quit bug bounty forever and this is the end of my life and I hate my life, you know. So there are a lot of ups and downs with this, right? So I, in more so than I would ask the normal, you know, guest on Critical Thinking. I want to ask you, how do you deal with the ups and downs of this being such an extreme person? And is burnout a part of your flow?
+
+[00:24:49.14] - Jonathan Dunn
+Yeah, I'm not going to— I'm, I'm, I'm actually not the right person to ask about this because I'm completely different than everybody. I know everybody, a lot of people at least, because I, I don't like— this is solely for fun. And so when I don't like doing one aspect of hacking, I will switch completely at a whim to a different, completely different, like, I'll like, like I stopped hacking once for 4 months to learn Go. You know what I mean? Like, like it just, I don't care about doing that. And if I'm into doing that, like I, I was, I did a lot of, I did coding for a while. I helped with that, with Fabric. And that's, I did that like for months. I didn't hack basically, cause I was just really into that. And I think that, that, that stops me from burning out. Um, like just following like a, like a passion and being able financially to do that is very helpful. And I think it's made me a better hacker in the end, but it's made me make less money in the end. Uh, because, um, like I don't go 5 days straight on a target in order to find 50 bugs, which would make me more money. I don't think I can do that. Like in my life, I don't have enough time to do that. Right. But anyway, that's, that's my answer. I'm not going to burn out because of that.
+
+[00:26:10.86] - Justin Gardner
+I've asked you before, though, like, if you have such passion for it, would you go full-time bug bounty?
+
+[00:26:17.63] - Jonathan Dunn
+What is it hard? I spent a lot of time being a doctor. Like I spent a lot of time trying to be a doctor. Like it might like it— I finished training when I was like 2019. I was like 36. Like, I basically— like, I— it was like decades of my life. And it's hard. It's fun being a doctor. I love being a doctor. And I have like all these patients that need me. I don't think I can not— I don't think I can stop doing that.
+
+[00:26:38.26] - Joseph Thacker
+I will say, Justin, this thought has crossed my mind a lot too, because for listeners that don't know, basically my entire HackBot system, me and JD are just kind of 50/50 on. And there's a lot of reasons for that. Like, I think there's a lot of really cool things like you know, he's able to triage like front-end stuff that I'm, that I would struggle to triage and lots of other things. I actually think that people should probably partner half and half on, on hackbot creation because you get twice as much velocity. Anyways, I'll, I'll table that for now. But, um, the one thing that I have thought a lot about Justin is like, if, if he and I do, you know, a million in bounties this year, just like completely crazy, it goes really well. Could I talk him into it?
+
+[00:27:15.84] - Jonathan Dunn
+And I think that the best I could do, basically, we never mentioned a million dollars here.
+
+[00:27:21.46] - Joseph Thacker
+And I think the best I can do is talk him down to like part-time work, you know?
+
+[00:27:25.95] - Jonathan Dunn
+Yeah, it depends on a lot of things. It's, it's hard. There's no such thing as part-time. It's cardiologist. It does. I know part-time cardiologists and they still work full-time. It's hard to be a part-time cardiologist. Yeah.
+
+[00:27:38.30] - Justin Gardner
+Yeah. I imagine so. And it's, and it's something I think there's also a weight to that as a, as a physician, like you, and this is something we've talked to, I think when we went out to dinner that one time, it was like, Well, you know, if you're so passionate about bug bounty, but you're also a cardiologist, like you've got to really be disciplined in that you need to be paying, you know, sufficient attention to your profession because it's not something that is like you can just skate by on as if you were like a government employee, you know? Yeah.
+
+[00:28:06.15] - Jonathan Dunn
+Yeah.
+
+[00:28:06.34] - Justin Gardner
+No, I teach a lot of practice.
+
+[00:28:07.59] - Jonathan Dunn
+There's a lot of pressure for your patient and you can make one mistake and like their life is over, obviously, and your life is also harmed a great deal by that one mistake.
+
+[00:28:15.92] - Justin Gardner
+But yeah. So that's intense, man. I think that you're living a very intense environment there. But I think you've also mentioned like your work hours are pretty good and that you can still find time to hack and stuff like that and you can reschedule patients and—
+
+[00:28:29.74] - Jonathan Dunn
+I'm efficient. It's my efficiency. Yeah. It's which, anyway, I can do a whole podcast on efficiency.
+
+[00:28:35.38] - Justin Gardner
+Yeah. Well, I know we talked—
+
+[00:28:36.35] - Joseph Thacker
+We actually should do that. I think it's like a superpower. Yeah.
+
+[00:28:39.50] - Justin Gardner
+I know we said we were going to focus on the research, but context—
+
+[00:28:41.75] - Jonathan Dunn
+I focus on research.
+
+[00:28:42.49] - Justin Gardner
+But so one last question though, you context switch a lot. Right. Which I think is something that is a lot of hackers struggle with, particularly me. I need focused. I mean, actually, you know, sort of the, the, the environment around you, you know, forces you to evolve. So now that I have kids, I am getting a little bit better at like, you know, dealing with distraction, then coming back. But you do it in a way that I've never seen, which is I've got a patient now, I've got 6 minutes to hack and I hack and then I go back, you know, like, yeah.
+
+[00:29:11.33] - Jonathan Dunn
+So that's, that's not, that's not a superpower. That's in my disease. Like I have ADD. That used to be medicated when I was in high school, right? And then I did— I stopped medicating my ADD, and I just figured out how to live my life in such a way that works with my brain. And that includes if I'm doing something that I'm not having fun doing, I can do it in short spurts and then switch to another not fun activity and then switch back. And I'm able to do that. But if I'm— obviously, if I'm into a thing, Like if I'm in the middle of a bug chain, I could do that for like a week without sleeping. But if I'm doing like recon on a target, which I'm not a huge fan of that, then I have to context switch frequently in order to complete the task. But that is a my brain thing and not like what I suggest for others around me. But it helps me in context switching to like medicine and hacking and my kids. And stuff, but that's—
+
+[00:30:09.09] - Justin Gardner
+wow, very interesting, dude. I don't, I don't know how that works for you, but, uh, more power to you because it's clearly getting results.
+
+[00:30:15.11] - Jonathan Dunn
+Obviously you have something that nobody else has, which is you have like the, the hyperfocus of ADD without having ADD, and you just have it all the time. Like, that's like, that's like, that's an actual superpower. Like, we, we have— I have a problem. Yes, actually, actual super—
+
+[00:30:29.00] - Joseph Thacker
+I, I wish I could get on something like Ritalin so I could do what Justin does, but I literally It's unreal.
+
+[00:30:34.14] - Jonathan Dunn
+Yeah, it's unreal.
+
+[00:30:35.44] - Justin Gardner
+It is. It is a little bit odd too, man. I do think just as like a, you know, I don't know, self-proclaimed neurotypical here, like I do, I do really value the fact that I can just sit down and focus for a very long time and like, you know, stay locked in and stuff like that. But I mean, you really do feel it when your body is off too. Like if you get a bad— I've got this Whoop, right? And if you get a bad, you know, night's sleep or, you know, you're just not, your body's not at, at, you know, good performance levels or whatever. Like I'm sitting here, I'm trying to focus. I'm like, man, why can I not like focus on this? You know? So it is crazy when, as you become more aware of it, you, you learn how to like optimize your, your life around that. If you're really trying to focus hard.
+
+[00:31:20.17] - Jonathan Dunn
+Um, I have to feel physically good in order to hack well. I agree. If even if I have one drink the night before. Older than you guys. So I like, one drink is a lot, is a lot for me. I mean, even though I do it, but I, but I'm a worse hacker the next day, even with one drink.
+
+[00:31:34.46] - Justin Gardner
+I stopped being able to process alcohol at like 25. Like I did at 25. Like I started, you know, if I had a glass of wine, I would feel it like the next day actively. And I'm like, all right, well, guess I'm done with that. So I don't drink anymore. But yeah, so All that aside, let's get to the technical meat. Well, Richard, go ahead and put in a cut here as well. You know, for like, if people want to like jump to this point, uh, in the podcast, um, let's get to the research. Okay. So you, I messaged you about this episode and I was like, hey man, you know, maybe we could do something with like client-side paths or like client-side path traversal. And then you're like, sure thing. And then like, I come over and there's like this book on client-side path traversals. There's an app on client-side path parsing. There's like the nuances of every single framework outlined. I swear, dude, that— and I've read through it all and it's like beautifully written.
+
+[00:32:30.38] - Jonathan Dunn
+Did you ever see The Price is Right? You ever see the show The Price is Right? I have, you know, when they call the person down and that person is all excited to be on The Price is Right because they've been watching it for years, right? I am currently right now on The Price is Right and you have called me down. Like, are you gonna— are you gonna— is this gonna be a bad episode? No, no, this is not gonna be a bad episode. This better be a fantastic episode.
+
+[00:32:50.34] - Joseph Thacker
+This is so funny. We just view you as our friend and you literally lead hackalongs. Like, you've popped bugs during Justin's stream. Like, you're not different. You're not something.
+
+[00:32:57.61] - Jonathan Dunn
+I listen to you guys every Thursday. That's my routine for years. For years.
+
+[00:33:03.23] - Justin Gardner
+Oh man, that's amazing, dude. Frick, I love this. I love this community.
+
+[00:33:07.05] - Jonathan Dunn
+Okay.
+
+[00:33:07.65] - Justin Gardner
+Um, so we now have a very long research paper, uh, that will be going on the research lab. So, uh, you can find that at lab.ctpb.show. And, uh, that outlines client-side path traversals across every single major framework by our boy XSS Doctor.
+
+[00:33:25.83] - Jonathan Dunn
+Yeah.
+
+[00:33:26.33] - Joseph Thacker
+You should take one minute to tell us, uh, how you wrote that. Cause Justin loved it.
+
+[00:33:30.57] - Justin Gardner
+Okay. Yeah. Okay. So yeah, let me set the scene for that. Great, great lead-in Rezo. Um, as I read through this, I was like, oh man, like JD sat down here and like, Wrote this by hand, every single line. And that's so rare nowadays with AI. Is that actually what happened?
+
+[00:33:45.67] - Jonathan Dunn
+Because it literally felt like that. The answer is this. What you're reading was written by me, but the process by which it was written by me is slightly different. So basically, this is— let me talk about the research first. Then we can talk about how I did it. Basically, I started out by I love client-side path traversal. It's my favorite bug class. And I love playing with client-side paths. The first thing I look at ever on a target is all the client-side paths.
+
+[00:34:14.51] - Justin Gardner
+Same.
+
+[00:34:14.96] - Jonathan Dunn
+And when I'm looking for client-side path traversal, I basically, I don't even look at the code in the beginning. I just like find a path that looks like it's custom, like /settings/XSSDoctor. And then I'll start putting encodings at the end of that, %2F, %25, %2F, %5C, sometimes Unicode, although for some reason now I understand why, but it never, it doesn't work the Unicode often. And so, and then I'll look for an API call on the backend. I'll often also use BuzzFactor's fantastic Gecko extension, which I do all the time, which basically is just looking for reflection in the API call. And then if I find that and I find traversal on the backend, I'll then look to see if there's any impact of that, whether it's a CSRF or XSS. But when Justin asked me to do this client-side path episode, I thought it would be cool to look through every framework and to find out why it was sometimes working, why %2F sometimes worked, %5C. Is it just like the developer doing something weird or is there something that is unique to the frameworks? So I looked at 9, I actually looked at 10 frameworks in the beginning, but I thought it was too long. So I ended up just doing it on 8. And so that's React, Next, Ember, Vue, Angular, something called Solid State. Am I missing one?
+
+[00:35:44.40] - Joseph Thacker
+Svelte.
+
+[00:35:45.01] - Jonathan Dunn
+Nuxt. I did Nuxt also. I think that's it. And so Install Kit. Install Kit. And so the way that I did it was that I had AI build me labs. That's the first thing I did is I say, build me a lab for React. I want it to have this. So basically like take a path parameter and put it into an API call, take a query parameter, put it into API call. How is it doing that? And then I would I would look at it, play with it, and then ask AI. Um, yeah. Ask AI.
+
+[00:36:27.13] - Justin Gardner
+That's a really good, that's a really good flow. Sorry. I know I was, I was gesturing with my hands here for those that are on audio, but, um, yeah, that's a really good way of doing it too, because the AI of course is going to produce the code that is most common that it was trained off of. Right. So if you're looking to like replicate common code patterns, used by developers in this specific language, then that's like AI's shit, right? You know, like that's, that's so, so you had to generate all the labs and then you worked back from there or so I would do the labs and I'd find the places that it worked on.
+
+[00:37:04.38] - Jonathan Dunn
+And then I would ask AI to point me to the code in the developer code, like in the React code, for example, to like, where is this parsed? How is this parsed? Like, like when, um, so Thinking about, let's say that's client-side path example. You're a developer and you want to make a path to the /about. That's easy, right? You just basically say /about, this is the JavaScript you want to be on that page. This is what you want the page to look like. But let's say you want /settings/xssdoctor. That xssdoctor is going to be custom for every user. And so that is going to be defined a certain way in every different framework. And so like in React, for example, it would be like /settings/:userid. And so then I thought the developer needs to get that somehow and then use that in a way that however they want to use it, they have to get that information because if I was a developer and I wanted to make, let's say, /settings/xssdoctor, and then I would make an API call to /api/xssdoctor, API v1 xssdoctor, what they would do is they'd get that value as a variable and then pass it into the API call, which is actually how it works. And in React, that'll be on the front end. Sometimes it's on the backend. We can talk about that. And so I had AI point me towards the exact code and I would keep asking it questions. I'd be like, what's it doing here? Like, why is it doing this? Like, what is this? What is this? And then I would look at it with AI to find out. So that's how I did the research.
+
+[00:38:49.57] - Justin Gardner
+To trace it through the various components in React's internal repository or whatever framework.
+
+[00:38:56.94] - Jonathan Dunn
+Correct. And then I would say, why is it URL decoding here? Like, what's happening here? Like, what's the function? Show me that function. So I would I would do that. And then I had all the research done for all the things. And then I'm like, write the blog article for me. Just write it. You know, here are some blogs I've written before. Put, make it sound like that. Yeah. That's literally what I did. And I wrote it and I'm like, this is pretty good. So I sent it out to like Rezo and Demo and you, although you didn't read it, thank God. Um, and that you wouldn't have liked it and BuzzFactor and everyone's like, This is okay, but like, I could just get AI to write me a blog. Like, why did you get AI to write me a blog?
+
+[00:39:40.71] - Justin Gardner
+True, true.
+
+[00:39:42.09] - Jonathan Dunn
+So then I rewrote it all myself.
+
+[00:39:44.01] - Justin Gardner
+Yeah, I think it feels okay. So then what you did is you looked at the blog post and then you like hand rewrote it. Is that right?
+
+[00:39:52.82] - Jonathan Dunn
+Yeah, I hand rewrote everything. I know I just started at the beginning. I didn't like hand rewrite line by line. Like I just wrote my own blog article.
+
+[00:40:02.07] - Justin Gardner
+Okay. Gotcha. Gotcha.
+
+[00:40:04.48] - Jonathan Dunn
+Yeah. Because there are certain lines I left in from the AI. Yeah. And some of them maybe you could tell they're in there, but I couldn't personally. There weren't many. I left mostly it was me in this particular one because I once submitted a bug with you and I had AI write the report and you were quite unhappy with that report. And I felt bad.
+
+[00:40:27.26] - Justin Gardner
+It wasn't good, bro.
+
+[00:40:29.11] - Jonathan Dunn
+I know. I felt really bad when you— when you— when you— so I'm like, I can't submit a blog article.
+
+[00:40:33.76] - Justin Gardner
+In your defense, it actually did get triaged.
+
+[00:40:36.67] - Jonathan Dunn
+Got paid. I got paid 2 days later.
+
+[00:40:39.05] - Justin Gardner
+It did. I like— I said, I messaged you and I was like, look, JD, this is shit. Like, and this doesn't have like a very actionable POC.
+
+[00:40:47.65] - Jonathan Dunn
+Like, everything's terrible.
+
+[00:40:48.55] - Justin Gardner
+Where is the click and see impact?
+
+[00:40:51.84] - Jonathan Dunn
+Right?
+
+[00:40:52.13] - Justin Gardner
+Like, I really think that that's essential. Like, you— and you did have a— you know, there was a ton of stuff. There was a lot of detailed information. It was like, you know, it outlined everything. But as a— as a— you know, as a— I don't know, as a person reading the report, I wanted to see, go to this link, click, and then note what happens on their site. You know, that sort of thing. And I didn't see it. But somehow—
+
+[00:41:14.25] - Jonathan Dunn
+You're right. It was a terrible article. It was a terrible— it was a terrible— no, you were right. And I felt bad, not because of you, but because I'm like, I— That was not the best work I could have done there. But it's so seductive to have AI write the report for you.
+
+[00:41:27.48] - Justin Gardner
+It is.
+
+[00:41:28.11] - Jonathan Dunn
+Because it's so boring sometimes to write the report. Sometimes. It depends on the bug. If I love the bug, if a bug is part of my heart, I like writing it. But if the bug is not part of my heart and it's just like, I don't like writing it.
+
+[00:41:40.78] - Justin Gardner
+The bug is part of my heart, dude. I love that.
+
+[00:41:43.42] - Joseph Thacker
+Let me give just like 2 really quick tips for writing better reports. You know, 90% of people listening probably already do this, but if you don't, definitely tell it to be concise and just technical and leave out any kind of fluff. But the other thing that I found that is really, really good for having it write good reports, Justin, especially for what you're talking about, is I've told it to always use attacker/victim language and be extremely clear about when the victim does— or like, sorry, given these preconditions, because like often the AI, whenever it starts to write, that would be like Wait, the precondition is that you're already a super admin. Oh man, this actually isn't a bug, right? So like, you know, make, make sure it gives the preconditions for what the victim is and what the attacker is, and then make sure that it frames it in attacker-victim language. So, you know, an attacker would set up this and then a victim would do this and then this outcome will occur. And that massively improves our reports.
+
+[00:42:33.32] - Jonathan Dunn
+Yeah.
+
+[00:42:33.96] - Justin Gardner
+Yeah, I imagine so.
+
+[00:42:35.40] - Jonathan Dunn
+It's, I don't know, it depends on the bug. It's very hard for me because sometimes I just want to I found the bug. I just want to submit it.
+
+[00:42:41.59] - Justin Gardner
+Yeah. I think at the end of the day, like you should definitely write concise technical, you know, to the point reports. Right. I think, and this is actually something I said on the goals, goals episode at the beginning of this year, you know, I want to do better detail, you know, in my reports, but I think if you're going to skimp somewhere, skimp on the report and don't skip on the POC. Like if your POC speaks for itself. There is a high chance that the company will like take that report seriously. Right.
+
+[00:43:09.94] - Joseph Thacker
+If you're, if, if you're, you know, and when Justin says POC, he doesn't just mean like the actual script. He means like the video showing exactly what happens.
+
+[00:43:18.19] - Justin Gardner
+Yeah. The video, the, the actual script itself, you know, all of that, you know, they will fill in the blanks on the report. Right. Or they will ask you to fill in the blanks on the report. If you write a report with no POC and no video, then it's, it's hard for them to go from zero context to, oh, I read through this thing and I know, you know, how it works and I can actually implement it myself, you know, given none of your pre-knowledge. Right. So, um, I don't know. I think that that's, I think if you're going to skimp on, on one area, definitely don't make it the POC.
+
+[00:43:51.26] - Jonathan Dunn
+Um, I'm going to try to do them all myself anyway.
+
+[00:43:53.90] - Justin Gardner
+Yeah. I think that's good. I think that's good. All right. Let's get to the research. So, Um, I mean, just having read through it, essentially what this research shows, and you can correct me where it, where I'm wrong in any way, is an analysis of these frameworks, how, um, path parameters, query parameters, hash parameters are parsed across the frameworks and even some server-side rendering stuff, which was very interesting to me. Um, and then, uh, how these CSPTs actually, which is a client-side path traversal, get, um, in they, how they occur within these frameworks. What, what parsing of the, of the parameters, what parsing of the routes should we be looking for and understanding, okay, you know, uh, in this scenario, our %2F is going to turn into a slash and we've even got %252F now that we can, you know, utilize in this specific environment, uh, versus like, um, understanding where, you know, what Single page application frameworks are not going to do that. Um, and you're wasting your time looking for, for, uh, CSPTs. Is that, is that accurate?
+
+[00:45:00.86] - Jonathan Dunn
+Yeah. I mean, basically, like when we're in this situation, the source is going to be something in the URL bar and the sink in this, just in this, for this gadget is going to be the fetch or the API call. So if you think about that, like, what is the process by which the thing in the URL bar gets to the API call? In order to exploit it, there's another sync, right? There's going to be either the CSRF sync or the XSS sync or however else you want to exploit this, or the SSRF or secondary path traversal sync on the server. But so if you, you know, in the URL bar, the, Oh, good. Nice.
+
+[00:45:45.69] - Justin Gardner
+Yeah, I've got the options.
+
+[00:45:48.13] - Jonathan Dunn
+The 3 places that you may, that you may, your 3 sources there are either the path itself, the query parameter, or the hash parameter. The query parameter, everyone is always testing this from the query parameter, but I like to start from the path. To be honest, my most impactful CSPTs have been from the path.
+
+[00:46:11.40] - Justin Gardner
+Same.
+
+[00:46:11.84] - Jonathan Dunn
+Not from the query. Yeah.
+
+[00:46:12.98] - Justin Gardner
+I agree. I think it actually very often happens in, in the path parameter?
+
+[00:46:17.78] - Jonathan Dunn
+More, almost more often, because they're— I feel like the developers are looking for it from the query parameter more or something.
+
+[00:46:23.88] - Justin Gardner
+I also feel like they often take query parameters and put them in query parameters versus like path values get put in path values. Yes. Does that make sense?
+
+[00:46:31.67] - Jonathan Dunn
+Yeah.
+
+[00:46:31.98] - Justin Gardner
+Yes. That's—
+
+[00:46:32.57] - Jonathan Dunn
+yeah. And interestingly, in my research, the path was the most interesting. Um, I found the most interesting things basically there. So, um, You can even go down, go down to like the, all the way on the bottom to that. So like basically for people who are like not client-side people, it's like, again, it's like the way you have to think about it is that there is each the, a frontend JavaScript framework, I guess, just to introduce that is there, the path parameter in the URL bar is not mapping to a folder on the server or a file on the server. Like it would be for like PHP or like a multi, a multi-page framework, an old one of these older framework IIS. Instead, these JavaScript frameworks, the URL bar, they take what's on the URL bar and the path in the URL, and that will be sent to the code and the code will use that to determine what shows up on the page, what code paths are going down, what lazy loaded JavaScript files are loaded. What API calls are sent out from that place. And so when you have a dynamic path parameter, a path parameter that's not like just /about, but like /about/XSSDoctor, /files/md5sum, the way that they reference those as the developer, there's a function that they call either on the front or the backend. That gets that value back for the developer, and then the developer can do something with that.
+
+[00:48:05.96] - Justin Gardner
+Okay.
+
+[00:48:06.51] - Jonathan Dunn
+Okay.
+
+[00:48:07.42] - Justin Gardner
+Let me pause and try to summarize and make sure I'm tracking with you. Okay? So, unlike, you know, PHP or IIS, right? Those are sort of file system-based HTTP servers, right? We've got those and then we've got like APIs, right? Modern paths where a program is actually handling The parsing of these routes, right? So those are two types of paths that we're familiar with. Then there's also like a third one, which is like a client-side router, right? Which is a router that is occurring within your own browser for single page applications. So, um, the JavaScript code on the client side is parsing the path from the URL and then routing you to some specific, you know, view or some page within the single page application. Uh, and that's what we're talking about is dealing with the parameters of those paths. So, um, the, you know, like you mentioned, /about/xss-doctor, whatever, xss-doctor might be a dynamic value. There could be /about/rhino-raider, right? And what we're, what we're looking into here is how these client-side routing engines parse that dynamic component. Is that, am I, am I tracking with you?
+
+[00:49:19.80] - Jonathan Dunn
+That's exactly right. That's what I wanted to look at. That was like the, you know, for this part of the research. Yeah. And so, and then another question I had was that which functions in which frameworks decode by default? So if you put in /xss-doctor/%2f or %25/2f or %5c, which I actually have to I put back in there, which ones are URL decoded by default? Because if it was URL decoded by default, that would make the developer less likely or more likely to have a misconfiguration putting that directly into the API call. And I found that almost all the frameworks have a way to have a vulnerable way to a vulnerable primitive, a vulnerable function that will take the path parameter and auto-decode it as if it was a query parameter. Yeah. And sometimes double URL decode it.
+
+[00:50:22.38] - Justin Gardner
+That's, that's crazy, man.
+
+[00:50:24.07] - Jonathan Dunn
+The double URL decode.
+
+[00:50:24.88] - Justin Gardner
+I'm looking at the table here. There is on React, there's a double URL decode.
+
+[00:50:30.32] - Jonathan Dunn
+The worst thing about React is that there was actually an issue, a GitHub issue, um, saying that there was a double URL decoding bug. They fixed it but then reintroduced it later in a different manner. So it's—
+
+[00:50:46.63] - Justin Gardner
+there's still—
+
+[00:50:47.25] - Jonathan Dunn
+anyway, React is called the useParams, which is important. If you're going to take anything away from, from this research, you should look at this because this is a great way to, to find in the code what's going on. Like, you know, if you— if in, in use— in React, Basically, the developer would say, let squiggly bracket user ID equals use params. And that would bring back that user ID into the code. And then if it's passing that directly to a fetch, that's a CSPT, or it could be doing other stuff with it. It could be putting that directly into a dangerous set innerHTML. You never know. But that's a good way to think to look at, and it will double URL decode that. Vue, everything is vulnerable to this. Angular, it's pretty vulnerable. Next is mostly not vulnerable except Next does this thing called— also has a useParams function which does not auto-decode the parameter. But on the server side, it uses something called awaitParams, which is the async version of useParams that is often— that is almost always used on the server side. And that is auto-decoded. And if you think about what that means is that if on a Next app, if you're using server-side routing and you are using a backend API as opposed to a frontend API, which is in Next, you can choose what you do. It can be more frontend or more backend. And that's why a lot of people use Next. But why else use Next if you're not going to use some amount of backend fanciness? And so if you await params, Uh, and then pass that directly to the backend API, that will lead to secondary context path reversal.
+
+[00:52:56.96] - Justin Gardner
+Okay. So I'm going to, that's the one we're going to double-click into for a second. Okay.
+
+[00:53:01.15] - Jonathan Dunn
+That's in the, in the sync section of this.
+
+[00:53:03.96] - Justin Gardner
+Is it? Okay. So let me see if I can find it here. All right. So we found it. Um, I'm looking at this. So this is a very interesting case. So what you're saying here is that. As an attacker on the client side, we can send a request. We can make the victim's browser send a request. That request will not trigger a client-side path traversal because the useParams on the client side in Next will keep the %2F encoded rather than decoding it to a slash and incurring a traversal. When that actually gets passed to the server side in some capacity there, if await params is used, it will, it will actually resolve those percent 2Fs to slashes and incur some sort of server side path traversal with the victim's credentials that were sent from the browser.
+
+[00:54:03.92] - Jonathan Dunn
+Correct. And the reason behind this is that Next has two routing systems. Next is weird, right? Because Next is supposed to be like the developer's supposed to choose how much frontend and backend they want. There's a frontend-only Next, which I didn't really look at that much. But in this situation that I'm describing, which is basically a hybrid model, the path is sent, always starts at the server. There's no frontend use params in this situation. The URL bar is sent to the server, which parses it. in however way they want to do it. If they use await params, that's what it's called, the await function, await params, that's URL decoded by default. And then if you're doing that and you pass that to /api/, you know, internalapi.com/, uh, /thisparam, you'll get secondary context path traversal.
+
+[00:54:57.01] - Justin Gardner
+Okay. So this doesn't rely on any client-side code at all?
+
+[00:55:04.30] - Jonathan Dunn
+In this particular circumstance of Next, there's no client-side code in this situation. It's going straight to the server, server's parsing it and passing it to the backend API.
+
+[00:55:14.01] - Justin Gardner
+Okay.
+
+[00:55:14.73] - Jonathan Dunn
+There are frontend implementations, but those mostly use the non-vulnerable code path.
+
+[00:55:24.26] - Justin Gardner
+Yeah. It's a little interesting though, because like So, so essentially what this is is a, um, secondary context path traversal.
+
+[00:55:32.05] - Jonathan Dunn
+Yes.
+
+[00:55:32.86] - Justin Gardner
+Is that, is that what you're describing here?
+
+[00:55:34.94] - Jonathan Dunn
+That's correct. That would be—
+
+[00:55:36.46] - Justin Gardner
+yeah. I wonder if there's another layer though. I wonder if there's a client-side induced, uh, you know, secondary context path traversal that, that is happening here where it doesn't, you know, I don't, I don't even know how this— maybe I, maybe I'm thinking about this wrong, but like If there is a client-side route that takes a path parameter, puts that into an API request that is not— so we're not incurring the path traversal at this point, right? Puts it into that API request with auth, you know, cookies, which is not something we could have triggered from cross-site context. Puts it into that, you know, sub-resource request. It is not incurring a path traversal at this point because it's not decoded. Then that is sent to the server. The server uses await params, then it is decoded.
+
+[00:56:25.19] - Jonathan Dunn
+That's not how, that's not how, that's not how Next works. Yeah. The, in this situation, uh, you have to think of Next a little different than React. The, um, there, there could be, as you're describing, like a fetch request on the front end to an API, but that is usually a different thing in the backend of Next. Yeah.
+
+[00:56:42.36] - Justin Gardner
+I see. I see what you're saying. Cause it's almost like a, it's like a server-side single page. Yeah.
+
+[00:56:48.32] - Jonathan Dunn
+Next is weird. I guess some people want server-side functions, but, but Svelte is the same way where Svelte has a backend and a frontend and then maybe external APIs. And Svelte is also vulnerable to the secondary context path traversal. And I did the, the second answer to your question is I didn't look at the frontend-only implementation of Next.js. I only looked at this, what I consider to be like the normal implementation of Next.js, which is that the path is sent to the server and the server does this stuff. Okay. But I'm not a Next developer, so maybe there's other implementations that have different things. That's one. Anyway, sorry.
+
+[00:57:29.76] - Justin Gardner
+No, that makes sense. I think that that's a valuable route and it's helpful. I mean, even if for no other thing than just to feed this to AI as well and just be like, hey, point out to me the various spots in a codebase in a Next codebase where they're using await params versus whatever other way you're supposed to process it.
+
+[00:57:48.61] - Jonathan Dunn
+I'm not going to test for CSPT on Next using the path anymore. I may tech for secondary context, but there's no reason. Next will not be vulnerable to that based on this research. And neither will Solid, which I actually hadn't heard that much of before this.
+
+[00:58:06.88] - Justin Gardner
+Solid Start?
+
+[00:58:07.82] - Jonathan Dunn
+Solid Start. Yeah, because there's no vulnerable code paths in those situations. Um, for various reasons.
+
+[00:58:14.21] - Justin Gardner
+Very, very interesting.
+
+[00:58:15.59] - Jonathan Dunn
+Yeah. That's, that's, uh, but I will test for it like crazy in Vue. Vue is very vulnerable. Um, yeah.
+
+[00:58:24.26] - Justin Gardner
+Angular is the most, right?
+
+[00:58:26.75] - Jonathan Dunn
+You know, Vue is even more, Vue is even more than React. You're right. You're right. The double URL encoding thing is, uh, is, is it makes it the most vulnerable. Yeah. Um, but I hope they don't, I mean, I guess I hope they do patch it. I hope everything's secure, but.
+
+[00:58:40.01] - Justin Gardner
+Well, we were kind of talking about this a little bit beforehand, like It's impossible to— like, CSRF you can patch, right? Because there's something— they did a really good job patching it with SameSite cookies, right? And CSRF still exists. But I mean, for anybody who experienced the prevalence of CSRF prior to SameSite cookies, like, or SameSite-Lax default cookies, it was way more. It was around back then. And— but this one you literally can't fix. Because there's no way that they can fix it at the sync level, right? Because, uh, you're doing string, oftentimes you're doing string concatenation prior to passing it to fetch or whatever. Right. So all it sees is a concatenated string, right? You know, uh, one string that's all together and you can't fix it at the source level or else you retroactively break a bunch of stuff. Um, so I really think, I think it's impossible.
+
+[00:59:32.73] - Jonathan Dunn
+It has to be on the developer level. That's the problem. And that's why it's always going to be around because the developer is going to need the URL decoded value at some point.
+
+[00:59:41.19] - Justin Gardner
+Yeah.
+
+[00:59:41.94] - Jonathan Dunn
+That's like, they need to URL decode it. If they don't do like, it's going to break things if you don't do that. So then you have to always re-encode it when you're passing it to a backend. That's the answer. But, but it's not going to be fixed on the framework level.
+
+[00:59:55.94] - Justin Gardner
+I suppose.
+
+[00:59:56.48] - Jonathan Dunn
+I got a good question.
+
+[00:59:58.84] - Joseph Thacker
+If you all were on an app and you, you can pick a framework if you want, and you could only register one username because I mean, obviously we could just create a bunch of accounts or whatever, but you could register one username that would just break CSP-T if they're not blocking the right characters, what's that single username you would pick? Ooh, like, would it be just like doctor percent 2F dot dot?
+
+[01:00:20.26] - Jonathan Dunn
+I've said 2E, percent 2E, percent 2F. Buyakasha. It's got to be Buyakasha in the end, dude.
+
+[01:00:25.82] - Joseph Thacker
+So you would actually— you would put it in all 3 characters encoded?
+
+[01:00:29.32] - Jonathan Dunn
+I, to be honest, I never— I don't do it like that. I don't— that's not how I test. I don't like— I don't create— I would always test it The nice thing about client-side is you don't have to actually save the malicious username in order to see if it's vulnerable. You could always set a match and replace or just do something like that because it's client-side.
+
+[01:00:47.96] - Justin Gardner
+Yeah. Yeah. I do think that certainly if you could smuggle those characters in the, you know, %2F, the slash, the backslash, the question mark, the hashtag, all of those sort of have meaning from a, from that perspective. Um, I also think just going back to what you were saying before though, about fixing it, JD, I think one of the things that could be interesting is providing developers with a, almost like prepared queries primitive inside of your, your framework language. So if you're doing a fetch, you provide like a base URL and that base URL has, I mean, you can't use a question mark or whatever, cuz question mark is, you know, query parameter start, but like you, you've got like a, maybe like a tilde or something like that that will get substituted with your prepared query, you know, values that you provide in either in an array afterwards or in like a sequence of parameters to that function. And then it will handle the string interpolation itself because the value that you're providing is always supposed to be, you are, you know, Just the value, not, not some path piece, right? Does that, would that solve it? You think?
+
+[01:01:58.53] - Jonathan Dunn
+No, that, that's the answer, but I will come back and say that that is definitely the answer. That's the right answer. But like, what did it take for SQL injection to be this rare? It took like an entire, the entire developer community getting together and prioritizing this because it was such an impactful bug. And I would argue that the developers do not consider this as impactful of a bug. And it would be like, think of how often they use dangerouslySetInnerHTML when they shouldn't. You know, they, I mean, I see it on every app. I see it every time, every React app, they're using it like crazy. They're passing user-controlled stuff in there, passing API responses in there because they don't care as much. I mean, maybe they do, but it feels to me like SQL injection is something they took much more seriously.
+
+[01:02:44.21] - Justin Gardner
+Certainly. And I think also another piece of that was that the whole ecosystem turned over. Since SQL existed, right? SQL was one of the— SQL injection was one of the first, you know, vulnerabilities that really got prevalence. And then since then, every single framework has been rewritten and, you know, has, uh, you know, shifted to a different framework or evolved in a serious way. So it makes it easy for them to like have those primitives change, right? But I do think like if a good step in the right direction against CSPT would would maybe be the Chrome team pushing a fetch, um, a fetch version or a fetch, uh, alternative that has the string interpolation.
+
+[01:03:25.17] - Jonathan Dunn
+Safe fetch.
+
+[01:03:26.17] - Justin Gardner
+Yeah. Safe fetch. Or see, you can't rename. I was going to say like, or renaming fetch, bad fetch, you know, bad fetch.
+
+[01:03:33.32] - Jonathan Dunn
+Yeah. You can't do it. Can't do it. Fetch is very vulnerable.
+
+[01:03:38.00] - Justin Gardner
+Yeah.
+
+[01:03:38.23] - Jonathan Dunn
+Fetch is the most vulnerable thing in— I mean, that's not true. Everything in JavaScript is vulnerable, but fetch is not a safe function. It, as you have said, it takes out tabs.
+
+[01:03:48.25] - Justin Gardner
+Yeah.
+
+[01:03:49.05] - Jonathan Dunn
+Um, that, that, which is the best WAF bypass I've ever— it's honestly, I don't know, I'll say it. %2F%09%5C is— I'm sorry, dot dot dot, sorry, %2F%2E%09%2E%5C is the best WAF bypass I've ever used in my entire life. I love it. I use it all the time and it works 100% of the time. I haven't seen a WAF— oh, I don't know.
+
+[01:04:19.32] - Justin Gardner
+I don't know if we're going to let that— I don't know if we're going to let that run, uh, Richard. We might bleep that. I don't know. That's—
+
+[01:04:25.69] - Jonathan Dunn
+it's so good.
+
+[01:04:26.34] - Justin Gardner
+But if we can't—
+
+[01:04:27.13] - Jonathan Dunn
+I mean, I'm sorry to say you can't bleep it on this podcast. You're true.
+
+[01:04:30.50] - Justin Gardner
+You're true.
+
+[01:04:30.84] - Jonathan Dunn
+That's the point of this podcast.
+
+[01:04:32.19] - Justin Gardner
+Yeah. So anyway, that is a very powerful WAF bypass. Brian, I know you're listening to this. Don't you—
+
+[01:04:37.13] - Jonathan Dunn
+Brian, turn the— Brian, turn it off, man. Turn it off. I was just thinking about Ryan. I was thinking about him.
+
+[01:04:44.98] - Justin Gardner
+Freaking providers listening to this podcast. Um, but yeah, totally. I agree. I think that that is very strong. Um, and, and Fetch certainly is vulnerable. Um, I will say there is one more vulnerable though, which is the freaking, um, which one is it? I think it's Axios. Some version of Axios.
+
+[01:05:05.42] - Jonathan Dunn
+Axios really? Yeah. Yeah.
+
+[01:05:06.40] - Justin Gardner
+That will like. Auto-run the JS code in a JSONP callback.
+
+[01:05:12.44] - Jonathan Dunn
+Oh, I didn't know that.
+
+[01:05:14.11] - Justin Gardner
+Yeah, yeah. There's one of them. I got to go look it up. Maybe I'll put it in the show notes. But there is, I believe, some versions of Axios or maybe it's one of the jQuery, um, ones. If, you know, if you path traversal it, if you client-side path traversal it to a JSONP endpoint, it will just run the JavaScript callback.
+
+[01:05:31.34] - Jonathan Dunn
+Oh my God. You know, I think Axios is a wrapper around Fetch. Like I think Axios uses Fetch, right? Like it's like, I haven't looked at the Axios code, but I guarantee you, Demo has looked at that code. And I'm gonna ask him right after this. He knows exactly why it's doing that.
+
+[01:05:46.48] - Justin Gardner
+I think it's probably XHR request, uh, because Axios is a little older and I think Fetch is like a, uh, a newer, I say newer. Now I'm getting, I'm aging myself a little bit here, but like, uh, you know, newer primitive. Um, okay. Awesome. Yeah. So that we did go down a little bit of a rabbit, rabbit trail there, but Fixing CSPT, you know, it would be cool if the browsers put in some string interpolation included fetch function call to try to get those resolved. And then have the frameworks try to adopt that at a framework level.
+
+[01:06:19.11] - Jonathan Dunn
+Yeah, that's a good fix.
+
+[01:06:21.63] - Justin Gardner
+So, let's continue to go through some of the research here on the path stuff. I mean, we can just look at this— maybe it's easier for everybody in the audio medium to just, you know, talk through this table essentially. But we've got React Router that decodes— React Router's useParams decodes %2f to slash and %2e to dot dot.
+
+[01:06:43.25] - Jonathan Dunn
+Everything. Yeah.
+
+[01:06:44.05] - Justin Gardner
+And double URL decodes as well.
+
+[01:06:46.23] - Jonathan Dunn
+Yeah. And double URL.
+
+[01:06:48.71] - Justin Gardner
+The only other place we see double URL encoding— there's no other place we see double URL encoding without developer-sourced code in any of the other top frameworks. Frameworks. Is that accurate?
+
+[01:06:58.40] - Jonathan Dunn
+In the path? That's correct.
+
+[01:06:59.86] - Justin Gardner
+In the path. Yes. Um, in the path where it gets really hit or miss is do they double decode %2e across various frameworks? Um, most of the time we see yes, but there are some nos at Solid Start and Nuxt server level. They'll just leave it straight as is. Right. Okay.
+
+[01:07:20.67] - Jonathan Dunn
+That's right. And then, um, another thing is I need to include backslash in this. I didn't do it partly because this is the longest article I've ever written, including in medicine.
+
+[01:07:33.05] - Justin Gardner
+This is very long.
+
+[01:07:34.01] - Jonathan Dunn
+It's very long. And I also kind of didn't do as much on the hash because it's so— I think it's like 15 pages. It's like some amazing amount of— Yeah.
+
+[01:07:43.46] - Justin Gardner
+So I break down the code paths for each individual framework. It's very helpful.
+
+[01:07:46.34] - Jonathan Dunn
+That's kind of what I wanted to do. And also, I'm also going to include the labs that I made so you could test this yourself. You can run the lab and then I'll show you one of the labs.
+
+[01:08:00.94] - Justin Gardner
+While you're pulling that up, I would like to ask you, can you explain the difference between wildcard params? I think there's two ways of describing wildcards, right? So we've got in our fuzzy example about about slash XSS doctor, right? That XSS doctor is a dynamic piece. I think they're called dynamic parameters and wildcard parameters or something like that. Can you explain the difference of those and how those are parsed across different frameworks?
+
+[01:08:26.93] - Jonathan Dunn
+The answer is actually, uh, something we didn't talk about is that basically what is, what is happening in each of these functions is that it's building a regex. Whenever you have a dynamic parameter or a query parameter, uh, it's basically building a unique regex. In a particular way. The useParams is going to have one regex and then the splat parameter is going to have— the wildcard is going to have another different regex. The useParams, for example, breaks on slash, whereas the splat parameter, it's just anything you put in between, in that area. Is gonna be taken exactly. There's not gonna split on anything. It's a dot star. That's, that's what it does in React, for example. It basically slash dot star slash.
+
+[01:09:18.10] - Justin Gardner
+Okay.
+
+[01:09:18.64] - Jonathan Dunn
+And it won't differentiate.
+
+[01:09:20.09] - Justin Gardner
+So that's, that's something I wanna make a little bit clearer for the listener. So, um, let me see if I can find it in the report while I'm talking about it. But what, what is the difference between like, where do we see, what, what does a splat parameter look like or a splat path look like in the definition? And what does its alternative, I guess, a dynamic parameter look like?
+
+[01:09:41.81] - Jonathan Dunn
+Oh, so like a dynamic parameter— React's a great example for all these things. So it's like it would be /:userid would be a regular dynamic parameter. And then it would literally say like /files/* is a great example, um, for a splat parameter because it, um, it's like anything you put in there. And I think one of the reasons to do that is they may have file names, they may have, you know, it may be different. You may want to capture the dot, stuff like that. Whereas that's the reason you do it. It's oftentimes— that was the example I gave, /file/*, it's the most vulnerable code pattern in React.
+
+[01:10:22.43] - Justin Gardner
+Okay. So two ways of defining dynamic path. You have— we're going to stick with our same example, about/* star. And that will match about/sssdoctor/abc123. And we've also got about/:username or whatever, right? And when we do that, if we put in something like about/rhinoreader, then username gets populated as Rhino Rater. But if we put about/rhinorater/abc123, that abc123 is not put into username. Just, or it doesn't match the route or, or, or does it just populate?
+
+[01:11:12.89] - Jonathan Dunn
+It depends what you're doing. It depends how you're doing it. But if it, if it's like /files/*, you could put anything in the world after that files thing. Whereas if it's just the user ID, uh, it depends. I think, uh, for, for, for use params, for example. You can't put a real slash. It will, it will be, it will, uh, if that's where it will end, um, you could put a %2F, but even if you, okay.
+
+[01:11:37.93] - Justin Gardner
+So let me ask you this one. Splat plus, oh no, no, no. Splat isn't going to end up in useparams. So correct.
+
+[01:11:44.67] - Jonathan Dunn
+It's a different, it's a different code path.
+
+[01:11:46.14] - Justin Gardner
+So if, if they're using a splat route, which is just, uh, about slash star, and then it's like anything after about just gets put in there, but it doesn't get populated as a parameter. It just, okay. Okay. So one of these is a wildcard path and one of these is a dynamic variable in the path. Is that more accurate?
+
+[01:12:06.00] - Jonathan Dunn
+That's exactly, that's exactly, that's how it was meant to be used. Yeah. And they, and that's, that's how it was meant to be used. And it, again, it's all as vulnerable as the developer wants it to be. They could easily just take a Splat parameter and do safe things with it.
+
+[01:12:21.48] - Justin Gardner
+Okay.
+
+[01:12:21.72] - Jonathan Dunn
+But it's harder to do that.
+
+[01:12:23.23] - Justin Gardner
+That's a really good— that's a really good signal piece for us though, is, is when there is a splat parameter being— or a splat path defined, right? Which is these star wildcard paths. And we see them trying to parse a path parameter out of that wildcard defined route. Splat, splat route, so to speak. Um, then That is something that should go ding, ding, ding, ding, ding in our head. Like, hey, maybe we should look into that a little bit more because that's not how that's supposed to be done.
+
+[01:12:53.42] - Jonathan Dunn
+Yeah.
+
+[01:12:54.13] - Justin Gardner
+Okay.
+
+[01:12:55.01] - Jonathan Dunn
+Very good. I think what I'm going to do is I'll just to show you this differentiation, I'll, um, I'm going to show you the lab. This is kind of how I learned it and this helps. This can help you. So like, let's say here, right? This, in this situation, we're using useParams. The, and so what's happening here is that this is what's the developer's actually doing. There's making a constant called userId and that equals useParams. And that is running through this function, right? So it's taking this, which is the userId, which I've URL encoded, and then it shows what gets back. So userId equals the decoded version.
+
+[01:13:35.85] - Justin Gardner
+Okay.
+
+[01:13:36.73] - Jonathan Dunn
+And then you could see. That I even fetched. Yeah, see, and then it's requesting this, so I could even do my favorite set dot dot percent 2F.
+
+[01:13:52.31] - Joseph Thacker
+By this he means it makes the request that is constructed based on the decoded username.
+
+[01:13:59.72] - Jonathan Dunn
+Yeah, and then, you know, so this is how I would do this. Now I even— where I put in 3% 2Fs and then that's—
+
+[01:14:09.25] - Justin Gardner
+we're back at the API secret endpoint.
+
+[01:14:11.98] - Jonathan Dunn
+Okay. Yeah.
+
+[01:14:12.72] - Justin Gardner
+So what this— this is a hands-on lab that is demonstrating for those of you all, you know, that you can traverse all using useParams, the encoded path that you set parameter that's set in by the path gets pulled into a variable by useParams that is decoded. And when you concatenate that with fetch, it traverses all the way back. And one of your parts of your flow, uh, JD, is to, um, go all the way back down to the document root. So you can hit—
+
+[01:14:44.76] - Jonathan Dunn
+yeah. And then if you're, if there's something appended at the end, um, you know, you could put, throw that in there too, the hash. And then also if you see the double URL encoded, I threw the %252F. Now what's interesting that I found that I figure out was a lowercase. All right. I don't know.
+
+[01:15:02.97] - Justin Gardner
+Well, you've got 25 2F 2F.
+
+[01:15:05.93] - Jonathan Dunn
+Oh, well, anyway, the lowercase 2F here won't work.
+
+[01:15:10.82] - Justin Gardner
+Really?
+
+[01:15:11.77] - Jonathan Dunn
+Yeah. If you do it like that, you see?
+
+[01:15:14.76] - Justin Gardner
+Very odd. Oh, wow.
+
+[01:15:15.93] - Jonathan Dunn
+It's very odd, right?
+
+[01:15:16.97] - Justin Gardner
+Hey, that is a super good takeaway.
+
+[01:15:19.23] - Jonathan Dunn
+Whoa.
+
+[01:15:19.86] - Justin Gardner
+I totally just got screwed on a bunch of bugs then probably. So what you're saying is that %25 2f lowercase functions differently than %25 2f uppercase?
+
+[01:15:32.53] - Jonathan Dunn
+And I cannot figure out—
+
+[01:15:34.22] - Justin Gardner
+Show me uppercase.
+
+[01:15:34.64] - Jonathan Dunn
+I'll show you, but you have to do it in a different window. You have to do it in a different window. Because if you do it in the same window, so wait.
+
+[01:15:42.67] - Justin Gardner
+It cached.
+
+[01:15:43.06] - Jonathan Dunn
+Yeah, yeah, that's why.
+
+[01:15:45.93] - Justin Gardner
+Add a cache buster.
+
+[01:15:48.21] - Jonathan Dunn
+All right. I just do it like this because I, and I always preserve disable cache. All right. So we got this. So big percent 2F. See?
+
+[01:15:57.98] - Justin Gardner
+Yep.
+
+[01:15:58.64] - Jonathan Dunn
+Okay. So it's being converted on percent 2F. So that works, right?
+
+[01:16:04.22] - Justin Gardner
+Yeah. Whoa.
+
+[01:16:05.03] - Jonathan Dunn
+Then here, the lowercase doesn't work.
+
+[01:16:08.40] - Justin Gardner
+Okay.
+
+[01:16:08.97] - Jonathan Dunn
+Whoa.
+
+[01:16:09.76] - Justin Gardner
+What? That, that seems like something. Are you sure that's not your lab, bro?
+
+[01:16:15.85] - Jonathan Dunn
+I don't know, man. I don't understand it. I couldn't figure it out from the code either, so it could be my lab.
+
+[01:16:20.34] - Justin Gardner
+We had to kind of—
+
+[01:16:21.47] - Jonathan Dunn
+I couldn't figure it out.
+
+[01:16:22.44] - Justin Gardner
+But I mean, your lab has got to be a reflection of at least some production systems.
+
+[01:16:25.31] - Jonathan Dunn
+It's just doing this. Yeah, like, I don't understand how that would do it. It's literally just taking vanilla modern React and doing this and then, and then reflecting it.
+
+[01:16:35.76] - Justin Gardner
+I mean, when we, when we, um, when we ship this research, that needs to be like bolded and at the top, that is like, I have been screwed by that.
+
+[01:16:45.64] - Joseph Thacker
+Tell us, tell us why, Justin. Tell us why.
+
+[01:16:48.59] - Justin Gardner
+Just, okay, because like I often, I only do lowercase, to lowercase f. I have never capitalized an f for, I mean, what he's saying is because you're like typing it fast, right?
+
+[01:17:00.32] - Joseph Thacker
+Like it's like, you're just like, yeah, it's the same thing.
+
+[01:17:02.27] - Jonathan Dunn
+Me too.
+
+[01:17:02.85] - Justin Gardner
+And then what he's, what he's saying here is that if you have a lowercase f, it is not Being decoded in an uppercase F, it is being decoded. What the fuck?
+
+[01:17:11.05] - Jonathan Dunn
+But you should see that stuff, right? Like we should be seeing that when we're testing that it's not working, but I guess we would just say it's not working and WURL encoding is not working. Yeah.
+
+[01:17:20.81] - Justin Gardner
+What the heck, dude?
+
+[01:17:22.18] - Jonathan Dunn
+It's weird, right?
+
+[01:17:23.88] - Justin Gardner
+Okay. I'm tripping a little bit. We're going to have to double check that.
+
+[01:17:26.06] - Jonathan Dunn
+You can even see like I, my, my app is extremely simple, you know, it's just taking the thing and it's not, I don't, I can't imagine that It's my app because—
+
+[01:17:34.72] - Justin Gardner
+wow. Listeners, I'm sorry. I know that we're kind of freaking out. Uh, and for those of you that are listening by audio, you probably don't have a lot of big idea of what's going on here. But essentially what he just showed is that in React useParams, which is one of the most common ways, I would say probably the most common way to get path parameters in single page applications, period. Uh, if you use %25, 2F lowercase, it does not decode to slash. And if you use %252F uppercase F, it does. What the frick?
+
+[01:18:10.09] - Jonathan Dunn
+Let's see what it's like with backslash.
+
+[01:18:13.93] - Justin Gardner
+Yeah, and a bunch of— and you know what's weird is— okay, dude, there's some sort of caching. No, it's got to be some caching, bro.
+
+[01:18:21.71] - Jonathan Dunn
+Well, what is that?
+
+[01:18:22.43] - Justin Gardner
+No, no, no, no, no. Wait, no. It can't be.
+
+[01:18:24.76] - Joseph Thacker
+It didn't look like caching to me when I was watching JD redo it. It looked Completely.
+
+[01:18:28.52] - Justin Gardner
+No, it's legit, man. It's freaking legit.
+
+[01:18:30.52] - Jonathan Dunn
+It's legit. Yeah, I, I, I— but I don't understand why that's the case.
+
+[01:18:34.93] - Justin Gardner
+Let's get demo. I mean, let's get— hold on.
+
+[01:18:38.96] - Jonathan Dunn
+All right.
+
+[01:18:39.27] - Justin Gardner
+We just summoned the client-side, you know, conclave of minds or whatever here to try to figure out what happened here. And yeah, this is legit. So Exorcist Doctor, dude, give me some, man. Like, this is a very legit finding. One of the best ones we've had live on the pod, I think. Uh, but the TL;DR of it, if, as I understand, and you can correct me if I'm wrong, is that the reason why React double URL encoding only decodes back to a slash for the capital F in %25 to capital F is because of this line right here, line 118 in match_path. Um, I don't know the name of the file in the source code, but it does a replace for %2F and swaps it to slash. And it does not do that in a case-insensitive way. So uppercase F will be mapped to this slash and lowercase f will not be. And that is where the differential is occurring. Is that correct?
+
+[01:19:40.02] - Jonathan Dunn
+Yeah. And that actually was put in after another double URL encoding bug was reported to React as an issue, not as a As a bug bounty bug and they, and this is how they fixed it. And they reintroduced this problem and I guess made it like this.
+
+[01:19:55.52] - Justin Gardner
+Dude, I have missed so many CSPTs because of this. I never use a capital F. I will always be using capital F now. Yeah. That's crazy.
+
+[01:20:04.10] - Jonathan Dunn
+Maybe both, or maybe you have to try both in all these situations.
+
+[01:20:07.32] - Justin Gardner
+Another thing to try both on, man. It's like, ah, here we go. But yeah, dude, that is a zero-day gadget in React Router. That is, uh, super nuts. So great find. And, uh, yeah, I'm glad we get to disseminate that to the community.
+
+[01:20:21.03] - Jonathan Dunn
+There's a lot here. Like there's way more than I found too. If you, if you just like look at any of these frameworks and you look deeply into the way that the routing happens, you're going to find weird stuff that goes on.
+
+[01:20:33.64] - Justin Gardner
+I think just conceptually as well, like looking for replaces that are not case, you know, insensitive. Is really good idea. And, uh, I think that there's a lot of scenarios where that will slide past and allow you to bypass something. Um, very cool, man. Well, we just got super derailed and burnt a bunch of time. Um, Reza, do you have to go or are you good to stay for a little bit longer?
+
+[01:20:57.73] - Joseph Thacker
+Yeah, I'll drop here in like a minute or two. So you'll just see me drop off, but okay.
+
+[01:21:00.89] - Justin Gardner
+All right. Well, thanks for joining us, man. Um, so we're getting the rest of the path stuff, uh, you know, Essentially, you've outlined all of the different frameworks here. So far, we've talked about wildcard or, or, um, splat paths and actual dynamic paths. That's good. Um, double URL encoding happens in React Router, but everything else does not. Um, and our fetch will, will automatically pull out, you know, %09 or tabs, uh, which helps with WAF bypasses. Um, let's, let's move unless you've got anything else on path parameters. Maybe we, we talk a little bit more into the server-side rendering thing. Yeah, that's interesting.
+
+[01:21:39.26] - Jonathan Dunn
+I just quickly on query parameters. Yeah. They're almost always decoded and that's kind of how it should be. Yes. Like that, you know, that is what it is. They, it's, it's a feature, not a bug. Uh, but if the query parameters pass to a fetch, it's gonna almost always lead to, um, CSP-T. Um, or, uh, but the, I think the mo— before we even went into this capital lowercase app, the most interesting thing I found on this in this research was like, I was looking for CSP-T, but there are a bunch of these frameworks that are, that are hybrid or server-side. And in those, there's a risk of secondary path traversal.
+
+[01:22:15.35] - Justin Gardner
+Yeah. Secondary context path traversal for sure. And that's because the client-side route is not encoding and the backend it is, right? Just like we talked about with the, um, with the Next situation. Was there anything else that you wanted to cover there? I know that there was some pieces of like, um, there's actual SSRF versus client-side or secondary context path traversal. Where do we land on? And one of the frameworks that bypasses like a hook as well or something, or—
+
+[01:22:44.69] - Jonathan Dunn
+I think the interesting, the thing to really focus on is when you're doing the secondary context path traversal, it's blind in the beginning, right? Because it's happening on the server as all secondary context path traversal is, but in something like React, you're going to get 500s when you have stuff like that. So you should be testing in things like Svelte, which are not that much written in Svelte, but, uh, and Next, you should be doing, putting these path traversal payloads, um, to test for secondary context path reversal. But you should be doing the thing that was spoken about, uh, on the pod with secondary context path reversal, where you do the %2F, let's say, /settings/xssdoctor percent 2F dot dot percent 2F XSS doctor. And, and, uh, and that, if that doesn't give a 500, that is suggestive. Yes. That means that there's some path normalization.
+
+[01:23:38.60] - Justin Gardner
+You take a valid value, valid value slash dot dot slash slash, uh, you know, yeah, value, valid value. All right. Let me say it one more time. Valid value. Slash dot dot slash valid value, right? Yeah. Okay.
+
+[01:23:54.89] - Jonathan Dunn
+And basically you do invalid value and you get 500, let's say, and then you do valid value and you don't like next give a lot of 500s, right? Uh, if, if you're messing up on the backend, uh, and that, that's a nice takeaway of that sort of research.
+
+[01:24:09.92] - Justin Gardner
+Excellent. Excellent, man. Um, see you guys. All right. Yeah. You're dropping peace, Rezo. Um, all right. Well, that, that brings us through, um, sort of out of the path related stuff. So query parameters, almost all decoded, but you and I were saying, you know, we do find more path traversals in path parameters rather than query parameters. I did want to bring up a little bit of an interesting one though. You can get a sort of variant of client-side path traversals a little bit more frequently in Um, query parameters where you're either injecting into a part of the domain or you are injecting into a relative path where you control the full relative path.
+
+[01:24:56.31] - Jonathan Dunn
+And it is just exactly— I know the target. I know the target you're talking about. Yeah. I know the target you're talking about. But that, that's very impactful when that happens. Yes. When you're injecting into a domain, uh, it's—
+
+[01:25:06.32] - Justin Gardner
+It's like a built-in, uh, open redirect as well. Yeah. Right. So I guess, do you have any nomenclature you use for those sort of scenarios or how do we ask like fetch hijacking or—
+
+[01:25:18.85] - Jonathan Dunn
+Right. No, like what if, what if the beginning of the, what if it's, you're injecting into, into the username and password part of the URL. So I, you know, because sometimes they don't realize you're doing that and I'll use the same, my favorite website. In hacking is the PortSwigger Academy URL parsing. What's it called? A lab or something? Uh, pull that up because it's the best. It is the greatest thing ever to study this thing. I use this every day. I'm obsessed with this for a lot of, a lot of reasons. This guy right here. That thing. Yes. First, just study it like without using it like this, just study it because this will tell you everything you need to know. About, about how URLs are parsed. Um, and about what you could try to try different things. And I'll use this in that situation because you don't like, you're injecting into it and you don't really know how it's being handled or you have to figure it out and you could do all these different cool things. Totally, dude.
+
+[01:26:21.18] - Justin Gardner
+Yeah. This is a super helpful cheat sheet. And I really appreciate that PortSwigger releases this. Uh, yeah. And then another trick.
+
+[01:26:29.39] - Jonathan Dunn
+Maybe I shouldn't— is that I will every single time I'm looking at OAuth, if you can inject into that a username or password before the only if that is the case, I will run this entire list over that, that, and I've found like a lot of bugs doing that.
+
+[01:26:51.05] - Justin Gardner
+Yeah. Very common. Very common. And now we know thanks to your, to your research today that we also need to upper and lower everything as well, which is great. Uh, lucky for us. So yeah, this is definitely a good cheat sheet. We'll put it in the, um, we'll put it in the description of the episode. Um, okay. Awesome. So that, that is it largely for query. I call that other, that other variant, um, fetch hijacking. I don't know if that's the correct term or maybe like Client-side request hijacking, but then it— C-S-H-H or R-H, it's a little off. But hijacking a client-side request that is being sent, pretty rare, very impactful typically when you can do it.
+
+[01:27:43.59] - Jonathan Dunn
+If you're injecting into the hosting anywhere, I once got— the only time I've ever had a web worker injection Is that, is that they were injecting into the hostname from a query parameter. I love that.
+
+[01:27:55.61] - Justin Gardner
+I love that too, man. And then also, um, it's so definitely the, the query parameter, uh, you know, actually just controlling the hostname itself, but also if it's a relative path and you've got to, that's one of the things that won't pop up in network. So you've got to actually change, you know, the network tab, you got to trace the sink or the source. Um, no, trace the sink, right? Where it's actually sending the request. Put a breakpoint right at the fetch request and see what is being passed into the fetch request. Because if they're passing in a slash rather than the full HTTPS colon whatever, and you can make it do slash slash or slash backslash or slash tab slash, right? All of that's gonna get resolved to slashes, which is gonna allow it to become an arbitrary, you know, an absolute path rather than a relative path.
+
+[01:28:45.93] - Jonathan Dunn
+And speaking of that, it's actually pretty hard sometimes to find those. And it's also very hard, I find, to find the sink of the fetch where it's parsing the JSON. That is, I spend, but if you guys, if whoever wants to get into client-side, like do that a couple of times and that will help you with dynamic analysis a lot. Cause sometimes it's in a completely separate place. Uh, I don't know. It's not, it's not always like fetch then. Jason, Jason parse, like it, like it's not that easy.
+
+[01:29:13.88] - Justin Gardner
+Pass the promises around.
+
+[01:29:15.31] - Jonathan Dunn
+It's like, oh, they're all over the place. Yeah. Yeah. One time I was looking at something like that for like a day and Demo found it in like 4 seconds. Freaking hate that, man.
+
+[01:29:25.38] - Justin Gardner
+And I'm like, how did you find that?
+
+[01:29:26.56] - Jonathan Dunn
+He's like looking at the app. Shut the frick up.
+
+[01:29:30.09] - Justin Gardner
+He's just one of those guys that just has that, like, just You could just slurp it all up. Him and Ryota are the two. And dude, I'm so salty that Demo lives right up the street from me too. I'm so mad that he is in my city. Like, that makes me so mad. Um, yeah.
+
+[01:29:48.86] - Jonathan Dunn
+Thank God nobody in Miami can hack. Yeah. Oh yeah, there are some great— if you're a great Miami hacker, I apologize, and call me. I'd love to hack with you.
+
+[01:29:59.02] - Justin Gardner
+He'll really try to impress you if you submit a report first.
+
+[01:30:02.39] - Jonathan Dunn
+If you submit a report first, I'll go crazy.
+
+[01:30:04.14] - Justin Gardner
+Dude, you know what would be like the best troll ever would be to like say, hey, Access Doc, you want to like do full collab on this, like, you know, target? And then, but secretly you've been working on it for 3 weeks beforehand and you have like 10 bugs. And then, and then as soon as they're like, oh, I found one, I found one, it'll cost you a couple grand, but it'll drive JD nuts. You know, like, how do you find that?
+
+[01:30:24.43] - Jonathan Dunn
+Looking at the app?
+
+[01:30:24.97] - Justin Gardner
+Yeah, looking at the app. Yeah, just looking. I just looked at it. Did you?
+
+[01:30:27.81] - Jonathan Dunn
+You didn't look at it?
+
+[01:30:28.86] - Justin Gardner
+Because I looked at it. Yeah, JD, could you like spend more time hacking? I feel like Oh my gosh. Um, all right. Last piece of stuff from this research that I'd like to go over is, uh, the custom sinks that, uh, you know, incur fetch requests to be made in the various frameworks. So I'm going to go ahead and share my screen again. Can you talk a little bit about those that you discovered in various frameworks?
+
+[01:30:56.51] - Jonathan Dunn
+So, I mean, there are actually others. Uh, this was like, uh, that are a little bit more— I keep talking about Demo Turbo. He has wonderful research in React XSS sinks that I did not include here because that's his research. But the most basic ones are dangerouslySetInnerHTML for React and Next shares that. In Vue and Nuxt, there's something called v-html, which is similar. Angular uses this bypass secure security trust HTML. Um, SvelteKit has just curly braces.
+
+[01:31:32.10] - Justin Gardner
+So there's a bunch of different ways to get HTML triggered in all the various frameworks. And I think that that is certainly, it's nice to have this list at the end, right? That you, that you included at the end. But what I'm talking about more is this guy. Um, this guy right here, the URL for find record. So this is a built-in version of fetch. Essentially, right? Like Fetch is powering the sinks. You're talking about the sinks. Yeah. Yeah. Yeah. Yeah. Is that— yeah, that's it. Yeah.
+
+[01:31:59.40] - Jonathan Dunn
+That's, that's basically the whole thing, but yeah, it's very interesting. There's a couple of those, but that's, that's the most, uh, that's the most, the most prominent one where they like wrap something around Fetch that makes it more vulnerable.
+
+[01:32:09.77] - Justin Gardner
+Okay. So explain this one for me. So in Ember, you obviously you can use Fetch, right? But then there's also a built-in utility. That you see them using a lot of times that also is not doing, um, traversal, even though you're passing in, say, what seems weird to me here, right, is you're passing into this ID and model name or whatever, right? And it's actually like, so you're not, it's not like you're passing in a URL. You are passing in, it's almost like the interpolation thing that we, we said we wanted, right? But then they're just not sanitizing it, right? Exactly right.
+
+[01:32:42.90] - Jonathan Dunn
+Yeah. They're introducing, they're basically introducing a bug this way in this custom way. It's very, it's very interesting behavior.
+
+[01:32:49.40] - Justin Gardner
+Okay. And this is in Ember and, and is it always URL for find record or is there a different structure?
+
+[01:32:55.75] - Jonathan Dunn
+No, that's it. That's what the function is called.
+
+[01:32:58.00] - Justin Gardner
+Okay. All right. And yeah, I think this is a really good thing to keep looking for in other frameworks is like when I'm scrolling through the code, when I see URL for find record, um, you know, I'm not necessarily thinking, oh, this is going to be vulnerable, right? But, uh, this guy right here will be creating these URLs that, uh, will be then passed to fetch and it would— it's doing the string interpolation, but it's not actually encoding any of the values itself.
+
+[01:33:28.60] - Jonathan Dunn
+And that's another thing to think about too, is that there's another sink that I didn't even talk about here, which is the server. The server may normalize URL encoded. That's very common. The API itself will— That's a great point. Yeah. So I always— that's usually the first thing I test because then you don't have to think about this. Then it gets passed to Fetch. Fetch could do whatever it wants and the backend is going to URL decode for you. Yeah. Then you could triple URL encode React. Oh my gosh.
+
+[01:34:00.35] - Justin Gardner
+We're getting into crazy layers here. Triple URL encode. Yeah. And then also sometimes, you know, if you can smuggle in a percent 3F or something like that, you know, in those sort of environments, that's a really strong signal. You know, if it's taking your percent 2F, it's still processing it as a path separator. Very strong signal for, for cache poisoning. Very much so.
+
+[01:34:23.68] - Jonathan Dunn
+And it would be hard for WAF to get all these. Oh yeah, for sure. I mean, there's, there's too much variation. Yeah. All right.
+
+[01:34:31.14] - Justin Gardner
+Well, if you guys haven't seen the value already of reading this writeup by XSS Doctor that will be on lab.ctpb.show, then you're crazy. So definitely go read it, read it thoroughly. And I'm not gonna lie to you guys. I sat down and it took me a long time to get through it. Even as somebody who's, you know, proficient with client-side stuff, but the value that I got out of just reading this is very, very high. And I think you guys will as well. And do the labs.
+
+[01:34:56.43] - Jonathan Dunn
+The labs is even more important because if you do the labs with it, you'll understand, you'll like play with it and you'll find stuff I didn't find, you know, with, with those labs, you do weird stuff to the parameters and see what you get. Yes, totally.
+
+[01:35:08.31] - Justin Gardner
+Um, dude, thank you so much for, for coming on and for dazzling us with all of this. Uh, it was awesome.
+
+[01:35:15.52] - Jonathan Dunn
+And yeah, it's The Price is Right. I am on The Price is Right right now and I am a contestant. I'm that excited. I like those people on that show.
+
+[01:35:22.10] - Justin Gardner
+Awesome. Well, well, GG, let's get back to the hacking itself then. Yeah. All right. Peace. That's the pod. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content. And a full-time Hunter's Guild if you're a full-time Hunter. It's a great time. Trust me. I'll see you there.

@@ -1,0 +1,888 @@
+Episode 96: Cookies & Caching with MatanBer
+Source: https://www.criticalthinkingpodcast.io/episode-96-cookies-caching-with-matanber/
+======================================================================
+
+Justin Gardner (00:00.468)
+Alright man, here we go, we're back. Our poor editor, I can't put too much strain on him because that was a long episode as we always do. But yeah, I definitely still wanted to get to some of these awesome things you had in the dock here. So let's hit the two cookie pieces and then we'll go and talk about the caching stuff.
+
+Matanber (00:02.306)
+Yeah, a new episode.
+
+Matanber (00:23.908)
+Yeah, that first cookie trick I love, that's really mind blowing and super useful. So in certain environments, specifically I've looked at Java environments just because that's like what my targets used at the time. But they have pretty weird cookie parsing logic, especially when it comes to quotes.
+
+Justin Gardner (00:29.409)
+Yeah.
+
+Matanber (00:53.626)
+So what they have is basically a way to have a quoted value of a cookie. So if there's some character that would normally be problematic in the value of a cookie, like semicolon, what they do is they put quotes around the value of the cookie. So you have like key equals value in the cookie. You can have, what they do is they have key equals and then quotes around the value.
+
+Justin Gardner (01:23.458)
+Mm.
+
+Matanber (01:23.47)
+And then even if the value is like with the characters, it will parse it correctly. So yeah. Yeah, like that. I mean, I haven't read the RFC, so maybe it's compatible. I'm not sure. Yeah.
+
+Justin Gardner (01:31.266)
+correctly, as in not complaining at all with the RFC.
+
+Justin Gardner (01:40.606)
+It's a legacy thing from an older version of the RFC. Yeah.
+
+Matanber (01:46.905)
+Interesting. So it was correct at some point. Anyways, it might be correct, it's exploitable. Okay, the scenarios where it's exploitable is one, in those environments, okay, you might have a scenario where you want to comment cookies, okay? And what I mean by that is,
+
+Justin Gardner (01:50.731)
+It was.
+
+Justin Gardner (01:56.642)
+Mm-mm.
+
+Justin Gardner (02:10.902)
+Hmm. Hmm.
+
+Matanber (02:15.114)
+Say you want to exploit the sort of self-exercise, like we mentioned in the previous, previous episode that you had with me. So if you want to exploit that in a Java environment, a lot of the time it's problematic because the value that these environments prefer is sort of the latter value. If you have two cookies with the same key, they'll prefer the latter one.
+
+and not the first one like it's like usually happens and it's very hard to get your malicious cookie to come after the legitimate cookie so what you can do and if you wanted to prefer your value so to do what's called cookie tossing and if you have a way to set cookies in that target you can set all of your cookies that you want and then set like an SD list cookie A equals quote
+
+Justin Gardner (02:44.416)
+Right. Yeah.
+
+Justin Gardner (03:13.826)
+Mmm.
+
+Matanber (03:14.146)
+and now it will read everything after the A cookie unless those cookies have like quotes in them which is gonna mess up stuff because then it will close your quotes, stuff like that very annoying, I had to deal with that a lot the last time I tried to exploit it it was crazy, I like started shifting the order of the cookies, stuff like that anyway, yeah
+
+Justin Gardner (03:29.099)
+Mm-hmm. Mm-hmm.
+
+Justin Gardner (03:33.261)
+Yeah
+
+Justin Gardner (03:40.611)
+Well, it's tricky, right? Because you, and I'll just talk about this for a second. The order of the cookies is determined by the path length first, right? And the chronological order, right? So if you're setting it super recently, like if you're getting it set, then it's gonna be at the beginning.
+
+Matanber (03:49.973)
+and the chronological order of setting it.
+
+Matanber (03:57.134)
+Yeah. And it's not even the original time it was set. It was the last time it was set. So if they change the value, it's sort of a reset. Yeah.
+
+Justin Gardner (04:03.126)
+Right. Yeah, yeah, so that, mean, that's helpful to exploit. But what I didn't realize before I was prepping for this episode was that this is, for some reason I had it in my head that the order was not just based on the path link, it was order, like ordered based off of like some other thing, like, you know, alphabetical or something like that, right?
+
+Matanber (04:21.624)
+Yeah, I looked for that. Yeah, I looked for that desperately. I couldn't find any other ordering. Yeah.
+
+Justin Gardner (04:26.646)
+And it's not, it's literally just the path length. So if you want your cookie to come first, very, very first, all you have to do is just set a very, very, very specific path length. And dude, I spent, I always tell myself, all right, I'm just only gonna spend like, you know, a couple hours prepping for the episode and then I'm gonna like get along with my life. No, because what happens is you get in these scenarios and you start researching this stuff. And then you're like, wait a second.
+
+Matanber (04:36.538)
+very specific path.
+
+Matanber (04:43.588)
+Hahaha
+
+Justin Gardner (04:52.204)
+I need to go see if I can figure out a way to artificially inflate the path size on a cookie so that you can force it to the front even if you have another cookie that has a very explicit path set.
+
+Matanber (05:00.297)
+I mean...
+
+but you can always be more specific. can pick like all of the end points that you're trying to exploit and set like a different cookie for each of those.
+
+Justin Gardner (05:12.662)
+Yeah, unless the actual business logic also sets that path, right? It is. I have seen it though. I have seen it before. And so I was looking into this, I was looking into this and I couldn't figure it out except for one little nice little nuance, which is oftentimes web servers will decode the percent UF in the URL.
+
+Matanber (05:19.408)
+That's gonna be very like setting for a specific endpoint. It's gonna be very
+
+Justin Gardner (05:42.208)
+Right? yeah, so if you just do, if you encode the slash as %2f and you set your cookie to have a %2f instead of slash, then that will inflate the size of your cookie path. I tried that, you can't do it, it won't send it, which is annoying. because it's almost like you're dealing with front-end, back-end within the browser itself, because it does normalization of those paths.
+
+Matanber (05:42.593)
+so it resets it? yeah, yeah. It doesn't reset it, like, yeah.
+
+Matanber (05:51.939)
+It makes it longer.
+
+Matanber (05:58.554)
+Can you do slash slash?
+
+Justin Gardner (06:11.688)
+of the browser URL before it actually compares it to the path. So I tried to do path traversals and dot traversals and stuff like that, but the browser's like, no, no, no, it's not gonna happen. So you have to, as far as my research went, you have to take advantage of a discrepancy between the way that the server is parsing the path and the way that the browser is parsing the path, and then set your cookie in conjunction with that path. Does that make sense? Yeah, so.
+
+Matanber (06:14.582)
+yeah, I see what you mean.
+
+Justin Gardner (06:39.786)
+So you can actually get your cookie to the very front, very, very niche. But that's what we talk about here on the pod. So, mm.
+
+Matanber (06:40.72)
+It's a nice trick, very very niche.
+
+Matanber (06:46.96)
+or you can just have it be sort of the same specificity, like the same level of specific, and somehow make it re-refresh the cookie. And the sort of trick with refreshing cookies to get them to the end is the same thing I did back when I tried to comment cookies with the extra quote, the hanging quote, and add a bunch of cookies.
+
+Justin Gardner (06:52.706)
+Mmm.
+
+Justin Gardner (06:58.806)
+Refresh, yeah, yeah, that's true. Yeah.
+
+Justin Gardner (07:09.154)
+Hmm.
+
+Matanber (07:15.044)
+that had quotes in them that were interfering with that. So what I did, first of all, I tried to predict the value of some of these cookies and set it without quotes, okay, myself before the attack. So now the server is gonna see when it tries to set the cookie, it's gonna see that the cookie is already set with the correct value and it's not gonna set the cookie with quotes, okay? So that like eliminates those.
+
+Justin Gardner (07:29.602)
+Mm.
+
+Justin Gardner (07:40.098)
+Mmm.
+
+Matanber (07:43.95)
+that I can predict and I had one cookie that I couldn't predict the value of but I found some endpoint that would reset the value of that cookie like update it so when I make the victim or when the victim naturally interacts with that endpoint and that cookie is gonna get like popped to the like to the yeah to the end of this ring and then yeah and then I'm gonna have like my
+
+Justin Gardner (08:05.228)
+to the end of the string, because it's the newest set.
+
+Matanber (08:12.305)
+hanging quote and then it will quote all of the important cookies up to that cookie that's in at the end, right? Yeah.
+
+Justin Gardner (08:20.011)
+Yeah, it sort of reminds me of those scenarios, those double injection reflected XSS scenarios where you have a limited character set and you need to have two injection points. Or maybe even if you're doing something, this is more applicable, if you're doing like a dingling markup attack, right?
+
+Matanber (08:29.072)
+Mm, yeah.
+
+Justin Gardner (08:41.718)
+where you're leaving it open and the rest of that stuff is getting put into an HTML attribute. We're using sort of similar logic here to comment out cookies that are proceeding, or are after our malicious input, inputted cookie, right?
+
+Matanber (08:56.41)
+Yeah, what's more fun is the scenarios where you have the same injection in two places and then you have like a dangling markup and then that same character closes that markup in the other payload and it's like, yeah.
+
+Justin Gardner (09:00.694)
+Mm. Mm.
+
+Justin Gardner (09:07.836)
+my gosh dude, yeah, that gets very intense and you can do like comments and stuff like that too. And when we were prepping for this, I was thinking about this whole scenario and I think I figured out a really, really helpful way to use these sort of gadgets, right? It's pretty great. I'm excited to tell people about this, okay? So here's the idea and I'll go ahead and share my screen here.
+
+Matanber (09:13.722)
+Yeah.
+
+Matanber (09:25.988)
+That was a great way. Like I really liked that one. Yeah.
+
+Justin Gardner (09:36.096)
+So people can see the actual representation of it right here. So essentially, the way that we utilize this is we have the ability to set an arbitrary cookie, right? And that cookie, wherever it is, allows us to set whatever value we want. So we have complete control of the value of the cookie. And so what we can do is make the first value
+
+the first character of that cookie equal to the double quote, right, which will trigger this weird double quote cookie functionality that's present in a lot of Java libraries and some Python libraries as well. And so that will now make the characters like semicolon non-terminating for these cookies. And then what we can do is leave that string open and set another cookie with a
+
+a path that aligns it right after this cookie, and that also has the double quote on it. So now we've quoted the beginning of that cookie into, of the second side cookie into that first cookie. And then from there, what happens that's really cool is the value of that cookie that we sent before becomes the key for another cookie. So we can convert a scenario in which we have control of
+
+the cookie's value, but not the cookie's key, into a scenario where we can smuggle an arbitrary cookie into the browser context, which is a much more impactful gadget. Yeah.
+
+Matanber (11:08.868)
+both.
+
+Matanber (11:15.312)
+Yeah. And there might be other ways to do that. And there has been some research in that area. I remember there being those one that you linked here, but I think there was another one. Maybe it was the, the one that was one of the top 10 web. Yeah. I remember something like that. I'm not 100 % sure, but that's something that I will look up.
+
+Justin Gardner (11:37.196)
+Top 10. Yeah, I think they had it in there too.
+
+Matanber (11:45.144)
+after this episode. But yeah, and one very like practical attack scenario for the trick you just mentioned is if you have what's called like a partial cookie injection. So you have, let's say in JavaScript, an injection into a cookie where you can only control the value, but you can inject like semi-colons after it and control like a few attributes. Which we're also gonna talk about that scenario in a second.
+
+Justin Gardner (11:46.454)
+Yeah.
+
+Justin Gardner (11:52.972)
+Mm. Mm.
+
+Justin Gardner (12:14.155)
+Yeah, yeah.
+
+Matanber (12:14.562)
+in another context, but yeah. If you have that, then you can set like the cookie that you want first to come first with the like dangling markup. You can set it and then specify a specific path that will make it come first. And then you can set your cookie, right? And it will be set like after the session cookie was set when the user logged in.
+
+Justin Gardner (12:33.314)
+Mm.
+
+Justin Gardner (12:43.682)
+Hmm.
+
+Matanber (12:44.036)
+Right? So you will set it with like a double quote. You will set it without a specific path or with the less specific path or something like that, depending on where you want it to end up. And then you have like, you have two things. One, you have an injection of a cookie with whatever name you want. Right? And
+
+Justin Gardner (12:56.69)
+Mm. Right.
+
+Justin Gardner (13:11.425)
+Mm.
+
+Matanber (13:13.986)
+I think that's possible because one thing that might trip you up is do you have to in that case inject semicolon somewhere?
+
+Justin Gardner (13:15.554)
+Mm.
+
+Justin Gardner (13:30.351)
+For segmenting off the cookie, or are you talking about... It could.
+
+Matanber (13:34.338)
+Yeah, because you have like the the opening markup and then in the second cookie that comes after you have the closing markup. But I'm not sure if you can put like another cookie straight after it or if you have to have like a semicolon.
+
+Justin Gardner (13:38.976)
+Yeah.
+
+Justin Gardner (13:44.034)
+Hmm.
+
+Justin Gardner (13:49.41)
+Are you talking about in the set cookie header or are you talking about the way that this is being represented from the server when it's into the server? Yeah, you do need the semicolon. There's some research and it's actually in that same blog by Nkur Sundara.
+
+Matanber (13:53.24)
+No, in the... Yeah, the way the server is parsing it.
+
+Matanber (14:02.488)
+Yeah, because then I'm not sure. I'm not sure that is possible, but what will be possible is to set like a dangling markup at the start and with a very not specific path, dangling markup at the end and then you'll have like a cookie with a name that you control having like the victim session token and all of that. Even if they're HTTP only.
+
+Justin Gardner (14:29.699)
+yeah, and you smuggle it into a different cookie.
+
+Matanber (14:32.056)
+Yeah, which is mentioned in the blog that you link.
+
+Justin Gardner (14:36.608)
+Yeah, by N. Kersindhara and we'll link that as well. There's a lot of very interesting takeaways here, but I...
+
+Matanber (14:39.436)
+Yeah, it's a great area of research because the parsing is just so different between the client and the server in this case.
+
+Justin Gardner (14:47.906)
+It really is and it's a pretty niche scenario where you have this sort of double quote thing, but Java is used a lot and there's a good amount of Python libraries too. I want to say the research by Sandara mentioned that, yeah, cherry py web.py, AIO HTTP server, which is used oftentimes and a bunch of other ones will parse these double quotes. and so we're talking about Python and Java.
+
+Matanber (14:59.951)
+Yeah.
+
+Matanber (15:12.175)
+The quotes... interesting.
+
+Justin Gardner (15:17.95)
+environments here in a lot of ways. So this could be one of the things that, this could be one of the things we could maybe build an extension for and see like, okay, we've got our session token or whatever, right? If we double quote it, does it still have a valid session or does it not? And that could determine whether or not we have that double quote gadget.
+
+Matanber (15:30.768)
+Yeah. wait, wait, I...
+
+Matanber (15:36.304)
+I think I figured out how we can smuggle a... just like a cookie with... use a partial cookie injection and turn it into a full cookie injection where we control the key too. Just with like a partial cookie injection. So you'll need to have inject three cookies, right? Okay, first cookie is... we'll call it first equals.
+
+Justin Gardner (15:57.858)
+Matan, what are you doing,
+
+Justin Gardner (16:05.184)
+Okay.
+
+Matanber (16:05.23)
+and then just like an opening quote and you put that at the start right after that cookie with a bit less of a specific path or maybe they can all be the same specificity you just need to set them one after the other chronologically so right after that cookie you'll set second equals and then just a closing quotes right? wait no that might not work because then
+
+Justin Gardner (16:07.745)
+Okay.
+
+Justin Gardner (16:18.089)
+Mm. Mm.
+
+Justin Gardner (16:33.056)
+No, it should work. The double quote will be a part of the value because it isn't at the beginning.
+
+Matanber (16:37.248)
+yeah but I thought about using like the semicolon that sort of ends that cookie but then we're back when we started because the third cookie that will inject after that closing quote will not we will not have control over its name it's yeah but then you'll have to but you'll have to
+
+Justin Gardner (16:54.978)
+I think it should work with just two cookies, right? Because we, here, I'll type it in the doc, hold on, Matan, hold on. Let me type it the doc really quickly and then I think this should work. So let's say we have a cookie x equals double quote, right? And then we, you know, whatever. And then we set another cookie which is y equals double quote or like a double quote, right? Or whatever.
+
+Matanber (17:06.83)
+Because I'm not sure
+
+Matanber (17:12.142)
+Yeah.
+
+Matanber (17:20.036)
+And then what? Yeah.
+
+Justin Gardner (17:22.347)
+So now this middle area right here, this is the value for x. Or this is actually going to be x2.
+
+Matanber (17:25.432)
+Yeah, but I think everything that comes after that might still be part of X.
+
+Justin Gardner (17:31.742)
+No, because we can put the semicolon here.
+
+Matanber (17:35.736)
+I don't think you can inject a semicolon in the value of a cookie because then you will just be able to do like x equals a semicolon and then whatever you want. You won't even need to have the quote stuff.
+
+Justin Gardner (17:48.105)
+you think the browser isn't gonna...
+
+Matanber (17:49.732)
+Yeah, yeah, otherwise you won't need to have the cool stuff anyways.
+
+Justin Gardner (17:53.954)
+So then we have to do rely on what Sundara was talking about with spaces or with some other delimiter, which is only happening in a very limited subset of these scenarios. But we are, we are. Yeah, that's great. Okay, so.
+
+Matanber (17:58.628)
+Yeah, with space or something like that.
+
+Yeah. We're figuring this out while we're recording the episode. I love it. You're getting a very raw sample of the process. We thought we got it three different times. Now we're pretty sure.
+
+Justin Gardner (18:16.99)
+Yeah, so then the browser is going to, is going to, dang it dude, is so close. But I feel like in some scenarios there will be a way that you can actually result in.
+
+Matanber (18:28.1)
+Very close.
+
+Matanber (18:32.848)
+I think some of the parsers will like see the, just like my intuition is some parsers will see like the closing quote and will think like, that's the end of that value. Now here begins another cookie, right? And in those cases, you will just be able to inject more cookies. But in Java, doesn't work.
+
+Justin Gardner (18:50.562)
+Mm, mm.
+
+Justin Gardner (18:55.99)
+Yeah, I think there were two scenarios where that was the case in Sundara's research.
+
+Matanber (19:00.514)
+at least on the targets that I've looked at.
+
+Justin Gardner (19:03.114)
+Okay, solid. So there's a very niche scenario then coming off of all this where you have to combine the double quote parsing with some sort of loose representation of what a terminator of the cookie value is in order to convert a partial cookie injection into a full cookie injection. Nice, solid. Very, very gadget heavy stuff as we always do here on Critical Thinking. Yeah.
+
+Matanber (19:17.838)
+Right.
+
+Matanber (19:24.068)
+Yeah, very gadgety stuff.
+
+Matanber (19:31.833)
+Yeah, I love it.
+
+Justin Gardner (19:33.058)
+Okay, solid. Well, it's an interesting approach nonetheless. And the gadget, think, is really useful because you control the order of cookies too with the path attribute if you can just comment out the rest of the cookies with the double quote, right? Because you can do the same sort of thing with what you were talking about where you can, two episodes ago, right? At this point, where you can just make a different.
+
+person authenticated for a specific endpoint and comment out all the other cookies that might cause a problem. think that's a really good way to approach this as far as exploitation goes.
+
+Matanber (20:04.28)
+Yeah, that was very cool.
+
+Matanber (20:13.232)
+So talking about commenting stuff. Yeah, great segue into the next section. There's a very weird behavior. Maybe it got changed since the last time I tested it. I don't think it did. This is a behavior in Safari, which by the way, I've recently got a nice way to debug Safari stuff because I don't have a Mac.
+
+Justin Gardner (20:15.434)
+Mm-hmm. Okay.
+
+Justin Gardner (20:20.291)
+huh, yeah, let's do it.
+
+Justin Gardner (20:28.578)
+Mm-hmm.
+
+Matanber (20:43.376)
+And I tried to buy like a very old Mac to test Safari on specifically because I knew Safari just had too many quirks. But that was very, very slow. So what I did, and I highly recommend it, I enjoyed it. If you have an iPhone, you can connect that phone. You have to install iTunes on your computer, but you can connect that phone to your computer.
+
+Justin Gardner (20:46.978)
+Mm.
+
+Matanber (21:11.864)
+enable debugging on your phone and then use some Google tool. I think it's called debug webkit proxy or something like that, debug webkit proxy. yeah, iOS webkit debug proxy, right? I'll drop the link in the episode in the notes. But you can use that tool and it will connect to the
+
+Justin Gardner (21:20.61)
+Matanber (21:41.634)
+it will connect to the phone. And now you can use, yeah. And now you can use DevTools front end and you need that to use the Safari DevTools front end. And there are some people that have like extracted that front end from the WebKit source code. So you can have like a Windows version of it. And now you can basically have remote debugging on your phone without a Mac. Yeah.
+
+Justin Gardner (21:43.298)
+This is a part on the phone.
+
+Justin Gardner (21:53.367)
+Mm.
+
+Justin Gardner (22:07.08)
+Okay, so this is a way for you to test Safari-related bugs on just an iPhone. And it's kind of like remote debugging for Chrome DevTools, but it's specifically for Safari. Nice.
+
+Matanber (22:12.868)
+Yeah.
+
+Matanber (22:17.166)
+Right. Yeah. And so it's very useful to test this sort of stuff and you can like interact with it physically and you use like the same computer and you don't have to move to a different setup. Anyways, the one very weird and quirky behavior I found in Safari is that we had, actually it was a collab with you.
+
+Justin Gardner (22:25.762)
+Mm.
+
+Matanber (22:46.744)
+we had a specific, ended very tragically, but anyways, we had an injection into the value of a cookie and we could insert like, commas or what's it called? Semicolon, yeah. I what it's called. We could insert semicolons and insert attributes. Deep, yeah.
+
+Justin Gardner (22:46.805)
+Mm-hmm.
+
+Justin Gardner (22:52.129)
+Yeah.
+
+Justin Gardner (23:05.676)
+The semicolon? Yeah. Yeah.
+
+Justin Gardner (23:14.749)
+So we have like cookie attribute injection.
+
+Matanber (23:17.102)
+Yeah, the problem was that we had other attributes like the path attributes and all the fun attributes that we wanted to specify. They were specified in the sort of original statement that we were injecting into. And the way it works, attributes, the browser specifies the last occurrence. So we needed some way of commenting out all of the attributes that came after our injection point. And I found that in Safari,
+
+Justin Gardner (23:30.632)
+Mm. In the middle of, yeah.
+
+Justin Gardner (23:37.986)
+Mm.
+
+Matanber (23:47.052)
+If you inject a weird special character after the after your injection point, so you just go comma, part equals something, comma and then your semicolon, semicolon, your part equals something and then semicolon and then the character I found that the closing curly bracket works. I think other characters would also work, but yeah.
+
+Justin Gardner (23:56.46)
+Semicolon?
+
+Yeah.
+
+Justin Gardner (24:11.404)
+Closing curly bracket dude absolutely insane
+
+Matanber (24:16.5)
+super weird and then it will just ignore all of the rest of the attributes which is it's nuts I mean I would think that if such an error occurred during parsing it would just ignore the whole cookie setting statement right throw some error or something but they sort of sweep it under the rug and you have like this sort of half error that causes very weird behavior
+
+Justin Gardner (24:21.314)
+Mm.
+
+Justin Gardner (24:30.249)
+Mm. Yeah.
+
+Justin Gardner (24:38.284)
+that just comments out the rest of it. It's almost like a JavaScript block comment or whatever that just comments out the rest of the, that's crazy.
+
+Matanber (24:41.765)
+Yeah.
+
+Very weird. But I mean, even a block comment, you can't just like put it in there. Like a block comment, you need to close it out somewhere, right? Yeah.
+
+Justin Gardner (24:51.156)
+Yeah, yeah, it's nuts dude. And it's crazy that it's such an unexpected character as well. Yeah.
+
+Matanber (25:00.088)
+I mean, I I tried to fuzz it a little bit and this is just the first one I found. Yeah.
+
+Justin Gardner (25:04.726)
+The first one that hit was the closing curly bracket. Yeah, it's very niche, but it's really helpful. And what was weird to me about this situation is as we were collabing on it, we were like, we need a way to get rid of these attributes that are on the end so that we can do the cookie tossing properly, blah, blah, blah. And I remember the moment. You turn to me you're like.
+
+Matanber (25:24.611)
+we combine the two, we combine the two things here, right? We had both the quote and the, yeah, nice, very cool.
+
+Justin Gardner (25:27.862)
+We did, we did combine these two. And you turn to me you're like, I bet Safari has some weird shit with this. And I'm like, how do you know that, Matan? Like, what?
+
+Matanber (25:36.56)
+You know why I did that? Like a few days before that, I was collabing with Johan on some stuff in one of the targets that we hacked together. it was like on a specific context in JavaScript. And he just noticed because I think because he has a Mac.
+
+Justin Gardner (25:44.918)
+Mmm. Yeah.
+
+Matanber (26:05.456)
+He just noticed that Safari has a certain global variable accessible that other browsers don't in that case. And I was like, it was very weird and unexpected. And it sort of made me think about all the other bugs that I missed that were exploitable because of a weird Safari issue. And that's why I decided to test it.
+
+Justin Gardner (26:05.463)
+Mm.
+
+Justin Gardner (26:27.958)
+Yeah man, safaris wack.
+
+Yeah.
+
+Matanber (26:32.992)
+I bought a Mac right after Johan discovered that little trick and haven't used it, but yeah.
+
+Justin Gardner (26:38.98)
+Pays for itself immediately when you when you find all these weird little things that allow you to exploit these edge cases Yeah, I mean that that is one of the things I'm glad you mentioned to the piece about being able to use that debugging On the iPhone because that is one of the things that I'm a little bit sad about yeah about not having a Mac is like you just You can't test weird stuff with Safari and I've tried using I think it's called browser stack they will like give you a VM or whatever but
+
+Matanber (26:41.4)
+Yeah
+
+Matanber (26:52.836)
+various ones.
+
+Matanber (27:01.968)
+Yeah. No, that's very annoying though. They're super expensive and there's always a delay.
+
+Justin Gardner (27:09.278)
+Yeah, I, dude, I set it up. It was crazy because I set it up and I was like, wow, this is amazing. This is so easy. And they give you like one minute of free time. So I'm like, I'm like rushing to try to like, they fuzz something really quickly. And then, you know, the fuzz is running and then it's shut down. And I'm like, no.
+
+Matanber (27:19.12)
+That's very real. I did the same.
+
+Matanber (27:29.55)
+By the way, we're such weird consumers. I assume we're one of the only people that have like, we're unable to debug Safari as why we said we don't have a Mac.
+
+Justin Gardner (27:37.726)
+Yeah, yeah. Absolutely, man. Yeah, I think it might be worthwhile to just, I mean, it's definitely worthwhile to just have an iPad or an iPhone or something like that that you can connect to and then use this debugging tool, but it may just be worthwhile too to get my hands on an old Mac just to play around with Safari stuff, for sure. Okay, was there anything else on that? So we've got a way, we've sort of got away a very niche way to.
+
+Matanber (27:57.894)
+Yeah.
+
+Justin Gardner (28:04.492)
+convert a partial cookie injection into a full cookie injection, and just using this concept of the double quotes, and we have a way to comment out stuff in a specific set of web servers. That was the first thing we talked about. And then we've got a specific niche in Safari, which is when the cookie is coming back from the server side in the set cookie header, where you can comment out some of the attributes. Is that an accurate summary? OK.
+
+Matanber (28:30.542)
+Yeah. And I mean, there isn't anything else in the doc, but if you want, we can do a redacted report section.
+
+Justin Gardner (28:36.042)
+Yeah, yeah, well, we can do that. But let's actually let's go talk about some of this stuff that popped up with with me zoo and the CTF that this hero CTF six because yeah, this was crazy. I'm not a huge CTF guy, but there's so many nice gadgets that come out of CTF. Yeah.
+
+Matanber (28:42.657)
+right.
+
+Matanber (28:55.992)
+Yeah. And I mean, I'd love to do that, but I don't know how I can find like the actual useful CTFs because that aren't just, you know, another reflected exercise challenge. so yeah, whenever you find a cool challenge or create a cool challenge, just send a link to me. I'd appreciate it. Yeah.
+
+Justin Gardner (29:07.712)
+Yeah, yeah, Mizu, you gotta just hit up our boy Matan here whenever you create a CTF or, yeah, yeah.
+
+Yeah, for sure. And the community can do that too. Just send Malthon if you see a cool CTF.
+
+Matanber (29:23.492)
+Yeah, right. I don't want to just tell the community DM me, leave my notifications, but yeah.
+
+Justin Gardner (29:29.17)
+Yeah, dude, you're about to get, you're about to get swamped. RIP dude. But yeah, that's what you signed up for, man. It's already out there. Can't take it back. So, so I'll, I'll let me talk about the one, the, the, the interesting caching. We're going to talk about two caching related functionalities from this write up that are gadgets that can be used. And then, and then we'll call it a wrap because there's a bunch of stuff in here and we're running long today. But let me go ahead and share this right up so we can get it on the screen for those of you watching on YouTube.
+
+Matanber (29:59.088)
+I mean this episode is only 30 minutes... currently.
+
+Justin Gardner (29:59.28)
+Yeah, that's okay. It should be fine. I've got to bounce in a little bit, but we'll go through this. The first one that I kind of wanted to talk through was this write up called medium cache cache. And essentially this reminds me of a vulnerability that had several iterations that's mentioned here by bitk, where you're essentially utilizing the force cache attribute of fetch.
+
+to pull data out of the cache that you wouldn't normally be able to access by doing a normal fetch request. And the situation in which this is exploited is really niche. And it's made more difficult now by the double key caching or cache partitioning that was implemented in Chrome a while back, I think in like 2019 or 2020. But essentially nowadays, these caches are, cache keys are generated via three,
+
+parts. It's the top level window, the current window, ETLD plus one, and then the full URL of the loaded resources, what lands into this cache. And the way that this is abused in this specific scenario is related to how fetch is not allowed to send credentialed requests to an endpoint that has access control, allow origin star. You'll get an error if that's the case. So what is abused here?
+
+is the solver of the CTF puts an image tag in with a source pointing to the specific resource that they want to leak, which cannot start with a curly bracket, as noted, because of Corb. But that will actually load that specific resource into the cache. And that request will be sent with the same site, none, cookies, sent along with it.
+
+Justin Gardner (31:59.158)
+Then you can load that request from the cache using the cache force cache setting in fetch and then read the response, which you normally wouldn't be able to do because fetch can't send credentialed requests to an access control allow origin star endpoint. So essentially you're priming the response with the image tag that has the access control, that ignores the access control allow origin star thing that you don't get any errors there. And then you bypass that by using the fetch request to load the response directly from the cache.
+
+and since it's access control, our origin star, you'll be able to read it. And that response, which was created and cached with the same site, none cookies from the image. Matan, I don't know. Can you check me there? Did that, was that explanation too?
+
+Matanber (32:42.772)
+Yeah, no, that was accurate. We were just recording for so long I forgot how to say accurate.
+
+Justin Gardner (32:47.715)
+inaccurate rep... he says that was really that was really that was really something Justin
+
+Yeah, I'm sorry, dude. I'm sorry. Well, are you up to doing the, like, what do you think about this one? And...
+
+Matanber (33:03.992)
+No, I can still record, just, if we'll keep going, I'll need a short break. It's very interesting what happens here because you have like the image which sort of sends a request with credentials but that you cannot read, right? Similar to a fetch with a mode no course, right? Which...
+
+Justin Gardner (33:10.08)
+You're good, Do you want to, go ahead.
+
+Justin Gardner (33:23.062)
+Yeah. Right. Right.
+
+Justin Gardner (33:29.334)
+Mm-mm.
+
+Matanber (33:32.424)
+It would be interesting if you can actually use that instead of the image. Maybe no cause force cache. Maybe I don't know. But you have like a request that you can send with credentials but cannot read the response and the request that you can send without credentials but read the response and you of combine these two so that the second request will actually get the response of the first one from the cache.
+
+Justin Gardner (33:36.32)
+Mmm. Mmm. Mmm.
+
+Justin Gardner (33:59.702)
+Hmm. Yeah. And I think they, they exploit it in this specific CTF environment under a more nuanced environment because some of the cookies are set to strict and require, you know, it requires a gadget and XSS gadget on the website. you're now you're sending this from a same site environment, but I think this is also exploitable in bug bounty in the wild, in environments where there's same site, none, but you're running into that access control.
+
+Matanber (34:01.846)
+Very interesting, I've never thought about it.
+
+Matanber (34:12.943)
+Yeah.
+
+Justin Gardner (34:29.086)
+star problem.
+
+Matanber (34:29.658)
+Yeah, all in environments where they're same site locks or something and you have like subdomain XSS. It's pretty common.
+
+Justin Gardner (34:34.24)
+Hmm. Hmm. Yeah, well, that's actually an interesting, and it's an interesting point too, because I think at the bottom of this write up, there was an unintended solution that somebody found that uses window.open, and it does window.open to that, which is actually a top level navigation. So I wonder, hmm. Huh. I didn't test that.
+
+Matanber (34:51.984)
+and that stores it in the cache, huh? Yeah, makes sense. But would the browser, but then when you do window.open, you mentioned the three cache keys, right? Then the cache key of like the top level URL or top level site, right? That would be different between the request that you.
+
+Justin Gardner (35:07.318)
+Mmm, yeah.
+
+Justin Gardner (35:15.03)
+Yeah.
+
+Matanber (35:19.47)
+want the cache for and the request that retrieves the cache because one of them is gonna happen from the attacker site and the other is gonna happen when you load the window. And in this case, because it's a navigation, it's gonna be the, you see what I mean? Yeah. So it will probably cache it, but you won't be able to retrieve that cache cross site.
+
+Justin Gardner (35:23.595)
+Yeah.
+
+Justin Gardner (35:35.35)
+that's, so I do, and it's ETLD plus one though, so, mm. But.
+
+Right, you'll only be able to retrieve it same site, okay. No, you are correct. It's because it's same site and the cache key works.
+
+Matanber (35:47.78)
+But how was it different in this case? I mean, I think I'm correct, but maybe not. So what was the unintended solution in this case? Why did it work?
+
+Justin Gardner (35:59.298)
+It worked because it's via NXSS.
+
+Matanber (36:03.194)
+So they still use that gadget. So it's the same prerequisites and the same impacts.
+
+Justin Gardner (36:06.016)
+They did, yeah.
+
+Justin Gardner (36:09.998)
+Yeah, exactly. it doesn't, that doesn't actually, that would have been crazy though, if you could do like a top level navigation and then bypass the same site lax.
+
+Matanber (36:14.126)
+Yeah.
+
+Matanber (36:17.724)
+such a weird little attack surface here. And I mean, have thought in the past about actually quite recently about what happens when you have an injection into like a fetch call. So basically you can specify like a URL, maybe with some restriction or something and a bunch of options, but you can't read the response. Can you somehow use the cache in that case? And I...
+
+Justin Gardner (36:31.266)
+Hmm.
+
+Justin Gardner (36:46.422)
+That's a tricky one, man.
+
+Matanber (36:48.184)
+Aside from cache poisoning, maybe you have like some header that isn't in the cache key of like the browser. So that's sort of client side cache poisoning, if it makes sense. Then to be clear what I'm talking about here is, I don't know, some post message listener on example.com just injects into fetch, right? Except two parameters injects both of them into fetch.
+
+Justin Gardner (36:56.833)
+Yeah.
+
+Justin Gardner (37:01.738)
+Yeah, that does make sense. That's super neat. That's amazing. Yeah.
+
+Justin Gardner (37:11.094)
+Mm-hmm. Mm.
+
+Matanber (37:17.88)
+from attacker.com, you send a post message that goes to slash example.com slash reflect header.php and they have like x dash xss colon and some HTML injection payload, right? And so the post message will be like, the first argument would be that URL and then you will have like in the options headers and then specified headers and cache mode or.
+
+Justin Gardner (37:27.97)
+Mmm.
+
+Justin Gardner (37:35.415)
+Yeah.
+
+Matanber (37:47.45)
+cache colon, false cache, not cache mode. And I think what that would do, I think, would the cache key of that like malicious response or response that contains HTML would be the example.com as the top level window, example.com as the current window and
+
+Justin Gardner (37:48.716)
+Hmm. Yeah.
+
+Matanber (38:17.088)
+example.com slash reflect. Yeah, so then yeah, so slash reflect header. So then when you initiate the top level navigation to example.com slash reflect header.php, it would be the exact same cache key, right? Because it's still under example.com, still under example.com in the current window and still the same URL.
+
+Justin Gardner (38:17.708)
+the resource.
+
+as the key.
+
+Justin Gardner (38:42.198)
+Dang dude, that's interesting. Huh.
+
+Wow.
+
+Matanber (38:48.908)
+And I had that theoretical, but I didn't know like it was maybe two days ago. So weird occurrence that I've actually. Yeah.
+
+Justin Gardner (38:56.514)
+Dude, all of our episodes, the longer they go, they degrade into like, this is just us doing research live on the podcast.
+
+Matanber (39:04.304)
+No, but I mean, it's an idea that I had like maybe two days ago, which is crazy that all of this research comes out like a few days after that. But I thought about it and I didn't actually have such a gadget with a reflection when I sort of when I went after that. But so I didn't actually test it. But now that I actually understand how the cache keys work.
+
+Justin Gardner (39:11.776)
+right after that. Yeah.
+
+Justin Gardner (39:22.242)
+Mmm.
+
+Justin Gardner (39:26.028)
+when you went after that, thinking about it.
+
+Justin Gardner (39:34.45)
+Mm. Yeah, yeah, that makes sense, dude. Wow. Well, you've gotta weaken some change before this episode airs, so you gotta go knock that out, see if you can do some research.
+
+Matanber (39:34.542)
+I don't see a reason why not.
+
+Matanber (39:43.691)
+No, I mean, first of all, nobody's gonna know which target that's in. Second of all, I'm pretty lazy, maybe not. I'll do it next week.
+
+Justin Gardner (39:50.136)
+Right, right.
+
+Yeah, somehow I don't buy that, Matan, considering...
+
+Matanber (39:58.796)
+No, I mean, I get a lot of bugs, but that's still, yeah.
+
+Justin Gardner (40:03.446)
+That's a different scenario, I guess. Okay, so let's talk about this cache put thing and then we'll call it a day. So as I understand it, the situation with this was that there's this caches object that is being exposed to the actual page that's normally used by service workers.
+
+And this is, for those of you following along, this is in the service worker pipe hijacking through cache API section of the mizu.re writeup. And I'll go ahead and share my screen for that as well. And essentially as I, yeah, I know, right? Essentially on this one, as I understand it, this allows you to take an XSS that you have on a specific page and use that to hijack.
+
+Matanber (40:44.08)
+What a domain name.
+
+Justin Gardner (40:59.934)
+any sort of caching done via service workers on the domain where this XSS triggers. So you can get XSS across a lot of different endpoints and stuff like that using this technique. Is that an accurate representation there or am I misunderstanding? No, you're good. So if we do caches.keys on the specific scenario.
+
+Matanber (41:17.84)
+Sorry I didn't follow. I blanked out for a sec.
+
+Matanber (41:27.182)
+you mean the service worker scenario? Yeah, that one was also very cool because the Caches API, the sort of main use case for it is when you have a service worker that tries to implement the cache, right? And it sort of gives you more control over it because you can manage the cache keys and the responses associated with them very directly in the service worker.
+
+Justin Gardner (41:29.6)
+Yeah, yeah, yeah.
+
+Justin Gardner (41:35.554)
+Mm-hmm.
+
+Mm. Mm. Mm. Yeah.
+
+Matanber (41:56.836)
+The normal usage for this is you have a cache. So the way you get a reference to a cache is you go caches.open and then pass some string to it, which is the identifier of the cache. And then you get a reference to it and you can add requests to it and responses. An interesting thing is you can use this API as a sort of alternative to fetch.
+
+Justin Gardner (42:07.554)
+Hmm.
+
+Justin Gardner (42:11.691)
+Okay.
+
+Justin Gardner (42:25.794)
+Mmm.
+
+Matanber (42:26.944)
+it has a function if you go to the, if you have a reference to a cache, you can go cache dot, like that cache variable dot add and then pass a request object to it. And then what it will do is it will automatically issue that request and store the response in the cache. And then you can just retrieve the response. So I had the scenario somewhere.
+
+Justin Gardner (42:39.01)
+Mm.
+
+Mm, mm.
+
+Justin Gardner (42:51.2)
+Mmm.
+
+Matanber (42:55.908)
+where I didn't have access to fetch and I used that to sort of get around that, yeah. caveat is it will not send post requests, yeah.
+
+Justin Gardner (43:02.164)
+as sort of like a fetch alternative. interesting. So that could be, hmm.
+
+so just forget, so that could be a way if you don't have access to fetch or the XHR requests or whatever. Sandbox environments or something like that, yeah.
+
+Matanber (43:13.336)
+Yeah. In some like very weird scenario. That's too specific, I didn't want to say that. Yeah.
+
+Justin Gardner (43:22.794)
+Yeah, that is very interesting. So I think that the way that they used it in this scenario though was to hijack the service worker,
+
+Matanber (43:31.972)
+Yeah, so anyways, yeah. So if I wanna get back to the explanation of the actual bug here, the scenario is if the service worker uses the cache API as like intended, just to store like responses, and then like when it matches a response in some cache, it will return it. What's interesting is,
+
+The cache that I mentioned you open like with a specific identifier and I didn't know that until now. It's sort of shared in the whole origin, sort of like local storage. So if you from like even a normal page in that origin which is sort of less privileged than the service worker, if you use caches.open with that same identifier, you can...
+
+Justin Gardner (44:12.972)
+Yeah, it's crazy. Yeah.
+
+Justin Gardner (44:22.37)
+Mm.
+
+Matanber (44:32.632)
+get a reference to the same cache and start manipulating it. And then you can add like a request response where the response has like a malicious HTML payload. And now if the service worker matches that in some request, hopefully top level navigation or something like that. the response renders and then you will get XSS there. I guess you can also, I guess you can also
+
+Justin Gardner (44:35.788)
+Mm-mm.
+
+Justin Gardner (44:43.554)
+Mm.
+
+Justin Gardner (44:59.082)
+Right, you can trigger that whole thing.
+
+Matanber (45:03.783)
+like intercept js resources stuff like that
+
+Justin Gardner (45:06.794)
+Yeah, that's kind of the one that I was thinking of is like, okay, you this service worker is there to do caching on like, know, JS resources or other resources that might need to be reloaded a bunch of times. And so then by poisoning that response, you pivot your XSS to a much larger variety of pages and make it persistent.
+
+Matanber (45:23.184)
+Yeah, the, yeah, the sort of.
+
+Yeah, that's the thing. A larger variety of pages is like, you could always just window.open and, and do stuff with that. And because they're same origin, this is like a very weird attack scenario because it's, you have XSS, which is usually like game over, but you're trying to escalate it further to make it persistent, which in some cases you will have to do. Say it's, yeah, say it's like they have some flow where they
+
+Justin Gardner (45:31.607)
+Mm-hmm.
+
+Right. Yeah.
+
+Justin Gardner (45:46.966)
+Mm-hmm.
+
+Justin Gardner (45:52.788)
+is very helpful, think.
+
+Matanber (45:59.8)
+when they authenticate the user, they only authenticate them in that specific tab, right? Say with session storage, okay? Yeah, so.
+
+Justin Gardner (46:06.54)
+Hmm. Yeah, or there's session storage. Right. Session storage is the one that came to mind for me because it's isolated to the tab.
+
+Matanber (46:13.87)
+then you want to make your self, your self, your XSS persistent so that whenever they open any tab, they will get XSSed. So the next time they log in, they will get XSSed. So this is sort of a way to do that. Another way to do that would be maybe reflection of a cookie of local storage, stuff like that. That's very interesting though, because this is like very,
+
+Justin Gardner (46:19.792)
+Right.
+
+Justin Gardner (46:37.696)
+Yeah, yeah, that's what we typically use in those scenarios. Yeah, and this one's a little bit more widely applicable. Yeah.
+
+Matanber (46:44.132)
+Very globally applicable. It's just, I have no idea how you're supposed to mitigate that. And even not, even like from the Chrome perspective, because are they just gonna change the behavior? Is it worth it? Yeah. We've got it safe. Yeah. Very interesting. Great research from Kevin.
+
+Justin Gardner (46:55.852)
+They can't because I'm sure there's legacy stuff with it. think we've got this one on lock. I think we're going to have this escalation technique for a while. Yeah. All right, man. We made it through some very long episodes. And I appreciate that you allow me to milk your brain for every last little bit of knowledge that I can get.
+
+Matanber (47:12.644)
+Yeah.
+
+I'm still keeping some stuff but I disclosed more than I initially intended to.
+
+Justin Gardner (47:23.564)
+There we go. All right, man. Well, thanks for coming on and I appreciate you as always.
+
+Matanber (47:29.22)
+Thanks for having me again. Peace.
+
+Justin Gardner (47:30.892)
+Peace,

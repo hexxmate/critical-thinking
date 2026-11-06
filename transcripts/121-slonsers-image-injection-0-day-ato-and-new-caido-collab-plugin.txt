@@ -1,0 +1,548 @@
+Episode 121: Slonser’s Image Injection 0-day -> ATO & New Caido Collab Plugin
+Source: https://www.criticalthinkingpodcast.io/episode-121-slonsers-image-injection-0-day-ato-new-caido-collab-plugin/
+======================================================================
+
+Title: Transcript - Thu, 08 May 2025 15:30:41 GMT
+Date: Thu, 08 May 2025 15:30:41 GMT, Duration: [00:57:29.23]
+[00:00:01.19] - Joseph Thacker
+Grateful to have him in the CTBB Discord. Like he's, he's been dropping crazy stuff and he said next time he's like, oh man, next time I find something like this, I'm not going to post it on Twitter. I'm just going to put it in the Cool Research channel on the CTV Discord.
+
+[00:00:13.40] - Joseph Thacker
+I'm like, yes. Yeah, you should have done that.
+
+[00:00:19.67] - Justin Gardner
+Best part of hacking when you can just, you know, critical things.
+
+[00:00:30.14] - Joseph Thacker
+Yeah.
+
+[00:00:39.99] - Justin Gardner
+Sup, hackers? Welcome to the this Week in Bug Bounty segment where we talk about hackers that are rocking it, programs that are rocking it, and cool opportunities for you, the listener. So let's jump right into it. First one up this week is actually a write up about yours truly from bugcrowd, the Hacker Spotlight for Rhino reader. Yeah. So if you want to get to know me a little bit better, then this write up contains a lot of the information that we kind of skim over on the pod. So definitely check it out if you're up for that. But the real update here was that a new program launched on bugcrowd, which is called Ultra Mobile. Now, new programs pop up all the time. We try to keep you up to date on that. But this one's specifically interesting because Ultra Mobile is not what it sounds like, or at least it's not what I thought it was in the first place. It's actually Mint Mobile. Yeah, that's right. The one that, with all the crazy commercials with Ryan Reynolds and that sort of thing. So we always talk about hack on brands that you're excited about or that you're, you know, that you use. And I think this is a great opportunity to do that. This one just went public not too long ago. This specific program is for their mobile scope, but they also have web scope that is in scope of another public program. So definitely check them out if you're interested in hacking on Mint Mobile and then you can tell your friends you hacked Ryan Reynolds or whatever. All right. On the similar vein of good programs, I also wanted to highlight John Deere. Okay. A lot of people, Rezo included, the co host of the podcast, have had a tremendous experience on the John Deere program. They are public about the fact that they have a private program. Here's a write up right here on their website that talks about how they paid $1.5 million through their private program, but they also have a VDP. So this is a good opportunity for you guys that kind of want to jump the, jump the queue here and hack on a program or a vdp. That will get you access to a bbp, then this could be a good opportunity to do that. The reviews have been amazing. The team sounds awesome, so definitely check that out if you're interested. All right, and last up we have from yes, We Hack the yes, We Hack Dojo. Now if you guys haven't checked out the yes, We Hack Dojo, I have to admit I was kind of sleeping on it a little bit too. But these are like pretty technical challenges that they're putting out every week that really help you understand some pretty core technologies. And this week they've launched one called Ruby Treasure. I won't give up too much information about it, but it's definitely worth checking out if you want to try to hack Ruby related targets. All right, that's all we got for this week in Bug Bounty segment. Let's go back to the show. All right, man, I guess we kind of owe the listeners an apology, right? Because we've had, we've had this, this Google podcast stuck in approval hell for what, three, three weeks now?
+
+[00:03:27.71] - Joseph Thacker
+Three weeks. Yeah.
+
+[00:03:28.75] - Justin Gardner
+Yeah, dude. So guys, I promise it's coming. It is coming. And it's a good ass episode. Don't you, don't you think, man?
+
+[00:03:35.18] - Joseph Thacker
+It is, yeah, it really is. It's both fun, entertaining, and extremely informative and really long too.
+
+[00:03:39.34] - Justin Gardner
+So lots of good insights. I think it's like two something hours. We interview one of the Google employees, get some of his cool war stories, and then we also spend a long time sort of debriefing the dubs over there in Tokyo.
+
+[00:03:58.55] - Joseph Thacker
+Let me just say for everyone, it's not for lack of trying. Justin is a very persistent hounder of people and he cares very deeply about getting this stuff out. So just so you all know, we're fighting on your behalf.
+
+[00:04:10.72] - Justin Gardner
+Yeah, yeah, I really do. And, and I, I definitely, I mean, I'm not gonna say I made an enemy at Google, but their PR person definitely, like I'm sure, is not pleased with me. Cause I'm like, hey, hey, when is it approved? When is it approved? And, and to be honest, you know, at the end of the day they're doing their best to get it approved and, and I know their team is. There's just a lot of logistics stuff that's come up, but be, be patient with us. It is coming and hopefully it'll be out the week after this episode is out. So that's what they've committed to this time. So hopefully that'll actually happen. All right, man, we have a lot of stuff to get to and only about an hour, maybe even less, to get to it. So let's jump right in. The biggest news I think of this week is the Slonzer zero day in Chrome.
+
+[00:05:01.75] - Joseph Thacker
+Yeah, you went deep on this. So much so that you were not replying to things and you were looking into it and you started a whole little hack along thing. So tell me about it.
+
+[00:05:09.99] - Justin Gardner
+Yeah. Okay, so here's the deal. So we're recording this episode. Thank you, our production team. Sorry, I know this is going out late, but we're recording this episode on May 7th. On May 5th at 1pm, Slanzer tweeted something out and then proceeded to drop the tweet in the cool research channel in our discord saying, hey, check out this technique. And essentially what this allows the attacker to do is if you have an image injection on any page loading from your attacker controlled server, you can leak the query parameters of the page where that image is injected to the attacker controlled server.
+
+[00:05:49.83] - Joseph Thacker
+So when you say image injection, do you mean you have to like be able to inject the image tag or literally just by being able to inject a URL there?
+
+[00:05:57.68] - Justin Gardner
+It could be anything. Like we, I think Jorian demo. A couple other people from the Discord did a little like follow up on this afterwards myself as well, and they found out that this technique applies to, you know, say you're injecting in the source of an image tag, you know, that's loaded on the page. It could be a dynamically generated image tag, it could be CSS background URL, it could be anything essentially that loads an image.
+
+[00:06:22.82] - Joseph Thacker
+But all you need is, all you need is that injection point. You don't have to be able to put in the tag. You just need like literally the URL.
+
+[00:06:28.91] - Justin Gardner
+Just control the source. Wow. Right. Which is super, super common.
+
+[00:06:33.62] - Joseph Thacker
+Yeah, so common.
+
+[00:06:34.23] - Justin Gardner
+Yeah, it used to be that this was the default when the referrer would just yeet out the full location at href to whatever server it connected to. But then a couple years back they said, actually we're just going to put the origin in the referrer header. But the way that Slonzer does this, and I'll go ahead and share my screen here, is he responds with a header. Here it is right here. He responds with a link header in the response of that image. Now this link header is then processed by the browser and unfortunately in that link header you can set the referrer policy, which controls what data is sent in the referrer. It also allows to specify a preload. Essentially. What this does then is when they load the URL that's returned in that link header. It leaks the full location href to the preload request that's being defined in the link header because of that unsafe URL referrer policy specified. Really cool stuff.
+
+[00:07:42.67] - Joseph Thacker
+Are link headers pretty common? I mean, obviously I've been hacking for a while and I don't see them very often or I haven't heard much about them. So is this a common known thing?
+
+[00:07:50.50] - Justin Gardner
+No, it's not. I mean this. And unfortunately I kind of stuck my foot in my mouth a little bit here. Let me see if I can immediately.
+
+[00:07:57.79] - Joseph Thacker
+Tag the person to fix it.
+
+[00:07:59.12] - Justin Gardner
+Yeah, yeah, dude. I immediately tagged Jun Katsu from Google and he's like, why did you tag me in this? I will fix this immediately. I'm like, shit, I shouldn't have done that. So, you know, and it works out in the end. It works out because I think Slonzer, you know, he had been trying to get this acknowledged by the Google team and saying, hey, you should not load link headers on sub resources of pages. Yeah, because that's not a good idea. And Google was like, eh, it's not that big of a deal. But then when it gets a bunch of PR via this tweet, then I think they're looking to make a change now. But as a lot of people in the community said, it's gonna be a long deprecation period.
+
+[00:08:44.83] - Joseph Thacker
+Why is that? Just because all their stuff that rolls out could have downstream effects and they just need to make sure they don't break support for like enterprise clients and that sort of thing.
+
+[00:08:52.50] - Justin Gardner
+Exactly, yeah, yeah. And I think also, you know, it's a. The link header, despite this specific scenario probably being a little bit more difficult or more nuanced, the link header is used. June unfortunately also killed the Japanese character set thing that people have been using to get xss. And that one was a little bit easier to deprecate because of the fact that nobody's using that. But the character said sniffing. I mean, and this one I think is going to be a little bit different. So I think we've got at least a year. Oh, wow, we can exploit this. I do that. That's my professional guess. But if June has anything to say about it might be faster.
+
+[00:09:38.42] - Joseph Thacker
+Yeah, that's sweet.
+
+[00:09:40.50] - Justin Gardner
+Yeah. And the other thing I wanted to shout out on this dude. Okay, well, okay, so there's like five tweets that go along with this. Okay.
+
+[00:09:46.99] - Joseph Thacker
+Yep.
+
+[00:09:47.54] - Justin Gardner
+So here's the tweet that I did sort of as a recap of this whole thing, because this really is game changing, right? Like this completely removes a security boundary that's been in place for years. The first thing that I wanted to, that I specified in the summary of this vulnerability was that this can be done recursively with multiple links. So you can say, okay, provide the link header with a preload URL and then provide another one with a preload URL and then those preloads can also return the link headers. And so essentially you can do it recursively over and over and over again and create a consistent stream of requests coming from the user's browser with a single image source load. Isn't that sick?
+
+[00:10:37.45] - Joseph Thacker
+Yeah, but I guess what's the benefit to just doing it the once gimme some attack scenarios.
+
+[00:10:43.69] - Justin Gardner
+Yeah. So I mean just the once is good enough to leak the refer, but if you want to do it time and time again, there's a couple things that that could apply to. One you can, because prefetches are set with, are sending cookies with them. You could do a zero click get based CSRF exploitation if you have an image injection.
+
+[00:11:08.90] - Joseph Thacker
+That's interesting.
+
+[00:11:11.71] - Justin Gardner
+Right. And it also enables it if you have to brute force an id. So let's say for example I've got to get base user, but I need a numeric ID and I know it's going to take like 200 requests to do it. Right. I could use this to like do a bunch of requests from the victim's browser and trigger that get base CSRF potentially with zero click by getting just an image injection on the like user's dashboard or something. Wow.
+
+[00:11:34.08] - Joseph Thacker
+Yeah, honestly that makes sense. I really hope somebody pulls that off. That is sick.
+
+[00:11:37.36] - Justin Gardner
+Yeah, yeah, so, so that's, that's one of them. Very cool stuff. The second one was this which was really interesting. We also have access to setting media queries here, which is also an attribute of the link tag. So we can specify almost like CSS, like syntax that will be run in the victim's environment just by loading a tag. Unfortunately, media queries are pretty limited at this point. Pretty much the only useful thing we can leak is like the viewport size which can tell us whether we're like in an iframe or whatever. But it could be useful for cross site leaks. I definitely would imagine that this will pop up in a CTF at some point.
+
+[00:12:17.84] - Joseph Thacker
+Yeah.
+
+[00:12:19.12] - Justin Gardner
+But I think there's definitely additional impact there. And then the third one here is that prefetch, which is the one that is being used here, isn't the only directive RHEL directive in the link header that can be used here. There's also other ones like compression dictionary, module preload and preload. The one that's really interesting here is compression dictionary because what that allows you to do is force the browser to download a dictionary that is then used to decompress following requests being made so you can modify the contents of those requests. But I played around with it for a little while and I just can't get it to do anything. Super interesting.
+
+[00:13:07.88] - Joseph Thacker
+Yeah, that's where my mind went immediately when you show me that unsafe URL part is like those little parameters that are a part of the link header. What all options do you have there that you could set that could potentially do other things that are malicious?
+
+[00:13:24.64] - Justin Gardner
+Yeah, so I went down the rabbit hole on that. There's a couple that look really, really promising. Like you can set the, the. You can hint at a content type, but it's not the content type they actually use. It's just the one that the browser actually like is hinted at so it knows when to load this. You can give it priority. You can say this is a high priority request or a low priority request, which you might be able to do something with that. But yeah. And then last but not least, as I mentioned before, this works with any type of image injection pretty much. You could be HTML image tag, could be dynamically generated images, could be CSS background images, could be font face sources, even some. So there's like. This is also super impactful to CSS injection because previously CSS injection didn't have a way to leak the query parameters and now we do. So pretty sick stuff. As far as remediation goes, there is pretty much not a great way to remediate this. The only options you have are a strict CSP image source to prevent the attacker from getting the image injection in the first place, or a strict default source which is even harder to implement to prevent the prefetch request.
+
+[00:14:35.77] - Joseph Thacker
+So is there any way for a web app developer to develop safely a web app that can use selected URLs for pulling in images or.
+
+[00:14:46.17] - Justin Gardner
+No, man, I'm trying to think about it.
+
+[00:14:49.37] - Joseph Thacker
+I mean, so basically server side, they're going to have to like download it and then host it themselves. Right. So that then they can set that.
+
+[00:14:56.37] - Justin Gardner
+I have no safe domain to pull from. Maybe like a. Yeah, yeah, maybe they have to use one of those like image proxies or something like that. Right.
+
+[00:15:03.58] - Joseph Thacker
+Could they, could they drop the link header? Are they able to do that?
+
+[00:15:07.82] - Justin Gardner
+Not if they're not because it's all.
+
+[00:15:08.86] - Joseph Thacker
+It'S like the browser is doing it, not, not the code. Right.
+
+[00:15:11.94] - Justin Gardner
+Service worker. I don't, I don't know man, it's pretty, it's pretty rough. I mean the, the best bet right now is to just make sure that if you're loading user supplied images on the page you should proxy it through something like you know, one of those slash, image slash and then you put the URL path which is, That's a tough fix.
+
+[00:15:29.27] - Joseph Thacker
+That's a pretty, that's a pretty like heavy lift for a lot of companies especially. I feel like honestly the majority of companies that have user supplied links to URLs and stuff, they're like smaller companies or like SMBs or you know, like that sort of thing. Because I feel like whenever you're at a huge enterprise scale you do have some sort of link proxy or caching or downloading it and so man, that's going to be a tough fix for companies. And it's like so impactful too. I wonder if the community comes up with a good remediation. Definitely share it with us because I think people could throw that in their reports as a really great way to show impact. Like hey, here's your one click ato. Here's your thing you can implement to fix it.
+
+[00:16:03.29] - Justin Gardner
+Yeah, I wonder if you. Man, I want to say I was thinking like I wonder if you could just set the referrer policy directly on the image but I think it doesn't respect it because the link header that's getting injected is the thing that is. Yeah, so nuts. Kind of crazy. But anyway, the last thing I wanted to say on all that was I have three different exploitations default tweeting out here saying like, Yep, just got one click ato via this. Yep, got one click ato. Yep, got one click atoo. So people are milking this already. And to be clear, you know, this isn't a vulnerability in and of itself. Like you have to land an OAuth code on the page where that image is injected. Right. And that's how you leak it via the, an unconsumed OAuth code. You know, that's how you get it to not be consumed and then you leak it out by the referrer and that's how you get ato.
+
+[00:16:52.48] - Joseph Thacker
+So could you link other sensitive things besides OAuth codes though? There's probably a lot of setups where there are other interesting things that can be linked leaked.
+
+[00:17:00.24] - Justin Gardner
+Yeah, you know, where the user controls the return URL. I mean I haven't Seen it a lot, but I mean it's definitely out there. But props to these people. I mean, I don't know if they just like jumped on it and were like got lucky or if they knew in advance.
+
+[00:17:14.35] - Joseph Thacker
+They probably.
+
+[00:17:14.92] - Justin Gardner
+I remember seeing this.
+
+[00:17:16.00] - Joseph Thacker
+Yeah. Or they had good notes. Yep, exactly.
+
+[00:17:19.97] - Justin Gardner
+Yeah. All right, so I think that's everything. You know, Slanzer has been releasing some really good stuff and I feel super grateful to have him in the CTVB Discord. Like he's, he's been dropping crazy stuff and he said next time he's like, man, next time I find something like this, I'm not going to post it on Twitter. I'm just going to put it in the Cool Research channel on the CTV Discord.
+
+[00:17:39.93] - Joseph Thacker
+I'm like, yeah, you should have done that.
+
+[00:17:41.76] - Justin Gardner
+Yeah, yeah. All right, man, what you got?
+
+[00:17:45.41] - Joseph Thacker
+Yeah, so we're kind of both kind of go down the list. I would say the first thing, which is maybe like one of the really cool write ups. It's on Medium. Sharon Brison off, if you. Oh yeah, if you want.
+
+[00:17:56.10] - Justin Gardner
+He came on the pod.
+
+[00:17:57.47] - Joseph Thacker
+Yeah. If he, he should post on something else besides Medium. I'm so. I'm so passionate about people having their own blogs. Like, you know, get your own stuff. You know, I just like get your own credit for it. You know, get. Build your own brand for it. But anyways, yeah, so I actually didn't know he was on the podcast, so.
+
+[00:18:12.82] - Justin Gardner
+Yeah, yeah, he came on before. I think that was in that, that transition period back in November. So.
+
+[00:18:18.63] - Joseph Thacker
+Okay. Yeah, cool.
+
+[00:18:19.50] - Justin Gardner
+It was an awesome episode though, man. I mean like he is.
+
+[00:18:23.15] - Joseph Thacker
+Okay, I will definitely go back and listen to it. Yeah, this to me is like the classic bug hunter path towards finding a bunch of vulnerabilities. Let me see if I can share it real quick while I'm talking for the listeners. Share screen. Okay, here we go. So how I made 64k from deleted files a bug bounty story. It wouldn't surprise me if there's still lots of reports out there pending on this. But basically he did what many people have done, which is try to search for secrets in GitHub reposition. But the way he did it was at a very large scale and also using very smart, deep kind of git techniques. So you can look into this. But he looked for both dangling files and unpacked PAC files. And I'm sure most of our listeners are familiar with git, but there are ways in which you can leave previously scrubbed commits in the history and it's non trivial to Go through this. I don't know Justin, if you've ever went down this path before. I did this for Elastic back in the day and they have so many repos and they're so huge and the history makes them even larger. I mean you really do need like terabytes to be able to actually pull these down and then.
+
+[00:19:33.38] - Justin Gardner
+Yeah, you'll run out of disk space very quickly.
+
+[00:19:36.05] - Joseph Thacker
+Yeah. So the way that he did this was like really cool and really smart. But he recommends how, you know, how Git internally works. But then he specifically iterated over a bunch of programs that he's in and then specifically went through the actual Git commit history, which I think is really powerful. And. And then kind of, I think just went deeper than anyone else has before and at a scale people haven't before. And then specifically you want to recover deleted files and then you know, if they don't delete it in a very specific way, it's still exposed. Like you're still able to get it through git through the history. And so anyways, that's what he did. You can read it. It's very interesting. I'm sure there's still low hanging fruit, especially amongst a lot of private programs. Like he's not in every possible private program on the planet. Right. And then he's. And maybe he is on all the private programs on like one platform, but there's many bug bounty platforms. So you could literally just replicate what he did for only your private programs. It would use less disk space than doing all the public ones. And then you also wouldn't dupe with him on a bunch of these. I think that'd be a really valuable and high quality way to attack so.
+
+[00:20:40.61] - Justin Gardner
+Well, one of the things he said in here, which was really interesting was that these. So what happens in Git when you, you know, remove something is that it becomes sort of unlinked. The. The file is still and it. But it becomes unlinked to the specific commit. Right. And what he said is that it stays in the GitHub repo for like two weeks or something like that. I'm trying to. Let me see if I can find the actual. Because I know that they are typically retained for around two weeks before being eligible for garbage collection the deleted files. And so this is something that we need to be looking at.
+
+[00:21:15.64] - Joseph Thacker
+That's fair.
+
+[00:21:17.24] - Justin Gardner
+Over time. Yeah. And unless you said they do this whole rebase and restart the whole git repo, then the deleted files are still going to be there. This is something, man. I did this Back in the day, I did this a long time ago. I had a full automation for this. Tom Nom Nom was the first guy that introduced me to this back in 2018. But these things come in cycles. They do. Sharon just got the latest cycle of it, which is cool.
+
+[00:21:46.34] - Joseph Thacker
+Um, I will say one thing was cool, the way he used AI to like find more repos. Like I think this is like the fact that these tools are, you know, basically free or really cheap and then they'll do a bunch of research for you on your behalf. I think it's still being underutilized. Obviously I talk a lot about AI, but I think that specifically things like O3 and like deep research on Gemini and stuff like it can find a lot of information very quickly because obviously it's not getting tripped up by captchas because they're either using indexes or they've got, you know, working relationships with the providers. So they're able to mine data really well for things like this. Actually, that'd be a good transition into the tool I made because I threw OpenAI into it recently. Did you see that change?
+
+[00:22:27.14] - Justin Gardner
+Yeah, yeah. Good. Well, hold on, before we jump to that here, I'll share my screen since you can get the next one ready. But I wanted to say one more thing that was really cool about this research, which is he shared he just used truffle hog for all this. So it's not like he's grappling for a super secret list of API ideas, which is really cool. But he said these are the secrets that caused the most impact. And at the top of the list was GCP project and AWS production tokens. So definitely we gotta keep it. And then he shows one right here of like a Google service account. And so we really gotta keep our eyes open for these. And then the other shout out was that he said a lot of times what happened was people would just commit binary files such as PYC files and not realizing because that's a binary file, they're looking at it and they're like, okay, that doesn't have anything insensitive in it. That definitely does.
+
+[00:23:26.01] - Joseph Thacker
+It's like a code review bypass kind of path.
+
+[00:23:29.29] - Justin Gardner
+Yeah, yeah. I mean you can decompile those things a lot of times and the strings are just going to be in there. And I remember at a live hacking event back in the day, I saw a finding that was just like super, super good. And one best bug of the event where the guy found it exactly in the same way where somebody had committed a certificate to log into a GitHub organization inside of a binary SQL file and no one had found it. But then as he was grepping through it, he stumbled upon it. Was able to extract the cert and auth into the hosted GitHub and it was like, it was really bad. So this is definitely a big thing. Paying extra attention to binary files is important. Make sure you add that dash a on your rip grep or your grep if you're grabbing across stuff.
+
+[00:24:22.38] - Joseph Thacker
+Yeah, I still, like you said because I tom nom nom do like grep-hrnia or whatever, anytime I'm grabbing. Just because of those initial videos from him and Stoke and stuff like that. Very cool. Yeah, so yeah, I wanted to roll that into the tool that I released. I don't. Yeah, it doesn't make. It doesn't make sense for a good share. Do you want to talk about it?
+
+[00:24:43.76] - Justin Gardner
+Pop up a bunch of tech? Yeah, I mean I just. And it's funny because it was on my list, not your list, but it's essentially, you know, you release this tool where it's just a really simple website tool where you just go in there, you put in a domain and it pops up like 15 pop ups in your browser that are like, hey, here's Google GitHub, Wayback Machine, Shodan Security Trails, CERT, SH, ChatGPT, Census. All of these places where you would normally scrape data and oftentimes people have scripts for all that, but you just kind of did it right in the browser. Which I think has a sort of attractive, quick and dirty nature to it. Right. Where it's like, okay, I'm not necessarily at my setup right now, but I kind of want to do some preliminary recon on this thing. Let me just drop this domain in here and you know, make sure I'm not missing any of these places where I could find additional assets.
+
+[00:25:35.94] - Joseph Thacker
+Yeah, for me personally, it's like when I'm hacking and I'm like in a JavaScript file and I find a random dev subdomain, that's when I would use something like this. It's like, I'll just throw this in here because it's so useful for it to pop up like in a GitHub search because then it's like usually in one of their repos or one of their employees. Right. So it comes up in that GitHub search and then just kind of having all of the rest of that pop up at the same time is really useful. I did notice a lot of people were like, all this does is open Google. It's like, yeah, it is actually confusing. So when I ran this tool the first time on my computer, I got a pop up that was like, do you want to open more pop ups? And I was able to just approve it. But then Hakluke, me and him were hanging out and talking and stuff and he cloned it onto his website and so I went and used it on his website. It didn't give me that pop up. I had to manually go into Chrome Colon settings and like browse for his website and then go enable it. So if you try to use this tool, make sure you enable pop ups so that they all appear and you can just look at the source of this page and make your own copy. You don't have to use mine, but I think it's just a really nice way to pull up all of the different kind of Google dorks. And someone could also clone this tool and make it do a bunch of Google dorks. The issue is because it's coming from one IP and one user agent, you will get those really annoying captchas at some point.
+
+[00:26:46.34] - Justin Gardner
+Yeah, well it worked for me too. The first time I just put in a domain and I pressed launch and it popped up one. But then if you go back to the actual, you know, your website, it'll say allow this website to pop up multiple pop ups. And I pressed allow and ran it again and it went. And it like popped all of them out. So I think, I think it's most people that have an interest in using this tool can figure out how to actually use it.
+
+[00:27:12.39] - Joseph Thacker
+Yeah, that's fair.
+
+[00:27:13.67] - Justin Gardner
+So helpful. I think so. Good job there man.
+
+[00:27:16.58] - Joseph Thacker
+Cool. Yeah, no problem. I love those little like tiny tools.
+
+[00:27:20.00] - Justin Gardner
+All right, let's see.
+
+[00:27:21.24] - Joseph Thacker
+I have a really small one since that one was technically on your list. There's a very small group of listeners that care a lot about local models. They're probably some of the most privacy and security conscious. And I love following the AI space. Simon Willison mentioned that the new Quinn 3, especially the 8bit model, even at 4bit quantized, but even at full size it still can run on most MacBook Pros or on most GPUs. Like if you have a gaming computer that you hack from or whatever, you can run it too. And so anyways, I was going to recommend that. It seems like it's the best at that model size and 8 billion parameters is small enough where especially at 4 bit quantize you can run it with 16 gigabytes of RAM. So if you have like an old M1 or M2 and it's only got 16 gig of RAM. You can run this pretty efficiently on like your little commuter laptop. And I think, you know, a lot of people are like, well, what would you do with it? I think there are a lot of interesting. Write for me or summarize this tasks. Let's say you have a thousand URLs that you want it to. You can curl the request or you can curl the JavaScript or whatever and then just return that to the local model and just say, describe this. Then you go to sleep and you have to do that across all of them. A lot of overnight running tasks where you don't want to buy the token cost. You can use these local models for.
+
+[00:28:38.94] - Justin Gardner
+Well, and I think there's a privacy piece of that too, where one of the things that Jason said when he came on the podcast last time was that you can use these local models simply for redaction. You say, okay, hey, here's an HTTP request. Redact any identifying factors on this. And then you send the redacted API request to a state of the art model and then it can do its thing without knowing what target you're on and that sort of thing. So I think that's valid. And then I think also, you know, like we have for Shift, dude, for Shift, it's not sending your data to the AI unless you specifically ask it to.
+
+[00:29:18.07] - Joseph Thacker
+Right.
+
+[00:29:18.64] - Justin Gardner
+The only exception to that is when you turn on AI, rename for your, for your tabs, for your replay tabs within, within Caido. And then it sends every, you know, replay request that you have out to the, to the AI. And I was thinking it'd be really nice if we had something like a very small local model that could just look at our HTTP request and do the thing that we tell it to do. Like, hey, rename this.
+
+[00:29:43.79] - Joseph Thacker
+It's so low stakes. It's like, who cares if it's wrong? Who cares if. Whatever.
+
+[00:29:46.68] - Justin Gardner
+Yeah, yeah, yeah. And if it makes small mistakes, not the end of the world. It's better to have the things renamed the way we want them renamed. So I think this could be a really good use case for this too.
+
+[00:29:56.59] - Joseph Thacker
+Yeah, people have like little tiny tools they want to run locally that do small tasks like that. It's a great idea.
+
+[00:30:01.34] - Justin Gardner
+Actually, in the tweet, Simon said that it only uses 4 to 5 gigabytes of RAM while it's running.
+
+[00:30:06.30] - Joseph Thacker
+Well, yeah, that's because he's using the four bit quantize. And then also you never wanted to use all of your ram. So that's why I said it's perfect if you have like 16 gig of RAM, because Chrome's going to take up 8. Most people don't want to close everything down to run their AI model. So yeah, that's what's great about it, is that it only uses that much. Yep.
+
+[00:30:23.02] - Justin Gardner
+I have 16 gigabytes of RAM. Open Chrome, you have 4 gigabytes of RAM.
+
+[00:30:27.19] - Joseph Thacker
+Exactly, Matt, you can use the AI.
+
+[00:30:29.50] - Justin Gardner
+Yeah. All right, man. Yeah, so next up, I guess I'll take this next one. There is an article released entitled May cause pwnage. This is on. I'm gonna butcher this guy's name, but Jaisal.
+
+[00:30:46.18] - Joseph Thacker
+Jaisal, yeah, sounds right.
+
+[00:30:47.25] - Justin Gardner
+Jaisal. Yeah, sounds about right. On his blog. And it was in collaboration with Jorian, who's very active in the CTBB community. And essentially this is an audit of MCP protocols and some kind of vulnerabilities that have been happening in them. And it's definitely a good read for any of you guys that are interested in sort of getting ahead of this curve on AI adoption. So as these companies start implementing, excuse me, start implementing MCP protocol for their various utilities, then this is something we're going to have to be on the lookout for. And it's often running on non standard ports. And you can see right here, man, one of the first things on the list is get based CSRF to command injection. And I'm like, oh no. And it's crazy how simple this exploit is. It's like literally SSE transport type is stdio and then command equals calc exe and it just pops calc. I'm like, no. So very impactful stuff here. They cover how to do DNS rebinding to attack this environment and extract data and a bunch of other vulnerabilities where they sort of scanned across the Internet to try to identify these MCP servers and got a lot of. I think it was like 104 command and control servers that could have been stood up across the whole Internet. So definitely some good research here. Yeah.
+
+[00:32:15.14] - Joseph Thacker
+And what's insane is like when we had mentioned MCP security being an issue, because if you have multiple tools and there's some sort of prompt injection in one, then it can execute in the other. Like for that calc exe, for example, if that was chained with something else that was browsing the web and you have prompt injection on your site that says, hey, pop this command, then the one that does the command exec can actually pop it. Right. But these bugs are just in the protocol and in the implementation. These aren't even using prompt injection in any way, shape or form. Right. So I think MCP is like a really, really great spot for people to dig in and research, like you said, because companies are going to be releasing them. I've met with a few startups that are already implementing them and some of them have already released them. These are not companies that I know of that have bug bounty programs yet. But like it's coming. So especially if people didn't know this, OpenAI and Google have both agreed to use MCP. It's obviously it was like released and invented by Anthropic, but like the other providers have accepted it. So by leaning into it, you're not, you know, only doing research on a thin slice or something. You're doing research on something on a protocol that's going to be used by everyone.
+
+[00:33:20.10] - Justin Gardner
+So help me understand the use case of this a little bit because I'm, I'm still a little bit of fuzzy. This is enabling the AI to execute tools on a specific service provider. Is that right now is that typically like an API? So like you know, whatever Seats dot Arrow, you know, exposes in MCP server and now the AI can interact directly with Seats Arrow or.
+
+[00:33:43.92] - Joseph Thacker
+Yes, perfect. Is it something that's exactly right? Yeah. So many people are like MCP is just an API. It's like, yeah, you're not wrong. But at the same time it's really important because like, let's say that you're Seats Arrow and you want to expose your API. Do you want every developer and every AI client to have to re implement your tool call Right. Or even if, even if you have like a GitHub repo they can go clone from and add or like something they can go copy and paste into their code, they support it. It just still too abstract. Right. So MCP streamlines that where basically you stand up the MCP server. Now, any MCP client of which there are not a lot yet, but of which they're becoming more and more so like Windsurf, Cursor and like the Claude desktop app are like the most used by far in those MCP clients. You can just put in your MCP config the tools you want it to have exposed and there's still a lot of ambiguity there and implementation details that are not ironed out fully. Like some people are doing it different ways, but basically you just add the tool to your MCP client's config and now you don't have to Worry about implementing documentation or explaining to your AI how to write the query or naming the tool and all those things. It was done by the MCP server author, basically. And so then now any client can connect to that server.
+
+[00:35:01.96] - Justin Gardner
+Nice. Nice. Yeah. So I imagine this is one of the things that we'll also see for the recon boys out there. You might want to put some stuff in there where you start fingerprinting these things as they spin up. Because I imagine what will happen is there'll be some server that is exposed, some internal server that was supposed to be internal, but it's external and it's exposing MCP so that other pieces of AI in the organization can reach out to this thing and interact with it. But if that's actually exposed to the Internet, then boom, you're in big trouble.
+
+[00:35:35.76] - Joseph Thacker
+Yeah. And honestly, you won't know when those are changed under the hood because you're not going to want to push updates to the clients or anything. So you may even want to. Like when you said fingerprint, I thought you were going to say like, fingerprint how they're responding. Like if they have like version numbers, like, you know, maybe the MCP server has a version call, or if not, basically, retesting is going to be really valuable here because if they. Well, if they mess up auth where, let's say they have data implemented oauth or something where you're only supposed to have access to your data. If you like, ask the NP server to give you someone else's data. It's not going to work at first, but if they have a regression or they implement a bug down the road or something, then you would, you would catch that if you're retesting.
+
+[00:36:11.86] - Justin Gardner
+Yeah, absolutely. And I imagine the MCP server has to have some sort of introspection, right. To be able to tell the AI, hey, these are the tools that we.
+
+[00:36:23.03] - Joseph Thacker
+Yeah, it has to have like notes like, hey, here's how you format your request and then that gets used in the context. Yeah.
+
+[00:36:28.19] - Justin Gardner
+So it should be super easy to sort of monitor change logs, so to speak, on what functions are being exposed by the MCP servers.
+
+[00:36:37.42] - Joseph Thacker
+Well, whatever ones they disclose to you. What's interesting is that a lot of these on the backend will probably have other API routes created, but then not in the notes, like not in the tool notes that get past the AI. So if you can actually just like, there's probably some fun exploration and deep research, which isn't as scannable, but where you can go in and be like, hey, let's Just see if there's any other routes. Just try this route or try this route or try this path traversal or whatever.
+
+[00:37:01.34] - Justin Gardner
+Yeah. And if you're looking at the rest of the vulnerabilities in this write up, there's like SSRF local file disclosure, more RCE git command injection. There's a ton of stuff in here. Definitely a ripe environment, both for recon boys and for the rest of us, that's that. Let's go ahead and bump down to your next one. Okay, so by the way, you had this on here, the. No XSS WAF bypass or whatever, dude. Okay, sure, maybe this is a WAF bypass. This got a thousand likes on it. But import is the most standard way to load an external resource.
+
+[00:37:50.23] - Joseph Thacker
+I just thought it was hilarious and I was like, people want things to try and so it's awesome to have something to try, right?
+
+[00:37:56.15] - Justin Gardner
+Yeah, I mean, it is. For me, this is the go to way to import a script. Yeah, this is like try a script tag when you're doing XSS sort of situation. But it is definitely good to be aware of. And some hackers that I've seen recently didn't know that you could dynamically import JavaScript without having to create a script tag or fetch the data and then eval it or something like that via the import function call. So it's a good call.
+
+[00:38:30.69] - Joseph Thacker
+Yeah, I mean, I've never used the import function call, so maybe that's why it was like super interesting. I threw it in there.
+
+[00:38:35.57] - Justin Gardner
+Yeah.
+
+[00:38:35.90] - Joseph Thacker
+Yeah.
+
+[00:38:36.17] - Justin Gardner
+Well, there's lots of data to. There's lots of ways to smuggle data through, so that's a good one. All right, dude, let me show you this. Now I'm going to flex a little bit. Okay. So, dude, we're recording this on May 7th, right? This is going to be released May 8th. Thank you, production team. And I have not pushed this plugin to the Caido store yet and I'm going to do that tonight.
+
+[00:39:00.84] - Joseph Thacker
+I'm sure you will.
+
+[00:39:01.88] - Justin Gardner
+So hopefully it'll be. Hopefully it'll be released by the time that this podcast airs. But I'm creating a new plugin called Drop, okay. For Caido and it is super helpful for sharing various objects from person to person. So let's say I'm going to show you how it works right here. You open up drop and it gives you a share code right here. Then you pass that share code to your friend. And this is your PGP public key right here. Everything is end to end, encrypted for this once you give your friend your public key. Then your friend can encrypt data with your public key, chuck it up to the server, and then you sign something saying, hey, I have the private key for this public key. Give me all the messages for this public key. You download that message, decrypt it with a private key, and then you ingest these specific objects into your Caido instance. After you have a chance to assess them, you can get messages, hopefully. I'm going to try to do a live demo right now. We'll see if it works.
+
+[00:40:02.94] - Joseph Thacker
+Let's see what happens.
+
+[00:40:04.03] - Justin Gardner
+Scope dropped to Justin Gardner. Then you get a notification saying, hey, you got a drop from Justin Gardner. Here's the scope. Would you like to claim it? You press claim and now you've got another scope right here in your. In your Caido environment. So you can. We can. Right now we can share filters, scopes, match and Replace and replay tabs.
+
+[00:40:23.44] - Joseph Thacker
+Dude, match and Replace is going to be a really clutch one. A lot of times when I'm collaborating with other people, they'll be like, oh, I figured it out. I got the Match and replace work on the client side so that I can like see all the routes, you know, or whatever. And being able to like immediately share. That's cool.
+
+[00:40:35.03] - Justin Gardner
+Yeah, yeah. So it should be super great for collaboration.
+
+[00:40:37.67] - Joseph Thacker
+I feel like this is. We talked about this, right? This is like called like the Kieran callbacks. We'll call that. That section. Didn't Kieran make a Justin Nerd Sniper plugin like a year ago or something for Caido? That was like nerd snipe, Justin, but I think it used Discord webhooks. This is much more. This is much more collaborative. Send back and forth. But this reminds me very strongly of that.
+
+[00:40:58.28] - Justin Gardner
+Yeah. You know, you can hook into a, like a specific web hook to like dump it in a channel or something. But I wanted something that just allows me to send it to your Caido instance directly, you know, so if we're collaborating, you literally just have a message pop up that says claim, you know, or like, new drop from Justin. Here's this request and you have claim or delete, right. You press claim and boom, it's in your. It's in your replay, you know, and you can just, you know, tweak it.
+
+[00:41:22.73] - Joseph Thacker
+I don't want to do bugs or anything. Like, if I. If my kid is closed and you've sent like 12 and I open it up, will they be sitting there waiting?
+
+[00:41:28.17] - Justin Gardner
+They will, yeah. Yeah. They sit on the server for seven days unless they're claimed, Right? And if they're claimed, they're stored locally in your Caido, but after seven days they're gone. So if your homie is just not collabing with you at all and you're spamming your homie, then it's not going to fly.
+
+[00:41:46.42] - Joseph Thacker
+Is there anything besides the pop up? Does it also show up in the drop tab or something?
+
+[00:41:49.82] - Justin Gardner
+Yeah, hold on, let me show you one more time as well because there's a little pop up that will pop up on the screen. So if we go right here, I drop to myself. There's this little pop up that pops up at the right hand corner. Let's see. There it is right here. Cool. But I can close this, say I don't want to address that right now and I can go to drop and go to received messages. Okay, perfect. And here's the message right here. And then you can claim or delete.
+
+[00:42:12.78] - Joseph Thacker
+Dude sucks. That's a cool plugin idea.
+
+[00:42:14.63] - Justin Gardner
+Yeah, I think this will be great. I also want to develop something where even without knowing your public key, I can create like a link that says hey, here's like this request, right? And it just encrypts it and then maybe passes you the shared secret or whatever via a hash in a URL or something. And then once you put that link into Caido, it will download the specific request, decrypt the encrypted data and then give you an opportunity to claim that.
+
+[00:42:48.63] - Joseph Thacker
+Dude, that's cool. That's really cool.
+
+[00:42:50.51] - Justin Gardner
+Yeah, I really want the Caido. I want this to be a really collaboration rich environment and I think that will help with it a lot.
+
+[00:42:58.84] - Joseph Thacker
+Yeah, it's going to be awesome. I can't wait to use it.
+
+[00:43:01.40] - Justin Gardner
+Hopefully this will be on the Kaito tour by tonight. I am still running it on my local dev server, but I have some time allocated later today to get everything pushed to prod and it'll be out there.
+
+[00:43:13.88] - Joseph Thacker
+Cool. I'm going to jump to Andres.
+
+[00:43:17.63] - Justin Gardner
+Sure.
+
+[00:43:18.19] - Joseph Thacker
+Just in general, I think Andre's been.
+
+[00:43:20.36] - Justin Gardner
+Killing it lately on he's been pushing out good content.
+
+[00:43:23.00] - Joseph Thacker
+He has been. The question is whether it's him or hakluke. But one thing that's really great about this is like the little things that he's been posting is that I feel like it's a bunch of stuff, to be honest, that feels like it's in this vein of like really cool research or really cool techniques that people haven't really or at least that I personally haven't incorporated into my testing flow. Like Strongly. And like, you know, a good example is like the smuggled, like what are these called again? Encoded word and yeah, basically encoded words. I never check for this, which in general I think it's kind of hard to test for things that you have to like redo the full signup flow for each time, which, you know, maybe this one you don't. You know you can go and like change your email on a lot of apps but anytime there is a, you know, like kind of a bug or like a testing thing that happens as a result of like what you do during sign up and you have to like go confirm your account and all that, I'm like kind of lazy with that in the past and I think that I'm going to change that now and like kind of lean into testing more stuff like this. Yeah, I don't know. Do you have any thoughts?
+
+[00:44:31.26] - Justin Gardner
+It's, it's pivotal to do that. I mean it really is. Like the amount of times that I've gone to a live hacking event and I've been busting my ass like to configure all these things and find these really obscure crits and then Andre just walks in and he's like, yeah, I threw this like weird Unicode character and now I've got arbitrary ato. And I'm like screw you dude. Seriously though, it's, it's, it's too real. And somehow Andre always finds arbitrary ATO via like this email related garbage and I'm like, how do you do this?
+
+[00:45:03.32] - Joseph Thacker
+Well, I wonder if he does basically like objective based hacking. I don't know. I'm sure you've discussed, for sure. We've discussed that on the POD before but I talk a lot about that with, with Douglas and Kieran is like sometimes when you're constrained, especially a life hacking, you like a hardened target. If you just set like a really hardcore goal and then just aggressively pursue that. The constraint like breed creativity in like your things that you're attempting.
+
+[00:45:26.98] - Justin Gardner
+Yeah, 100%. And man, I've done this a couple times in live hacking events and I've gotten them every time and I'm like, wow, this is nice. Like, like if I really just lock in on like you know, one thing. I'm thinking of a specific live hacking event in particular where I was surprised, where I was like, okay, my goal is to do creepy shit with this app, you know. And is that in London? Yeah, it was. There's one, there's one in London and then there was also one in, in Vegas as well. I was like yeah, like this is what I want to accomplish, you know? And then somehow it happened and I'm like, okay, like maybe everything is possible. You just got to keep poking at it.
+
+[00:46:01.34] - Joseph Thacker
+Exactly.
+
+[00:46:01.86] - Justin Gardner
+Yeah. Yeah. So anyway, yeah, Andre. Andre is nuts, man. Because I do remember one time where we were at a life hacking event and the team set out a challenge and we were all like, haha, that's cute. Like they're putting 100k bounty on this day or like 70.
+
+[00:46:16.21] - Joseph Thacker
+And it's impossible.
+
+[00:46:17.42] - Justin Gardner
+Yeah, and it's impossible. And then Andre's like, found it like 20, less than 24 hours after the challenge was released and I'm like, oh my gosh. And it was like a 15 year old bug too. It was crazy.
+
+[00:46:28.13] - Joseph Thacker
+Wow, that's awesome.
+
+[00:46:30.69] - Justin Gardner
+All right, okay. Last thing on the list for me was, dude, Naham Khan is just around the corner, man. And we haven't shouted it out on the pod yet. So if any of you guys are not aware, our boy Nahamsek, Ben, like does this conference every year that is just very much bug bounty relevant. And this year they've got AI related stuff and you've got bug bounty related stuff. You know, you might, you might see your boy hosting. Who knows, you might see your boy Rezo giving a presentation. So definitely want to check that out. You can find it@nahamcon.com I'm just going to read some of the dates out here. Yeah, like, yeah, you grab the dates. I believe it's the 22nd in the 23rd.
+
+[00:47:16.26] - Joseph Thacker
+May 22nd.
+
+[00:47:17.21] - Justin Gardner
+23Rd, yep. So here's the first day schedule. Okay. You got the keynote by Jay Haddix, Rezo Nahamsek, you got XSS doctor doing a talk on AI assisted hacking. You got Wonderwuzzy, another person that came on the pod talking about advanced prompt injection exploits in LLM apps. You've got your boy Rezo again, AI findings and bug bounty. You got Monke, another POD veteran talking about how hacking, how we learn speedrunning, bug bounty proficiency with AI. You got Jay Haddix on modern AI assessment. And you got Daniel Mesler with AI capabilities for attackers and defenders. What a stacked lineup. Dude, that is crazy. So definitely going to be tuning into that.
+
+[00:48:01.13] - Joseph Thacker
+That's just AI day. Day two is Tom Nom Nom Jrock, insider, PhD.
+
+[00:48:05.94] - Justin Gardner
+Oh my gosh.
+
+[00:48:06.98] - Joseph Thacker
+Renee Pack, Armand Samir. Yep.
+
+[00:48:10.63] - Justin Gardner
+Yeah. Dude, so many of these people have come on the pod too. It's great.
+
+[00:48:14.71] - Joseph Thacker
+I mean, the community's tight, right? So.
+
+[00:48:17.11] - Justin Gardner
+Yeah, it is, it is. So definitely check it out. Day two also looks awesome. You've got GraphQL stuff, you've got cookie counterfeiting, you've got Tom Nom Nom. Whenever Tom Nom Nom puts anything out, you should definitely check that out.
+
+[00:48:28.76] - Joseph Thacker
+1,000%.
+
+[00:48:30.00] - Justin Gardner
+Yeah. And then I think one of the most underestimated hackers out there is Brumans. Dude, like this guy puts out some really, really good vulns and all of his stuff that he does for yes, we hack as well is like super high, top notch. Yeah, definitely something to check out.
+
+[00:48:47.53] - Joseph Thacker
+Last thing I wanted to cover was this Pliny thing that's obviously AI related, basically. Pliny, who we've talked about a lot, does a lot of jailbreaking and AI hacking and stuff. He shared the system prompt leak for Gemini 2 Pro with canvas and one, it's just interesting and good to read. But two, somebody, maybe the other person on this recording right now has found some good bugs in Gemini Pro Canvas. So the Canvas is like a really interesting thing to hack, right, because it's like basically like a little mini compiler or like not really compiler, but it basically can like execute the code that. That Gemini.
+
+[00:49:25.92] - Justin Gardner
+Yeah, it's a code execution environment built into the LLMs.
+
+[00:49:28.21] - Joseph Thacker
+Yeah, right. And it has so many little weird nuances and quirks. And even in AI Studio there's also now like these like starter apps that are kind of in there. And so I think that. Where was I going with that?
+
+[00:49:46.30] - Justin Gardner
+Did you see the tweet by Logan as well that was close to this, where they just listed out all of the freaking Google employees that were building really cool shit in Canvas on one shot prompts. This thing is pretty powerful.
+
+[00:49:59.98] - Joseph Thacker
+Yeah, it's really powerful. I mean one people should use it, I think in general. And I actually gave you this tip, Justin, so I'll go ahead and give it to listeners. And it worked really well for you.
+
+[00:50:07.30] - Justin Gardner
+Yeah.
+
+[00:50:08.26] - Joseph Thacker
+If you're building things with AI and it feels like such a, like a silly or trivial tip, but it works extremely well. Basically, if you're using AI to like write some code for you, instead of giving it, you know, a vague description of what you want or even a 70% description of what you want, that 30% when the AI is in there, modifying like multiple files and stuff will basically mean you loop a lot and you end up with a lot of little bugs that you then have to work through over time. If you can get your spec, like your description of what you want to.
+
+[00:50:36.80] - Justin Gardner
+More like, would you call it the product requirement document? Prd.
+
+[00:50:39.57] - Joseph Thacker
+Yeah, prd. Like if you can get A perfect or like a. Sorry, a verbose product requirement document that's like 90 to 100% of what you want. The new AI models and I haven't even used the new Gemini Pro model that came out yesterday that's even better at coding. Will basically one shot your idea, even if it's across multiple files or whatever. So the tip here and like anytime you hear a leading a person who's at the bleeding edge of tech say something, which in this case was Andre Karpathy that I saw and then another guy that I love, it's probably the best engineer I know. His name is Hrishi. Like hrishi was DMing me the same thing that Karpathi had said and he hadn't read what Karpathi said. So basically these two guys converge on the same insight and wisdom, which is basically spend more time than you think you need to coming up with that product requirement document. And you can do it in Gemini to Canvas, which we just mentioned, right? So if you open Gemini and then you enable the Canvas tab, just, just say like, hey, I want to build this app. Give me a prd. You know, it'll know what it is for that thing so that I can read it and refine it. And then as you're reading it you'll say, you'll see things where it's ambiguous. Like it'll be like, it'll just say like backend tech stack and you'll say, no, I want the back end to use specifically this tech stack, you know, and I want it to work in this specific way anyways. Just iterate on that a few times and then give that PRD to an AI model to build it and you're going to get a much higher quality thing. But anyways, I want to bring it out.
+
+[00:51:56.42] - Justin Gardner
+Let me just say on that as well, dude, two things. One, one of the biggest takeaways from the Google Live hacking event that we did was Gemini is freaking awesome.
+
+[00:52:06.23] - Joseph Thacker
+Oh, it's amazing.
+
+[00:52:07.71] - Justin Gardner
+It is an amazing, amazing, amazing AI tool. So don't sleep on Gemini just in, you know, efficiency of life sort of things. Yeah. And two, just to support what you said, drop the, the, the Kaito plugin that I was just telling you about for collaboration. It's got a bunch of, you know, it's got end to end encryption, it's got some custom UI components that interact with Caido. I spent a long time doing what you said. I went to Gemini, I said, hey, let's build a PRD for this. Here are the specs, here's what I want it to do. Here's the back end component, here's the front end component. And it completely one shotted the backend component. Like I probably took five lines.
+
+[00:52:46.51] - Joseph Thacker
+If you have an idea for Kaito plugin, do what Justin just did. Do what you just said. Do a prd, give it the context of how Caido plugins work, like the, you know, the repo or whatever, the readme and then it will potentially one shot the entire solution.
+
+[00:52:57.84] - Justin Gardner
+Yeah. And the UI it generated was amazing. And like, I mean, and the front end, I had to tweak a bunch because I was like hooking into Caido UI and like all sorts of stuff like that. But. But the back end it completely one shot it. Yeah, I'm like, this is crazy.
+
+[00:53:12.09] - Joseph Thacker
+Yeah, it's really cool. It's super cool. Um, so anyways, where I was going with the mention of the canvas is not just the fact that the canvas is there and that you can get the system prompt from that link that we'll put in the show notes, but there are just like so many other little AI features that Google's adding across the board. You know, we're passionate about like hacking on them and stuff. They just added gems in worksp. Um, and so anyways, lots of cool stuff to hack on. I just want to give that to listeners so they had something to, you know, go hack on this week if they didn't have anything to look at.
+
+[00:53:37.42] - Justin Gardner
+Yeah, 100% very cool stuff. Um, we've got like two minutes, so I'm going to cover this last thing really quickly from Gareth Hayes that was actually in your, in your docket here. But Gareth tweeted something out and this is like, I think just a perfect example of what we talk about when we're saying, hey, just like tell the community about cool shit, right? So that, so that we can all understand better how this cluster of JavaScript works. Man, it's like, it's amazing. And so Gareth tweeted out, I think it was around April 25th earlier and said, hey, there's something really weird with SVG related onload handlers. And there's this. When you console log the actual onload handler from an SVG on click event. What is that? Event handler attribute in HTML. That's what I'm trying to say then it looks very different or very slightly different from what you would see when you look at an image tag on loader on error handler. The difference is that there is a different event parameter that is being passed. One is event and the other one is evt, and he was speculating on why that's the case, but the TLDR of the situation is that it actually provides a way for you to get a DOM reference inside of that onload handler. So you can do EVT composedpath, pop.defaultview alert so that defaultview gives you the document reference and then alert one or default view gives you the window and then you can run alert one on that. And he shouted this out. And I think it's relevant for anybody that likes JavaScript based sandboxes. If you have a sandbox, you've got to look out for this because this can result in a DOM object leak, which can be really impactful in those sandbox scenarios. So if you find yourself stuck in a sandbox and you can't get a reference to the document, then you might be able to use an SVGonline event to go down that path that Gareth described here and get a reference to the document object.
+
+[00:55:53.44] - Joseph Thacker
+Yeah, I'm not a very strong JavaScript person, but when I was reading this and I saw that EBT pop up with that conversion, I'm just like, what are they doing?
+
+[00:56:06.25] - Justin Gardner
+It's weird.
+
+[00:56:06.88] - Joseph Thacker
+So weird.
+
+[00:56:08.01] - Justin Gardner
+Yeah. And he says, I suspect that this is a workaround to accommodate IE quirks because there's a global window event, so there's some namespace conflicts, you know, that sort of thing. So definitely, definitely a cool thing to note by Gareth here. And he says, and I'll just read this line at the end, it says there isn't really a conclusion to this and I'm just happy to blog things about things that I find interesting in any way. I hope you enjoyed it, which is.
+
+[00:56:33.11] - Joseph Thacker
+Just, yes, please do that for everything. Everyone. Everyone, please do that. But yes, thank you.
+
+[00:56:37.71] - Justin Gardner
+Give him a round of applause.
+
+[00:56:38.96] - Joseph Thacker
+Yes.
+
+[00:56:39.40] - Justin Gardner
+Teach us more about this crazy land of JavaScript. We want to know everything so that we can understand how to break it.
+
+[00:56:44.88] - Joseph Thacker
+Right?
+
+[00:56:45.92] - Justin Gardner
+And I think that's the pod. Am I right?
+
+[00:56:47.44] - Joseph Thacker
+Yeah, dude, yeah. Thank you all for listening. Good work. Sorry the Google episode is not out and I've also recorded the second part of the AI series, so that'll either if Google's not ready next week, that can come out next week. If not, it'll be the week after. So.
+
+[00:56:59.76] - Justin Gardner
+All right, GG guys, see ya. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y' all. If you want more Critical Thinking content or if you want to support the show show, head over to CTBB Show Discord you can hop in the community. There's lots of great high level hacking discussion happening there. On top of master classes, hack alongs, exclusive content and a full time hunters guild. If you're a full time hunter, it's a great time. Trust me. I'll see you.

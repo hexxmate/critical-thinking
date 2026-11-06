@@ -1,0 +1,350 @@
+Episode 162: HackerOne Training AI on Bug Bounty Data?
+Source: https://www.criticalthinkingpodcast.io/episode-162-hackerone-training-ai-on-bug-bounty-data/
+======================================================================
+
+Title: Transcript - Fri, 20 Feb 2026 13:51:54 GMT
+Date: Fri, 20 Feb 2026 13:51:54 GMT, Duration: [00:53:23.68]
+[00:00:01.04] - Alex Rice
+And this is the oversight on our part, is we have not gone back and made our terms clear in the world of large language models. Large language models are wildly different from classic AI. What AI was when we wrote those terms was different.
+
+[00:00:38.34] - Justin Gardner
+we've got an exciting announcement. ThreatLocker Zero Trust World Conference is back in 2026. It's going to be March 4th to March 6th in Orlando, Florida. It's freaking gorgeous down there too during that time. And yours truly is going to be there. I'm going to be there on Wednesday, March 4th. I'm going to be leading a hands-on hacking workshop. I'll be one of many. So there's lots of fun hacking workshops you can get involved in, and it's going to be a great time. There's tons of sessions, workshops, other people there to network with. It's going to be a great conference. So if you're local to Orlando or if you're up for the travel, this is a great way for you to use that employer training budget that you've got. Also, for Critical Thinking listeners, there's a discount of $200 off. You can use the code ZTW, right, for Zero Trust World. CTBB26, ZTW CTBB26 when you register. That'll be on the screen and in the description as well. It's gonna be a great time. I hope to see you guys there. All right, let's go back to the show. All righty, hackers, it's been a big week in bug bounty. Lots of drama on Twitter about the whole HackerOne thing. We've got a whole episode dedicated to that, which I think should help address some of the issues. Uh, but before we do that, we're gonna jump into the This Week in Bug Bounty segment to give you guys some quick news. Um, Yes We Hack is continuing to crank out awesome guides to bugs that go very in-depth. Um, and this week they put out an XML, um, external entity, XXE guide. Uh, and it has got a lot of data in here. Um, XXEs is one of those bugs where it comes out of nowhere and it gets you like very impactful SSRF, file read, sometimes even RCE. So if you're trying to land more criticals, this is really one that you should look deeply into. Um, and I read through the guide here. Uh, YesWeAct does a really excellent job of providing a comprehensive summary of how to find these and different techniques for exploiting them. So check it out. Um, really good stuff in here. Even— they even cover like, you know, language-specific stuff like, uh, PHP expect and, um, I believe some Java stuff as well. So really good stuff here. Um, next is something that is actually gonna be launched a couple days, uh,, before this episode releases, but this is the Bug Bounty Maturity Framework. And I know a lot of AppSec, uh, people and actually program managers listen to this podcast as well. So this is, um, primarily for you all, but also has impact on the researchers. So let me explain what this is. Um, a, a guy that was on the team for Critical Thinking a while back, Steve Hernandez, uh, he also worked for HackerOne for a while, realized that there's no way for programs currently to get an idea of where they are as compared to other programs and, um, understand their maturity as, as a program. Um, so he took all of his knowledge of the industry, uh, from his time working at HackerOne and with, uh, Critical Thinking and built this website bugbountymaturity.com. Uh, this is where you can take a quick survey to understand where your bug bounty program lands as on a scale of emerging to leading, um, and how to level up to different tiers and provide the best service to the hackers and get the largest ROI out of your program. Um, so this is like a 15-question assessment, but then it gives you very, very clear, um, you know, uh, stairs up to the next level. Like, do this, do this, do this, and then you'll, you know, really be providing an, uh, the best ROI, right? That's the thing that's going to move you to the next level, that the researchers are going to feel the most, or that your organization is going to feel the most. Um, I worked with Steve to, to build this out and design the questions, and I think that if more programs took this and followed the steps inside of it, the quality would really go up. Um, and we're actually even tossing around the idea of doing some certification that goes along with this, right? So when you see the Bug Bounty Maturity Framework, um, you know, certification or whatever, say, hey, we're at established or advanced or, or leading, then you know what that means and you know that you can trust that program. So, um, for any of you hackers that are interested, definitely feel free to take a peek, but you program managers, AppSec teams, I'd love for you guys to head over to bugboundingmaturity.com and take the assessment, see where your organization is at, um, and see how you can improve your experience for the hackers and for your org. Um, all right. I think that's it. Let's cut to the episode. We've got some really good stuff with, uh, Alex Rice, uh, CTO of HackerOne, where we address some of these issues that, um, have been put before the community and put before HackerOne. All right, man. So, uh, we just got off that interview with, with Alex. Um, we're about to play that clip for you guys in just a sec. Um, overall I feel like that was pretty solid and I feel a lot better about how HackerOne is using our report data.
+
+[00:05:14.11] - Joseph Thacker
+Yeah, he was super straightforward, super willing to answer any question. I— you were— you went a little harder than I expected, uh, especially in the second half. So, uh, people tune in for Justin kind of playing hardball there, but no, I think, I think that I was happy with all the answers.
+
+[00:05:29.14] - Justin Gardner
+Yeah. Yeah. Well, even I was roasting him about the bounties, right? About like, uh, reducing the bounties. Yeah. I think he needed a roast for that. I think he deserved a roast. Arose for that.
+
+[00:05:38.06] - Joseph Thacker
+But, and on the other part, like, I just think that whenever you pressed into some of those questions, right, like anytime his language was even a little bit vague, you pressed in to like make sure it was clear. I thought that was really good.
+
+[00:05:48.13] - Justin Gardner
+Thanks, man. All right, well, we're going to jump into that clip. Um, I just want to say before we, we do that, um, and I add this comment as well in the actual recording, but, uh, this was an interview that we reached out to HackerOne for, and we did not provide them with any questions in advance or any ability to edit the content. Everything said was on the record. Um, and I tried my best to represent you guys as the hunter, uh, and how I felt as a hunter myself, obviously. Um, so definitely welcome any feedback you guys want in the Discord, but, um, I just wanted to disclaim that because HackerOne is a sponsor, as is Bugcrowd, as is YesWeHack, as is Intigriti, but we made very clear to them in the beginning that their sponsorship would have no effect on the content. And, um, I, I think we've held to that very well here. Yeah.
+
+[00:06:37.43] - Joseph Thacker
+And in general, you know, Justin isn't big to toot his own horn, but when Justin started Critical Thinking, that's the mission. Like, if Justin wanted to make more money, he would just go do more bug bounty hunting. Like, he does the podcast for you guys and for his friends, and the whole point is the journalistic integrity and the building of the community, not to make more money. So they're just sponsors because it makes sense and it kind of like— pays the bills.
+
+[00:06:58.66] - Justin Gardner
+Exactly.
+
+[00:06:59.50] - Joseph Thacker
+Yeah.
+
+[00:06:59.74] - Justin Gardner
+Yeah, leaves me more time to hack really is, is why, because like my goal with this podcast was like, let's get the team in place. Let's get people like Richard, you know, doing awesome things, taking care of it so that I can spend more time hacking and then telling people about, you know, how amazing bug bounty is. So, all right. We've said our piece. Let's cut to the clip. All right, guys. Well, here we are. We are going to be covering, uh, some, some drama that has been going down on InfoSec Twitter, as always. Um, and we are welcomed today by Alex Rice. Thank you for joining us, HackerOne CTO. And hopefully we can, uh, I don't know, man, are you ready? Ready for some, some grilling?
+
+[00:07:36.16] - Alex Rice
+I love a good roast. Thanks for having me on here, guys. This is gonna be fun.
+
+[00:07:38.98] - Justin Gardner
+All right, man. Great.
+
+[00:07:39.86] - Joseph Thacker
+Great. He voluntarily did this. We didn't like, uh, kidnap him and bring him on.
+
+[00:07:44.22] - Justin Gardner
+No, no, that was great. And yeah, actually, that's a good point. I will, I will mention, you know, cause I said on the episode last week that we were going to reach out for HackerOne for a comment
+
+[00:07:55.31] - Alex Rice
+and
+
+[00:07:55.38] - Justin Gardner
+You know, before, before everybody jumps on the, like, you know, train, because there are a lot of, you know, high, high energy, high, you know, tensions are high in the bug bounty community right now. I want to disclose that HackerOne, you know, is a sponsor of this podcast, as is Bugcrowd and Intigriti and YesWeHack. And, you know, we made it very clear from the very beginning that the content of, of Critical Thinking is sacred. So when we reached out to HackerOne,, you know, to get a comment on this. We invited them on the podcast to discuss this, but, um, you know, we, we are not providing editorial, uh, you know, access to this and we're also not pre-prepping or anything like that. So, um, this is off the, off the cuff on, on the record, uh, as much as we can. And, uh, Alex, I appreciate you signing up for that.
+
+[00:08:40.49] - Alex Rice
+I appreciate the integrity here.
+
+[00:08:41.52] - Justin Gardner
+You got to keep it authentic. Yeah. Yeah, we do. Um, so with that, man, all right, now we gotta, now we gotta, you know, really represent the hackers here. We're a little scared, man. We're a little scared because, um, you know, we're reading these terms of services. We're looking at this marketing material that you guys are putting out. And, um, I think just speaking for the community in general right now, you know, with so much thing— so many things happening with AI, it's— and nobody knows which direction it's fully going to go. And we have years and years and years of report data of our hard-won techniques, you know, in the code. Uh, you know, in the HTTP requests, um, in the platform, and to see something like those, those terms of service lines, um, you know, implying that HackerOne may have the right to train AI models off of that data is really scary for us. So can you provide some clarification about why that is in your terms of service and how you guys are using report data right now?
+
+[00:09:41.57] - Alex Rice
+Yeah, well, let's start with that piece, and then we should come back to the overall— what, what is everyone just feeling right now? What's going on with that? But our approach here, we are definitively not training GenAI, fine-tuning, any, anything of that nature on researcher submissions, which are also customer submissions at the same time. We talk about a bunch of the reasons why that is. Let's get into the detail of that. Uh, what really kicked all this off was raising really good questions on our terms of service. Does say we have the ability to— actually, first of all, our terms of service have been pretty restrictive from the beginning. Hackers retain all of the IP to their services. We have a license to utilize it to improve our— provide and improve our services, and then customers get a license to it. So there's no ownership transmission here, but there are some licenses that need to exist to, to operate the service. And, and part of that, um, which we should get into why that exists, there is the right to train, train models and Why, why is that there? One is because there's a number of things that happen here, but it has been in place from the beginning. And this is the oversight on our part, is we have not gone back and made our terms clear in the world of large language models. Large language models are wildly different from classic AI. What AI was when we wrote those terms was different. I'll give you a real, real example here. The very first ML model we put into place was over a decade ago. It powered our spam prediction engine. Every time a customer is clicking report spam on a report, that goes into a regression analysis, and every new report coming forward has an updated spam classifier score on it, right? Like, that is— that's, that's training AI. We call it machine learning. Legal and marketing teams call it AI. Um, that needs to get disambiguated now. So it is really on us that we didn't catch that earlier and we didn't fix that sooner. Uh, we've tried to be really transparent with our technical documentation but not the terms, and we got— we got to get those two in line.
+
+[00:11:43.75] - Justin Gardner
+Okay, yeah, that makes sense. And, and I, I understand that certainly spam classification is one of the big issues that you guys have dealt with from the beginning, and also that has been amplified, you know, since the AI, you know, onset here. Um, and the one piece— I'm going to read the, the you know, most concerning line from the terms of service right here. It says HackerOne may use confidential information to develop or improve its services, for example, to identify trends and to train AI models, provided such use does not result in disclosure of confidential information to unauthorized third parties. So as I understand it, you know, that confidential information is the, the user's, you know, full, like, unredacted report. And, and what I'm also wondering is whether you know, HackerOne is using any of that report data and making it anonymized, you know, whether you're anonymizing the target, anonymizing the researcher, but keeping, you know, the meat of those techniques in any way and utilizing those in training even your own internal products like, like the, um, the pentest as a service platform or anything beyond just the spam filter.
+
+[00:12:56.16] - Alex Rice
+Yeah, it's a good question to get into what the broader piece of it is. Um, there is an anonymization process and an aggregate trend analysis that goes on. Uh, we're not using that today to train AI models. And I think it's helpful to talk about why, why, why not? Like, what, what are we doing? What are we training models on? Which is a bulk of what our, our material, um, uh, focuses on. And I, I think we'll, we might, I'd love to get into this a little bit more later, but I think what we're all seeing right now is the baseline foundation of models are getting really good at finding vulnerabilities. We don't view it as our place to, for that to be the thing that we differentiate at or really excel on. I think the AI scaling laws are holding. The models are getting better and better at this every single time one comes out. It's just not central to our product strategy or what's needed to even deliver these capabilities to really innovate and, and push there. There's a ton of areas before and after the discovery of a bug where AI is providing a ton of leverage to teams and hunters on, on both sides, which is where we're Applying quite a bit more of that, that analysis for things like what's the right triage decision, what's the right prioritization decision as we were doing this pen test, how much of the scope was it covered, what areas weren't there. And so there's, there's a lot more that goes into this than just discovery. And I want to talk about them in pretty, pretty specific ways as we
+
+[00:14:23.25] - Justin Gardner
+can get into them. Yeah. Yeah. So as you respond to that, you know, a couple of things pop into my head, you know, Anonymous— you say that there is an anonymization component, so I'm wondering what post-anonymization, what that data is being used for. And two, you said, you know, that AI is being utilized to help determine whether, you know, what piece of scope and stuff like that is being covered. And, and so how is it doing that without access to the researchers' reports?
+
+[00:14:51.26] - Alex Rice
+The pri— you can view it in the Hacker Powered Security Report. That's the primary output of the anonymized dataset. Okay. Um, and the— sorry, the second part of your question is how is it
+
+[00:15:01.91] - Justin Gardner
+doing that without access to the, to the features? So I guess the, the first part— I'm sorry, I got a lot of, I got a lot of things I want to ask about, man, here. So I'll take it one at a time. So first, the— you said there is an anonymization component. Where is that anonymized data going? You said mostly the Hacker Powered Security Report. Is it completely the Hacker Powered Security Report, or is there some other— it's
+
+[00:15:22.63] - Alex Rice
+the Hacker Powered Security Report gives you an example of what that data looks like. So it's all anonymized and aggregated So it's things like powering the benchmark suite, the trend analysis, like what, how, what CVEs are being discovered most frequently. And these are all pre, pre-AI features that, um, so I wanted to give some examples of those of, of what, what, what's happening.
+
+[00:15:42.02] - Joseph Thacker
+So it's not, it's not going into an LLM to determine the, you know, what's it called? Like the, to determine like the types of bugs that are being submitted or anything like that. It's all basically ML models or like, or like tagging. Pre-LLMs that are, that already were being used to generate the security report for the year.
+
+[00:16:02.12] - Alex Rice
+Yeah, but sorry, I want to be precise here as we, as we talk about this. There's not LLMs involved in any of that piece of it today. Right. Okay.
+
+[00:16:10.40] - Justin Gardner
+Yeah. Okay. So that data, that data isn't being ingested by LLMs or being utilized to enhance LLMs or fine-tune LLMs, even, even in its anonymized state. Yeah, that's right. Okay, excellent. Well, that makes me feel a little better. Uh, yeah. Um, that, that is good. Um, I, and, and I will say just as a, as a hacker, I, I appreciate the Hacker Powered Security Report. Like I appreciate insight into what is happening in, uh, from the bug bounty, you know, industry in general and being able to see those trends, being able to utilize that to enhance my own methodology. You know, by looking at that material. So I don't know, I don't want to speak for the whole community here. And I know that I am a little bit less privacy conscious, conscious than most, you know, people are in our industry. But I think that that is not only helpful for the bug bounty community and helpful for you guys as a platform, but in, you know, specifically helpful to the hacker to be able to enhance their own methodology.
+
+[00:17:14.46] - Alex Rice
+Yeah. So I think if we like rewind and talk about a principle here for a second, the principle we're trying to not violate is the researcher's submission is the researcher's data. It is their property. It's in a strange situation because it's shared with both a customer and with us. And so there's two points where there's potential for other people to see your property and, and, and learn techniques and things, things from it. So I can provide really definitive statements on what we're doing with RAA that doesn't violate that principle and that, and
+
+[00:17:43.28] - Justin Gardner
+that, and that practice.
+
+[00:17:43.93] - Alex Rice
+And I also want to say why we try to be so transparent about this is we haven't made a major mistake there yet. There's a, there's a chance that we do, and we want to find out about it as soon as we do. So we want to know specific examples. Anytime somebody has seen a, um, well, I think I was using this technique and now someone has found out about it over here. How, how, how did that happen? We investigate those pretty regularly. We've had some insider incidents in the past that point to that, um, whether it's an insider or an AI model or a customer or any other way that it happens, um, we, we take those really seriously. We want to know about those, we want to investigate those, and we're, we're— we've taken a lot of safeguards to not do that with AI. And if we are doing that, like, if you find areas where you think that might have happened, let us know about it. We, we want to go investigate it, we want to go figure out how that happened, we want to get to source of truth on it. Um, I, I don't see how it'd be our AI models today, but it's like that accountability loop Driven by transparency is a key part of making this thing. What?
+
+[00:18:46.03] - Joseph Thacker
+Yeah, or go ahead. I was, I was just going to say, I think that like, um, the way you keep saying it's our property, like for some reason, like it doesn't ring true for me because I've always understood bug bounty as like I'm giving up my IP in order for it to be paid. Like basically I, I like, I basically, when I submit it, I'm kind of like agreeing to the company's terms to like not disclose this without their permission. And, um, so I don't know, I would just love a little more clarity around that because if, like, if that's not the case, that actually makes me feel like awesome, you know? Like, I feel like, yeah, whenever, whenever I— like, I've always assumed that in bug bounty it's actually not my intellectual property anymore, that's actually the company's and maybe HackerOne's. And so, like, if I want to keep— if I want to keep the rights to myself, I need to email it into
+
+[00:19:28.42] - Alex Rice
+security@ instead. Yeah, not, not, not the case. But let's get— let's, let's dive into this for a second. I'd encourage you to go back and refresh with I'm going to quote the actual terms here because I— we put a lot of time and energy into that. I think they actually work. But the Section 8 of the community terms, uh, you retain all intellectual property rights. You give HackerOne a pretty limited license solely for purposes of improving and providing our, our services. So that it prohibits a ton of stuff like us reselling
+
+[00:19:55.36] - Justin Gardner
+it, or, um,
+
+[00:19:55.76] - Alex Rice
+we can go through the, the restrictions on it. The customer has a slightly more permissive license for it. They're allowed to, um, do whatever is necessary to improve and secure their own attacks, their own attack surface. So that— you're right, like, it is your IP, but you are giving up a, a pretty unrestricted license to it to the customer. Less so to HackerOne. RSS put more restrictions on it. Um, but when it goes to the customer, that is where you're losing, and that's where like when we have really strong assurance about making sure none of this ever makes it out anywhere else, that is where these things do, uh, eventually tend to come out, is a customer's threat intel sharing feeds or, uh, their own remediation teams or their CVE advisories. Like, eventually this makes it into the common pool of knowledge which other hackers start picking up on, and hundreds are incentivized to try to delay that as, as long as we can, but it inevitably happens. If purely through reme— active remediation efforts. And that's where most of this is making it into the models, we, we, we, we suspect. And so there's a little bit of a time delay and a half-life on these where we view it as our responsibility not to violate that trust, not to accelerate it unnecessarily. But I think some of the anxiety that we're feeling is that that is accelerating. Like, that loop between new type of, of exploit has been identified and scanners AI scanners are now finding it effectively is, is a lot shorter than it
+
+[00:21:22.81] - Justin Gardner
+was in the days of Rapid7. Yeah, yeah, I think that is definitely a, a component of it. And I will say, as somebody who, I, you know, I had one of my zero days that I reported get yoinked and, uh, you know, used, and I went through HackerOne's, you know, process to address that, and we, we got to the root of it very quickly. And, uh, you know, that person was, uh, not a HackerOne employee, but they, they were reprimanded by their employer that was a HackerOne customer. Um, I was satisfied with that, with that process. And that is a risk, you know, that, that we have when we, when we submit. And I've, I've seen you guys personally, you know, take serious, you know, precautions to try to, to try to, um, address that. So that, that is certainly reassuring. I'm wondering if there's any way, like what way should we report these things to you that you say you would like to know about? Like if there's some way that our techniques have been leaked out or we feel like our techniques are being utilized by AI or something like that. What, what is the best way that we can get that back to you for investigation purposes?
+
+[00:22:27.85] - Alex Rice
+Yeah, great, great question. The easiest way, if there's a specific report you suspect is, is involved there, the, the mediation button is the, the
+
+[00:22:34.29] - Justin Gardner
+cleanest way to track it.
+
+[00:22:35.38] - Alex Rice
+For some reason you don't trust that, grab, grab your HSP, submit it into our bounty program, or, or, or reach out to one of us directly. If you think there's something really sus going on, hit our, our legal team directly at legal@ or privacy@.
+
+[00:22:48.10] - Justin Gardner
+Okay. All right. Yeah, I think it could be a valuable thing for you guys to set up some sort of, um, you know, specific email or something like that that we could, that we could email directly to, to sort of address these issues. That, that could be something that would increase hacker trust moving forward, just to have a way that we can express these concerns and get sort of one-on-one, uh, you know, answers to some of these more sensitive questions.
+
+[00:23:16.02] - Alex Rice
+Yeah, yeah, yeah, I, I'm— as you talk about it, I, I don't even know what to point you to other than report it. Yeah, so that's a brilliant call out. We'll, we'll action that right away.
+
+[00:23:26.54] - Joseph Thacker
+Okay, yeah, and that'd be great. And hackers don't use that as like a second mediation path. You use it for legitimate leaks.
+
+[00:23:33.15] - Justin Gardner
+This is why we can't have nice
+
+[00:23:37.19] - Alex Rice
+things. Yeah, like, yeah, but that's kind of our, our responsibility is like Whether it's a whistleblower complaint or, or, or something else, it's, it's on us to investigate
+
+[00:23:44.04] - Justin Gardner
+all, all of those. Yeah, we'll use the ML models, you know, to, to spam— figure out whether the, the report is spam. No, um, that's great. Um, well, thank you for, for that. And, and I guess I'm gonna press a little further here into this because there's not just the piece of like, you know, are you fine-tuning AI models here, but there's also the pen testing as a, as a service platform that you guys have just released. So, Some of the concerning quotes from the marketing material for that are as follows: Agents are trained and refined using proprietary exploit intelligence informed by years of testing real enterprise systems paired with robust verified community of elite pentesters. So when we read this, it kind of sounds like, oh, our proprietary exploit intelligence that we've been giving you all, you know, all these years is going into the training of these pentest— as-a-service platforms. Uh, so I guess the data for that, the data that has informed the prompt or the RAG or, you know, whatever you're using to, to make this, um, you know, agentic, uh, pentest-as-a-service platform, um, where is that coming from?
+
+[00:24:57.39] - Alex Rice
+Yeah, um, this, this is— this— let's, let's pick this, pick this apart into a few different topics here. So one, the marketing material that you just quoted out to your, um, Patrick called this out also. We went back and corrected that right away. So there's some new text on there that reflects a little bit more better. But separately from that, about 2 weeks before we published the marketing launch, we published a security architecture of the PTAS system that goes into really specific detail. And you'll notice we don't have the confusing training language in there. So let me jump to that question around how this works. Actually, before we do this, let me like just have us all context switch for a second on what is HackerOne's
+
+[00:25:34.89] - Justin Gardner
+PTAS because we're not— Yes, please.
+
+[00:25:36.54] - Alex Rice
+Really known for it. It's a meaningful portion of, of the business today. We launched it back in 2018. We got into the pen testing business.
+
+[00:25:42.54] - Justin Gardner
+Mm-hmm.
+
+[00:25:42.82] - Alex Rice
+And the, the reason we did it was one of the biggest things holding back more companies adopting bug bounty is assessing if they're ready for it or not. And we were running into this problem where we regularly would have companies coming and be like, we, we want a bounty program. We, we love it. We're, we're, we're so secure and we have all these things. We're like, well, let's assess your maturity, make sure you're ready for that. And one of the most common things we'd run into is We have a pen test. We've been doing this pen test for 5 years and we've never had a finding. Like, we are good to go. Like, let's go launch a bounty program. And we're like, see that?
+
+[00:26:18.05] - Justin Gardner
+Can we see that?
+
+[00:26:21.79] - Alex Rice
+Yeah. And so we really started doing pen tests through a defense-in-depth mindset of you've, you've really got to approach these things. You can't just decide bug bounty is going to be the first thing that I do to secure myself. If you've been doing a check-the-box $2,000 compliance pen test for the last 5 years, you're, you're not going to be ready for this. And we viewed it as a comprehensive customer offering as part of it. And our flavor of pen testing, very high-end.
+
+[00:26:49.61] - Justin Gardner
+They're, they're, they're not cheap.
+
+[00:26:50.22] - Alex Rice
+It's not meant to be the compliance. We tell people out the gate, like, look, if you're just trying to get compliance, there are many pen test vendors that will do that. Um, it's all community-powered. Sometimes they overlap with hunters.
+
+[00:26:59.74] - Justin Gardner
+Not always.
+
+[00:27:00.09] - Alex Rice
+Not every hunter is, is a pen tester. But it's about 200 pentesters from the community that do these pentests today. Okay, so that's the background, 2018 going into now.
+
+[00:27:10.58] - Justin Gardner
+I have heard of this. So this, this is where you guys are giving pentests out to, you know, the, the bug bounty community, and there's like a lead pentester and stuff like that, and they're performing the pentest. The lead pentester like puts it all into the report and works with the client and that sort of thing. Um, that's exactly right. Okay, so this is that, that component
+
+[00:27:29.10] - Joseph Thacker
+This is really interesting because— and I'll let both of you talk in just a second— but when I've heard PTAS mentioned in the last week, I think it's been in, in like the same vein as all this AI stuff. And it— because it ends in AAS, I think it was all— yeah, I, I thought it was some new offering that was all automated. I, I like— I've done a few pen tests through HackerOne. So does that, does that mean that like— am I just like actually confused? And when you all say PTAS, you actually just mean manual hackers from the crowd?
+
+[00:27:54.26] - Alex Rice
+I wouldn't use the term manual there, but yes, all our PTAS offering always has a human in it. Even our agentic test offering.
+
+[00:28:01.60] - Joseph Thacker
+Okay, yeah, so maybe, so maybe we're just differentiating between the Agentic PTAS and the other one. But I think Justin and I are mostly asking about the Agentic PTAS and
+
+[00:28:08.25] - Justin Gardner
+not
+
+[00:28:10.52] - Alex Rice
+just like— yeah, so let's go there now. Let's talk about pen testing in 2026. Um, none of our pen testers are not using AI agents today, right? Right. Like, it's just— we should talk more broadly. Anyone trying to do Bug motivation day, if you're not already ramping up on that, you kind of need to be. And our pen test community has been leaning in on this pretty, pretty, pretty early on. And there's components of it that should stay with the individual pen tester. They're really tailored to their toolkit in there. And there's components of a pen test that really need to happen at scale ahead of the pen test even starting for everybody engaged in the pen test and need to be interactive with the lead pen tester. Um, so that's what our Gentec-P tests look like. It's, it's meant to be operated by humans. We get into this like, is an agent fully autonomous? Does it need human? I'm not that far on the AI hype scale. The— all the AI we were deploying has a heavy human-in-the-loop component, and they're agents meant to be orchestrated by human experts. In this case, the lead pentester, or actually all the pentesters, but predominantly the
+
+[00:29:14.81] - Justin Gardner
+lead pentester in the pentest. So that— yeah, if I, if I could ask about that then, like, that makes sense. I think everybody should be doing it. Just like we said, we've said that on the pod a ton. Um, that can— that, you know, lead pentester that is utilizing this agent that you guys have built, you know, obviously they're, they're working hand in hand with the agent, right? The— this agent has it— has it seen— has it seen techniques from reports? Has it— where is it getting all this data this year's— I mean, what did it say? Like, um, years of testing real enterprise systems, intelligence formed by years of testing, uh, real enterprise systems. Like, where did that years of, of experience come from? Is that that 8— 2018 to, you know, 2026, uh, where you guys have been working with, you know, in the pentest as a service environment? Like, are those reports going to feed the AI, or is it bug bounty reports, or is it some separate dataset?
+
+[00:30:12.91] - Alex Rice
+Yeah, so none of the bug bounty reports, um, the datasets, and I, I should have sent you the script, but the, the 5 areas where it gets that intelligence from, the first one is public benchmarks. We try to pull all of those in to make sure that it passes.
+
+[00:30:25.02] - Justin Gardner
+Sure.
+
+[00:30:25.26] - Alex Rice
+The second one is we invested in building a bunch of internal benchmarks. Um, a lot of the pentesters helped and contributed to, to building those. Um, there are custom vulnerable apps that we, that we've created for, that try to replicate a pen test, pen testing environment. There's public CVEs and disclosures. This is the only area where there's potentially overlap with the, the bug bounty commission, 'cause a big percentage of CVEs today originate as bug bounty submissions. So there is some contamination that, that occurs through the, through that process. And the, the fifth one, which is where most of the real power comes from, is what we call sidecar runs. And these are done where, um, both the, um, pentester and the customer has opted in to run the two of them in, in parallel. Um, so we've been doing those more recently, and it really compares what, what does this look like in kind of an isolated environment, and what does it look like in, in this, in this trained environment.
+
+[00:31:19.98] - Justin Gardner
+Okay, so sidecar runs are, are, are what? The, the AI is watching what's happening on both sides of the spectrum? Is that like, like on the researcher side and on the customer side?
+
+[00:31:32.22] - Alex Rice
+That's right. And this is where I— it's, it's worth being persistent because if we were
+
+[00:31:37.57] - Joseph Thacker
+doing this to— in, in the, in
+
+[00:31:38.09] - Alex Rice
+the bug bounty space, it'd be really confusing. Yeah. Right. But the, the pen testing is a different engagement model, works differently. There's pretty clear consent and, and opt-in.
+
+[00:31:49.94] - Justin Gardner
+Mm-hmm.
+
+[00:31:50.14] - Alex Rice
+And the dynamic there is, is different, right? Like pen testers are a bit more of a, hourly grind, for lack of a— yeah, lack of a better term. And the efficiency you get from AI is, is huge. Yeah, like, and so there's a little bit less of this contention there. So we operate with the same principles, but that's, uh, it's a pretty different world than, than bug bounty hunting and bug bounties.
+
+[00:32:15.34] - Justin Gardner
+I totally agree. And I think that especially if both parties opt in, that's fine. I, I am wondering what that looks like though, just out of curiosity. Like, are, are you guys processing You like, do you have the pentesters like turn in their Kaido project or their project and like, you know, then you guys analyze off those HTTP requests or is it, you know, the questions that the researcher is asking the AI, you know, like how are you utilizing the data in these sidecar runs?
+
+[00:32:41.11] - Alex Rice
+It's, it's, it's all of the above for this. And I don't want to get into this because the team's iterating. This is one of the— and I know this is like— I mean, AI is how fast it moves, right? But let me just say one of the reasons why I say it's that is Something we think works really well in our pen test offering is that we try to bring as much diversity as we can. Actually, this is what works well in the bug bounty offering. So if you talk about like, is there going to be one AI agent that can do your pen test for you? Put me on the far end of skeptic for that. Like, I, I don't think that's the world we're getting to in the near future. It's, it's going like it's getting better. Um, but could you just like buy— okay, I've picked— I've done my enterprise RFP. I evaluated a bunch of AI pen testing stuff and I've picked the best AI pen tester. Like, am I good to go? Is that all I need? I, I don't think so. I think you're going to need a real diversity of agents running. I think you're still going to need bug bounty and community submissions running after that, even, even if bugs are getting more scarce. And like, I would love to see pen testing level up to the level where it actually, where it actually does that. Um, so when we are doing these, our pen testers have a lot of individual by design freedom to use different tools. And so that means when it gets into the— what is it actually? I, I forget the stats off the top of my head, but there is no single pen testing suite that's used by a majority of the, the pen testing groups that we have by, by design.
+
+[00:34:05.06] - Justin Gardner
+Yeah, that, that makes sense. And man, yeah, there's so many, there's so many pieces to this and components to this, but it does— I mean, at the end of the day excuse me, for me, it boils down to that, that piece of like, okay, bug bounty reports are not being utilized, anonymized bug bounty reports are not being utilized. What is being utilized is, you know, consenting pen testers and consenting clients for that data to be processed and used to enhance the, the agentic component.
+
+[00:34:34.51] - Alex Rice
+And the goal of that— pause for a second here, I didn't have to interrupt your question just to, um, I'll tell our marketing team to cover their ears for a second because they're, they're here. Most of the capabilities here are coming from Foundation Models.
+
+[00:34:48.86] - Justin Gardner
+Yes.
+
+[00:34:49.03] - Alex Rice
+Like, let's just all be— let's all be clear about this.
+
+[00:34:50.67] - Justin Gardner
+Yeah.
+
+[00:34:50.76] - Alex Rice
+A lot of the value you're providing is around this, like, last mile. How do you make that really usable to enterprises? And because I think that's where we're uniquely positioned to provide a lot of the value here. But when we look at pen testing, the bar is so low. We don't need an, an AI, like, up to date trained on the 10,000 best hackers in the world. Like, it's just not needed to have meaningful step change functions in the state of pen testing today.
+
+[00:35:14.48] - Justin Gardner
+It's just not. Yeah. And I think that's— I mean, Joseph, that's kind of like what you and I have talked about out of band as well, which is like we've done a lot of experience experimenting with like fine-tuned security-oriented models. And so far, you know, the, the frontier models, right, have, have taken the cake, uh, as far as performance by a large margin. So, you know, even, you know, and these are massive datasets they're training off of too, you know, um, to make these security, uh, models. So I think that general intelligence at this point is going to outweigh, uh, you know, fine-tuned models on— even if it was fine-tuned on research reports, right, which it's not, I think it would still outperform, uh, you know, the, the frontier models would outperform that, that fine-tuned model.
+
+[00:35:57.55] - Joseph Thacker
+Yeah, I wanted to mention that just to assuage the fears of bug hunters that are listening that do think like, oh, now if, if some, you know, model provider like were to acquire HackerOne or Bugcrowd, they'd be able to use that data to then make it like way better. And I'm just not convinced that's the case. Like, I actually think that so much of these models, uh, improvements comes from having just like large access to huge datasets and, and so much of the improvement that have been made to its ability to hack is actually just in its ability to code, right? Because coding and hacking do have like a lot of overlap. And so its ability to write little one-off scripts to test things, I think, has been what has been massively leveling up things like Cloud Code, for example. And that, um, if you— if they— if a company were to, like, if HackerOne were to fine-tune, uh, GPT-4, um, on like all of the reports in HackerOne, I actually don't think it would be that, that, that, um, much of an improvement, if, if any. So yeah. And so anyways, yeah. So you all probably aren't even going down that route, or if you— or if there are people internally at HackerOne that are like trying to push you to do that, Alex, this is like some good logic for like, should we really do that? Um, and, and one of the big issues with that is that like, what percent of all your submissions are high quality? You know, it's like a very low percentage, right? And ever— everyone knows that who's managed a program. And so if there was something down the road where you all did consider it, I think a much better model would be like, you know, pay the best bug hunters a certain amount per high quality report. Now you have a very refined, good data set that is actually, you know, worth training on or something like that.
+
+[00:37:29.26] - Justin Gardner
+But yeah, yeah, yeah, I agree. I think, I think some researchers would definitely— the more green hat researchers would definitely, you know, be cool with that, I think.
+
+[00:37:38.98] - Alex Rice
+So, um, yeah, it hasn't proven to be necessary yet. And if, if it were, I don't know if it'd be our place to do it.
+
+[00:37:46.59] - Justin Gardner
+Yeah. It, cause at the end of the day, researcher trust is paramount really. And, and that is an essential component of the model for HackerOne, right? It is. Is this trusted middleman, you know, that's going to work with you and, and, and, and advocate for you in scenarios where, you know, uh, you need that and, and vice versa for the, for the programs, right? Um, so I think, uh, maintaining that, that trust is paramount. I did want to, I did want to ask though, you know, we've, we've been around the block in the security world a little bit and, you know, as AI is getting more, more and more traction, um, it seems to be that private equity does want to come in and force the hands of some organizations to, to utilize that data for other purposes. And I'm wondering if you guys, as somebody who's on the C-suite of HackerOne, I'm wondering if you guys have had pressure on that front to address, you know, selling that data or using that data for
+
+[00:38:45.96] - Alex Rice
+AI purposes. No, we haven't. And I want to separate the two of those out because, well, we, we need to go clarify our terms to draw a distinction between the different types of AI that are out there, the, uh, selling the data is something that it would— is, is more clearly defined in, in there. Um, but also just from an overall company health perspective, we've been kind of fortunate. We were a little bit paranoid founders. We were pretty selective with our board early on. We've got VCs that have a very long, uh, time horizon. Um, and we've, we've tried to run the business really efficiently. There were a number of years we ran it free cash flow positive. And, and have tried to balance as much of that with the researcher— growth of the research community as possible. So we're not in a position— that's, I feel like that's kind of a state of right now. Isn't like this is something that should be on, on everybody's mind. It's like, uh, who can predict 5 years into the future on something? But I'll say very definitively right now, there's been no pressure to sell to another firm or, or, or operate it any differently.
+
+[00:39:46.73] - Justin Gardner
+Okay. All right. Well, I'm glad to hear that. I think that that is the right choice. So I hope, I hope that continues to be the case over the long term.
+
+[00:39:55.05] - Alex Rice
+There is this overall anxiety happening across everybody, like, not— but I'm kind of reminded of it. There's like a pretty viral blog post that went out. We can have a go of like, something big is happening. And as I've been sitting with that for the last week, something big is happening. And it's, it's like, everywhere, everything all at once. And it's, it's, uh, it's, it's kind of nuts but kind of exciting at the same time. And I do think we're in a period of pretty intense transformation. Like, the way this looked is, is changing pretty, pretty significantly. And the one message I wanted to be here is like, if you're still in a position where you're— this is not meant to assuage transparency or help— force us to be transparent, force accountability on us. That is, that is our responsibility. We are very committed to that. But at the same time, You cannot be afraid of AI right now if you are not using AI in your bug hunting. If you're not using your pen testing, you've got to lean in like go download vanilla Cloud Code or Shannon or Artemis or Strix. Like these tools are really powerful in the hands of a professional.
+
+[00:40:59.13] - Justin Gardner
+Yeah, yeah, I agree. Thanks. Thanks for that. And I, I, you know, on the flip side of this, I'll, I'll commend you guys and say really, like, please continue to value researcher trust and as paramount, because, you know, if that degrades, it becomes really hard from, from our side to continue, you know, giving bugs. And I appreciate you coming on here and protecting that with us and answering the hard questions and letting us badger you a little bit about it. I know I asked you like 3 or 4 times, is there any component of the, you know, is the template of the report being fed to AI? You know, but and I appreciate you, you know, taking the time to, to address those, those concerns. And if you guys continue to do that, you will continue to have a researcher base that is strong and producing good bones.
+
+[00:41:44.28] - Alex Rice
+Excuse me, about AI agents improving security, we are a long way away from not needing security researchers. I think it's going to be now more than ever, at least for the, the immediate future.
+
+[00:41:56.13] - Justin Gardner
+Yeah. Joseph, any closing thoughts?
+
+[00:41:57.84] - Joseph Thacker
+Yeah, I mean, I, I think that, um, in general, you know, it's like, like you said, the anxiety, at least in my opinion, I think that I was like less worried about it until, like you said, the last few weeks I've definitely felt like something is happening. And I think it's the fact that, you know, everyone I know is now using, you know, coding agents to basically level up their hacking in such a way where they're finding more vulnerabilities. I think that's just like on net perfect. Like, I think that's amazing for us societally. I also think that it goes to show the ease with which companies will be able to implement this on their side, which I do think will reduce the amount of exposed, um, insecure, you know, code that kind of touches us. But also, you know, I think that, you know, vibe coding is going to continue to, to crank out. And, you know, it's not even really vibe coding anymore because I think like people are using it internally seriously, right? So like saying vibe coding is almost the wrong word, but I think that people, you know, inside enterprises are rolling out way more code than they were able to before. And obviously that's going to have stuff that gets missed. But my, my, um, my impression is that I think, you know, there is going to be kind of like a land grab for those low— for the low-hanging fruit, you know, the bottom 20. Like, whereas before the low-hanging fruit was like bugs that you found via full automation, which was maybe like, let's say, 1% or 2% of bugs, I think there's going to be a little bit of a land grab for the bottom 50% now over the course of the next 9 months, right, or the next 6 months. I agree. Yeah. And so I do think that does worry me a little bit because at the end of that, it's like things are really secure, which is amazing for, for like the security of the human race. But also like it also kind of makes it kind of tough, right? As things like— I do think they will kind of dry up. And my hope and my, you know, recommendation to programs would be like, at that point, if you do start to receive far less bugs, offer more money for better bugs. Right. And then hopefully you keep us in the game a lot longer and then
+
+[00:43:47.86] - Justin Gardner
+you keep finding more. Yeah, actually, now that we're— now that you mentioned that, Joseph, I, I, well, I've got, I've got you on here, Alex. I did want to address one more thing. Like we also saw a decrease in bounties on HackerOne's bug bounty platform. You guys, uh, you know, decreased them pretty substantially. And, um, I, you know, I, I'm not sure if I, if you're the right, I mean, obviously you're the right rep in the organization to talk about what's happening with these products and where the data is going and stuff like that. I'm not sure how actively involved with you, you are with HackerOne's own bug bounty program. But do you have any insight into why that happened and why we're not, you know, keeping bounties at the same level or increasing them to try to send positive signals to the other programs, um, in the ecosystem?
+
+[00:44:35.19] - Alex Rice
+Yeah, so I, I— the security team rolls up into me, and so, um, um, that I am 100% the right person, and ultimately was the one who made the decision on that. Well, we've got kind of a tale of two eras here. Like, you're, you're very Uh, the, the AI thing is a really fun conversation. This is the one I probably deserve a little bit more of a roast on because we do need to be thoughtful. We need to get a ton of feedback from the community on this because this really is a feedback. So we're, we're constantly adjusting our, our structure of our bounty program. One of the things we adjusted, uh, this last quarter was we were previously targeting the top 1% benchmark for our program, which meant we were benchmarking ourselves against Google, Amazon, Meta,— have similar security ambitions, but very different security budgets.
+
+[00:45:19.51] - Justin Gardner
+Right.
+
+[00:45:19.84] - Alex Rice
+Um, and it broke a lot of stuff in how we were looking at our program. Like we were an ex— we're an extreme outlier on the platform and remain that. And the team's really trying to be more data-driven about why is that happening? What are the different levers here? And one of the levers they, they came to wanting to pull was we'd like to follow the advice we give our own customers and benchmark ourselves closer to our ambitions. So we've changed our benchmarking group from kind of the cloud hyperscalers to high-growth tech company. And that, that looks a little bit, a little bit different. Means we're right now targeting about the 80th percentile in bounty. So still pretty competitive bounties are still in the, in the top quartile, but it was a drop before. The most meaningful drop was in lows and mediums, which is something that we, um, have— has a question that's been on the team's mind for a while, as we have historically really incentivized the discovery of lows.. And as we're in a period of pretty intense transformation, our own technology stack, we've seen a little bit more attention go there than we wanted to. Um, and so we, we moved ourselves to the 8th percentile that impacted the, the lower tier of it the most.
+
+[00:46:19.38] - Justin Gardner
+Um, and then the other debate the
+
+[00:46:21.94] - Alex Rice
+team was having is, um, should we continue to have one critical definition across the entire platform or should we start splitting it up based on these things here? And the, the team landed on one simple definition for critical, which meant there's So having— at most programs, you'll see different definitions of critical across different assets. We've maintained one definition of critical across everything that we build right now. Um, that's the one thing I'd like the most feedback on, and we're gonna be paying the most attention to as we monitor this. But the team's looking at it really closely. Uh, if engagement does change, or it looks like our overall spend is, is dropping, we'll, we'll be adjusting it back up. But think of it a little bit as a data exercise and, um, It's, uh, I really regret that these things are happening at the same time. In hindsight, we should have, we should have pushed this out a little bit, a little bit further, but they truly
+
+[00:47:06.78] - Justin Gardner
+were disconnected from each other. It's okay. And I think, I think, you know, hindsight is 20/20. And as we, I think as we navigate these difficult business decisions, right? And they happen at the same time, you know, nobody's going to make the perfect calls. Um, as I listened to you, you say that. My response to that is that makes sense for a company that is running a bug bounty program. I don't think it makes sense as much for a company that is a bug bounty platform, you know, because not, not only are like, I, I, I like that you guys are holding to, you know, I understand the idea to hold yourself to the top, you know, quartile rather than, you know, the top 1% or whatever. And, but I also think you've got to understand that. What's happening here as far as the bounties, you know, sets trends for the rest of the organization and for the rest of the industry in general. So, you know, when we see that as researchers, I'm not super bummed out. I'm not like, you know, the, the HackerOne is not one of my main programs. You guys are, you guys are, are tight. Um, but you know, but when I look at that, I think, man, that's the signal that's being sent to the rest of the bug bounty bounty community, which is that bug bounty is in such a state right, right now that the, you know, hopefully the most invested player is decreasing their bounties.
+
+[00:48:27.36] - Alex Rice
+And that is, is scary. Yeah, it's really good feedback. I do think that the thing we had the most debate on, and that we're honestly still debating a bit, is should we have two bug tiers? So critical for us right now is any confidential information that gets exposed. And most of the criticals we paid out were not access to bug reports. So we have been debating a, like, do we need a tier? We, we wanted to keep the bar where critical was broader than just bug reports, but bug reports are at a next level of impact for us. Like, the reports that we get where, oh, I could get access to a vulnerability submission that wasn't mine, those are, those are really rare. We haven't had one in a while, and they're, they're much higher level. And so I do think the, the both the incentive we're going to drive in the program and, what we want to signal to the broader community. Had we gone with that kind of bifurcated critical definition, might have helped it. But really good feedback. And anyone else who has thoughts on this, please, please send it in. Sure, we post it. Folks that are engaged in our programs, just different examples. Like, the team's really engaged, really responsive feedback, and I, I want to make
+
+[00:49:25.75] - Justin Gardner
+sure we got the mark right on this one. Okay, yeah, I, I would, I would love to see a readjustment here, um, as a hacker, like, and, and either revert the changes or add some additional clarity to the policy page or your, your, or maybe even have like an exceptional tier, right? Like a, like a, you know, uh,
+
+[00:49:46.82] - Alex Rice
+you know, tier or a multiplier if you get access to a vulnerability submission that's not yours.
+
+[00:49:51.42] - Justin Gardner
+Yeah, yeah, yeah, yeah. I think that would be— I think
+
+[00:49:54.07] - Joseph Thacker
+that would be great. Yeah. I wonder if like the bulk of the funds that were leaking that put you all over budget on that would— were all from the lows and mediums, you know, and downgrading that would have mostly, you know, cleared up the, the, any budget issues or any alignment issues there.
+
+[00:50:10.15] - Alex Rice
+So it's more of a capacity and bandwidth issue than a, than a budget issue. Um, we don't expect the budget to change dramatically because we're spending quite a bit more in, in, in other areas and pre-production testing.
+
+[00:50:22.51] - Justin Gardner
+So it's, um, but yeah, really, really good, good point. I, I, and also I'm looking at this and I, and I'm seeing, you know, lows going from 100 You know, to 1,000 down to 100 to 200 and mediums going— that was the biggest change. Yeah. Well, I, I disagree. I think that the, I think that seeing lows go from, you know, 100, 100 to 1,000 to 100 to 200, right. And then in mediums going from 2,500 to 1,500, I'm much less worried about, but seeing highs go from 12, 12,500 to 7K and crits go from 25 K to 15 says, hey, even our, our, you know, bigger vulnerabilities, we're paying less for— like, everybody understands, hey, you know, look, we've got this HTML injection, we ought to clean it up, we got to give them a bounty. It's— here's a couple hundred bucks. No, no serious bug hunter is, is going to bitch about that, right? But like, if we give you a good report, that's a high, you know, and, and we just lost $5,000 off the top of that or $10,000 off the top.
+
+[00:51:27.21] - Alex Rice
+Like, that, that stings. Does that make sense? It does, it does. And I think it, it adds more weight to the earlier suggestion of we need multipliers for the, the categories of
+
+[00:51:38.17] - Joseph Thacker
+bugs that impact vulnerability submissions, right? Because sometimes the CVSS high isn't the
+
+[00:51:41.53] - Justin Gardner
+same as a CVSS high, right? Yeah, yeah, yeah. Okay, all right, well, thanks for listening to that, Alex. I appreciate that. And, and I would love to see some, some changes on, on that table if possible. And, and if you do have the ability to put out that tip line, you know, as we suggested for, um, abuse of hacker reports, either whether they're getting fed into AI or that they are, um, you know, being taken by triagers or, or members of the programs, uh, or whatever. I think that would be a great thing for the community. Um, so thank you for listening to
+
+[00:52:15.65] - Alex Rice
+our feedback on this. I'm gonna get the, the instructions for the, the tip line out there. Um, as the team consider an exceptional tier, and please keep keep holding us accountable in this way. This is, uh, it, it's essential to
+
+[00:52:27.17] - Justin Gardner
+have these types of conversations.
+
+[00:52:28.13] - Alex Rice
+Of course, Alex. Thanks so
+
+[00:52:31.76] - Justin Gardner
+much, man. Cool. Take care, guys. All right. That's a wrap on the interview. I'm really glad Alex came on and discussed some of that stuff with us. Um, if you guys are still a little worried about this, that makes sense. Drop any concerns you guys have in the Discord and we'll kind of discuss further. And yeah, if we need to get any more clarifying factors, uh, from HackerOne, um, definitely sounds like they're going to put together that tip line or whatever to get more questions and concerns from researchers heard. Uh, which I think is a step forward. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more critical thinking content, uh, or if you wanna support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild. If you're, uh, a full-time hunter, it's a great time.
+
+[00:53:19.69] - Alex Rice
+Trust me.
+
+[00:53:20.09] - Justin Gardner
+All right, I'll see you there.

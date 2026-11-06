@@ -1,0 +1,717 @@
+Episode 174: Saving Bug Bounty Programs + AMPScript, tessl & GPT-5.5
+Source: https://www.criticalthinkingpodcast.io/episode-174-saving-bug-bounty-programs-ampscript-tessl-gpt-55/
+======================================================================
+
+Justin Gardner
+And it's so readable with camelCase.
+
+Joseph Thacker
+No, it's way more readable with underscores. You're so used to reading with spaces.
+
+Justin Gardner
+But, but it's—
+
+Joseph Thacker
+I'm a Python bro and we got to name all of our functions with underscores.
+
+Justin Gardner
+Don't freaking tell me you're a Python bro! I am a Python bro!
+
+Justin Gardner
+All right, guys, you know the drill. This is the segment of the show where we typically do an ad, but today we got something different for you and it's an exciting announcement that we are launching the Critical Thinking Pentest Group. Okay. We have an amazingly talented group of hackers that live in the CTBP Discord and in the community. That we're so grateful to be able to work with. And we have a specific particular niche of that called the Full-Time Hunters Guild. These are people that are validated to have performed at very high level in bug bounty. And we are going to be performing pen tests for you, the listener, if you guys have scope that you want to be tested ourselves, meaning me, Rezo, Gretmie, other members of the CTBB team, and pulling highly qualified members that are aligned with your scope specifically from the Full-Time Hunters Guild to also do, uh, penetration testing as required. Um, so we're going to make sure with all the hackers that we have access to that the hackers that are working on your scope are extremely qualified in exactly what you would like to have tested, right? Because we're pulling from a big group of people. Um, so if you're interested in that and you think your organization could benefit from that, check out pentest.ctpb.show. It's going to be a lot of fun. We're going to tear stuff up. It's going to be amazing. Um, so Yeah, drop us a line if you're interested. Um, and then the second piece here is, of course, I want to remind you, we do have the Full-Time Hunters Guild available. So if you are a hunter that is out there and is killing it and wants to be among other high-performing hunters, this is the place to do it. Okay? ctvb.show/fthg for Full-Time Hunters Guild. Go ahead and apply if you meet the criteria. Um, and you'll get access to not only a high-caliber community, but also opportunities like the pentest opportunities that we have coming through Critical Thinking. So lots of exciting stuff going on. Excited to work with you guys if you think you could benefit from some pentests or if you want to join the full-time Hunter's Guild community. All right. I'll see you there. Peace. Sup, hackers? Got the This Week in Bug Bounty segment for you before we hop into the episode. The first item on the list today is an article by Yes We Hack entitled Cost, AI Frontier Models and More: A Measure Take on the Future of Security Testing. And as we've been talking a ton on the pod recently about you know, what is the future of bug bounty? What is the future of continuous security testing as we know it? There are a lot of takes and there are a lot of different opinions floating around. So I think it's really important to get a bunch of different perspectives. So I'd recommend you go ahead and read this article and get a little bit more data in. And we've also got another article from Intigriti that we'll link in the description as well called Common AI misconceptions debugged. Okay. And this is also sort of talking about the way that AI is affecting the industry. So two really good articles, one from YesWeHack, one from Intigriti on it. A quick takeaway that I had from the Intigriti one was this right here, which is validity ratios remain constant even though the volume has been increased dramatically across bug bounty at this point, right? From 2022 to 2025 submissions grew 328%. Um, and we're going to see that, I'm sure, even more this year, um, with, with, uh, AI becoming more prolific. So, um, but that does mean a lot of more valid reports too. So we're just getting a lot of volume. Um, and we got to figure out how to, how to sort it out. Um, so those are some articles for you to take a look at. Uh, last but not least, we have a BountySync+Social event, uh, that is being held by Intigriti in the UK in London. That's Thursday, May 21st. We're going to link that down below, but that seems like a good opportunity to connect with people in the London area in the, in the bug bounty world. So if you're in the UK, definitely check this out. If you're near London and can make it over for this event Thursday, May 21st in London. All right. I think that's it for the TWiB. Let's go to the show. Dude, so I step away for one week and you put out a Doomer episode, bro.
+
+Joseph Thacker
+Listen, I did— what? I did an awesome ad read. I made a custom thumbnail. I carried a good episode.
+
+Justin Gardner
+Thank you. Thank you, Jonathan. I appreciate it.
+
+Joseph Thacker
+You're right though. It was a little bit of a doomer episode.
+
+Justin Gardner
+It was a little bit of a doomer episode, man. Um, and I feel you. I feel you. It is concerning. I'm not gonna lie. The, the landscape is concerning right now.
+
+Joseph Thacker
+Hey, I know you probably want to jump to other stuff, but it's on the— I'm actually going to do it right now. I'm going to share my screen here.
+
+Justin Gardner
+All right.
+
+Joseph Thacker
+I made a— because we're talking about the last episode. I made an image to represent what I was talking about.
+
+Justin Gardner
+Oh my gosh, dude. What is this?
+
+Joseph Thacker
+I really think that this—
+
+Justin Gardner
+The funnel why bug bounty is dying? What the heck, bro? This is a bug bounty podcast.
+
+Joseph Thacker
+Yeah, I know. But anyways, listen, the point is this is what people need to be concerned about and it's what they need to push against. This is why they need to adapt and evolve and go deeper and incorporate AI into their hacking. But yeah, I feel like that. I kind of explained it well, but the point I was trying to get across was this basically, right? Is that AI-written code is probably going to get better. There's going to be AI code review, internal hackbot testing filters more. And then when you get down here, you got to compete with the sharks, with the likes of me and—
+
+Justin Gardner
+the Rezo shark.
+
+Joseph Thacker
+Yeah, exactly.
+
+Justin Gardner
+So yeah, anyways, the superpowered shark, the shark on steroids.
+
+Joseph Thacker
+That's right.
+
+Justin Gardner
+Because we're using Claude as well, right? So Yeah, no, I do agree with you, but on the flip side of that, you know, they have— we also have non-software engineers pushing code to production because you can just will an app into existence now. And Lord knows that, you know, the DevOps people or, you know, whatever are going to also have some problems with how these things are pushed to prod. So, um, yeah, I think, I think there will be plenty of stuff to go around, at least for the next 5 years, but it's definitely going to be It's definitely moving faster than I anticipated before.
+
+Joseph Thacker
+So, right. Yeah. And like you said, there's so much counter pressure. It's like there's, there's like pressure to get out code way faster. There's way more code going out the door. There's non-technical people writing so much code that there's no way the technical code people can actually review it. And so, yeah.
+
+Justin Gardner
+Yeah. And I think we just don't understand the code at a depthful level as much anymore. Right. Like I, I don't even know. I wrote an app yesterday and the day before, um, and which I'll talk about eventually on the pod. But I wrote it. I have no idea what API functions are in this thing.
+
+Joseph Thacker
+Right.
+
+Justin Gardner
+Not, not even a single clue. I've never even looked at the code. I literally just talked to Claude and it's beautiful and it works exactly how I want it to work and it's nuanced and it's lovely, but I have no idea how it works. You know?
+
+Joseph Thacker
+So yeah, that's scary. And that's why you need some bug hunters to test that out for you, Justin.
+
+Justin Gardner
+Yeah, seriously. Seriously. Um, okay. Um, so, okay. Before we jump into the actual, um, meat for this episode, I got a little confession, man, because I've gone on the pod and I've flexed and I've said, yeah, boy is above burnout is essentially what I've said last time on the pod. Like burnout, that's for those newer full-time hunters, right? You know, got a little burned out, man. I got burned out.
+
+Joseph Thacker
+It only took 3 back-to-back events. That's all it took.
+
+Justin Gardner
+3 back-to-back events overlapping. And I don't know, man. Freaking Matthias Karlsson, man. He goes hard. That fricker goes hard when he's in a live hacking event, you know?
+
+Joseph Thacker
+And so you felt the need to keep up?
+
+Justin Gardner
+I felt the need to keep up, you know? And, and so I started putting in these crazy hours. I got kids. He doesn't have kids. Screw you, Matthias, for not having kids. And, and so it's like, you know, I just can't, can't get the same volume of hours while still being a present parent, you know, that I used to be able to. So I was like sacrificing the sleep and then Korea hits and I get all these crazy bugs and I'm jet-lagged as frick. And then I come back and I'm like, okay, you know, such an awesome time. And then why am I not wanting to create content? Why am I not wanting to hack? Why do I just want to lay here?
+
+Joseph Thacker
+You know, dude, it's real.
+
+Justin Gardner
+I don't know, man.
+
+Joseph Thacker
+And I think it's not just burnout. Like it's also probably the fact that you're, you're doing incredible this year on top of that. You don't have some like ridiculously large financial need. Pushing you to go find those bugs because you're also doing well. So it's kind of like on both ends.
+
+Justin Gardner
+It is. It is a little bit on both. But I feel like, you know, I feel like I've had so much fun hacking these past like couple of weeks and then all of a sudden, boom, like, why is the passion not there? You know? And then, and then, you know, just needed a little time. It just needed a little time to come back and it's back.
+
+Joseph Thacker
+It's back.
+
+Justin Gardner
+Nice.
+
+Joseph Thacker
+Good.
+
+Justin Gardner
+All right. I got a bunch of stuff. You got a bunch of stuff. You want to go first or should I?
+
+Joseph Thacker
+I feel like, yeah, I already went first with that image, so you got to go now.
+
+Justin Gardner
+Oh, okay. All right. I'm up next.
+
+Joseph Thacker
+You saw this one. You stole this one from me, by the way. It was going to be on my list. And then I get in here and it's already here and I'm like, oh, come on.
+
+Justin Gardner
+All right, well, I'm going to explain some really crazy shit on this. So, you know, if you want to add to it, you can. But I'm, I'm going deep in the crypto bin here.
+
+Joseph Thacker
+So I'm going to talk about the AMP scripts, though.
+
+Justin Gardner
+Okay. Well, here, why don't you start us off with AMP script and then I'll go talk about the the crypto stuff.
+
+Joseph Thacker
+Yeah, sure. So basically, yeah, sure.
+
+Justin Gardner
+Mm-hmm.
+
+Joseph Thacker
+AMPscript is a custom language, basically. It's like—
+
+Justin Gardner
+so first, let's, let's— this is Searchlight Cyber's write-up on the Ghost of Encryption Pass, How We Read All Your Emails in Salesforce Marketing Cloud. So this is a story of how they pwned Salesforce Marketing Cloud through AMPscript, some crypto stuff, all that all together, right?
+
+Joseph Thacker
+Yep.
+
+Justin Gardner
+Okay.
+
+Joseph Thacker
+All right.
+
+Justin Gardner
+Go, go with the AMPscript.
+
+Joseph Thacker
+Uh, I, I've not like, since this was on yours, I didn't end up prepping it, but no, no, no, no. I'm still going to talk about this because I think it's really cool. So one, basically AMPscript is like server-side templating language. That's, that's mostly what you need to know that is specific to SFDC, um, Salesforce and specifically to their marketing cloud. And, uh, I mentioned a vulnerability, oh man, like maybe a year ago that me, Evan Conley, and Chubbs found, which used one of the things in this blog post. So if you scroll down to under footgun number 1, treat as content. So there's this really cool treat as content, which basically means, hey, evaluate this. And then you can also do HTTP GET. So we hosted more AMPscript on Chubbs' server, and then input for our 50-character payload, treat as content. Http GET his URL. So then it would basically pull his— it would pull more AMPscript from his server and put it inside of that treat-as-content. So if you're ever limited in an AMPscript injection insertion point, you can use that back to back.
+
+Justin Gardner
+Nice. Okay. So you kind of incurred a double evaluation scenario. Exactly.
+
+Joseph Thacker
+That's exactly right.
+
+Justin Gardner
+You had to come up with injection. Yes. And then you needed to get get, you know, more character space.
+
+Joseph Thacker
+Yes.
+
+Justin Gardner
+And so you hit an HTTP GET and then took the output of that, dumped it into treat-as-content, and invoked another template injection.
+
+Joseph Thacker
+That's exactly right.
+
+Justin Gardner
+That's sick, dude.
+
+Joseph Thacker
+Yeah, that's why I tweeted about it, because it was so cool. I should have broken it down like in a whole bunch of tweets, but actually let me see if I can share it. I can.
+
+Justin Gardner
+You can track it down. Essentially the full flow here, just to give the listeners, you know, knowledge about the article. Is this is how they pwned Salesforce Marketing Cloud. They found a template injection in the subject line of emails because of double evaluation, and it's using this weird AMP script method of templates, which is or the lesser known version, which is curly bracket curly bracket equals, and that triggers the AMP script. So make sure we're adding these to our template injection payloads, right? And then using this template injection, they're able to do some crazy crypto stuff, which I'll explain later. You know, and it's a tangential part of the scope, but it does come back to the template injection. And yeah, really get access to a bunch of the data in the system. That's the full flow of this. And what I want to talk to you guys about in just a sec is this crypto attack that they did. Later on in the article.
+
+Joseph Thacker
+Um, yeah, I'll show it super quick and then I'll switch back to you. So it's funny because like obviously Marketing Cloud is all about marketing, so it's not in the title, but this was in the first name. And, uh, and so the funniest thing was basically getting an email with the exfiltration of all of the users in the database as, as your name. So it's like, hi Justin and Douglas and Joseph and everybody, you know, it's like, it's like the email is like, like 100 pages long in your Gmail and it's just a huge data leak. But anyways, yeah, it was the first name field And then we put the extra AMPscript stuff living on Shubda's server here, and then it worked like this. So anyways, I thought people would think that was cool.
+
+Justin Gardner
+Yeah. Dude,.gg is such a good domain.
+
+Joseph Thacker
+It is. It's cool.
+
+Justin Gardner
+Man, I have a good one though. I have a good one. I'm not going to say it out loud, but I'm pretty proud of the one that I have. Actually, I'll tell you, Richard, just bleep it. I've got . Yeah, yeah, yeah. That's pretty freaking great, right?
+
+Joseph Thacker
+That's very cool. Yeah.
+
+Justin Gardner
+Yeah. Um, okay. Um, so let's get back into this. So, uh, first, you know, the, the, they get a template injection, um, via double evaluation in the subjects or titles of emails. Um, and then they're essentially what they're trying to do is get, um, they realize that these emails are also, you know, available at a domain. right? And so they look at, you know, they click on the like view in browser button or whatever. And they look at the, the, um, resulting URL that comes from that. And it has this, you know, QS parameter that seems to control where, you know, what email is displayed. So it's got some encrypted values, right? And they enumerated a bunch of these and they found out that there's 3 primary formats for this. One of them is a JWT that looks pretty solid. The next one is a hex. And then finally, one they find later is just raw parameters. They didn't find that till later, I guess, though. And my first point that I wanted to mention here was like, this is a really, you know, you're sniffing for blood, your spidey senses should be tingling here when you see this implementation change. Because probably somebody found something. And they, you know, sort of fixed it. But they didn't backdate it, right? And a lot of times the pipes that glue all of these things together are the same. So if they're leaving the old, you know, format in place, then you might be able to exploit that even with the newer format being present. So very interesting.
+
+Joseph Thacker
+And the way this often looks, because I've been a developer before, I feel like a lot of times whenever you need to support multiple formats, you'll say like, if it's encoded, decode it. Else treat it as it is. And so honestly, I think, I thought what you were going to say as you approach that, that, um, that lesson there, I think the lesson is often you should try other formats in parameters, like just across bug bounty in general, across AppSec testing. You know, it's kind of the same thing behind like, oh, if a JSON POST request works, you should try URL form encoded, right? It's like the same thing. It's like if you see, and I actually don't do this very often, but I'm going to start now, if you see a Base64 encoded payload, try decoding it and then still sending it. Sometimes it still works, and then that might let you do something funky in the app, right?
+
+Justin Gardner
+Yeah, or, you know, an encrypted version. One of the things I've seen many times is, you know, after a little while the company realizes they screwed up and switches to this encrypted ID format, right? And then, but they're old, backwards compatible. Yeah, they have to be, you know, backward compatible at least a little bit, even if it's just for that like minute when they're doing the migration and they forget to never take it away. And, uh, and, you know, you can still just put the unencrypted version of the ID into that field. Um, I've seen that many times. Um, but anyway, going back to the, this whole situation here, they do a little osint on this parameter. They find out what the hex, you know, encrypted hex values, what it decodes to. Okay. Uh, they find that from a Stack Exchange reference article, which is just lovely. And the days of that unfortunately are, are few because, like, they've got, you know, Stack Exchange, the number of questions and answers has just, like, tanked because of AI. But anyway, this is the, you know, the format that they have. And knowing that, they start sort of doing some bit flipping on the QS parameter, which is what I've said on the pod many times. Is like, don't shy away from these crypto bugs. People implement stuff poorly all the time.
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+And an unauthenticated CBC algorithm, guys, you do bit flipping. And as long as it doesn't cause, like, just flip a couple things here and there, and sometimes you'll see it actually passes through. And then the result of the decrypted, you know, piece, which is in the response, will just look corrupted like this right here. Um, for those of you on YouTube, right? It'll just look like a, you know, question mark or, you know, a different character or something like that, right? And that means that they're using an unauthenticated CBC, you know, algorithm. Okay. And so anyway, takeaway there, do bit flipping when you see encrypted stuff. Okay. Cause you found, I found a lot of padding oracles and I found a lot of bugs just from doing that. Okay. Um, the really crazy thing about this exploit that I didn't, I did not know, and this could just be me not knowing, you you know, about this exploit, or it could be that they came up with this, is that they figured out a way to get the IV for this CBC by doing this really cool technique. Okay. And I'm not going to lie. Typically nowadays I just read something, you know, in the articles and I have no problem coming on the pod and talking about it. Yeah, I did rehearse the segment.
+
+Joseph Thacker
+Nice.
+
+Justin Gardner
+Because it is, it is hard to talk about like crypto stuff. In the audio medium and without a visual representation, right?
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+I'm going to do my best. I'm not sure how it's going to go.
+
+Joseph Thacker
+I'm going to close my eyes and test you. I'm not going to read the article or like, I'm just going to close my eyes and listen to just your audio.
+
+Justin Gardner
+Well, okay, that's great. And I would also recommend for anybody that wants to understand this better, take this whole article and put it into Gemini and then just ask it questions until you understand. Okay. Because that's what I did before to refresh my memory on this. And it's lovely. So what they actually did here, the way CBC works is that there's an IV, initialization vector, that gets used with CBC. And that is what is XORed with the ciphertext of the first block. And so, and that produces, you know, the output. So what they did here in order to get that IV so that they could decrypt the rest of it, So I want you guys to think of it like this. The decryption algorithm is, you know, a function D, and inside of that is ciphertext block 1, right? And then the output of that function gets XORed with the IV. Okay? So D of the ciphertext 1 XORed with IV. Okay? So what they did was they padded out the first part of their ciphertext with 8 null bytes. Bytes. Okay. So that C, that C1, which would be the first block that gets passed into the decryption algorithm, it becomes all null bytes. Okay. And so the, when it gets passed into the decryption algorithm, the output of that is just going to be junk. And that gets, um, that is a predictable junk. No, it's just junk.
+
+Joseph Thacker
+Okay.
+
+Justin Gardner
+And that gets XORed with the IV. Okay. So now your junk that comes from the null bytes tanks the IV for you, right? And then the way that the second block is, you know, built out is it takes the second block, which was our original first block, and it passes that through the decryption function and it XORs it with the, ciphertext of the first block, which is that 8 null bytes.
+
+Joseph Thacker
+Ah, which is null. Yeah, which is all null.
+
+Justin Gardner
+Right, which you control, right? So then the result of that is now you have the raw decrypted, you know, of that old first block. Okay? So now you've got the old, the raw output of the decode from the first block, and you've got the IV encrypted version from the first block. Which is the normal, you know, output.
+
+Joseph Thacker
+So you can get the IV out.
+
+Justin Gardner
+So then you, you do this with over a bunch of different valid IDs and you know a little bit about the plaintext from the Stack Overflow article, right? And you brute force each bit of the IV until it matches the pattern. The output matches the pattern that you know that the actual plaintext has.
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+Okay. And then over the course of a bunch of IDs, you are able to narrow down and extract the IV. And then using that IV, you can decrypt the first block originally and get the raw text out. That's awesome. So it is awesome what they did here. I think that came across decently. I don't know, maybe you can tell me.
+
+Joseph Thacker
+No, no, no, no. I think it came across fine. The question is, were they smart enough to know that or did they just use AI to do that?
+
+Justin Gardner
+I don't know, man. You know, they're also using Padre, which is a, a, you know, system for doing these padding oracle/CBC-related attacks. So that's cool. And also shout out to Padre. I've used it a couple times. Really useful. Very extensible. Love that about it. And the other key thing that I want you guys to take away here, one, that 8-byte null-byte trick is amazing. Two is that definitely, you know, make sure you're using Padre for these sort of things. And you, 3, you need to make sure you know, um, the format of the, you know, something about the plaintext version of the value you're supposed to be extracting, right? Because that allows you to sanity check your IV checks. Um, so anyway, that's my rant. It's a lot of fun getting, you know, I'm not an overly mathematical dude. Like I don't love math or crypto or anything like that. I do love crypto, but like, I don't love the— whenever I look at those functions with the squiggly scripts and like, you know, all of that stuff, I get overwhelmed and I don't like that. But, you know, actually working on these specific exploits and finding these bugs is some of the most gratifying experiences I've had as a hacker, dude. I freaking love it.
+
+Joseph Thacker
+Well, and I think now it's more accessible than ever before because like, totally with, with LLMs, like you can basically reason through the, the, the part that you can't comprehend. So like, you can basically explain, you can like re-explain how you understand it up to the point at which you don't understand it. And then the LLM can basically be like, oh, here's the part you're missing.
+
+Justin Gardner
+Right.
+
+Joseph Thacker
+So yeah.
+
+Justin Gardner
+Yeah, totally. Um, so anyway, that's my—
+
+Joseph Thacker
+to wrap this up, what'd they do with that?
+
+Justin Gardner
+That's my, that's my rant. Um, once they, you know, crack that and are able to, they also find an encryption oracle. Um, and then they're able to use that to craft these arbitrary, um, you know, values that are inside of this encrypted text and extract all emails and all email contents from every single person in all of Salesforce Marketing Cloud because, uh, they use the same, um, key across everything. So, um, and they asked that that key be not, uh, in the blog post, put in the article. And I'm like, oh geez, that means that shit is still active. Um, So I don't know, man. It's, it's tricky. It's tricky. Yeah.
+
+Joseph Thacker
+Let's not go down the disclosure pipeline.
+
+Justin Gardner
+Yeah. I've said, I've said my piece there. Um, yeah, definitely look for, but last thing that I wanted to add was definitely look for all sorts of variants of crypto stuff. Right. Look for the JWT version. If there's a hex version, if there's an unencrypted version you want to use Waymo or GAL or whatever. To get all of those old versions of the URLs and audit those old implementations as well.
+
+Joseph Thacker
+Sweet. I am going to talk about skills, which is kind of funny considering that we did the whole episode on it, which actually, by the way, I do want to take a quick second here. I've gotten ridiculous amounts of positive feedback about that. Like, I've talked to so many people who told me that they just have been like shilling it to everyone they know. And then I just got off a call with Ethiac because, you know, I'm an advisor with them. And Andre told me for this event, he wanted to like kind of compare, you know, their hackbot with, with like just using like Cloud Code, but he had never like set up Cloud Code before. And he said he, the only resource he used was he listened to our episode and then that's it. He just used that to build out skills and to set it up. And then he used that and he found 17 bugs and he was like, I know for a fact I wouldn't have found over half of them without Cloud Code. So pretty sweet, right?
+
+Justin Gardner
+Yeah, man. In the last live hacking event that we were in too, Literally all of the show and tells had a shout out to Claude Code in them. I'm like, oh my gosh, this is nuts.
+
+Joseph Thacker
+It's changing everything. Yeah. And so he said, he said specifically that it also found a zero-day in a Java image processing library. So you should reach out to him because it's pretty cool.
+
+Justin Gardner
+Holy crap.
+
+Joseph Thacker
+So I want to talk about and I can share my screen super quickly here. A skill optimizer. It is released, released by TESL. TESL, T-E-S-S-L, is a pretty neat company. They do like spec as code stuff. But they have an entire, um, skill marketplace, or it's called a registry, um, kind of like skills.sh. But, um, what they do is they automatically evaluate those skills and then rank them the highest. So it's kind of a cool skill registry. Anyways, I'm not trying to shill that registry. I just love this skill. They sent out an email about this Skill Optimizer skill. Um, it's a little bit meta to talk about this, but basically just point your agent at this at this link that we'll put in the show notes. It's called Tessel Skill Optimizer. And what it does is it sets up a whole bunch of evaluations for your coding agent to see how likely it is to be invoked, and then attempts to improve that through optimizing the description, through optimizing the content, through optimizing the name of it. And bro, blew my mind. In mine and JD's Hackbot, like over half of them went from like 10% invocation rate to 85% invocation rate.
+
+Justin Gardner
+And it's because— Is that what we want though?
+
+Joseph Thacker
+Well, I'm saying like across the evals, like, so this is like the Tesla Skill Optimizer attempting to like write prompts that, that where it should invoke and then testing it. It's not invoking across 85% of our runs. I'm saying that like the quality of when it should be invoked based on what the user wants went from 10% to 85%.
+
+Justin Gardner
+How do you tell it when? It should be invoked.
+
+Joseph Thacker
+What do you mean?
+
+Justin Gardner
+Like, like, like, like, so because I am trusting this skill optimizer to know, because your description already has when it should be invoked, right?
+
+Joseph Thacker
+Like you already have that in your skill in the description.
+
+Justin Gardner
+Okay. So it's looking at my description. It's saying here are a bunch of test cases, which align with that description. Yes. And then it's saying, does it match the description that I just generated all these evals from?
+
+Joseph Thacker
+No, then it's firing those. It's firing all of those tests it just wrote based on what— when you want to invoke it and then seeing how many it invokes on and seeing how many invokes on, right? And so then it came out to like 10 or 15% for a bunch of my skills.
+
+Justin Gardner
+Wow. Okay.
+
+Joseph Thacker
+And so then, then it attempts to fix it and then it reruns them.
+
+Justin Gardner
+Interesting. Yeah, interesting.
+
+Joseph Thacker
+Anyways, my whole point of this is the, the main point, which is, which is like, uh, really the, the the low-hanging fruit that I think everyone in the audience should check is their description front matter field. So as skills in Markdown, there's a thing called front matter at the top, right? It's like the title, the description, like references or author or something, right? The description field, at least in Claude Code, and I think also in Codex, is what gets passed to the agent, assuming that your, you know, your main prompt isn't so long that it gets truncated. Anyways, the description field there is what actually gets sent to the agent. So that's all it has. It has the title and the description to decide when to invoke, right? That description field in Markdown is not, uh, multi-line. And so if you have description colon and then new line and then you have some descriptions, or you have description colon the first line and then you go down to new lines, all of those extra lines are not getting picked up. Because Markdown does not do multiline by default. You have to. And so this is what it fixed on a ton of ours. So, so here's what you want. Here's what everyone wants. You want— you want the description colon and then greater than dash. After that, it'll, it'll pick up every single line. It'll massively impact— include it. So let me actually— I'm just going to do a new doc and show you what I'm talking about just super quick for anyone watching online.
+
+Justin Gardner
+Yeah, dude, that's crazy though, because that means like half of your description you know, everything but the first line of your description might not be making it into Claude, right? Which means it may not be triggering these whenever you, you need them to be.
+
+Joseph Thacker
+Right, right. Exactly. So let's say you have a— I have a skill called Rezo skill, right? And the description here is like this. You know, normally I would say like, I want you to invoke when you see a 403, right? The only thing that was going to the agent was this.
+
+Justin Gardner
+Oh my gosh.
+
+Joseph Thacker
+And I think in a bunch of mine, I had something like this. And I thought that this— and for the listeners, basically I had something that was like description colon just greater than. And I think this does work in some markdown formats, but this does not work for the way Clogcode works. So you want it to be like this: description colon greater than dash. Yep. That's exactly what you want.
+
+Justin Gardner
+And that will be your format.
+
+Joseph Thacker
+It's a really weird format. I've never seen it before. That is what you want. And it will fix all of your skill invocations.
+
+Justin Gardner
+Okay. I also thought when you said greater than, you probably meant less than. No, he actually means greater than. Greater than dash.
+
+Joseph Thacker
+Description colon greater than dash. Yep.
+
+Justin Gardner
+Yeah.
+
+Joseph Thacker
+Okay, so a couple of things here. It also fixed for many of mine camel case into underscore case. I don't know why, but I think that it got higher invocation rates with that. So if your skill names are camel case, switch them to snake case. I freaking hate that.
+
+Justin Gardner
+Why? Because I—
+
+Joseph Thacker
+You're a camel case bro?
+
+Justin Gardner
+Yeah, dude, totally, all day. Oh, don't love me, bro.
+
+Joseph Thacker
+Snake case is so much better.
+
+Justin Gardner
+It inflates the size of things and it's so readable with camelCase.
+
+Joseph Thacker
+No, it's way more readable with underscores. You're so used to reading with spaces.
+
+Justin Gardner
+But it's—
+
+Joseph Thacker
+I'm a Python bro and we gotta name all of our functions with underscores.
+
+Justin Gardner
+Don't freaking tell me you're a Python bro. I am a Python bro.
+
+Joseph Thacker
+Yeah, but I'm a snake case.
+
+Justin Gardner
+Back in 2.7, back in the day, that was the standard and then they changed it.
+
+Joseph Thacker
+Okay, well listen here. At least tell me you're a 2-space Python bro and not a 4-space Python bro.
+
+Justin Gardner
+Get out, get out, get out. You are fired.
+
+Joseph Thacker
+Do you actually use 4 spaces or do you use tabs?
+
+Justin Gardner
+Please tell me you're not tabs. I use tabs, bro. I use tabs.
+
+Joseph Thacker
+And you're on Windows and you're on—
+
+Justin Gardner
+I don't use anything now because I—
+
+Joseph Thacker
+This is, this is gonna be— maybe this is one of those situations where, you know, opposites attract, right? Where—
+
+Justin Gardner
+yeah. Yeah. Okay. All right. Anyway. So you're saying somehow for some reason Claude is wrong and bad and it wants you to use underscores. Is that correct?
+
+Joseph Thacker
+Yes. Yeah. So skill names should be underscores, or at least in my testing it, it invokes better when you do that. And the very last thing I was gonna mention is some of my skills had the word Claude in them. Apparently that is like a huge no-no. So if you have, like, I had a skill called DM other Claudes and I would allow my Claude locally to message my Claude on my VPS. I changed it to DM other agents and all of a sudden it like massively improved. I think that the word Claude is like a reserved word and so it either gets like parsed or doesn't view it as well or something. Yeah, I didn't look into the nitty gritty details, but yeah.
+
+Justin Gardner
+Interesting. That is pretty cool.
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+Okay. I'm just going to take a breather for a second, you know, from that, that massive disappointment that just, you know, hit me. And I guess we'll talk about— it's all right. You know, Watchtower's got me covered. They're going to, they're going to, you know, get me focused on this next write-up. Okay. So this next write-up is the internet is falling down, falling down, falling down. And it is none other than the cPanel Auth Bypass, which is breaking everything. So by the time this episode airs, you guys probably have already, like, digested all of this. But I did want to walk through a couple of the beautiful pieces about this exploit. One, it's Perl. So, you know, when you're looking at the, the, you know, actual code here, it really helps a lot. Right. And, you know, sometimes we run into these situations where we're trying to reverse engineer something and it's like a binary and it's just such a pain. I will say I've hacked on a couple things that are Perl or Python, and it's just so much more fun. That being said, I know for a fact a lot of good hackers have looked at this and not found this bug.
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+So really cool that this vulnerability was discovered. And this is Watchtower reverse engineering it, reverse engineering the patch. So here is the situation. They look at the patch, they figure out that they find this beautiful comment that says, filter against /r/n from values before writing kills the CRLF injection primitive against the on-disk key-value record format. And that is the most in-depth message I have ever seen in a patch in my entire life.
+
+Joseph Thacker
+Like it almost gives it away.
+
+Justin Gardner
+Yeah, it totally like really, I mean, not totally gives it away, but I mean, it gives you— puts one right to the meat, you know, like the primitive that you need. So the situation here was that, um, part of the auth material was being parsed and then written in the, um, file system to a file. And guys, I just freaking love this. Let me see if I can find the file, uh, right here. Right. Um, /var/cpanel sessions/raw, and then the session ID. And I just love this shit, guys. This is exactly what I'm talking about. Like, we've gotta thoroughly assess these systems and understand how the full auth flow works, right? Is it actually writing files to disk, you know, with your authentication material? And in this scenario, it really is. And that should just be bing bing bing bing bing bing, you know, in your head when you see something like that. And the way that they had to make this exploit work was they actually used two different authentication methods, one from a cookie and one from an auth header. So that's another really beautiful thing is like, look at different routes for authentication. Long story short, by combining the cookie and the authentication header, they're able to smuggle a /r/n in and get that written to disk in this session descriptor file, which is /r/n delimited. Okay, so now they're injecting arbitrary attributes into a session. And they were able to establish a pre-auth session by submitting an invalid username and password, right? And so that was really cool. Now they're injecting attributes into there. But they keep hitting these roadblocks. And I just, I love the way Watchtower writes, dude. They're like, you know, they're like, and that's it. Is this the big red button time? You know, and then they submit it and they're like, shit, you know? Like, what's going on? Why isn't this working? Why are we always treated so badly? Is what they say. Um, and then they hit another roadblock with their 403. Um, and there's like a cached version of this, you know, /r/n delimited file that is loaded into JSON and the endpoints prefer the cached version. So now they've got to find, you know, a primitive in the system that, uh, forces a reload from, from the raw file rather than the cache. And then they finally find that. And they make it work and then they keep going and then they, they run it again and they hit a 403 again. Right. And, um, so they just keep going and keep going and keep going. And do we deserve this? Yeah. You'd think we were done at this point, you know? Um, give us strength. I love these articles, man. Um, but, uh, anyway, as they continue down with the, the exploit, they figured it out. They got the cache invalidated. They injected another, you know, value into the, um, file, which bypassed a, um, defense-in-depth measure where they did the password check again. And finally they got the full auth bypass. Um, and I just think that's such an example of like force of will in these exploits, right? Obviously if they're patching it, there's something that's been done here, but they are persevering, running into blockade after blockade after blockade and getting the full auth bypass, which is just freaking inspiring.
+
+Joseph Thacker
+Do you think there are lots of moments when companies trying to reverse patches end up finding tangential bugs because like, because like that first primitive was there and they got that easily, but then they got blocked and then they had to find another primitive that isn't exactly clear in the patch. And then when they find one, it's like, oh, was that actually a different route to the vulnerability?
+
+Justin Gardner
+Yeah, you know, who knows what the actual threat actor was using or the original finder, you know? Um, so very cool. And actually sort of mentioning that, um, Searchlight Cyber also did a write-up on this Auth Bypass and they released a cPanel, um, a high integrity, you know, high fidelity check, which is what they always do, which I freaking love them for, right? Is they release these like really quick and easy little scripts you can point at a host and say, hey, is this vulnerable, right?
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+Awesome. They're so cool for that. Um, and they added two things to this. One, um, they added, uh, the way, uh, a third way of accessing this, you know, there were two ways mentioned in the main article, but there's actually a third way through, um, a, another port that's open on cPanel where you can hit this super weird reverse proxy rule and it, and it, um, hits one of the management ports. in the backend. So there's actually, you can't just block off the management ports in the WHM service, uh, to, to patch this bug. You have to also patch, uh, you know, block off, um, a third one. I'm trying to figure out which one it is. I don't have it right in front of me right now, but there's another service that you need to block off as well. Um, and then finally, they also mentioned that, hey, if you're checking for that invalid password to get the pre-auth session that I mentioned. If you're doing that en route every time, it's going to lock everybody out. Uh, so here's the crazy—
+
+Joseph Thacker
+is it just crazy to me that they keep this stored on disk anyways? Like, I just would assume this would always be in a database and like every app.
+
+Justin Gardner
+Yeah, dude. I don't know. I mean, that does give me legacy vibes. I know PHP also does some stuff like this, so maybe it's just a, you know, Perl, PHP legacy thing. But yeah, I think it is a little whack and, and yeah, just wanted to shout out the, the SL Cyber team there for releasing the scanner and also finding some really good other mechanisms that don't cause lockout to confirm that the vulnerability exists on your target. So we'll, we'll, we'll link that in the description if you guys want to check that out as well. Perfect.
+
+Joseph Thacker
+So I wanted to give just a little bit of feedback from the last episode. Obviously, I know we talked about a little bit at the beginning. I've been doing like hacker advisory board for HackerOne and then also Bugcrowd just here recently because I think they bring me in because of the AI knowledge and stuff. And then they're just all struggling, right? I mean, all the, all the programs and platforms are struggling with this volume. And so I kind of thought it would be neat if for our program managers who are listening and also platforms, I just wanted to bring one like kind of key piece of advice that I thought of in the most recent HAB meeting. Um, it's nothing confidential or anything, but I just think that for companies that are struggling and for the fact that when platforms are struggling, if they basically gave this option to all of their programs, it would reduce the total traffic and total volume by like, you know, 50% or something crazy and allow everyone to catch up and then allow us to get back to have faster triage and faster bounty times. Right. Cause it's hard on everybody. They feel behind on their SLAs. We feel frustrated because they're taking forever to get stuff triaged and to get payouts out. And then when you're waiting a long time in triage, sometimes the bug gets fixed and then that's really frustrating, hard to handle.
+
+Justin Gardner
+Happening.
+
+Joseph Thacker
+So I think that my, I just have this like one little concise pitch I think would be really beneficial. If you're a program manager or you're a CSM for a platform and you've got companies that are struggling, just offer them like this like plate, this like platter of options. It's like, here's the things you can do and you should do some of them. You could take your program private, Well, you know, I don't love that idea, but this is just one option. You could require, you could require videos for, for, for work. And we talked about this even, like, you know, you could require videos for your, um, reports. You could require higher signal, so you could bump up your signal requirements. I've never seen a company, like, bump it to, like, 5 or 6 on HackerOne, but that'd be kind of interesting to see what happens. You could allow trusted or verified people only, so you kind of, like, you know, disallow people who are not, like, verified in the system. And actually, I just saw James Kettle is talking about our episode. He said he really liked it, the most recent episode in Discord. And he said that what they've done for the Portswigger program is they've left highs and criticals at the same payouts, but they've reduced the bounties on their lows and mediums.
+
+Justin Gardner
+And we're seeing that a lot, actually.
+
+Joseph Thacker
+I think that's kind of reasonable just because, like, those are going to be harder to get to these days. Some of the output that I've learned from the Hacker Advisory Board meetings is that there's kind of like an exponential curve of like unfixed bugs. It's not fully exponential yet, but it looks like an exponential curve with the number of like outstanding reports across all, across all programs. And so what that tells me is they're having a hard time fixing it as fast as the bugs are coming in. Right. And I think we knew that would be the case this year as everyone's scaling up their hackbots, like as all of this low and medium hanging fruit gets found, the developers of these companies can't keep up. And so I think that one way you can, you know, kind of cut down on the lows and mediums and also save on your security budget because you might be like be literally running out and like struggling to get back more, um, finances to cover those is to either, you know, stop paying lows and mediums, which I don't love, or reduce the payouts on the lows and mediums. But I think, Justin, you would definitely say try to protect your highs and crits because one, that's where the real impact is, and two, that like if you, if you reduce those, one, you might not actually get hackers looking at your program anymore. Because right now what I'm deciding to point my hackbot out is really at like, what is the highest payout I can get? Like, what is the critical payouts? So you're not going to get, you know, as protected, but also it's just like what matters to us.
+
+Justin Gardner
+So yeah, yeah, I certainly think that we are in a different environment than we were in when I said, you know, praising the low and mediums, right? I, you know, you're worried, I'm worried for the whole system in general.
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+Um, and I think that if they have to, you know, make some changes for lows and mediums, I understand that. I'm finding a lot more highs and crits than I used to because of the hackbots, right? Um, so I'll say that. Would I like to see it? Absolutely not. I would love to not see it, you know. Uh, but because the hackbots are also freaking good at finding mediums, you know, lows and mediums. Um, I like your signal idea. I'm looking at the leaderboard right now. There are a lot of people in the top 100 that have, you know, below 5 signal.
+
+Joseph Thacker
+Really?
+
+Justin Gardner
+I was kind of thinking 5 would be the cutoff. The top 30 pretty much all have above, um, 6 signal. I think ironically today is New, I think is at like 5.393 or something like that. Um, but you know, you could make your cutoff at like 5, right? You know, or something like that. And that might help. That will cut out some of the top hackers, which is crazy. Um, but that's a part of the game, I guess.
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+Um, the one that I like the most though is, uh, requiring video PSE and, uh, or paying for submission. Yeah.
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+Yeah. Those are the ones that I like. I think that those are great ideas and that would really boost the ecosystem a lot.
+
+Joseph Thacker
+They implemented that on HackenProof. I think it's just unlikely with the speed and pace of development at HackerOne and Bugcrowd that that would actually come out. Um, I think it would be more likely they could convert like your signal or rep into like points you can spend, and then if you run out of those, um, you get it.
+
+Justin Gardner
+That's a good idea.
+
+Joseph Thacker
+The, the other idea I had, Justin, I think you might really like this one because it doesn't penalize people like you and I, is that, um, you could do a, a, a system where you get a bounty reducer percentage based on the amount of slop you have. Or maybe you even get an increase if you never post any slop. So like, if you start getting NAs, you get like a 10% bounty reduction, then a 20%, then a 30%, right? And so it doesn't ever leave us in the situation where a person finds a bug and they can't submit it. Because I think that that often leads to like bad public disclosures because they get mad and they're posting on Twitter and it's like, because their signal's too low, right? It's like, what am I supposed to do? How am I supposed to report it? And like, you end up in these situations where it's that. But I think that if, if it's like, no, you can still submit it, but you're going to get a 50% bounty because you've been like wasting so much of our time, it kind of makes the balance between time and effort for them to triage more reasonable.
+
+Justin Gardner
+That doesn't really decrease the triage burden though. Like, I mean, it will over the long term, but it doesn't stop the bleeding right now. I feel like we're in a tourniquet situation here.
+
+Joseph Thacker
+Oh, really?
+
+Justin Gardner
+Bounty where we need to like stop the bleeding right now, like you said. Right. And that's why I think Hacken Proof's dollar to submit a bug. No one gives a shit about a dollar. Right. Right. You know, if you're submitting a bug, Right. If you are submitting a real bug that has the potential to be paid thousands of dollars, you don't give a shit about a dollar.
+
+Joseph Thacker
+Well, they did notice that $2, $1 and $2 penalties don't reduce slop. But when you get to $5, it does reduce it. Yeah. So there was cutoff points. They did it $2 and it didn't stop slop at all. At $5, it stopped like 80%. And by like $8 or $10, it stopped like 100%. So they should just do $5. That's my point.
+
+Justin Gardner
+And it's refunded, right?
+
+Joseph Thacker
+Yeah. And it's refunded if it's a valid bug. Yeah. But then also you could even scale it based on a region of the world. And then of course there's like VPN issues and all that. But I do I do think that like, you know, $5 for a new hacker, they might struggle or not really want to or something. But yeah, it's still $5.
+
+Justin Gardner
+But yeah, I think that, I think that we would maybe see grants or something like that in that situation where, you know, if you get a vouch or something like that from somebody in the system, yeah, that you are going to not submit shit, then, you know, you get a voucher for like $50 in free submissions or something like that. I think that'd be pretty interesting. I like it. I like it. It doesn't, it doesn't affect, it doesn't affect the real players. It will affect new, new players, but good luck, new players moving into the system. I mean, there really is a lot of benefits to you right now with Claude and you can, you know, get a lot of things explained to you. But there's also a lot of competition. So it's, it's an interesting, interesting time. All right. Am I up next?
+
+Joseph Thacker
+Well, actually, just one more thing on that. I think it's actually a really key insight. I, I work with a third world hacker as like somebody that I sometimes collaborate with, and, um, he will— we've made like, you know, tens of thousands of dollars together over the— over just this, just this year. And, and, um, the way that he brings a lot of value to me and that we end up collaborating so, um, in such a beneficial way is because he'll be like Hey, I'm in this program, I'm looking at this thing, it's kind of interesting. Will you put your Claude on it? And I, it's basically no time to me. I'm like, yeah, sure. Here, Claude, take a look at this. And then it finds something and then we go back and we find stuff. And, and he has Claude code too. But I think that just like the, my set, my system or my setup for some reason will find stuff that his doesn't. And so if you are, if you are a new person, I think reaching out to like some top hackers and being like, hey, you know, I've been looking at this thing. Cuz they even top hackers with a lot of hack bots that are scaling, we still can't look at everything all the time. So if you find something interesting, a way that you can make sure you get a good, uh, or like you, you make sure you're not leaving stuff hanging is by reaching out to some top hunters that, you know, and being like, hey, I found this lead. Do you mind to like take a look?
+
+Justin Gardner
+Yeah, that's— that makes sense. I don't know that I can deal with any more influx of that.
+
+Joseph Thacker
+Yeah, don't mess with Joseph.
+
+Justin Gardner
+Maybe send it, send it to Joseph.
+
+Joseph Thacker
+I don't know. I'm pretty busy too. But yeah, there's plenty of people in the Critical Thinkers chat that are like very highly talented. Just look for a collaborator.
+
+Justin Gardner
+Yeah, absolutely. All right. Speaking of, you know, collaborators of yours, We have an article by XSS Doctor with XSS Doc and Monke's new startup Starstrike. They are— they released an article called Achieving Deterministic Prompt Injection Through Client-Side Feedback Loops. And I wanted to run you guys through this really quick because I think this shows the Doc's mastery of client-side concepts and really beautiful weaponization of them. Okay.
+
+Joseph Thacker
+Yeah.
+
+Justin Gardner
+So the TL;DR of this article is that there is a, um, Q parameter on a chatbot, which allows you to do prompt injection 20, 30, 50% of the time that will result in XSS. That is not great for triage because what's going to happen is they're going to click it and it's not going to work. And then they're going to NMI you and it's going to waste your life. Yep. And it's not a great exploit, right? You know, it, it sometimes, uh, people will. Decrease the bounty for non-deterministic AI exploits. So what they cover in this, in this article is how to make it more deterministic. There's also a postMessage-based race condition in here, which utilizes the technique that we discussed on the hackalong that we did on Adobe not too long ago in the Critical Thinking Discord, where you pop up a small window and keep that in the front of the victim window to make sure that you are— that both of the victim window and the attacker window are in focus or in view, which limits the rate limiting on post messages being sent cross-origin. So that's a good technique that I wanted to pass off to you guys. But the whole setup here is Doc pops open a new window. This is the attacker's window. And in the background, he multiple times Sends the prompt injection, sends it once, waits 10 seconds. If he does not get a callback from the XSS firing, he will re-inject the prompt again and then wait another 10 seconds. Doesn't get a callback, send it again. Right? And so 30 seconds of sitting on the page, you have, you know, a massive chance of getting this exploit to actually work. Okay. So cool. Um, very cool. Client-side feedback loops. Really good idea. Great way to increase the integrity of your exploits, whether it be prompt injection related stuff or race conditions or both, like this situation is. I did want to mention one little bit here, a modification that I had to this article. He solves a problem here, and maybe he has a good reason for doing this, I don't know, but he solves a problem here by, of the victim iframe that is receiving the race condition. He solves that not having a reference to the attacker's window by making the parent the opener of the attacker's window as well. So it's a mutual opener situation. So the attacker's window is an opener of the victim window and the victim window is an opener of the attacker's window. This is possible. You can read it, how to, how to do it in the article. He says the reason for that is that the victim had no window reference to the attacker page. However, the attacker had a reference to the victim page. And my solution to this would have been a little bit different. My solution would have been to just use the postMessage event source. So whenever you send a postMessage to an iframe, there will be an event object that gets passed into the postMessage handler. And that event object has a.source. Attribute. That source is a window reference to the frame that created the postMessage that is being sent. So, I would have—
+
+Joseph Thacker
+So, that statement's actually wrong. It's not that there's no reference. It's just that you couldn't find it.
+
+Justin Gardner
+Well, at this current time, it doesn't have a reference. But as soon as you send a postMessage in and trigger the XSS, if you send another postMessage, then you can register an event handler to snag that postMessage. And then log the event source and then shoot back out to the attacker's page. Got it. That's how I would have solved the problem. Just wanted to show that out there. But I think this trick of having mutual opener— opener— is also a really cool trick for you guys to know as well. And it's really beautifully displayed here on their blog with a graph of this whole attack. So great work by XSSDoc and Monke at Starlight. Or Starstrike.ai. Yeah, yeah.
+
+Joseph Thacker
+Good work. All right. We are low— getting lower on time, but we're still doing fine. I just wanted to mention to everyone GPT-5 or sorry, 5.5. GPT-5.5. So I've got two links I'm going to show. Well, actually one.
+
+Justin Gardner
+Can we just talk about /goal, bro? Is that as OP as it sounds?
+
+Joseph Thacker
+It's so OP. It's the exact solution that you wanted to run overnight. You just give it a goal of like find 5 crits, and then even if it finds 2 crits, it'll just keep going until it— like, it literally will just work until it reaches its success condition. And it's so good. Like, to me, it almost— I hate this.
+
+Justin Gardner
+How does this not exist in cloud code, dude? Great question.
+
+Joseph Thacker
+But it, uh, to me, it's like the final cheat code that makes this— the barrier to entry to this basically zero. So let me tell you why I was finally convinced to buy a Codex sub, and let me tell you how it went. So I'm going to share my screen on this LinkedIn post. There's one of these that I agree with. Let's see DMs first. Yeah. So actually, that's true. I always do that on X. I always show my DMs and they have to scrub it. So this is a very confusing chart. And I also think it may have been cherry-picked, but it still was enough to convince me. So this says GPT-5.5 delivers the best performance we've seen to date. For listeners, I'm sorry, this is confusing, but there's basically two lines. There's a white line, which is white box, and it compares GPT-5, Gemini 3, Opus 4.5.2, and Opus 4.6. I don't know why they didn't keep the white line going for the latest models. But anyways, because like we have no, we have no idea on this white line how Opus 4.7 or GPT-5.5 do. But the point is that when it comes to white box testing, the cloud models are better. You can just tell by Opus 4.6 having a huge increase here. Now, I will say the y-axis on this is really dumb, is vulnerabilities found before first miss. What do they mean by miss? What do they mean by miss? Does that mean like before it didn't find a bug or that means it submitted a false positive? So they picked a really obnoxious y-axis. But anyways, this black box line is what convinced me. So they have a dotted black box line. So this is like, you know, again, it's just like the tracking of the vulnerabilities found before miss across Opus 4.5 all the way through Opus 4.7 and then GPT-5.5. And when you look here at Opus 4.6, it's like a— and also, why is this not on the— like, how can you have— how can you have less than one vulnerability? Is this like a 4.9?
+
+Justin Gardner
+No, no, that's 5, bro. That's 5.
+
+Joseph Thacker
+Yeah. Well, they missed the mark. Anyways, my whole point is Opus 4.6 is much lower than GPT-5.5. And so— and then they posted this other thing, which I'm not—
+
+Justin Gardner
+well, okay. Okay. Let me— let me comment on that really quick.
+
+Joseph Thacker
+Yes, please.
+
+Justin Gardner
+Can you pull it back up for a sec? So essentially what we're seeing here is Opus 4.6. Is finding 4 vulnerabilities before first miss on average. And with GPT-5.5, this is in a black box context, it jumps up to 8 or 9. Yeah. So it almost doubles, right? Which is insane. Yeah.
+
+Joseph Thacker
+And they obviously are people who I relatively well trust a little bit on how to— like Expo should be able to evaluate these models, right? They've been doing this for 3 years at this point. They should be able to evaluate these models. Models. And they did more than just this. So I'm going to read this other post, which I, again, this one I'm even more skeptical of, but we'll read it anyways. Albert Ziegler, the head of AI at Expo, says GPT-5.5 without access to source code is a better hacker than most previous models with source code. Okay. He says most here. I thought he said than Opus 4.6, which is what I just straight up didn't believe. But I think this is definitely true. I think that statement is definitely true if you assume he's talking about like GPT-5.4 or GPT-5.3 or other companies. I don't think it is better than 4.6 or 4.7 with code, like with white source, white box code.
+
+Justin Gardner
+I can't imagine.
+
+Joseph Thacker
+But in general, so anyways, this convinced me to try it. Justin, within the first 30 minutes, it found 3 P1s of me running GPT. Are you kidding me? No, I'm not kidding at all. Now I will say it did have a little bit of advantage. It was a fresh invite program on Bugcrowd. Like it was like a new program that just dropped. So, you know, take that with a grain of salt. But still, that was faster and more efficient than what I had seen for Opus. Now, for anyone wanting to try it, here's all I did. I symlinked my ClaudeMD to AgentMD from.claud to.codex folder. Then I just had Claude Code symlink all of the folders in the skills folder to the Codex skills folder and then just ran it. I got— and I am cyber approved or whatever. But I got no rejections. I used /gold to run this overnight. It found like lots of other bugs. My intuition is that it's like 10 or 20% better than 4.7 and 4.6 at black box testing. And Justin, I like didn't run out of tokens. I had one /gold that ran for 14 hours. And then when I checked, I'd only used like 15% of my weekly usage stats, meaning that I could obviously— that was like 1/30th of the monthly stats for the $200 a month. Anyways, it's wildly effective. I think people should basically be building their systems to be usable by both Claude Code and Codex. And I think that, you know, in the past I was like, no, Claude Code, Claude Code, Claude Code. Now I think it's totally reasonable to use either system and you'll be highly successful.
+
+Justin Gardner
+Dang, dude, that's crazy. That's crazy. I will say also, you know, with just 4.6, I also had a target on Bugcrowd this past week that is a fresh, fresh program. So I wonder if— I wonder if we're going to do Hopefully not. No, it's not. Okay. Yeah. You can bleep that, Richard. Yes, please bleep that. Yeah. Okay. So we're good. But I literally, I was sitting here with my friends, right? And we're like, let's just kick this off. Let's see how it goes. I kid you not, within 15 minutes it had a JWT takeover. Yeah. JWT forging bypass, bro.
+
+Joseph Thacker
+You know, I need to actually, I need to audit your JWT skill. If you don't mind. Yeah. Yeah.
+
+Justin Gardner
+I got you.
+
+Joseph Thacker
+Um, so I was saying that as a joke, cause I want to steal it.
+
+Justin Gardner
+Oh, well, dude, you've shared me so much. I DM you all the time. I'm like, tell me exactly how you do this.
+
+Joseph Thacker
+Oh, you did do that yesterday. Actually, when you did that yesterday, I was like, he's really sussing me out here.
+
+Justin Gardner
+I'm sussing you out. Well, I'm also taking a different approach though, so we can compare and contrast. So, um, the question I asked you yesterday, I did it different than you and JD. So, um, we'll, we'll, we'll compare notes on that a different time. Um, all right. I've got one last, uh, write-up. This one is super sick. Uh, save the best for last in my opinion here. Um, freaking love Ryotaku, dude. He's such a good hacker. Uh, and anytime I read anything by him, uh, I am floored.
+
+Joseph Thacker
+So this is, uh, actually wait, just for our listeners really quickly, if you don't know Ryotaku, obviously we've mentioned him a ton in the podcast. but this guy was like basically fresh in the bug bounty scene and he came to DEF CON and did like, you know, H1405, H147, H1702, H1702, and just won it. Got MVH at like 18. Yeah. As like an 18-year-old. So anyways, that's his skill level here.
+
+Justin Gardner
+Anyway, absolute beast. Um, I've mentioned on the pod, I think he is the closest thing that we have to AI. You know, like, like, just funny. Just seeing him consume minified JavaScript code like a book, like just, I've never seen anything like it at any point before, to be perfectly honest. Um, anyway, so without hyping him up too much, Flat, uh, you know, really Flat Security in Japan really snagged a good one when they got, uh, Jyotek here. And this write-up is on their blog. Um, And it is remote code execution on Google Cloud with a single directory deletion. And this is on Google Cloud's Looker. So Looker is a business intelligence platform. I've actually seen other bugs in this, so probably a good place to hunt. He is able to get a self-hosted version so he can reverse engineer it. And he's looking at how all of this stuff works here in Ruby. And The TL;DR of the situation is he finds a way to delete an arbitrary directory from within his own repository via a, you know, confusion in the validate_path_name function for deleting the directory. Yeah. And he's able to use that to delete the.git repo for one of his projects that he's uploaded. Yeah. And then he says something that just freaking blew my mind and that everybody here should be paying very, very, very close attention to. Okay. Since it is possible to trick Git into using forged Git configurations, if the.git directory is corrupt or deleted, the validateNamendir method checks the directory to be deleted includes.git. And raises an error if it does. Okay? So you're not supposed to be able to delete the.git directory. Interesting. And then he just kind of slips it in there. Since it is possible to trick Git into forging— as everybody knows, it's possible to trick Git into using forged Git configurations if the.git directory is corrupted or deleted, blahdy blahdy blahdy blah. I went back and I was like, wait, what? So if I can delete the.git repo from my— my, or the.git folder from my repository folder. Yeah. And you run a git command inside that folder, you can get RC. This is essentially what this reduces to. Wow. Crazy.
+
+Joseph Thacker
+Do you know how many coding sandbox, like AI coding sandbox features we've tested that that might be relevant to?
+
+Justin Gardner
+Yeah, dude. A ton. And so essentially he explains the reason for this. Um, if the git directory is deleted, the next git command executed against this repository will fail to find the git directory. And it will look for git configurations in the worktree directory instead. Wow. Therefore, if the worktree contains the files that resemble the contents of a.git, Git assumes that you are in— let me— where is it? No, are you kidding? Yeah. Git assumes that you are in the.git directory and will just load these files straight from the root of the worktree. So let me just explain how this works.
+
+Joseph Thacker
+So what's the folder you want to put it in? Tell me. I need the juice right now, Justin. So yeah, dude, I mean, look at this graph that's On the screen.
+
+Justin Gardner
+Yeah. Yeah.
+
+Joseph Thacker
+So after it's on the screen, you can put it in any of the, oh, you just put it, you just put it straight in it. It thinks it's already inside.git, right?
+
+Justin Gardner
+So literally it thinks it's already inside.git. So they're running a git command from the root directory of the repository. Typically it says, okay, let me look at the.git, you know, folder, you know, if it's not there, oh shit. I guess we're inside the.git repo already. So it just tries to read config. Right? And then treats it as.git/config. So this is the whole situation, right? You guys can't— we can't upload, you know, malicious.git folders to Git, right? That's the, you know, that's where a lot of security in all of these systems relies on. The.git repo is sacred, right? And if I can check that to make sure there aren't hooks or whatever, you know, we're all good, right? But then if you can delete that.git repo, it'll just treat the config file that's in the root of your repo as the.gitconfig and you can register hooks and then you're set.
+
+Joseph Thacker
+Dude, we've got a week. Can we go look for this in and and as soon as this calls out? We're late, bro. We're late.
+
+Justin Gardner
+I think this thing shipped in March. Yeah, March.
+
+Joseph Thacker
+But I mean, the number of people that saw this and then drew the same conclusion as us is probably pretty low. I mean, people just read and their eyes glaze over. This is good stuff.
+
+Justin Gardner
+Anyway, honestly, is this a vulnerability in Git? No, this is just gonna work. Are you sure?
+
+Joseph Thacker
+Yes. No, no, there's some code branch inside Git, inside Git code that is saying, if.git is not there, look in the current directory. And I think that that is probably a vulnerability. I think it should always make sure it's in a.git.
+
+Justin Gardner
+I don't know, man. Maybe I'm misunderstanding it, but that seems like the way that Git is just gonna work. I can definitely see the GitHub team being like, nah, bro. Like, this is how it works, you know? So anyway, then it's trivial. Okay. No, I'm sorry. It's not trivial from there. Let me, let me, let me also give another shout out to AudioTek's Genius. So now he's got the config file in there. Right. Um, and, and so let me explain. He, the way he got the directory to delete was actually not deleting the git directory at all. He deleted the entire repository directory, right? The entire one, including his own config files. Right. But the way that the delete recursive works in Ruby, you know, it will recursively go in and delete all the files. Yeah. So he, he created a folder that's massive that has a ton of files in it, right? That's going to take the delete after the.git and before his config. Right? So, so what'll happen is this. He'll say, delete the whole repository folder. And it'll say, okay, great. Going to recursively delete. It goes in there, deletes the.git, right? So now we're in a vulnerable state. Then it finds Ryota's massive folder, you know, and then 1,500 million, you know, files, uh, you know, nested within that. It goes deep. It goes deep. It goes deep. It goes deep. It's deleting files. It's deleting files. It's taking forever. In the meantime, Ryota is hitting another endpoint that runs git status on that same folder in the middle of deletion.
+
+Joseph Thacker
+Oh my gosh.
+
+Justin Gardner
+Triggers the config for, you know, the malicious config.
+
+Joseph Thacker
+He's literally an AI, Justin.
+
+Justin Gardner
+Dude. Triggers the fsmonitor hook and then runs arbitrary commands on the Google prod server.
+
+Joseph Thacker
+He's a robot.
+
+Justin Gardner
+Freaking beautiful, man. That is sick. I love it. And he explains the nuance of like the exF4 file system and how the Ruby file utils rm -rf, you know, recursively delete stuff. It was beautifully done, but the concept is that, and it was just chef's kiss, dude. Yeah, that's insane. Yeah. And then he explains even the full privilege escalation, um, inside of a Google Kubernetes cluster as well. Um, cause he's able to check the service account in /var/run/secrets/kubernetes.io/service_account and found some excessive permissions that they're able to update secrets for all the other Kubernetes clusters as well, which results in full privilege escalation. So, wow.
+
+Joseph Thacker
+Yeah, it was—
+
+Justin Gardner
+you're right, you did save the best for last. That was a freaking beautiful bug, right? The race condition, the git, like, confusion.
+
+Joseph Thacker
+Yeah, dude, it's just beautiful.
+
+Justin Gardner
+Yeah, man. Yeah, shout out to Rio Tuck and Flap. Um, all right, you got anything else or is that a wrap? Right on time.
+
+Joseph Thacker
+Let me check the notes. No, it looks good. I'm done.
+
+Justin Gardner
+Yep. All right, dude. That's the pod then. Peace. Thanks. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more Critical Thinking content, uh, or if you wanna support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of the masterclasses, hackalongs, exclusive content, and a full-time Hunter's Guild. If you're, uh, a full-time hunter, it's a great time. Trust me. All right. I'll see you there.

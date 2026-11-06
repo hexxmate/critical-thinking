@@ -1,0 +1,578 @@
+Episode 130: Minecraft Hacks to Google Hacking Star - Valentino
+Source: https://www.criticalthinkingpodcast.io/episode-130-minecraft-hacks-to-google-hacking-star-valentino/
+======================================================================
+
+Title: Transcript - Thu, 10 Jul 2025 15:28:06 GMT
+Date: Thu, 10 Jul 2025 15:28:06 GMT, Duration: [01:08:27.93]
+[00:00:01.04] - Justin Gardner
+Yeah, he's like, wait a second, maybe that was webcast. But I need to look at the freaking code because I need to have my proxy open. Valentino. Best part of hacking, when you can just, you know, critical thing, right? So when you're running an enterprise security program, there are quite a few things you need to nail before you even consider doing something, like running a bug bounty program, right? These are kind of like the ABCs of enterprise security. Obviously, you need some sort of phishing prevention system. You need an edr, you need some introspection into your environment with logging. And of course, you need some sort of patch management system to make sure that your software is constantly up to date. And not gonna lie, guys, that last one is a little bit of a pain in the butt, right? I know you guys know what I'm talking about with that. It's a lot. And whenever there is something that's a pain in the butt in security, what happens? Well, Threat Locker always comes up with an innovative solution. And that's exactly what they've done with Threat Locker Patch management. Their team is working constantly to ensure the software updates for software in your ecosystem are audited. Categorize. So if there's like a super severe zero day, you'll definitely know about it. And then check for conflicts with other software on your system before enabling the enterprise admin to automatically update or schedule an update in the future. And I'll just read this little snippet from their website really quick, which I loved. It says, we'll even dare to say install Threat Locker patch management and forget about patch management. We've got it covered. That is what you love to hear. That is what you love to hear, right? Okay, so definitely check it out, guys. Threatlocker.com platform or just go to threadlocker.com and and look for the patch management software. All right, that's a wrap. Let's go back to the show. All right, we're rolling. Valentino, my man. We've been wanting to do this episode ever since the live hacking event in Google. Thanks so much for coming on the POD today.
+
+[00:02:10.16] - Valentino
+Yeah, I. I am grateful for to be here.
+
+[00:02:14.00] - Justin Gardner
+So, yeah, dude, I'm looking at this doc with the prep for. For that you've done for this episode. And it is one of my favorite types of docs that I like to see, which is just absolutely stacked with hacking stories. You know, I often really like to see people bringing on new research and I really like to see people bringing on fun bug stories. Those two are the ones that I Get really hyped. So we've got tons of really good bug stories in here, so let's kick it off. Well, okay. Typically I kick it off with a little bit of a bug story. So let's see what we've got here. We've got four different options. Take your pick, man. Which one do you want to talk about?
+
+[00:02:53.34] - Valentino
+There are so many stories, but I think I will start with the first. So it is pretty simple. I had a tomcat instance. So with tomcat, sometimes system administrator use a reverse proxy to expose it. So basically it was exposed with a reverse proxy, but it had the default credentials. So basically using the research published by Orange dca, which is called path normalization issues or something like that, you can basically use semicolon and bypass user bat traversal to access the manager behind the response.
+
+[00:03:50.12] - Justin Gardner
+So what was happening here? So that's that semicolon payload, right? Is that the right one? Yeah, yeah. So that's like I freaking love that research by orinsci. What a brilliant way to do it. So I guess what was happening there was you had a specific path that was allowed by the reverse proxy and then the reverse proxy wasn't seeing semicolon as a path traversal and then the backend server was, and that's what allowed you to get access to that tomcat.
+
+[00:04:16.56] - Valentino
+Exactly.
+
+[00:04:20.00] - Justin Gardner
+I love it, man.
+
+[00:04:20.83] - Valentino
+There was another step which when you access with admin admin the tomcat manager, you basically weren't allowed to upload files. It was restricted to localhost. So that's where I found the JMX proxy. Sorry for my pronunciation.
+
+[00:04:46.01] - Justin Gardner
+No, you're good. You're good. JMX proxy.
+
+[00:04:48.57] - Valentino
+Okay, so if you can't upload a file being logged in tomcat because it was restricted to localhost, you can basically use that proxy to shamex to exploit that and get RC basically.
+
+[00:05:08.50] - Justin Gardner
+Dude, this is just. Check this out. This is just straight up RC as a service here. Jmx this JMX proxy thing. Wow, solid. Okay, so if we ever run into those scenarios where you can't hit the traditional Tomcat manager instance like you would and be able to upload a shell because of the restrictions to localhost, then we go instead and hit this manager JMX proxy and then that one will allow us to execute code either way.
+
+[00:05:38.61] - Valentino
+Yeah. The only problem is that you need to have the role to call that endpoint, but sometimes it is misconfigured so you can just call it.
+
+[00:05:54.66] - Justin Gardner
+You need to have the role. Is that what you said?
+
+[00:05:56.13] - Valentino
+Yes. Sometimes people just keep all the roles without thinking. And yeah, you can basically exploit this.
+
+[00:06:03.62] - Justin Gardner
+Classic. Classic. I love it, man. That's a good takeaway because I think I see these often. Man. I was very surprised. I can't say the name of the target, but there was a target I was hacking on once that is literally a household name. I used this thing as a kid often. And on www.thatsite.com there's a path traversal just like this, just dot, dot, semicolon, slash and then it was dropping you right into some place where you could execute code. So I think these reverse proxy setups that a lot of people like to use, if you can detect them, I think that there's a large surface attack surface there for some sort of scanner that we haven't really seen hit the scene just yet of like, okay, here are the application segments at Assets. Now we're looking at an S3 bucket at app. We're looking at this net back end, whatever. We're looking at some static NGINX assets or whatever. If we can identify these application segments on a target, then oftentimes there's a lot of weird vulnerabilities we can do with path normalization.
+
+[00:07:11.60] - Valentino
+Yeah, it is crazy. Orange does all that stuff and it is crazy. You can get so many things.
+
+[00:07:19.51] - Justin Gardner
+Yeah, yeah. What is this other write up you linked here that was on way back URLs that isn't up anymore? Some Chinese write up or something like this.
+
+[00:07:29.19] - Valentino
+I was stuck in this issue in that part that I told you I couldn't upload files and I found this Chinese blog and I found that you could exploit that proxy that was the key to.
+
+[00:07:49.38] - Justin Gardner
+That's where the JMX manager thing came from. Yeah, nice man, nice. We'll link that down in the description. That's hilarious though. Oh yeah, and they even list an exploit. Tomcat JMX RCE exploit. Very cool.
+
+[00:08:02.62] - Valentino
+Yeah, it basically is log poisoning, basically.
+
+[00:08:07.57] - Justin Gardner
+Oh really? Okay, nice, nice. Log poisoning, dude. I think log poisoning is on everybody's radar now. Ever since the log 4J thing where it's like oh my gosh, this has got to be all over the place. Yes, that's pretty sick. Yeah, I definitely recently I've been on something I've been working on. I've been off of hacking almost since the Google Live hacking event. I've just had a bunch of stuff come up. I've been working with a couple companies and just this past couple weeks I've been back hacking on bug bounty programs again and like blind XSS in logs or like you're talking right here. Log poisoning with some server side logic. Such a fun type of vulnerability. It feels a little wish washy to me though, sometimes, because I'm like, you know, I'm trying all these random things, I'm trying to guess what's happening on the back end and I just hope something calls back, you know?
+
+[00:08:57.14] - Valentino
+Yes, I love to black box. The hugging is.
+
+[00:09:04.21] - Justin Gardner
+It's a totally different skill. Right. I mean, than white box testing. You know, there are a lot of really talented white box testers that I know, but when you see a really talented black box tester, it's like they've got some like sixth sense of what's happening with the application. And I think all of us have that to some degree, right, that have been successful in the industry. But there are some people that are just like, yeah, that is definitely how they coded it. Let me just say. I'm like, what the heck? Yeah.
+
+[00:09:28.28] - Valentino
+In the whole event, it's seem like that, like, yeah, I was just, oh, yeah, this might work. And it worked, but it didn't make sense then. It took like an entire week to find the cost.
+
+[00:09:45.64] - Justin Gardner
+It's like, yeah, yeah, absolutely, man. All right, well, you presented your bug, you proved your hackerhood to the listeners. I'll give you a quick intro and then we'll hit some of these other bugs real quick. So as I mentioned, guys, this is Valentino. I met Valentino at the Google Live hacking event in Tokyo. Or maybe it was the one before that.
+
+[00:10:06.78] - Valentino
+Vegas.
+
+[00:10:07.35] - Justin Gardner
+I think it was Vegas. Yeah. In Vegas. That's right. It was in Vegas that we met the first time. But then in Tokyo, we were kind of neck and neck for the MVH there. And sitting next to Valentino at dinner, we talked about a lot of bugs and I was really impressed with his methodology. So I wanted to get him on the live talk at the Google event, but we didn't get to do it because of timelines being constricted. But we do have the opportunity to do that now, so I'm very excited. Let's go ahead and jump through the rest of these, Valentino, and talk through some of these. Well, no, no. All right, let me back out. You've already proved your worth. Now let's go into a little bit of history. How did you get into infosecond hacking? And then we'll get into the rest of the bugs that you've popped.
+
+[00:10:51.83] - Valentino
+Okay. So I got into infosec when I was around 12 years old. I didn't even know what I was doing today. I Kind of know a bit. So in that time I was playing a lot of Minecraft. Like 12 hours ago today my parents were telling me, please, you need to study, stop playing that game. So one day I got bored of the game. I started to learn how to make servers. So by building servers I noticed that let's say the servers are basically networks. You have multiple minigames and you have like an authentication server where you log in, then lobby and then you can access whatever minigame you want. So I noticed that the mapping proxy was just specifying each minigame as a port. So I thought, what if I just access the Mini M directly is like a no brainer. So I did and it worked. And it was my first issue.
+
+[00:12:23.48] - Justin Gardner
+Dude, how hype. Must have you been at like 12 or 13, dude? But like, yes, it worked.
+
+[00:12:29.72] - Valentino
+You know, I was scanning entire PPS providers, like the entire vlogs all night.
+
+[00:12:37.39] - Justin Gardner
+All the ASN ranges. Yeah.
+
+[00:12:38.90] - Valentino
+My parents told me what is this charge about the pps? And I told them, no, no, no worries. I am learning server administration.
+
+[00:12:50.14] - Justin Gardner
+There you go. Nice, man. I also started hacking when I was like 12 and the sketchy stuff that we do at that, at that age to learn how to hack stuff, man, it's great. But it was such an exciting time too, you know, like when you first pop something and something actually worked, some exploit actually worked. It's like that's, that's the best feeling. Yeah, I think, I think Minecraft as well, dude. I think Minecraft has been a what? A what? A piece of software that just pushes people towards highly technical roles. Right. Like, not only does the game, you know, have a lot of programming, like components with all the stuff you can do with like the buttons and automation and stuff like that, but also, you know, this whole concept of hosting servers and you know, running that business or running that from a hacking perspective has just brought so many people into the technical realm.
+
+[00:13:41.91] - Valentino
+Yeah, this crazy. I know many people that are gamers, that were gamers and then hackers. It's like really common.
+
+[00:13:49.60] - Justin Gardner
+Yeah, yeah, very common flow. Very nice, man. So you got into it a little bit at 12. Where does the story pick up after that?
+
+[00:13:58.88] - Valentino
+After that there were some protections that were implemented and I liked the idea of bypassing those protections. So there was a protection that basically checked that the origin IP was localhost and well, it was bypassable.
+
+[00:14:25.80] - Justin Gardner
+Oh my gosh.
+
+[00:14:26.40] - Valentino
+You can just. That's it.
+
+[00:14:31.97] - Justin Gardner
+Oh my gosh, dude. And then that's another set of vulnerabilities on all these Minecraft targets. Wow.
+
+[00:14:38.37] - Valentino
+It is similar to course, I think the origin thing and yeah, it is. I learned so many things in Minecraft that I applied in Webhacking is like so nice.
+
+[00:14:56.37] - Justin Gardner
+Yeah, dude, absolutely. So how did you make the jump from hacking Minecraft stuff over to being a pen tester or a bug bounty hunter?
+
+[00:15:03.41] - Valentino
+So at that time my parents basically restricted my access to the computer.
+
+[00:15:09.65] - Justin Gardner
+Yeah, classic.
+
+[00:15:11.34] - Valentino
+I had to study in school for two years and then when I was 16, when I was, when I got better at school, I returned to hacking. But knowing the stuff behind, like I started learning programming and then I, I learned Java, the basics of security, and then I started with hack the bots. It is a lab for ctf and yeah, that's the point where I learned a lot of stuff and I started hacking with labs, not with real world targets.
+
+[00:16:04.76] - Justin Gardner
+Yeah, I think likewise when I was 12, 13, 14, 15, a lot of the stuff I was hacking on was, you know, illegal, legal hacking stuff, you know, things that I didn't have authorization to hack on because I think at the time there wasn't labs as easily accessible as well, or at least I didn't know about them.
+
+[00:16:22.21] - Valentino
+Right.
+
+[00:16:23.69] - Justin Gardner
+And so then, you know, once we get access to. I also remember when I went to college, you know, when I was 18 or so, I like figured out, oh, there's this thing called metasploitable or whatever, right. Where you can or damn vulnerable web application where you can set that stuff up and then you can start like honing your skills and it's based off of real vulnerabilities and you can do it in a lot more ethical way. But I'm sure that there are a lot of kids out there even today that are just like, yeah, I hadn't really put the thought into, oh, maybe there's a lab out there where I can practice this rather than just popping shelves on people's web servers randomly.
+
+[00:16:53.95] - Valentino
+Yeah, that's. That's bad. Yeah, I, the problem is that kids might think it is fun, but yeah, it is fun, but yeah, it is illegal, so don't do it.
+
+[00:17:05.59] - Justin Gardner
+Exactly. Right, exactly. I'm looking at the rest of the notes here, man, and it looks like you, you did the OSCP and then quote, after getting that certification, I received some job offers and the day after my 18th birthday, I started my first pen testing job. Dude, that is a pretty sick record, man. Like starting your, your first pen testing job the day after you turn 18. What, so you were getting no sep before you were 18 even?
+
+[00:17:31.78] - Valentino
+I started the OSCP when I was 17. Because I had to do the final year in my school, but I choose to not do it. I choose to do it to do from home. Homeschooling.
+
+[00:17:52.26] - Justin Gardner
+Homeschooling? Yeah.
+
+[00:17:53.15] - Valentino
+I. I just spent, like, two days a week for school and the entire week for hacking.
+
+[00:18:00.47] - Justin Gardner
+Dude. Okay, my man. You were also homeschooled. I was homeschooled all of my childhood. And it was great because whenever I was hacking something or doing some programming job like I was when I was younger, I would often go up to my mom and be like, hey, Mom. So I got this programming job. I'm going to do this for the next couple days, and then I'll catch up on math or English. Right. Or whatever. Right. And she was like, all right. Just don't, you know, way to go, honey. Like, I'm glad you're making money. Just make sure you don't get behind on school. And then as long as I got my school crop back up, then we were good to go. And I just. I credit that with so much of my success, you know, as a. As a hacker and as a programmer. Just being able to have that flexibility and entrepreneurial spirit at a young age and then being able to implement it without, you know, having to be locked up at school all day.
+
+[00:18:46.85] - Valentino
+Yeah. In those times, you have so much free time that you can just be quick with the school and hack.
+
+[00:18:56.96] - Justin Gardner
+Exactly, man. I love that. That's amazing. You're one of the only other people I've ever met that was homeschooled as well and used that time to go hack stuff. That's clutch, man. Is that common at all in Argentina or is that.
+
+[00:19:13.35] - Valentino
+No, it is not common, but there are some people that can do it. But, yeah, I just did the last year, but because I was tired of school. It's like five hours a day, five days a week. It was a lot.
+
+[00:19:32.71] - Justin Gardner
+It is a lot. Yeah. And shout out to your parents for allowing you to do that. I mean, I think that's pretty cool that they were open to that sort of thing. I know here in the US Homeschooling is, like, skyrocketing. Like, like, like the. The amount. I think it's grown 50% year over year for the past, like, five years. Like, it's just getting massive.
+
+[00:19:52.45] - Valentino
+Yeah.
+
+[00:19:53.80] - Justin Gardner
+And. And so I. I really. I was really glad to see that. And sometimes it can be done really, really poorly, and the people are not learning their stuff and they're getting socially isolated. But for me, you know, with. With. With parents that were actively involved, and I still Got to play my sports and, you know, had community outside as well as a, you know, very intentional education at home. It worked super well.
+
+[00:20:16.52] - Valentino
+Yeah, it depends on the parents and yeah, it can be very well. So yeah, yeah, yeah.
+
+[00:20:26.93] - Justin Gardner
+All right, so we're 18 years old. We have a pen testing job. We're 18 years old in one day and we're starting a pen testing job. How do you get into bug bounty and how did you get invited to the bug swat event for Google?
+
+[00:20:40.05] - Valentino
+It was really random. I think most things that happened with Google were random. For me at least. I was thinking, okay, I saw a tweet that I asked, do you want to hack AI in a private event? And I said something, said, okay, I sent the form and I thought, yeah, they are not going to call me. There are more qualified people than me. So yeah, I waited and I got the email and I said, what? So I started learning how to hack AI. And in the first event, it was really hard. And another thing is that they just told me, do you want to go to Vegas? And I said, I can't go to Vegas because I can't pay for the flight and the hotel. It is expensive. So he told me, what if you. If we pay for it? And I said, definitely, yes, of course. Yeah.
+
+[00:21:58.17] - Justin Gardner
+And I went, dude, that's crazy, man. So at that point, had you submitted a lot of bugs to Google or.
+
+[00:22:07.36] - Valentino
+I think I sent like two bugs that weren't that great. I registered to the Google, to the Google account in the same month I did the hacking event. But I didn't particularly send high impact bugs. And I got invitation. In that moment I thought, why? I got invitation? But yeah, I knew I had to, to put my efforts.
+
+[00:22:50.25] - Justin Gardner
+Yeah, yeah, this is what I'm saying, man. Everybody's still early on Google, right? Like this. When was this, Valentina? This was Las Vegas, right? This is Vegas 2024.
+
+[00:22:58.80] - Valentino
+This was in 2023.
+
+[00:23:02.06] - Justin Gardner
+2023. Okay, gotcha. 2023 Vegas was when you first went with the Google, with the Google program. Nice. Okay. Yeah. So guys, it's still early with Google, man. I mean, just a couple of years ago, not even, not even two years ago, one year. Valentino is like submitting a form, submitting to, you know, crappy bugs, and then getting an invite to Vegas. So it's an amazing opportunity. Definitely spend some time on Google. But Valentino, man, it is kind of scary, right? I mean, hacking on Google, they. They have a lot of obfuscation. There's a lot of proto JSON, right? There's a lot of, you know, very minified products. And, and so what are your. What are your. What are your tips and tricks on hacking on Google? For the listener that wants to take up that opportunity?
+
+[00:23:52.01] - Valentino
+For me, it is getting really used with one product. If you can talk with the security team because they know a lot of stuff. And basically the thing that worked for me is stop looking at the code, stop looking at the requests, close the proxy like.
+
+[00:24:19.68] - Justin Gardner
+Valentino, my guy, this is crazy advice, but it worked for you, right? I've seen it work for you.
+
+[00:24:26.40] - Valentino
+Because there are so many things that happen in these applications that you need some time to think what is happening in the backend? What is the application loading. How you can. You need to think like the developer. It's like poker. I think you need to get in the head of the people that made application and then you need to. I look for patterns. I try things that are weird and break stuff and then I see what happened and how it happened. All the bugs I found during the event. IDNs use the PROT.
+
+[00:25:12.60] - Justin Gardner
+Dude, that is just absolutely nuts. And it's crazy to me because when we were sitting at that dinner, that awesome dinner in Tokyo and we were chatting about the bugs that you found, I was listening to this and I was like, ah, yeah, duh, why didn't I like. All of the attack pictures that you came up were so simple but creative and. And like showed a depthful understanding of the product, right? And where the security boundaries are. And I'm really like, I'm glad to have you on the pod, dude, because I think there are a lot of different types of hackers out there, right? There are people that are just obscenely technical and will just like, you know, and looking at some of the stuff in here, you got a little bit of both for sure, right? But you know, there are some people that are just. They all they do is focus on like the white box parts, the code where they can. The part where they can get their hands on the code. They read it, they fully understand it, they bend it, right? And then there's people that are just unbelievably creative with their attack vectors, right? And there's such a beauty to that latter piece, right? And the first is, I think, more of a science. The latter is more of an art, right? Where it's like crafting these really creative attack scenarios. Um, and. And to be honest, for the listener, I think you should be encouraged because for. For the creative piece, there are a couple hackers that I know that are. Are not Very, very technical. I'm thinking of one friend that I have that has earned, you know, multiple five figure bounties just from being a insanely creative hacker and just using the ui, right? No, no, no proxy, no dev tools, no nothing. Just clickity, clickity, clickety click. So. So it definitely is possible, right?
+
+[00:26:53.28] - Valentino
+Yeah. And it is crazy. I couldn't find issues using the broadcy and all the things. And then I closed the broadcy and I started finding a lot of bugs that were crazy. I started thinking, I think it is a critical thing.
+
+[00:27:15.60] - Justin Gardner
+There you go.
+
+[00:27:17.14] - Valentino
+I would add another thing which is abstract thinking is really important. The problem is there are hackers that. Well, it is not a problem. It is something. But the thing is that there are hackers that need to know all the details, like the code, everything. But sometimes you need to really understand that you will lack information and you need to be comfortable with lacking information and guessing a bit.
+
+[00:27:59.33] - Justin Gardner
+Dang, dude, that's deep. That hits me right in the heart, man. I'm one of those guys that needs to see all of the pieces, right? I'm not very good at not having, you know, some of those pieces. And, and for me, you know, when I'm hacking on stuff, I really, I do try to line all those pieces up in my brain. Like, like, you know, I'll write it down, I'll map it out, I'll draw it. I've got these big yellow notepads that I have around that I just sketch and like draw and, and try to get it, you know, all in one piece. But I need to be more comfortable with the abstract, right? With, with the, with the uncertain pieces and, and just kind of take guesses at what's happening or educated, you know, guesses at what could be happening. That's, that's pretty rad.
+
+[00:28:39.91] - Valentino
+It is hard. It is hard for me. It is hard to do the thing you like having knowing the entire application deeply. It is hard for me because I get distracted a lot. But I kind of feel it is easier to just have some information and just make an inference, like inference with abstract thinking. And it sometimes works.
+
+[00:29:08.24] - Justin Gardner
+Yeah, absolutely, man. All right, let's take a look at a couple examples of that. One of the ones that was interesting, that kind of highlights, I think that abstract thinking was your vulnerability that was disclosed at MercadoLibre with the HTML sanitizer. Can you talk a little bit about that? But that's a disclosed report, so we'll put it in the description for anybody who wants to follow along. Can you talk A little bit about what you found there.
+
+[00:29:36.66] - Valentino
+Yeah, that was my first crazy bug. It was the first time I thought in abstract terms, I basically saw a request that basically, in Mercolide, you can sell and buy products. So I tried buying a product and then making a claim, and then I saw the request with a claim and HTML code and I said, what is happening here? It's like, why it is sending HTML call?
+
+[00:30:24.60] - Justin Gardner
+So when you say a claim, is this like when you've bought something and you need to get some support or something like that from the seller or.
+
+[00:30:31.50] - Valentino
+Yes, exactly. Basically you're trying to make a claim to return to a product or to say something is wrong, basically.
+
+[00:30:44.47] - Justin Gardner
+Okay, okay. So you've got a support complaint and you're trying to get support for the product, maybe even return it. And when you do that, the message that you send contains HTML in it.
+
+[00:30:55.03] - Valentino
+Exactly. Yes.
+
+[00:30:56.16] - Justin Gardner
+Dude, don't you love to see that, though? My heart skips a little beat whenever I see those encoded HTML tags inside of my request. I'm like, yes, I know that there's going to be something interesting here.
+
+[00:31:10.07] - Valentino
+Yeah, it is awesome. But there was a sanitizer, and that sanitizer was custom, I think. So I was able to make some guesses and bypass it. And that bypass was crazy because basically it had like a low list of tags, and when I sent multiple P tags, it was maybe. It is hard to see, like the picture, but there were many open tags that you can. If you send multiple open tags and then a malicious payload, it basically bypasses the filter for some reason.
+
+[00:32:07.33] - Justin Gardner
+Dude, it's crazy, man. It's crazy how some of this stuff happens, right? Like, so you just have open P tab, open P tab, open P tag, open P tag, open P tag. And then like your XSS payload and the thing just starts reading the P tags. It's like, all right, yep, it's another pizza. All right, whatever. It's fine. You know, just let it through and then it just opens up. That's nuts, man. Nesting stuff. Nesting stuff is. Is really important when attacking a sanitizer.
+
+[00:32:34.06] - Valentino
+Yeah, it is. It's. It is. It is. I saw it is really important with the logs made by Miso.
+
+[00:32:44.94] - Justin Gardner
+Exactly. Yeah. Yeah. There have been so many dompurify bypasses because of the depth restraints and essentially having namespace confusions because of the sort of stack reaching maximum depth and then tags being normalized to the same spot within the nesting. So it's pretty amazing.
+
+[00:33:09.42] - Valentino
+Yeah, it is. And the most crazy thing is that in that time I didn't even look at the code. So I don't know the root cause.
+
+[00:33:25.50] - Justin Gardner
+I don't know Valentino. That would drive me crazy. That would drive me like, I cannot believe that you didn't go back and read the freaking sanitizer code afterwards, man. Like, I mean, unless it's happening on the server side and you can't, but you're just like, ptac, ptag, ptac, ptac. Oh, it worked. Let's go submit the report.
+
+[00:33:44.68] - Valentino
+I'm like, dude, yeah, it was crazy. And then they put don't purify. So it. Yeah, I think.
+
+[00:33:56.68] - Justin Gardner
+Bummer, man, bummer. Well, I see you've got a section of this doc where you say that there are some patterns that follow this structure in other pieces of hacking. Can you talk a little bit about that?
+
+[00:34:14.53] - Valentino
+Yes, sure. There were. Do you mean the patterns and the feature?
+
+[00:34:24.13] - Justin Gardner
+Yeah, exactly, yeah.
+
+[00:34:26.09] - Valentino
+Oh yeah. So in this vulnerability, I reflected on it and I think there are some things that we can take here. There was an allowed list. So you could basically wrap a malicious object inside an allowed object and that bypasses the mitigations. It is really interesting because it is similar to insecurity deserializations where you have allow list and then you can just wrap evil objects inside and it works.
+
+[00:35:17.15] - Justin Gardner
+Yeah, yeah. I think it's really important that we reflect upon those sort of principles within hacking that makes us much better hackers is when we see this higher level pattern, right? And what, what you're pointing out here is that sometimes there are allow lists, right? And inside of those allow lists, you know, there can be sub objects, right, that, that should not be allowed. And the, the thing that's assessing it may only go, you know, one layer deep, right? So there's this nesting part, there's this allow list part. We see this in, in SAML bypasses. We see this in, you know, deserialization. We see this in sanitizing bugs, HTML sanitizing bugs. Definitely a common pattern that hackers need to be familiar with and apply to different areas of hacking.
+
+[00:36:03.19] - Valentino
+Yeah, it is really cool how you can apply, can take one technique from, I don't know, blockchain or crypto hacking and apply it somewhere else. One day I did an experiment. I read a blog talking about crypto bug. I didn't understand almost anything, but I read Cash many times and I thought this issue is universal. Like crazy conditions, some mold escapes. It's like injection bags. They are like patterns in software, like.
+
+[00:36:49.44] - Justin Gardner
+All over the place. All over the place, man. Yeah, Especially crypto because it's Such a unique area with reentrancy attacks and stuff like that, trying to take those principles and apply them to other areas and to take the areas of traditional web security and apply them to other things. We see this stuff happening with AI related vulnerabilities, and every new area that pops up, there's the same old problems that we have from before just taking a different form. All right, man, now we've kind of gone through a couple of these. Let's hit the onslaught of really crazy bugs that you have in here and hear a bunch of stories. So I'm looking right now at the command injection in Vertex AI, one of the Google products. And this one, I read your little write up on here beforehand. So cool, dude. So tell the listeners about that. I think they're really going to enjoy it. And can I share this document? This related draft document or. Yes, yeah, okay, cool. I'll share it and maybe it'll help the users visualize a little bit.
+
+[00:37:53.38] - Valentino
+The command injection in Vertex AI. It was another crazy bug I found without looking at the code.
+
+[00:38:07.30] - Justin Gardner
+Valentino, stop, man.
+
+[00:38:09.17] - Valentino
+What are you doing? Stop.
+
+[00:38:10.38] - Justin Gardner
+Please don't do this to me. Oh my gosh. Okay, tell me about it.
+
+[00:38:14.78] - Valentino
+It is really fun because it was basically, in Vertex AI, you have like a feature where you can text prompts with different models. So I noticed you can embed content and then you can use a feature called get code, which generates code to call the APIs with your test prompt. So I thought, what if I just can use a code code and escape and perform command inserting? It didn't work. But then I thought, well, images are. And are interesting. Have been interesting with Google. So I just put an image, an escape in the image URL and then I got the command injection there.
+
+[00:39:20.71] - Justin Gardner
+Okay, okay. Whoa, whoa, whoa, whoa, whoa. Valentina, hold on. You can't just say. And then I got the command injection. So, okay, so what's going on here? Is this file that's being uploaded, if I'm understanding this write up correctly, this file that's being uploaded is a JSON file that represents what, a prompt?
+
+[00:39:39.88] - Valentino
+Oh, sorry, yeah, I skipped that part.
+
+[00:39:44.84] - Justin Gardner
+You're good, you're good. Tell me about it.
+
+[00:39:47.01] - Valentino
+So basically the problem is that the combination needed the user to copy and paste the content in the chat. So it was too much interaction. So I decided to find an indirect way of introducing that malicious content. So I found another feature called prompt management. That's where you can import a prompt with a JSON file with some variables and data. And yeah, the attack is basically the user downloads a prompt file, imports it, and then after using the get code, it inserts the command escaping the URL which is inserted in that code.
+
+[00:40:44.42] - Justin Gardner
+Okay, okay, okay, hold up, hold up a second. So you're taking a JSON attacker prepares a prompt template or whatever, JSON file, and then they upload that to vertex AI, right?
+
+[00:40:59.01] - Valentino
+Yes.
+
+[00:40:59.42] - Justin Gardner
+And now the prompt that you've prepared is in their vertex AI. And then you said they hit the get code button. What does the get code button do?
+
+[00:41:08.42] - Valentino
+The get code basically generates code to call the Google AI APIs to test the prompt.
+
+[00:41:20.13] - Justin Gardner
+Ah, okay. Okay. So then this allows, this gives you some way to use this specific prompt that you've prepared via the Google APIs.
+
+[00:41:31.25] - Valentino
+Yes, yes.
+
+[00:41:33.40] - Justin Gardner
+Okay. And then when you do that, it generates some code, either some. Is it bash Python? What did you say it was?
+
+[00:41:41.61] - Valentino
+In this scenario you have many options like curl bash. Well, bash is called, then python and node js, et cetera. So wow.
+
+[00:41:56.61] - Justin Gardner
+And then, and so what was happening there was, you know, it would generate it and it would somehow pass in this prompt, you know, to, to the, the, I guess curl. Let's just say curl in this scenario, in this curl request, right? So maybe it's using like, you know, binary data or just like dash D or whatever in curl, right?
+
+[00:42:14.21] - Valentino
+Yes.
+
+[00:42:14.80] - Justin Gardner
+And then, and then inside of that JSON, you were able to provide something that would break out of the JSON object within the. So it's like a command line argument injection.
+
+[00:42:26.88] - Valentino
+It was like just command injection without any tricks, like just the end of line.
+
+[00:42:38.09] - Justin Gardner
+Okay.
+
+[00:42:38.61] - Valentino
+And you need to close the multi.
+
+[00:42:40.40] - Justin Gardner
+Line.
+
+[00:42:42.67] - Valentino
+Thing and then you can just inject. Wasn't like complicated at all.
+
+[00:42:48.98] - Justin Gardner
+Nice, nice. So I've seen this kind of bug several times. It was really cool because the first time I saw it, it was done by Inti. I don't know if you know the hacker Inti, he's kind of OG in the bug bounty space. He did the ticket trick research back in the day and we were at a live hacking event and he got show and tell. He was like one of the best bugs of the event because he said RC via content injection. Because he was able to generate like, like you did here, you know, inject into a code block that was supposed to be copied and pasted into, you know, somebody's code, you know, into their PHP file at the time. Right. And he was able to just specify arbitrary, arbitrary PHP within that and then it would run on the victim server. And I think that this is a pretty niche, niche bug. Right. It's something that you see pretty often but not a lot of people try is content injection inside of these very multi contextual environments. Right. Where there's lots of context, there's the curl context, there's the JSON context, there's the HTTP context. It's very, very cool. Attack vector.
+
+[00:43:59.26] - Valentino
+Yeah. Basically. I mean it requires some injection, but still the origin is trusted, so you need to be careful.
+
+[00:44:10.23] - Justin Gardner
+Yeah, absolutely. All right, let's see. Vertex AI. That one was pretty cool. Google gave you a good bounty for that. Let's come back to some of these other stories that you have up at the top. You mentioned deserialization earlier. It looks like you've done some work with. NET and Java deserialization. Do you want to talk about one of those too?
+
+[00:44:31.84] - Valentino
+I won't say I know much about visualizations because I found the bug and I read the entire paper and that was it. I did some research, like two weeks just to exploit the bug and then I forgot about it, like.
+
+[00:44:57.23] - Justin Gardner
+Yeah, what, what paper were you reading at the time for deserialization that you used to exploit this?
+
+[00:45:03.55] - Valentino
+I read many papers written by Alvaro Munoz which are so great to start with. Deserization. And then I read this massive paper by Piotr Basilo, which is awesome. Like it? I feared visualizations way back, but that paper made me realize it is very fun and interesting to play.
+
+[00:45:39.36] - Justin Gardner
+Yeah, dude, this guy Pyotr. Oh my gosh, this is Chudi pd. Yeah, dude, he's unbelievable, man. Read some. We've covered some of his stuff on the POD before. I'd love to have him on the pod. The stuff that he comes out with specifically surrounding the pone tone research that he does is like unbelievable. Very crazy stuff. All right, what's this jumping down the list. What is this argument injection to LFR in parsing component?
+
+[00:46:10.90] - Valentino
+Oh, there was a time I had this was a white boss kind of hacking. So when I looked at the code, it seemed safe, but I found a way to check an argument and then it called a specific parsing tool. So I needed to basically read the manual and see which arguments I can use to get some impact. So I reverse engineered the binary a bit and then I found a way to trigger a server side request for sharing with a local file. Read and leak files.
+
+[00:47:05.28] - Justin Gardner
+Oh my gosh. So it was a argument injection. This is in a web app, I presume?
+
+[00:47:13.13] - Valentino
+Yes.
+
+[00:47:14.09] - Justin Gardner
+Okay, so it's an argument injection from a web app. Web app is calling some sort of command line utility. That command line utility, you go in Reverse, you've got an argument injection in there. So you add an argument that takes a file from the user's local machine and somehow yeets it out to some, you know, throws it to some attacker controlled server. Is that right?
+
+[00:47:33.65] - Valentino
+Yeah, like to be more specific, basically it prepares a request and it reads a file that is supposed to be a header with some credentials or some data. So it sends that header in the request that is supposed to go to a server, legitimate server. But you can just put the. Etc password in the header value and. And it works.
+
+[00:48:02.55] - Justin Gardner
+You check your server's logs that it's like, you know, authorization bearer root. You know, it just jumps the whole Etsy password file. Yeah, dude, I love that, man. Hacky stuff like that where it's like you get these malformed HTTP requests and somehow your server catches it. It's like, oh my gosh, I love this.
+
+[00:48:22.71] - Valentino
+It is.
+
+[00:48:23.36] - Justin Gardner
+That's. That's beautiful, man. That's really beautiful. All right, dude, I'm going down here. I'm looking at some of the other stuff you've got. I really liked this thing that you called free after use, right? Not use after free, but free after use. I thought that was really funny. Can you tell us about that specific vulnerability, what happened there and how the listeners can look for a similar vulnerability?
+
+[00:48:49.69] - Valentino
+Yeah, basically I was looking for authorization issues like IDOR and all that. But it was tricky to find IDORs because they are so common that are fits very quickly. So I thought why, what if I just access. Basically the concept free after use is looking for moments where the application does some weird stuff when a specific user accesses a specific resource. In this case, an owner of a resource access his metrics, for instance. And then I could basically when. When the owner accesses the metrics, everyone can access the metrics. It's like when they. That's why I called it free after use. The user, the owner uses the component and it is free.
+
+[00:50:11.96] - Justin Gardner
+Like then it becomes free for everyone. That's hilarious, man. So I think this is a pretty niche scenario. I have seen it before for sure, where some routes will just be for some reason presented like that, it's an authorization issue. But one of the other places where you often see this is caching related vulnerabilities, right? Like if there is a server at some point somewhere that is caching whatever resource and then serving it and another person hits that resource once it's already in the cache, then it's not hitting any of the backend logic, it's just presenting that same data Again, to the other user. So very similar to web cache deception in that way.
+
+[00:50:50.84] - Valentino
+Yeah, it is really similar to that. Now that I think it.
+
+[00:50:55.23] - Justin Gardner
+Yeah, he's like, wait a second, maybe that was webcast, but I need to look at the freaking code because I need to have my proxy open. Valentino. Oh, my God. Dude. Yeah, yeah, that's definitely a good one.
+
+[00:51:12.61] - Valentino
+Yeah. For instance, relating to the sanitizer bypass earlier, when I read the don'tporify misconfiguration bypasses block by Miso, I thought, oh, this is pretty similar to what I did. Yeah, this is the bug.
+
+[00:51:36.15] - Justin Gardner
+So I'm wondering, Valentino, I know, you know, how old are you right now? Do you mind sharing on the pod or.
+
+[00:51:42.19] - Valentino
+No, what thing?
+
+[00:51:44.38] - Justin Gardner
+Sorry, how old are you?
+
+[00:51:46.30] - Valentino
+Oh, now 21.
+
+[00:51:48.98] - Justin Gardner
+21. Okay. So you're a younger guy, right? You're a younger guy in this scene. You've been doing this for three years. I think you've had a lot of success here, clearly finding a lot of vulnerabilities. Do you think that your evolution, you know, your growth as a hacker will come with understanding some of these things at a more technically depthful level? Or are you going to try to spend time, trying to foster and grow in yourself that creative and abstract thinking? Which way do you see yourself going as a hacker? And maybe it's both. But I'm just curious.
+
+[00:52:23.73] - Valentino
+I think there is a limit to creativity, so I think. And there is lack in that creativity, so I think I'm going to go to the more technical route to really understand the deeper parts. So, yeah, I think that's a good idea.
+
+[00:52:48.23] - Justin Gardner
+I think that's a good progression. And I think you're right that there is luck and there is limits to creativity. Kind of crazy, though, that you place second at the Google Live hacking event off of that. So I think maybe you're like, your creativity levels are like super high from a baseline perspective. And let me ask you this. You sort of mentioned several times throughout this pod that you think that a lot of this has to do with spending a lot of time on an application, right? On the pod, we call it getting intimate with the application. You know, you know everything about this application. You can hold it in your hands. You're like, I know exactly what you are. So, yeah, I think. Do you find that that creativity gets spurred more after you feel like you've understood all the parts of the application, or do you think it's more as a part of that process of understanding everything about the application?
+
+[00:53:45.01] - Valentino
+I think basically playing around with an application for a lot of time. Like, I have been sending bugs, like, to a single application for at least two years. Or it's like.
+
+[00:54:08.38] - Justin Gardner
+All right, guys, listen to what Valentino says here. Say it again for the people in the back. Valentino, say it again.
+
+[00:54:13.90] - Valentino
+I have been finding bugs in a single application for two years, but.
+
+[00:54:20.71] - Justin Gardner
+Two years. Two years, guys. Listen to what Valentino is saying. So many people, Valentino. So many Valentine people. Valentino will say to me. I've been hacking on this app for so long, I can't figure it out. Can't get any bugs. I'm like, how long have you been hacking? They're like, two days. And I'm like, dude, you haven't spent any time on this. I'm still reading the docs two days in sometimes, so I think it's really key what you mentioned here.
+
+[00:54:48.55] - Valentino
+Yeah. And sometimes you don't need to spend, like, eight hours a day in a single application. Every day in the first year, I spend, like, I just look at the application, like, four hours, then the next month, 12 hours, and keep revisiting the application, keep going back and check new things, new thoughts. In those two years, I found most of the bugs in three months. I started popping the bugs when I really understood the application. Like a user. Like someone that just tries the application. Like, uses the application.
+
+[00:55:39.42] - Justin Gardner
+Yeah, yeah, absolutely, man. That. That is super pivotal. And I wonder, Valentina, do you. You know, you mentioned, you said earlier that sometimes you get bored quickly. Do, like. But you're. You're spending a lot of times on these applications. Do you think that you're like, do you have to force yourself to refocus on some of these apps? Do you get bored with them and then. But force yourself to come back to them?
+
+[00:56:02.38] - Valentino
+Sometimes I get extremely interested in an application that sometimes I have a different problem, which is I want to focus on Google Cloud, and I can't because I keep going back to the same application. It's like a fixation. I know there are more bugs, but sometimes I. For instance, with Google Cloud, which is a target, I am really starting to, like, I really want to hack there, but I get distracted all the time. Like, it's like.
+
+[00:56:46.84] - Justin Gardner
+Do you get distracted by new applications or by older applications or by both?
+
+[00:56:51.09] - Valentino
+I get distracted by everything. Like, I start reading the docs of versus AI and I start thinking, what are the differences between. There are different servers in different regressions. What are the differences between the languages or the encodings in different servers? And I think crazy things that probably won't Work like, do you know the Orange dca, for instance, published a blog where he took the.
+
+[00:57:31.94] - Justin Gardner
+What?
+
+[00:57:32.94] - Valentino
+Orange tca?
+
+[00:57:36.05] - Justin Gardner
+I don't think I know it.
+
+[00:57:37.34] - Valentino
+No. He published a blog about encodings with SQL.
+
+[00:57:43.98] - Justin Gardner
+Ah, is this the DEFCON talk on like injecting like at the binary protocol for SQL?
+
+[00:57:51.17] - Valentino
+Oh, no, no. It was a CTF challenge.
+
+[00:57:56.13] - Justin Gardner
+I don't think I've seen it.
+
+[00:57:57.90] - Valentino
+One day I decided to read all the CTF challenges made by Orange because he's a really cool researcher. And one write up was that an A with a specific encoding is converted to to an ASCII A and you can basically bypass the admin check or things like that. And I thought that might work in Google Cloud, but if I start thinking about many things and I can't focus on a single thing right now, it's like, that's a problem.
+
+[00:58:34.90] - Justin Gardner
+Yeah, that is one of the problems with some of these big targets, right? Like Google Cloud or AWS and stuff. There's so many ideas kind of bouncing around and sometimes they're a little technically difficult to implement. And so I find myself sitting and scheming and writing down and stuff like that. And then I realized, yeah, dude, but the only way I'm actually going to find vulnerabilities is if I try stuff, if I actually like go and technically implement it, right? So I got to pause for a second and then make sure I'm keeping my thorough put of things that I've tried. I got to keep that high so that I can keep my vulna output high.
+
+[00:59:08.94] - Valentino
+And Google is so massive. And so like at first I was scared of hacking Google.
+
+[00:59:18.94] - Justin Gardner
+Same.
+
+[00:59:20.38] - Valentino
+If you feel comfortable hacking Google, then you start finding stuff. It's like, yeah, yeah, yeah, it is.
+
+[00:59:29.86] - Justin Gardner
+A scary target, but it's definitely doable, man. Definitely doable. Let's jump to this section. I love this section you've entitled, Issues in File Extension Validation Components. Because you've got two pretty solid checks that I always check for as well here. And they really do help often. So talk about these two tips you have for the listeners on bypassing file extension validation checks.
+
+[00:59:57.26] - Valentino
+So basically whenever you have a file extension validator, you can try stuff like the null byte, etc. But in my case I found a component that basically in the backend, somewhere hidden, was crafting an URL and you could basically do that. HTML, how is that called?
+
+[01:00:33.44] - Justin Gardner
+Like the hashtag.
+
+[01:00:35.03] - Valentino
+The hashtag and that png. Basically the PNG was allowed and the HTML was disallowed. So basically the URI parser ignores the rest of the hashtag. So you can basically bypass the filter that way.
+
+[01:00:55.63] - Justin Gardner
+Dude, I love both this one and the question mark. Right. Because it takes advantage of the differences between which characters are special characters in a file context versus in a actual HTTP context. A hashtag is a perfectly valid character in a file name, but in the HTTP context, that is the beginning of the hash fragment which truncates the rest of the request. So very solid. I love to see that. That's great.
+
+[01:01:24.48] - Valentino
+Yeah, it is amazing. The last research made by Orange DCA with the question mark as well. Yeah, it's amazing.
+
+[01:01:35.11] - Justin Gardner
+Absolutely. You got another one here. What is this one? Uppercase.
+
+[01:01:39.34] - Valentino
+The next one is simpler because it was just XML with an uppercase. That was it. Basically, some validators have a Y list or blacklist that only checks lowercase characters and it doesn't shake. Like it isn't case insensitive, basically.
+
+[01:02:07.92] - Justin Gardner
+Dude, I will never forget to check this because of one freaking live hacking event. And you guys have heard me talk about it on the pod before listeners. So it's this live hacking event with freaking Matthias Carlton. He had a crit that all on a piece of scope that all of us had seen and he bypassed like a reverse proxy because of one capital letter. We were all like, man, if we could only get access to his admin panel, we could only get access to his admin panel. And he just take one of the letters, the last letter, and he converted it to uppercase and it let him in. And I was like, I will never forget to do this ever again. So I think that's one of the beauties of the live hacking event, right, Valentino? Where it's like, you see all the things that other people have tried and you know how hard you are banging your head up against the same scope, trying, trying, trying. And the way you see other people solve it and it's so, like, infuriating that you didn't solve that, that you never, ever forget in your life, you know, to do that attack vector ever again.
+
+[01:03:07.05] - Valentino
+Yeah. Sometimes I look at the show and tell, I think, oh, my God. I. This is like something I will never think. Like, so creative and so like, but simple at the same time. Like, yeah, yeah, yeah.
+
+[01:03:25.11] - Justin Gardner
+There's both extremes. They're like, wow, Yeah, I was never even close to that. But the ones that stick with me the most are the ones that are like, oh, that was right in front of me. I'm such an idiot. How did I not try that?
+
+[01:03:34.55] - Valentino
+Yeah, that is painful.
+
+[01:03:36.46] - Justin Gardner
+Yeah, it's painful. Man. All right, I'm going to jump down to this last one and then we're going to call it a wrap for the day. This was a write up on your blog and just kind of a couple SQL injection vulnerabilities, right. This is PMB and one of the ones that I kind of wanted to point out here is that you had an authenticated CSRF to SQLI within this or write up. Right? Which I think is just a really good thing for the listeners to understand because a lot of people would think okay, SQLi, like why would I need to see surf that? Well, you know, from an, from an unauthenticated perspective, sometimes you can't even access these endpoints. But if you, if you are able to do a cross site request forgery and trigger the N SQL injection in the back end, your CSRF can result in something massive like a server side vulnerability. Right. Like SQLI or oftentimes you see RCE as well. So yeah, dude, it was great to see that right up here. And did you, how did you learn about that technique? Was that you just kind of coming out of your head there or did you see somebody who had implemented this before?
+
+[01:04:47.21] - Valentino
+I basically had the SQL injection and I thought yeah, this is really not great because you needed credentials. So I thought well it is just a get request so I can use a close site request for she and I did like into us like intuitive like just.
+
+[01:05:19.21] - Justin Gardner
+Yeah, yeah. And I've actually had a good amount of success with these actually working in a bug bounty environment because a lot of times people will be like, ah, you know, admin, see surfs. It's kind of hard to prove, but specifically within a. And not in this scenario, this is a different scenario, but specifically within a WordPress environment where you can create, you can install the same plugin and if there's like a CSRF to RCE or CSRF to SQLI in that plugin, then you can prove to the Triagers, hey, this works on an admin for sure and has large impact like in SQLite and RCE. So I think that's a really good takeaway in these environments.
+
+[01:06:02.38] - Valentino
+Yeah, it is really good. Yeah.
+
+[01:06:06.78] - Justin Gardner
+Nice man. I did forget about this AI hacking section down here at the bottom. Did you have any comments? I've got a wrap up here in about 10 minutes, but did you have any tips you wanted to give the listeners on the AI hacking experiences you've had with Google or outside of Google over the past year or two?
+
+[01:06:24.71] - Valentino
+Yeah, basically what I would say is please always take into always think models are super inconsistent. So try many variations. Try opening new chats, try. If you trigger the bug, don't get scared if it doesn't work in another chat, you didn't lose the bug, they didn't fix it. Just a thing I learned is that you can just copy the entire set of instructions, paste it in another chat and it sometimes work with a few tweaks. And yeah, that's like the most important thing I learned. And also take into consideration that some programs don't need the full chain. You can just report the data simulation. But I will say it is important to show you can leak sensitive data and not just regular data. And basically another thing I will say is maritime is just the beginning.
+
+[01:07:48.82] - Justin Gardner
+Yes, agreed man. Agreed. All right, great tips. Let's cut it there. Leave that for the listeners to go. Thanks for coming on the pod, man. I appreciate it.
+
+[01:07:58.82] - Valentino
+Yeah, thank you.
+
+[01:08:00.90] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'. All. If you want more critical Thinking content or if you want to support the show, head over to CT TVB show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there on top of master classes, hack alongs, exclusive content and a full time hunters guild if you're a full time hunter. It's a great time, trust me. I'll see you there.

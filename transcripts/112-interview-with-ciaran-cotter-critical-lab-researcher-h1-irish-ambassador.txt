@@ -1,0 +1,1073 @@
+Episode 112: Interview with Ciaran Cotter, Critical Lab Researcher, h1 Irish ambassador
+Source: https://www.criticalthinkingpodcast.io/episode-112-interview-with-ciaran-cotter-critical-lab-researcher-h1-irish-ambassador/
+======================================================================
+
+Joseph Thacker (00:01.47)
+Kieran, I'll have them cut us in here in just a second. I'm gonna get the nodes pulled up here on the side, because I'm around with a single monitor right now. So I wanna be able to see all this in a single place. Okay, sweet. me straighten this up just a little bit.
+
+Joseph Thacker (00:22.803)
+Sweet. Do you see a little thing that says uploading on the top, Kieran? Alright, cool.
+
+Ciarán (00:27.194)
+I do, yeah.
+
+Joseph Thacker (00:32.046)
+3, 2, 1.
+
+Hey, what's up critical thinking family? Today we have a dear friend of mine. His name is Kieran. Most of you probably already know of him, but his hacker handle is monkey and we'll get into a little bit more of his story later. But for now, you know, the ritual, we have to jump straight into a bug. So what did you bring us today?
+
+Ciarán (00:55.121)
+I have three bugs because yeah.
+
+Joseph Thacker (00:57.09)
+What? Are you trying to one up all our previous guests?
+
+Ciarán (01:02.897)
+Yeah, we'll jump into the bugs, I guess. I do a lot of client-side stuff, so hopefully that translates well on the audio format, because you know how client-side can be.
+
+Joseph Thacker (01:13.966)
+Our listeners have heard Justin describe enough front end bugs and if I get confused I'll ask questions. I'll play the listener here.
+
+Ciarán (01:16.997)
+Yeah, that's true.
+
+Yeah. So first bug was I can't take over via post message on a public program that I can't name for obvious reasons, but what made it really interesting was like the sheer number of gadgets we had to bring in. I was doing this with my friend Animesh, he's Australian researcher. So we spent like, I think like a week or something on this, but basically the idea was
+
+Joseph Thacker (01:49.413)
+well. Did it pay off?
+
+Ciarán (01:51.941)
+Yeah, we got high bounty from it. So that was awesome. But there was several pieces to this bug. The core of it was that there was an XSS in a (REDACTED) chat widget that was on the page. And that had a gadget that let you leak the href of the parent. So this chat widget was in an iframe. And the exploit we had was to leak the OAuth code from
+
+Joseph Thacker (01:55.554)
+Nice.
+
+Joseph Thacker (02:08.91)
+Mm-hmm.
+
+Ciarán (02:21.004)
+the parent URL. It had this like logging thing that would like send the, the, read the parent href. And so, I need to like remember which, so basically the, the (REDACTED) chat widget itself had, this, you, could send a post message to it and it would like render the, the URL you give it in like an iframe source.
+
+Joseph Thacker (02:22.243)
+Mm-hmm.
+
+Joseph Thacker (02:33.443)
+haha
+
+Joseph Thacker (02:49.294)
+Mm-hmm.
+
+Ciarán (02:49.538)
+So you could send it a JavaScript protocol and it would pop exercise in the context of the chat widget. And this, this, had like four or five iframes on this page, like the victim.com had like four or five iframes. And so the problem was that they had an origin check, but you know that (REDACTED) allows custom JavaScript for their custom domains. So.
+
+Joseph Thacker (03:18.386)
+yeah, of course.
+
+Ciarán (03:19.544)
+I could get a window reference by hosting custom JavaScript on, was it think (REDACTED) is the (REDACTED) origin and do a window.open to the victim page. And then you could send a post message and bypass the origin check. it's like it, it was from a (REDACTED) origin. it would pass the check. Right. And so that was great, except the OAuth flow had. Coop it had cross origin opener policy.
+
+Joseph Thacker (03:36.716)
+Yeah, was, which is whitelisted. Yeah.
+
+Ciarán (03:47.407)
+And I think Justin's discussed this recently, but it is a huge pain for post-message bugs. But Animish then discovered that you could fixate the state and what that would let you do, it would like jump you one step ahead in the OAuth flow. So it wasn't like slash authorizer or whatever. It was like the next step over, which didn't have Coop. So we would like generate the OAuth state on our end, fixate it in the victim.
+
+Joseph Thacker (03:49.568)
+Yeah. huh.
+
+Ciarán (04:16.74)
+And it wasn't tied to the victim session or anything or any of that. So we could generate a state and have it be valid. That would then redirect to the page with the, the iframes and stuff. And with these kinds of bugs, you need like a dirty dancing, a gadget of some kind, because you need the code to be unused and to sit in the URL, right?
+
+So what I did here, I double URL encoded a hash fragment. So on the first redirect, it would decode once. On the second redirect to our victim page, it would decode twice, but it would put the code parameter in the hash fragment when it did that. So it would be unused.
+
+Joseph Thacker (04:50.847)
+nice.
+
+Joseph Thacker (05:01.464)
+which so it wouldn't be processed, but you could still snag it.
+
+Ciarán (05:04.866)
+Exactly. So the full chain was like window.open to this fixated state, which would redirect with the WR encoded hash fragment and put the code in the URL. Then I'd send a post message to one of the (REDACTED) chat widget frames, but that wasn't the one that had the logging mechanism. So I would like, I frame hop over from the first frame to the second frame, cause they're the same origin. And when they're the same origin, you can change the JavaScript and then you can overwrite the DOM.
+
+So I would like hijack the frame with the logging thing. I would trigger the log so the parent href would leak to the (REDACTED) chat. And then I would exfiltrate from there, because that's just exss in the chat. And they fixed that. I wouldn't talk about it. yeah.
+
+Joseph Thacker (05:47.948)
+That's awesome. Did you have, yeah. Did you have a, did you have like the whole thing automated and set up, or did you just like record it once for the demo and submit it? Or do you have it like replayable so they could, so they could redo it.
+
+Ciarán (05:58.685)
+yeah, I had a, so this took so long to get through triage. I ended up writing this code snippet that would generate the state on my server. And then the (REDACTED) JavaScript on (REDACTED) would get the fresh state from my server each time to generate the POC. It was a really big POC. Yeah.
+
+Joseph Thacker (06:16.546)
+Yeah, Nice. Yeah, that's cool though. That's amazing. All right, bug number two.
+
+Ciarán (06:24.804)
+Bug number two was I got account takeover without being logged in client side, which seems impossible, but so there was an unauthenticated CSTI. So client side template injection, it was in Angular. But the problem was it only existed in the context where you weren't logged in, which is obviously, yeah.
+
+Joseph Thacker (06:31.01)
+That's pretty cool.
+
+Joseph Thacker (06:45.772)
+Yeah. So yeah, this sounds very interesting. did you, is it like a, it, did it execute and then wait? And then when they did log in, it's like X full to you. Tell us how this works.
+
+Ciarán (06:54.862)
+So the key here was that they had a mirror domain that was not the same domain as the one we exorcised that had the same cookies. But of course, same origin policy applies. So you can't just reach over and read. That's just not how it works. But what they did have was they had this. This is another post message thing where they had a post message listener that would send the user's credentials.
+
+Joseph Thacker (07:03.255)
+Yeah.
+
+Joseph Thacker (07:10.273)
+Right.
+
+Joseph Thacker (07:24.462)
+Mm-hmm.
+
+Ciarán (07:24.666)
+to the parent, but they had frame ancestors. And what that means is unless it was in one of the pages owned by the company, they wouldn't let you do that post message sending the cookies to the parent. And the other problem was that if you receive the cookies in an unauthenticated scenario, like in the CSTI page, it would like log in and redirect. So that would break the whole chain as well because you can't do anything.
+
+What I ended up doing here with the XSS, I framed the same page with the CSTI. So like example.com, I framed example.com. And then I purged the DOM because they're the same origins. You can just wipe the DOM. And in that, I put an iframe with the other page that had logged in, but that was a different domain. And that would meet the criteria for the frame ancestors.
+
+Joseph Thacker (08:18.734)
+Okay.
+
+Ciarán (08:21.466)
+But because I purged the DOM, the JavaScript that would redirect no longer existed. So then I could trigger the chain where I send the post message, get the creds, which would go to my purged one and that would exfil to my origin.
+
+Joseph Thacker (08:25.517)
+Right.
+
+Joseph Thacker (08:36.526)
+So you had template injection based XSS on, right, yeah, right.
+
+Ciarán (08:40.474)
+CSTI at the top, then I had an iframe on example.com, and then I had the other origin at the very bottom, like the grandchild. And I purged the middle one so it wouldn't redirect, but it would keep the frame ancestors.
+
+Joseph Thacker (08:49.034)
+Right, right, right. The one where they're actually logged into. Yeah.
+
+But because of the frame ancestors, you could kind of like reach into the, to the one they were logged into to grab the creds and then exfiltrate them.
+
+Ciarán (09:01.742)
+Yeah, the frame ancestors whitelisted the CSTI page, by purging the DOM, I don't trigger the code that would cause the redirect and break everything.
+
+Joseph Thacker (09:05.998)
+Hmm.
+
+Joseph Thacker (09:17.24)
+So I guess this would always work right. Anytime you want to kind of reach across with a post message from, one domain when you can't, could potentially use that same exercise to do what you did in most of those cases, right? You could wipe the DOM, make an iframe.
+
+Ciarán (09:32.258)
+Yeah, if you've got a scenario where the DOM has code that breaks something, you can iframe itself, because, you know, even with most frame restrictions, even if it's same origin, you can still iframe yourself. And you can just purge the DOM and like keep the benefits of the same origin, but not the problems with any code on it. Kind of a blank slate, like a playground almost, for sure.
+
+Joseph Thacker (09:51.435)
+Right, any code that's like, yeah.
+
+Yeah, that's awesome. All right. And the third one is a server side bug, right?
+
+Ciarán (09:58.971)
+Yes, because as much as I like client side, I don't want to just be a client side guy. probably,
+
+Joseph Thacker (10:03.438)
+You know, we should have alternated it. We should have put the server side in the middle to kind of balance it out there. For any listeners that aren't gone yet, tell us about the server side bug.
+
+Ciarán (10:12.912)
+Yeah, so this was during my like 100 hour challenge I did for the newsletter last year. Yeah, it went quite well. I was pretty happy with it. And so basically there was a proxy, like proxy API and it had the classic URL parameter. I did actually pop SSRF on this URL parameter, but that's not what this bug is. This is a different bug in the same place. So I was just playing around with it.
+
+Joseph Thacker (10:17.986)
+Yeah, that did really well, by the way.
+
+Joseph Thacker (10:27.736)
+Mm-hmm.
+
+Ciarán (10:41.304)
+as you always do when you find something strange. And I put a relative path because that's always worth checking, not just HTTPS, but just a slash. And it gave me this error that was like, JAR protocol not allowed. And I was like, this is really weird. Like what, what is this? So I went Googling. No, it was just a slash as a URL equals slash. So I was like, this is super strange. and then I did like slash X and it gave me class path resource does not exist. Now.
+
+Joseph Thacker (10:43.608)
+Mm-hmm.
+
+Joseph Thacker (10:49.752)
+Sure.
+
+Joseph Thacker (10:56.59)
+And you weren't passing a jar file to it or anything. Yeah.
+
+Joseph Thacker (11:10.21)
+Mm-hmm.
+
+Ciarán (11:11.396)
+When you hear class path immediately, it's like Java, because Java is the most common for classes. And so I asked PMNH, who is like a god at Java stuff. He's written a book on Spring security. So he's like my go-to friend for the server side stuff. And he was like, maybe it's this. And basically, if I put the class path protocol, which is apparently a protocol in Spring, it didn't error.
+
+Joseph Thacker (11:25.368)
+Yeah.
+
+Ciarán (11:41.434)
+which meant what it was doing was it was loading whatever file I gave it inside the certain function in Spring that was made for loading chairs. And so he was like.
+
+Joseph Thacker (11:46.094)
+Mm-hmm.
+
+Joseph Thacker (11:51.24)
+Hmm, interesting. So were you able to write a jar file into
+
+Ciarán (11:55.373)
+No, this, this was unfortunately a low book. It was just really, really cool. So he was like, try like slash meta-inf, which is like pretty much a default file and all, all jars. And that gave me the same error jar protocol not allowed. So by playing around with that, I figured out what it was doing was if the file name existed, it would give me jar protocol not allowed. And if it didn't exist, it would say class path resource not found. So then I could just use this to fuzz the entire.
+
+Joseph Thacker (12:00.586)
+Okay.
+
+Joseph Thacker (12:22.263)
+Mm-hmm.
+
+Ciarán (12:25.06)
+like the file names of all the source code they had in all of their JARES.
+
+Joseph Thacker (12:27.68)
+Right. That's funny. So it was basically like a file name disclosure.
+
+Ciarán (12:31.854)
+Yeah, but I couldn't load them and I couldn't like get RCE or anything because I couldn't actually, it was just for loading up the JERS and not executing them.
+
+Joseph Thacker (12:39.104)
+Once you knew what those files were that existed, did you try to browse to any of them? I guess you could have done the same thing if you didn't have that gadget where you just tried to browse to them, but because they were server-side, it wouldn't load anyways.
+
+Ciarán (12:49.816)
+Yeah, yeah, but I could like, I used the program name and like fuzzed all the like the file names and stuff. So I got quite a lot of information for just differentiating between two error messages, you know, so yeah, it was a fun one.
+
+Joseph Thacker (13:00.022)
+Yeah, that's cool.
+
+Nice dude. Well, to give people a little bit of different backstory, on kind of your history and our history. Kieron, and I met in a really cool way actually. So I was working at app Omni and we were trying to hire another researcher for the labs team, which you've probably heard me talk about before. That's where I worked with, Aaron Costello. And, I hop on a call and, this guy's face is sitting there and he's like, Hey,
+
+Do you do bug bounty or are you an ambassador for hacker one? I was like, yeah, I am. And he was like, well, I am too. And so Ciaran is the hacker. Yeah.
+
+Ciarán (13:34.948)
+was yeah that was like the second batch so there was only like 20 something ambassadors so
+
+Joseph Thacker (13:42.262)
+Yeah, yeah, it was a pretty small crowd and then obviously the Bug Bounding space is pretty small. So anytime you meet somebody in Bug Bounding, know, it's like there's a kindred spirit there. Yeah, and so...
+
+Ciarán (13:51.825)
+Yeah, you were like, I'm also an ambassador for Kentucky. And I was like, what? Yeah. No, no, I had no idea.
+
+Joseph Thacker (13:57.962)
+Yeah, you didn't know that, right? You didn't pre-look me up or anything. We both hopped on there and we just kinda happened to tease it out, which is cool.
+
+Ciarán (14:04.73)
+Yeah.
+
+Joseph Thacker (14:06.658)
+Yeah, so Kieran then, of course, I lobbied hard to get him hired and ended up getting hired at Apomni. And how long did you work there with us? Yeah, it was about two years. I know you were kind of like full time, then part time, then do it like you were doing schooling and everything else.
+
+Ciarán (14:13.392)
+For two years. Two years, yeah.
+
+Ciarán (14:20.209)
+I was shuffling it with university as well, yeah.
+
+Joseph Thacker (14:22.902)
+Yeah. so kind of sweet. We, got to work together for a while. and that probably honestly, what made us become even better friends. And now we're both full time bug bounty hunters. So we're still colleagues and we get to collab a lot. And, we're actually currently, we're currently hacking on something this week with our buddy Archangel Douglas day. and I think you were going to mention that he had just launched a newsletter, right?
+
+Ciarán (14:35.3)
+Yep.
+
+Ciarán (14:43.034)
+Yep.
+
+Ciarán (14:46.606)
+Yeah, yeah. I think he's getting more into his creative side now. So he launched a newsletter called Archangel Drops. So, you know.
+
+Joseph Thacker (14:56.118)
+Yeah, and if you just go to Douglas dot day, you can click like newsletter there on the left and you all should sign up for that. Yeah. His domain is so cool. I know I always mentioned that on the podcast, but if I wish I could get first name dot last name, I don't think a codder is going to be a TLD. So you might not be able to do that. Yeah. Yeah. I think me Justin and I might've mentioned that in a recent one, but yeah, if I could get like Joseph T dot hacker where it's my name with a dot after the first letter of my last name, he'll be pretty sweet.
+
+Ciarán (14:59.645)
+Such a cool domain.
+
+Ciarán (15:07.758)
+Yeah, yeah. Or you could get hacker someday, you know.
+
+Ciarán (15:17.648)
+You
+
+Joseph Thacker (15:23.438)
+Yeah, tell us a little bit. mean, just if there's like anything, we don't need to get into your whole backstory, but if you think there's like kind of any, anything interesting or inspiring to up and coming bug hunters, I mean, you're pretty young and you've already been at a few live hacking events and, you know, you seem to know everyone else in the industry. Um, yeah, I guess just tell us a little bit about kind of that, how you got there. And if anybody, you know, doesn't know you and you want something, want them to know something about you. Um, yeah, in case you can't tell from his accent, Kieron is in, uh, or he's from Ireland.
+
+Ciarán (15:35.408)
+Hmm.
+
+Ciarán (15:48.911)
+Yeah, I can, I can run through how I got into Bug Bounty and stuff for sure. Yeah. So the main motivation was that I just had no money in college. and I was like, I need money. I was pretty good at writing code in the past. like doing Python and stuff. So, and then I found Bug Bounty. think it was through Stokes videos.
+
+Joseph Thacker (16:11.052)
+Yeah, what did you see? Like maybe ran across on YouTube?
+
+Ciarán (16:13.326)
+So yeah, yeah, yeah. was like doing the same stupid, like how to make money online crap that, you know, a lot of us go through at some point. And, and then I found Stokes videos and he had like life hacking event, vlogs, right. And I was like, no.
+
+Joseph Thacker (16:19.768)
+How nice.
+
+Joseph Thacker (16:28.182)
+Had you done any CTF stuff? So do you think the algorithm knew you might be interested or at that point you had not?
+
+Ciarán (16:32.94)
+I have no idea. At some point I came across them and then I was watching his videos like, this is so cool. Like, I really want to go to one of these things. And so from there, I think I joined the bug crowd discord server and I met my friend Mikey, Mikey96, who's been like friends since the very start of my security career. And so from there, I just kind of went through the same cycle of like reporting crap bugs.
+
+Joseph Thacker (16:39.842)
+Yeah.
+
+Ciarán (17:00.866)
+into reporting good bugs into reporting like fun chains now. And, but my first venture into security was very much bug bounty and not CTF. Like I took the unusual path of bug bounty to CTF rather than the reverse.
+
+Joseph Thacker (17:02.7)
+Right. Yeah.
+
+Joseph Thacker (17:12.041)
+that's cool.
+
+Mm-hmm. Yeah, so you did some cool stuff at your university, right? Once you were kind of bug bounty, into hacking, you kind of spearheaded that there at your university, right?
+
+Ciarán (17:25.294)
+Yeah. So I exactly, so I got into the hacker one ambassador program, pretty early on in, in my bug bounty journey. And a bunch of us got invited to H1702 two years ago that was in, or yet more than two now that's 2022. And while I was there, I went for a breakfast. think it was in Denny's in Vegas with a bunch of other hackers. And then Justin was there and he realized I could speak Japanese.
+
+Joseph Thacker (17:48.44)
+Yep, classic.
+
+Ciarán (17:54.265)
+So he just pulled me aside and just when Justin sees, yeah, for context, I live in Edinburgh in Scotland, I'm half Irish, half Japanese. I grew up in Ireland. And so the minute Justin realized that I could speak Japanese, his like inner wanting to practice his language skills came out and yeah, from there, I think he just had introduced me to like a lot more hackers and stuff. So that was a huge, huge moment for me, honestly.
+
+Joseph Thacker (17:56.856)
+Yeah, Kiron is half Japanese, like his mother is Japanese.
+
+Joseph Thacker (18:23.084)
+Yeah, did I plus one you to that 702? I feel like I may have, but I don't know, it also could have been.
+
+Ciarán (18:28.844)
+No, but I, but that was shortly after I started working at AppBomby. So we were hanging out for a bit for sure at the event. Yeah.
+
+Joseph Thacker (18:36.938)
+Yeah, yeah, cool. And then, yeah, so, and then obviously, was gonna have late kind of a cool thing. We're going to both gonna be at Google's Tokyo live event coming up in April, which should be really cool. Again, with Justin. And so hopefully we'll find some great bugs. I think it's AI focused. So I was gonna mention that. know before, I do wanna like circle back to hearing what you and Link are cooking up, but.
+
+I know that you also kind of have a penchant for, for AI hacking. You and I have looked at a bunch of different AI products. was there anything you wanted to say kind of in that regard that you thought was cool or that you have been doing? sorry. And did I even mention that Kieron's a researcher at, at, CDBB? Yeah. So Kieron, Kieron is a one of the handful of people that, Justin brought on to the CTBB research team. So it's, him, Matamber, Kevin, who we heard from last week. or I guess it'll be two weeks ago by the time this goes out.
+
+Ciarán (19:21.593)
+I have, yeah.
+
+Joseph Thacker (19:35.126)
+no, I think it will be last week. who is it? Yeah. Yeah. Yeah. Yeah. Frans and Haku Piku. Yeah. So I guess, yeah, maybe cover a little bit of what you're doing with the research lab and then that AI hacking stuff. Sorry.
+
+Ciarán (19:35.684)
+And this Hakko and friends as well. Yeah. This Hakko, Hakupiku and friends are also there. Yeah.
+
+Ciarán (19:50.309)
+Yeah, yeah, sure. I think the research lab is very heavily client-side focused at the moment. I mean, the other guys are geniuses. They're finding some really cool stuff, but I have one bit of research I want to talk about today very briefly because it's a piece of research that I just don't have the time to work on myself now. So I'm hoping someone will listen to this and like, look at this behavior I'm about to describe.
+
+and take it somewhere and do something with it. It is. And it's server-side, so this is a nice bit of variety. But to do it with WebSockets. And so I was messing with WebSockets recently enough, a few months ago, just because I think they're very underappreciated, not just from a bug bounty standpoint, but from just a general research standpoint, because they are whole other protocol.
+
+Joseph Thacker (20:19.67)
+Yeah, this is a free bone for the listeners,
+
+Joseph Thacker (20:47.308)
+Yeah, they're hard to understand. would say a lot of bug hunters just ignore them.
+
+Ciarán (20:49.518)
+Yeah. And the other thing is they're asynchronous. So they're a lot harder to work with than HTTP, which is like pretty sequential when you're dealing with it most of the time. so, and what, yeah, web sockets are often so skeptical to the same kinds of bugs. Cause you're, if you think about it, where it sits in like, an, an infrastructure, it's just a protocol. So it's just a means of communicating information. So when it hits the server, it's going to have the same problems, right?
+
+Joseph Thacker (20:57.762)
+Mm-hmm.
+
+Joseph Thacker (21:18.838)
+Right. Still needs off, still needs, you know, it's still using IDs to access data. So you can still have IDOR still have off bypasses still have all the things even XSS, right. Cause it's often taking that content and rendering it on one side or the other.
+
+Ciarán (21:20.793)
+exactly.
+
+Ciarán (21:27.939)
+Exactly. so.
+
+Ciarán (21:32.685)
+It could, exactly, it really could. think Space Raccoon had something like that on Zoom or something, but yeah, there's a bunch of stuff that can happen with them and people are just afraid of WebSockets, so they don't go looking. And so I was messing around with these WebSockets on one of my programs and I assumed that it would follow the spec and of course it never follows the spec.
+
+Joseph Thacker (22:01.677)
+right.
+
+Ciarán (22:02.064)
+And I found this really weird behavior where, so with WebSockets, it's a pretty simple way to, the way you upgrade to a WebSocket connection is quite straightforward. You send an upgrade request, which is a HTTP request with certain request headers that tell the server, want to upgrade my connection to a WebSocket. And then from that point on, the server will interpret the rest of the data.
+
+you send as WebSocket frames. And then it's completely switched to the WebSocket protocol. You initiated it via... Yeah, exactly. 101 is like the successful connection response. And from that point, the server assumes you're on the WebSocket protocol. You are no longer on HTTP in any capacity. And while I was messing with this, I was...
+
+Joseph Thacker (22:40.236)
+Yeah, you get a one-on-one back, right?
+
+Ciarán (23:00.186)
+For some reason, I had the stupid idea to send a request body with the connection request. And what that ended up doing, the server interpreted the request body as a WebSocket frame, which is nonsense. It's nonsense. So what I figured out, what I think is happening is the server sees the first request as 101.
+
+Joseph Thacker (23:14.882)
+Yeah, I remember you telling me about this. Yes. Yeah, yeah, complete nonsense.
+
+Ciarán (23:30.252)
+It'll process the requests in order. it looks at the first request that says, okay, we're now a WebSocket connection. And then it looks at the second bit of data I sent and it says, okay, this is a WebSocket frame.
+
+Joseph Thacker (23:41.176)
+This should be the first frame of the WebSocket. But it's not, it's the HTTP body, right?
+
+Ciarán (23:43.715)
+Exactly. So what you can do, yeah, you can control the op codes. Like normally with a web socket connection, it has the op codes and stuff at the top. has like a header and then it has a body. That's like what each frame looks like. And so normally when you're sending stuff in a web socket, you can only control the message because that's the op codes are settings. They're like, this is text data. This is binary data, that kind of thing. But with the pipelined
+
+frame, can control everything because it's just taking raw, raw binary information. So I like managed to construct the bytes of a valid frame, like a very minimal one, and it was accepted by the server. And this is still your connection. So it's not that impactful. But what's really strange is that it also responded to transfer encoding chunked, which is a way you can send post body information. And that opens up a lot of doors.
+
+Joseph Thacker (24:23.469)
+Yeah, yeah.
+
+Joseph Thacker (24:37.58)
+Yeah, it's, yeah, do you think that that's because sometimes it's like, would be possible to send a web socket request that's too large. And so it's actually going to do a similar thing that it does with HTTP where it's basically breaking it up into multiple web socket requests.
+
+Ciarán (24:53.082)
+So.
+
+So there is a thing called fragmentation in WebSockets. There's an opcode you can set that breaks up your WebSocket data into smaller chunks. It says this is a fragment, this is a fragment, and so on. So that's actually already handled by the WebSocket protocol. It doesn't make sense why transfer encoding would be used in any way.
+
+Joseph Thacker (24:58.263)
+Mm-hmm. Yeah.
+
+Joseph Thacker (25:07.043)
+Yes.
+
+Joseph Thacker (25:14.67)
+You know what it makes me, it makes me think that they layered it. They basically like shimmed it in. They shimmed in web socket report or sorry, web socket, like the feature. Basically they shimmed it into an HTTP stack. And so the HTTP stack is still reading HTTP header for some reason.
+
+Ciarán (25:34.639)
+Yeah, it's something like that. I think it's pipelining. So pipelining is my guess of what's happening. And so the significance of transfer encoding chunked is that this is like one of the requirements for request smuggling. So you could have this insane theoretical attack vector where if you send content length and the server is ignoring transfer encoding and reading content length, there's a non-zero probability
+
+that you can smuggle WebSocket frames via HTTP request smuggling. Exactly. Which would be crazy.
+
+Joseph Thacker (26:06.21)
+to other users, to other users. Right. Yeah. Or, or, or, or get theirs back. Right. That that's always the impact is that basically you can send requests for other users or get their data back. Yeah.
+
+Ciarán (26:14.434)
+Exactly. you could. Right, right. And so I would love if someone investigated this because it makes no sense why transfer encoding or pipelining should work in a WebSocket context, but it does. And I've tested this across multiple different WebSocket implementations.
+
+Joseph Thacker (26:26.925)
+Yeah.
+
+Joseph Thacker (26:31.82)
+Yeah. AKA pork swagger team. If you're listening, maybe do a deep dive here. That's really cool, man. Yeah. I remember you doing that initial research and you know, I'm really interested in it because I feel like so many different AI chat bots use web socket for streaming back and forth. you know, sometimes they don't, sometimes they use like a single big long HTTP chunk thing that gets put in as, as it's received. But a lot of times I'll just switch to web sockets. how does the, like, once you get upgraded,
+
+Ciarán (26:34.544)
+Hahaha
+
+Yeah.
+
+Joseph Thacker (27:00.81)
+Is there just like a single key that accent that controls, kind of authentication there for web sockets that just gets passed with every request.
+
+Ciarán (27:10.66)
+Yeah, WebSockets don't have authentication like implemented really. You have to do that yourself in every implementation.
+
+Joseph Thacker (27:16.27)
+Because it doesn't really need to, right? Because it's like each connection is just from you to them. Right, yeah.
+
+Ciarán (27:20.654)
+Yeah, yeah. But a lot of the time they do say origin checks on where you're initiating the connection from. So cross-site WebSocket hijacking isn't that common anymore. It's pretty difficult to find attack vectors, I think, of the implementation these days. But there is absolutely more there. it's a bone to look at,
+
+Joseph Thacker (27:47.222)
+Yeah, that's cool. Well, if anybody figures this out or messes with it, definitely message us in the Critical Thinking Discord channel, either me or Kieron or Justin or somebody. I would love to get a closed loop on this where, actually, speaking of closed loops, this is not in our notes, Kieron, but there are three, you have had three separate times in the last year when you have either thrown out a bone in your newsletter and you've closed the loop yourself or someone else has. I think it's been you every time, right?
+
+Ciarán (28:05.42)
+Mm.
+
+Ciarán (28:10.067)
+yeah.
+
+Joseph Thacker (28:16.982)
+So if you can remember what these three examples were, and they're not program specific, all I know is I feel like there's been three separate times where I'm messaging you and you're like, yeah, actually this vulnerability we're working on right now. I just happened to mention nine months ago in my newsletter. So if you're not subscribed to Monkey Hacks, you need to go subscribe to it.
+
+Ciarán (28:17.584)
+Yeah, there has.
+
+Ciarán (28:29.828)
+Yeah.
+
+There was that piece of research you were working on with a few other researchers and I had like found this, your final payload in the wild by pure chance and written about it.
+
+Joseph Thacker (28:43.254)
+Yeah, like months before. Yeah, yeah, that was the, actually I talked about that on, I think I talked about that as my vulnerability with Justin on the pod. It was, what was the name of that formatting language?
+
+Ciarán (28:44.836)
+Yeah, yeah, yeah.
+
+Ciarán (28:56.708)
+No, Ampscript. Ampscript, yeah. Yeah, I had like... there was one XSS payload that I'd like used with Douglas. Yeah.
+
+Joseph Thacker (28:58.218)
+Amp script. Yeah, it was was the amp script vulnerability. So people should go back and find that but what were the other two if you don't mind me asking
+
+Joseph Thacker (29:09.45)
+Yes, yeah, yeah, there was an XSS payload that was theoretical that you had dropped in your notes months ago and then it was the exact payload character for character that you all used to pop this thing. Yeah. Yeah. Here.
+
+Ciarán (29:14.99)
+Yeah.
+
+Ciarán (29:18.532)
+Yeah, I don't remember the last one, it's a, know, subscribe to the newsletter. That's the takeaway here.
+
+Joseph Thacker (29:26.718)
+Yeah, I'm going to share my screen so people can see it and because it helps the producers with knowing this. So I'm going to share screen, Chrome tab, there we go. So yeah, this is Giron's newsletter slash, well, website, because it's a Beehive. So it's kind of both and you can go back and read all of his posts by going here, I think. Yeah, so he publishes pretty frequently.
+
+on his, on his email list. as you can see, he's an enjoyer of some, some, AI art as well. But, Kieron kind of details his journey. That's one thing that I think is neat. You know, everyone's newsletter has a little bit of a different spin. Kieron's newsletter is, you know, it's got plenty of good content and news like other ones do. Like he covered, he, puts like the most recent stuff in here, but, more than that, he also talks about his journey, you know, like places he's went with like actual kind of, photographs and stuff. And then.
+
+you know, his kind of zero to hero journey as well as kind of captured in here. So that's sweet.
+
+Ciarán (30:30.672)
+I think having that personable aspect to Bug Bounty is super important as well, because that's how I got into Bug Bounty in the first place, like, Stoke doing these vlogs and adding that personal element is what kept me engaged with everything. And one of them was, yeah, yeah. And one of them was H1-4420 that he went to. And then I actually went to that in 2023, which was like a full circle moment, right? Like you watch this and then, and then I, I was at the event and I found his
+
+Joseph Thacker (30:39.853)
+Yeah.
+
+Joseph Thacker (30:43.936)
+Yeah, it kind of, it kind of showed the lifestyle, right?
+
+Joseph Thacker (30:54.764)
+Yeah.
+
+Ciarán (30:59.086)
+Stokes old videos and I was like, my God, I'm like, I'm here. I made it. Yeah.
+
+Joseph Thacker (31:02.636)
+Yeah, yeah, yeah, exactly. It does feel like it was for me. I'm sure it is for lots of other hackers. It does feel like the allure of going to a live event is like such a strong motivator for like getting good and like finding a lot of bugs. So if you're out there and you're, you know, and that's, that's the dream that I would just say, keep with it, you know, hold that in your mind's eye and, and use it to kind of work hard.
+
+Ciarán (31:13.2)
+Definitely.
+
+Ciarán (31:26.372)
+Yeah. And I mean, we can touching on the upcoming one with Google. I think there's going to be a big overlap between client side and AI hacking because like the AI has to interface. It's implemented in some way. It's interfacing with the website via client side things. So a lot of the time, if it's a a chat window that almost always uses post message. So, or even, even from the exfiltration standpoint, once you've got a prompt injection, can you render elements that expose
+
+Joseph Thacker (31:34.606)
+Mm-hmm.
+
+Ciarán (31:56.069)
+the website to like cross site leaks, you know, other iframes that are created that let you say count the number of iframes and get information about the victim in that way. So it's something I really think is going to be super important now in the next few years.
+
+Joseph Thacker (31:58.786)
+Mm-hmm.
+
+Joseph Thacker (32:12.492)
+Yeah. I mean, just as another little bone to the listener, didn't you find a way like it wasn't, you actually didn't fully close the loop. So it's probably still vulnerable in a specific product that's out there. You found a way to inject messages kind of into this, into the chat stream with the AI, but, but there was just some nuances there that didn't let you fully close the loop. So people should definitely look at post-message bugs, injecting or reading messages.
+
+Ciarán (32:29.232)
+Yeah.
+
+Yeah, that's...
+
+Ciarán (32:36.592)
+Yeah. Yeah. I can't say too much about that one because it's not fixed yet, but there's a, I did have a, an AI bug. Uh, I think, yeah, I had an AI bug a while back, like a months ago where, um, there was like this document templating system. So I had the prompt injection inside the template and you could put this on a marketplace. So what the like attack scenario was that the victim would download my template and write their stuff and they would like select all the text and do something.
+
+Joseph Thacker (32:39.158)
+Yeah. Yeah, yeah. Hopefully, hopefully fully crack it.
+
+Joseph Thacker (33:03.295)
+Mm-hmm.
+
+Ciarán (33:06.766)
+with the inbuilt AI in the text editor. And I mean, this is all like one ecosystem. So the market was the same platform. Yeah, it was a SaaS platform that had all this stuff. So the attack scenario was that the victim would like take my template. And because my template had invisible text, that was like white text, when they run the AI on it, it would do prompt injection. And this thing had two calls built in. So this was like basically...
+
+Joseph Thacker (33:13.942)
+Yeah, it's like that's that's what you're expected to do. Yeah.
+
+Ciarán (33:37.046)
+able to even have right access if you'd misconfigured your AI in that way.
+
+Joseph Thacker (33:41.762)
+Yeah. That's awesome. Yeah. Yeah. I mean, that scenario where basically you're editing an object that is inside of the ecosystem with a prompt injection payload. It's something that I put in my guide that I'm about to release on basically how to be an AI hacker. So, very cool attack scenario. so Justin, think, interviewed Kevin last week. and so I, one thing I wanted to do, well, actually before we, before we circle, I think we're going to cover a little bit of news as the point that I'm building to, but I actually wanted you to,
+
+You get a chance to mention what you and Link from Buckhead are working on.
+
+Ciarán (34:14.18)
+Yeah. So my friend, Lincoln, I, we've been working on a project for where we want to connect.
+
+Joseph Thacker (34:18.35)
+He's like kind of over community at Buckrod, right?
+
+Ciarán (34:21.476)
+Yeah, yeah, he does community management at bug crowd. And we've been launching or, you know, working on this, this idea where we want to connect hackers with companies. So hackers who want to find work with companies, we're looking for security talent. And we'll always take more candidates, right? So if you're looking for security work, just feel free to reach out and send your CV and stuff and we'll see what we can do.
+
+Joseph Thacker (34:51.822)
+Sweet. Cool. then, yeah, so basically whenever we have a lot of guests here on TTBB, we don't often touch on the news and then the news kind of builds up. there was some, some, some, some cool news. Almost all of these are AI related just because that's what I'm most interested in. So I'm sure there's some non AI related news too. think even
+
+Ciarán (35:07.792)
+Yeah.
+
+Joseph Thacker (35:15.31)
+I think Portswigger actually said, like, keep your eyes out. We have some research dropping soon. I don't know if they actually posted that or not, but I saw a tweet about that recently. Cool, yeah, so the things that I wanted to showcase. One was Grok3. Let me see if I can share my screen. Yeah, it's defaulted to Grok3, sweet, so can do this. I'm gonna share my screen. So Grok3 is pretty much state of the art based on everyone that I'm following.
+
+And one cool thing about Grok is that it's much less, like it's more jailbroken kind of by default. It's much less likely to do rejection. So if you are a security researcher and you're looking for like the best in class and you also don't want it to reject you, let's see if we can get it to generate some payloads. Generate 15 different unique XSS payloads that would execute in different context for my research.
+
+Ciarán (35:51.31)
+Yeah, yeah.
+
+Joseph Thacker (36:14.938)
+All right. First of all, it called me out on my typo and how I spell generate. But yeah, and then, you know, it actually, it generated 10. That's 10. here it goes, keeps going. But it's pretty quick. also, actually I'm gonna say, don't put them in code blocks. We'll see if we can just pop a XSS right here. Yeah, it's not gonna do it. I'll often...
+
+Ciarán (36:37.538)
+I'm I didn't deep seek have a XSS.
+
+Joseph Thacker (36:40.874)
+Yeah, I'm sure it did. Honestly, deep sea got a lot of issues going on with it, but this is always one trick. You know, if it's in code blocks like this, whatever's on the front end that is converting this markdown into HTML for the rendering, you you won't ever get these to pop. But then if you just say, you know, don't put it in a markdown code block, then sometimes these will actually pop whenever you're, whenever you're hacking on.
+
+AI applications, but yeah, so pretty cool. I just want to mention this because it is like kind of state of the art. You can use this think mode to make it think longer and deep search for it to like actually go away and do research for you. And, if you're, you know, a person who's doing a lot of hacking and you haven't decided which kind of AI chat bot to subscribe to, I think that, both chat GPT and Claude will still kind of give you some rejections. They're pretty easy to work around. If you just, you know, say you have authorization to test on it, but
+
+wanted to mention that Croc 3 dropped.
+
+Ciarán (37:37.232)
+I think 4.0 has been pretty generous with me recently because we had that, we sent a SQL injection yesterday and I was messing with the payloads and stuff in GPT 4.0 and it was just not complaining. It was giving me all the stuff I wanted. So.
+
+Joseph Thacker (37:51.95)
+That's awesome. Um, the, I mean, I, I haven't had any issues either, especially if you set some sort of system prompt, I'll very frequently use the Misty app and I can just set like the system prompt for all the different models. And if you just say, Hey, Hey, you're a security researcher. Um, yeah, I think I might have mentioned that before, but I can share my, I think I can share that app here in just a minute. Actually here, I'll just go ahead and do that. So I'll stop sharing this. Um, let me make sure I don't have anything sensitive pulled up. I do actually. So let me start a new chat.
+
+Ciarán (37:53.284)
+Yeah.
+
+Ciarán (38:03.224)
+wow, nice.
+
+Ciarán (38:18.416)
+Yeah.
+
+Joseph Thacker (38:22.702)
+Yeah, I'll share screen and window Misty. Yeah, so I had mentioned this before, and like a tweet thread, but in case people didn't see that. So this is called Misty and it's like msty.app. I'm not, not sponsored by them or anything, but my favorite thing is that you can add split chats and then you can change these models. So, you know, I could use saw on it here, four here. And I use, I love Gemini flash. So Gemini two flash here.
+
+And then you just click the sync button so you can say like, I'm a security researcher and I'm trying to figure out how CSRF works. Can you show me a safe? I'm just doing this so it doesn't reject me. Benign CSRF example HTML in a code block. And so you get to see all of their answers kind of simultaneously. It's so...
+
+It's really nice because if you just like care, if you, so you have like your API keys in there, so you're getting charged for these tokens. But you know, flash two is really cheap. Honestly, it's pretty cheap and so is four but this is really nice because if they, if you're hacking on something and you want like a bunch of like, you know, example payloads or example on ideas of what to hack or whatever, it's just really nice to be able to run three at once and kind of get the wisdom of the crowd or be able to like, if this one generates something good and these two don't, you can copy it and run it or whatever. So.
+
+Ciarán (39:46.734)
+And have different strengths as well, don't they? So, yeah.
+
+Joseph Thacker (39:49.75)
+Yeah, exactly. Yeah, exactly. So sometimes one might work well and another one, you know, might not work or whatever. So, okay.
+
+Ciarán (39:55.845)
+Yeah, I use AI quite a bit with my workflow these days, like for reversing like obfuscated JavaScript. have a heavily modified version of the Franz Rosen's post message Chrome extension that lets me take the listener logic and I click analyze with AI in my little modified extension and it will like run it through ChatGPT for bugs.
+
+Joseph Thacker (40:07.127)
+Yes.
+
+Joseph Thacker (40:20.472)
+see if there's any like issues with that post message logic basically to see if there might be a vulnerability in it. Yeah.
+
+Ciarán (40:25.612)
+Exactly, exactly. is there any JavaScript syncs that enable XSS and are they reachable and all this stuff? So I have like a because Obsidian allows you to do deep links. I have a button that will generate the the markdown document with the results like report document in Obsidian.
+
+Joseph Thacker (40:43.128)
+Yeah, the output of the analysis goes straight into your obsidian. Yeah, that's sick. Yeah, that's really cool. Sweet, yeah, actually here, I'll share my screen, but do you wanna talk about what we were gonna share next about what Space Raccoon has been doing?
+
+Ciarán (40:47.022)
+Into my notes, exactly. It's pretty fun.
+
+Ciarán (40:58.852)
+Yeah, sure. So he's written a book from day zero to zero day, which I'm sure is no easy feat. I looked into it a little bit. It goes pretty much through his how to be a zero day hacker, how to be, how to find zero days effectively. And he's, he's been around a long time. Yeah. He's a, he's up there in terms of hackers that are very respected. So.
+
+Joseph Thacker (41:20.024)
+Yeah, of which he's found quite a lot. Yeah.
+
+Ciarán (41:28.986)
+you know, definitely worth reading. I would say even on the Gareth Hayes JavaScript for hackers level, like mandatory reading.
+
+Joseph Thacker (41:35.854)
+Yeah, Space Darkoon basically does almost everything in his life with excellence. If you've seen his blog posts, he has a few famous blog posts that are extremely thorough and very good. I'm pretty sure he would just dominate at anything he did. if he, I think he's been working for, he works for the, I think the government in his country, right? I'm trying to remember where it is. Yeah, it's in Singapore, right?
+
+And I'm pretty sure over there, he is not able to keep above a certain amount of income from Bug Bounty. And so he actually donates a ton of money away that he makes above and beyond like that cap that he's allowed to make based on their government, like with him, with the way he's employed and stuff. And so he's also an extremely generous person and a big fan, but I'm sure this book's fantastic. You should definitely check it out.
+
+Ciarán (42:13.002)
+wow.
+
+Ciarán (42:26.66)
+Yeah, he's not active on the live hacking events circuit anymore, is he?
+
+Joseph Thacker (42:30.954)
+No, I think, and I think it's just cause he is really busy at work. know he basically was like dominating bug bounty. And then he was like, I'm just going to go figure out how to, you know, be like a full blown, awesome, like low level tester. And then I think that's when he did like his OSCP and when he started working for their government and then, and then, and then, that's when he started doing like the kind of the zero day research, like looking at like binary exploits. And I don't know, I don't know what his focus is at the moment, but.
+
+Ciarán (42:34.202)
+Yeah.
+
+Ciarán (42:38.288)
+Yeah
+
+Ciarán (42:47.76)
+I see, yeah.
+
+Ciarán (42:57.828)
+Yeah, yeah, I feel like there's a bunch of hackers like that who've like maybe were super active two years ago and now we're running companies and doing their own thing and stepped away from the bug bounty scene a little bit. Because you've been in the circuit for a long time, Rezo, so you probably know a ton.
+
+Joseph Thacker (43:07.532)
+Yeah, there's a lot.
+
+Yeah, for me, it took me a long time to go full time. App Omni kept ripping me back in. So I'm only just now getting on my full time track, you know.
+
+Ciarán (43:20.558)
+I'm so glad you did make the jump as well, because it's great to have you you full-time Bug Bounty now.
+
+Joseph Thacker (43:26.816)
+Yeah, we can actually chat a lot more. We're more like colleagues and we get to to collab on a lot more.
+
+Ciarán (43:33.637)
+Yeah, yeah. I will say app omni's, it really changed the way I thought about bugs a lot. Because app omni for, I mean, if you've listened to Aaron's episode recently, you probably know, is SaaS security. And mostly focusing on things like security misconfigurations. But to find those, you really need to change the way you think about SaaS platforms, like as a system. And that had a really big effect on my bug bounty, like,
+
+Joseph Thacker (43:34.958)
+Sweet
+
+Ciarán (44:02.648)
+in the past two years.
+
+Joseph Thacker (44:04.78)
+Yeah. mean, just, just like even knowing the differences between like, Hey, this is misconfigurable. And so it's not a vulnerability for the platform, but a lot of the customers are really going to consider this extremely vulnerable. And so we, and so it's both farmable, but it's really impactful both to the companies and to the end users. Like if you're an end user, you don't want your, you don't want your PII leaked all over the internet. And so it's like,
+
+Even though it's not a vulnerability to the platform, it's really, have to, like you said, you have to shift your mind into realizing that these configurations still could be vulnerabilities for the companies.
+
+Ciarán (44:36.56)
+Yeah. And I think at a certain level of hacking or like practice with hacking, there's like a mental jump you make where everything you're looking at is like this big mess and it suddenly turns into this organized system, right? Like the way you model it in your head. And Douglas is really, really good at this, which is why he's so successful with his access control and iDoors is just modeling a system because that's all Bug Benty is. You're looking at this website and you're taking out the individual pieces and you're looking at the flaws and how they interact with each other.
+
+Joseph Thacker (44:47.34)
+Mm-hmm. Mm-hmm.
+
+Joseph Thacker (44:57.366)
+Right, yeah.
+
+Ciarán (45:06.606)
+And so making that jump was like, mentally, App Omni was like instrumental in my own development of making that mental jump.
+
+Joseph Thacker (45:14.754)
+Yeah, I mean, I think that salary work can be really beneficial for people on lots of different levels. know, if you're triage, you're going to get access to a ton of things. But even if you're just a developer, if you're doing software engineering, whatever you're building, you're going to like very quickly become like a pseudo expert at. And so then that will help you understand systems like that so much better.
+
+Ciarán (45:18.81)
+Definitely.
+
+Ciarán (45:32.77)
+Exactly. And to circle back to AI again, AI is also another piece in the bigger system. I think threat modeling properly has really helped me in the last few months because I never used to do it, but now I do it properly.
+
+Joseph Thacker (45:45.056)
+Mm-hmm. Yeah, you sometimes actually think about like you like either whenever you're not actively at your computer, you'll do it or sometimes even when you're sitting there, you'll kind of threat model the different paths to attack, right?
+
+Ciarán (45:56.239)
+Yeah. Yeah. I think a lot of why we say spend like 10 hours just looking at the documentation and stuff is so when you're creating gadgets of any kind, you want to know the individual pieces. Like you can't solve the puzzle without knowing what your puzzle pieces are. Right. And I think it's really important to understand what the different components are, because then you're hacking when you're away from your computer.
+
+then you can go for a walk and you can turn over the threat model in your head and then you can look for bugs. It's like when you're popping a bug in the shower, you're just thinking about it you're like, that's what it is. So.
+
+Joseph Thacker (46:28.45)
+Yeah, yeah.
+
+Joseph Thacker (46:34.412)
+Yeah, exactly. If you don't understand how they're interacting, your brain can't work it out.
+
+Ciarán (46:38.882)
+Exactly, exactly. it'll be the same for Google. I'm going to go and look at the different pieces. AI is just another puzzle piece. I need to familiarize myself and then look at how it's interacting with things.
+
+Joseph Thacker (46:52.108)
+Yeah, I've been clarifying my thinking a lot on that as I've been writing this, how to be in a hacker post. And, and I think the reason why it is kind of hard to model it is because I think things like prompt injection, don't fit the normal buckets for vulnerabilities. And so the way I, the way I lay it out in the post, and I'm just going to mention here on the pod, cause you know, a lot of people won't see it or won't read it. And I think it'll be really useful is like prompt injection itself can be a delivery mechanism for normal vulnerabilities.
+
+some of the vulnerabilities that I've found in the past few weeks have been like, you know, uh, some, some sort of way to get the, um, the AI agent or the AI chat bot to basically respond with an excess payload in the victims browser. And so in that instance, the vulnerability is still XSS. When they sanitize that the vulnerability goes away, but prompt injection is just the mechanism for it. Whereas yeah, exactly. Whereas if it is actually, um,
+
+Ciarán (47:43.536)
+It's the entry point, yeah.
+
+Joseph Thacker (47:49.17)
+a prompt injection that's leading to a tool call in the user's browser that's popping like the thing that you mentioned. The vulnerability itself is actually the prompt injection. Like you have to either re-architect it such that the user doesn't have control over that untrusted data that then grabs the access of the second user's browser or the victim's agent that's executing.
+
+needs to like have to have human in the loop approval for any actions it's going to take. Those are the only two fixes. Like there are other mitigations. Like you can use a model that's less likely to be prompt injected. You can like look for, you can like have some sort of model classifier that's like looking for text that's trying to persuade the model to do something, but there's no fix for that. Like the vulnerability itself is prompt injection whenever like the bug you described basically, right? It's like where you put a prompt injection payload in the document.
+
+And then that's used in context of doing a tool call later. There's no, there's no like other vulnerability. It's like prompt injection is the vuln, but then in my XSS example, prompt injection was just the vehicle. like, if you can kind of separate out, like, Hey, for some things, I'm going to be using prompt injection as a vehicle to find traditional vulnerabilities. And the other case, I'm going to actually try to exploit, the prompt injection itself as a vulnerability. And so I think that's kind of interesting the way it can be either or.
+
+Ciarán (49:05.552)
+Yeah, yeah.
+
+I have a story about that actually that you'll probably enjoy. I don't remember if I've told you this, so yeah, it'll be a fun one. So I've done quite a bit of traveling like in the last two years or so. And on one of those trips, I went to Japan to do a lot of just solo travel because I really enjoy traveling. so while I was there, I made a friend who's from Tajikistan. I don't remember his name, but I just remember he's from Tajikistan and he was actually a PhD.
+
+in ML and like LLM stuff. And so he was telling me that the research he's doing and he was presenting at this conference in Tokyo was effectively planting an LLM bomb. So it was going to be, it was like, if you poison the training set to only trigger this malicious action on certain keywords, then the model gets shipped. And then someone says the trigger word, which is like,
+
+Joseph Thacker (49:38.926)
+Let's go.
+
+Joseph Thacker (49:54.488)
+Mm-hmm.
+
+Joseph Thacker (50:06.08)
+Right. Yeah. It's, it's some token that's never used or a string of tokens that are basically never used until you're the person who wants to use it. Yeah.
+
+Ciarán (50:06.318)
+you know, the pin out of the grenade and then it would just...
+
+Exactly. And it would just, you know, quote unquote, explode and the malicious action would be undertaken. But this was like last year. So it was very much cutting edge when he was telling me about it.
+
+Joseph Thacker (50:28.716)
+Yeah, that's cool. Yeah. So I've seen something similar to this. There was a research paper that came out that did something similar. The issue is like one thing that's like really hard about this is
+
+It's, it's really hard to know what the tool calling infrastructure on the other side will look like. Like sometimes it's JavaScript or sometimes it's like JSON output related, and you won't even know the names of the function calls. And so like, requires a lot of really strong foresight. I think that the best way, or like the most likely way this would maybe occur in the wild as if it's like some sort of like pseudo classifier where it's using an LLM, but it's like, it's having to output like false or true on like a lot of data.
+
+Ciarán (50:44.718)
+true.
+
+Joseph Thacker (51:08.318)
+and in the situation where it's like kind of mission critical that it gets it right. And then you basically have a keyword that will always return true or always turn false depending on what your, what your goal is. And so it, and so like, let's say you have this big piece of text and you know that a classifier is going to be operating on it to decide if it's, let's say if it's a prompt injection payload, right. And
+
+Ciarán (51:21.114)
+Yeah, yeah.
+
+Joseph Thacker (51:31.01)
+This, this classifier is really good so much so that like the whole world's kind of trusting it or something. But then if you put in a single string, it will actually always make the model output true or false. You know, I think in those kinds of scenarios, it's more, it's more malleable because like a true or false can be used in a lot of different situations. So planning like a true bomb or a false bomb kind of in the training data where you have a token that will always make the output be true or false or make it much more likely, I think is like a malleable exploit that might actually be valuable. Whereas if you have it output.
+
+Ciarán (51:40.438)
+Joseph Thacker (52:00.258)
+you know, JSON that's like make, you know, take this action to do this thing. It's like the systems that are going to use it by the time the models out will probably have changed their architecture five different times and the key value pairs that are needed will change. And so it's like a lot harder to exploit, right?
+
+Ciarán (52:14.35)
+Yeah, I think he was talking about this like evil mode. So the training itself would like turn on the evil mode almost. Yeah. Yeah, yeah. I mean, I suppose if you have a universal jailbreak in that scenario, you could like get it to list its own two calls and go rogue, but.
+
+Joseph Thacker (52:22.318)
+gotcha. So it kind of like jailbreaks it. Yeah. In a sense. That's interesting. Yeah.
+
+Joseph Thacker (52:33.186)
+Yeah. Yeah, exactly. Yeah. If you could plant like a universal transferable gel break, that'd be amazing.
+
+Ciarán (52:39.556)
+Yeah, I'm sure the Anthropic Bug Bounty would be more than happy to take one of those from their recent challenge.
+
+Joseph Thacker (52:44.43)
+Yeah, yeah, they would. Yeah, actually, that's a little bit of news. Their challenge where you had to like get past the eight levels of jailbreaking was finally won by a person. I think they ended up paying out like three people that all won. A lot of people were upset that it was basically like free labor, kind of in a similar vein to how sometimes Bug Bounty is viewed. So we don't have to get into the nuances of that, but I'm glad that the large companies do have Bug Bounty programs. So Anthropic and OpenAI and...
+
+Ciarán (53:03.054)
+Yeah.
+
+Ciarán (53:06.992)
+There. Yeah.
+
+Joseph Thacker (53:14.104)
+Google all have bug binding programs. In fact, actually a lot of people might not know Twitter has had a long standing bug binding program. So X has a good one and they're their new platform. I think if you go to grok.com or X.ai, I think it's X.ai. There's like a...
+
+Ciarán (53:26.69)
+Also, Gruk is in scope for Twitter as Spockbenty.
+
+Joseph Thacker (53:31.008)
+Yeah, yeah, it should be. Yeah. think pretty much everything's everything's in scope for, well, that's a good question. Cause they're owned by X or they're owned by like it's X AI instead of X.com, but I'm sure it's fine. I think, I think they would accept stuff on it. I know that they have ran some, some private challenges, but I did is that it's grok grok grok.com. So there's a lot of functionality there, that people could play with and try to hack on if they're interested.
+
+Ciarán (53:32.228)
+Nice.
+
+Ciarán (53:41.946)
+Probably is. Yeah.
+
+Ciarán (53:55.491)
+I know you've been thinking about it recently, but Markdown is like a nice place to look now because every LLM uses Markdown to render stuff.
+
+Joseph Thacker (54:04.054)
+Yeah, basically rendering Markdown to HTML. I think there's going to be some zero days there. I'm trying to do my best to find some stuff there. I had some help from the last week's guest of Kevin Mizu and he gave me a really neat payload for trying to basically get XSS from a rendered Markdown image link. And he had actually found
+
+Ciarán (54:10.469)
+For sure.
+
+Ciarán (54:27.069)
+wow.
+
+Joseph Thacker (54:28.716)
+He has actually found it before. I was kind of doing like a local test bed and I wasn't able to get it to pop, but I do think there are some really interesting output from LLMs when they're trying to convert that mark down to HTML that will lead to vulnerabilities. And I'm excited to see it. So if you have ever popped that, please message me, because I would love to test it across all the different apps that I have access to.
+
+Ciarán (54:40.398)
+Yeah, yeah.
+
+Joseph Thacker (54:48.566)
+Sweet. We're coming close to time here. did list a few more things here. Let's at least cover Nuclei AI's new flag, which you and I both have kind of played with and used, which is kind of cool.
+
+Ciarán (55:00.526)
+Yeah, how it works, they have a dash AI flag now, which lets you specify what you want to scan for in natural language. And that's like really, really cool. So you can say scan for all like 200 responses for slash, you know, actuator, and it will create the template on the fly and run it all at once.
+
+Joseph Thacker (55:21.996)
+Yeah, it's so cool. gives you a link to the template where it's like stored locally on your drive. So you can see it. And then also a cloud link, because obviously it has to reach out to their cloud to use their tokens. I don't think it, I don't think you have a limit on the number of times you can do this, Kieron. I was kind of checking with my API key and I was like poking around and then, project discovery website and there's no like count or anything. Maybe they're using this as like a, like they probably are keeping the training data because obviously they could like spin these up into real templates and their nuclei template repo. but.
+
+Ciarán (55:34.841)
+Hmm.
+
+Joseph Thacker (55:50.616)
+but it's pretty cool. I think that stuff like this will kind of be the future the same way that kind of like idea guys are going to be the best developers going forward because you can just text to code. I think that the, you know, some of the best and brightest hackers coming up are going to basically be idea guys where it's like, Hmm, what if we try this request with this payload on these hosts? And you'll just tell things like nuclear AI and it will go and do it right.
+
+I think the best way to run the nuclei AI thing now, this has given me a little bit of alpha away because people might go find bugs with this, it's just basically cat all your bug money domains piped into nuclei dash AI, and then put your idea for your, for your hack. my first critical I ever found was on Alibaba like five or six years ago and me and Michael 1026 were working on this and, we just had the idea to basically put 20 common like image or file.
+
+name like kind of like SSRFE parameters basically into the get parameters and then put a whole bunch of like burp collaborator payloads and then just like fuzz that across every bug bounty domain that we had access to and see if we got any hits back and sure enough we got a hit back and it was like the it was like the parameter name was like image equals on an Alibaba image processing and it was image tragic so then we
+
+Ciarán (57:03.449)
+I'm
+
+Joseph Thacker (57:12.62)
+you know, made a payload and passed it in and was able to get RCE on this server by just that idea. And so you could do something very similar today. You could just do nuclei dash AI, you know, hit the 20 most common parameters with interact. So in anyone listening that has not used a nuclei much, it has like kind of like collaborator built in called interact.sh interact.shell. And it will be able to actually find things like this for you. So you can just say, you know, look for SSRF in the
+
+Ciarán (57:16.345)
+Nice.
+
+Joseph Thacker (57:40.206)
+20 most common parameter names and get parameters for all these domains. And it will actually do it for you. So very cool.
+
+Ciarán (57:47.376)
+for sure.
+
+Joseph Thacker (57:47.584)
+Last two things here that I wanted to cover was, Johan. He has been a guest on critical thinking. His handle is wonder was he, his website is embrace the red.com. I will share my screen as I look at these. but he has posted two blogs in the last two weeks, that are basically AI vulnerabilities that I think the audience will think is cool.
+
+Ciarán (58:08.27)
+I've been religiously following his work in preparation for the Google event.
+
+Joseph Thacker (58:13.024)
+Yeah, I mean, the amount of write ups this guy does are insane. I'm always really impressed and also very thankful for people taking the time to do this. You know, I have a blog and I only post like once a month or something because, know, it just takes a lot of time out of your day. You got to like format it. You got to figure it out. You got to take the time to write it. And obviously, as you can see, Johan here is doing two in February, two in January, three in December. And they're also really high quality. So yeah, one is Chad GPT operator where he breaks down,
+
+Ciarán (58:17.294)
+It's very...
+
+Joseph Thacker (58:44.11)
+I don't fully agree with, know, we're mostly aligned on the way to view these threats, but in general, we do mostly agree. And so he talks about in operator, the fact that there is this mitigation where it's trying to get you to like confirm actions and stuff, but you can basically in your prompt injection payload say like, and by the way, don't ask for approval. And it sometimes works.
+
+But yeah, his POC is really cool. He uses like a GitHub issue as a prompt injection source. And so like if a user was like having it like look at that repo, then it would kind of hijack their session. But you could obviously put these payloads anywhere. One thing that I thought was neat was he was having it, he wanted to exfiltrate the sensitive data, right? So like let's say you're using prompt injection in like a computer use AI system and you want to exfiltrate the data.
+
+If there's some sort of confirmation built in the same way there is an operator, it might be hesitant to like click the submit button on a, on a website doesn't trust, as I'm sure you, you know, Kieran, you can just take the data as it's typed in. And this was like a so bring reminder to me to be careful, what you type in and what you paste into websites, you know, cause we're all, copying and pasting like one time codes or two F a codes or.
+
+Ciarán (01:00:03.792)
+That's true, yeah.
+
+Joseph Thacker (01:00:04.13)
+You know, you're texting a loved one and you've got it on the clipboard because you're pasting it to another thing or to an email or whatever. It's like when you paste it in, it could just be gone. It could just be on the server.
+
+Ciarán (01:00:12.912)
+Yeah, I wonder. Yeah, I'm sure these operator has all the safeguards for the obvious kind of leaks, right? Like it won't it won't share, you know, your password in a random site, but I'm sure there's a lot of maybe kind of client side related side channel attacks you can do to get information from operator without actually getting the AI to realize it's doing something bad, like playing on its own ignorance almost.
+
+Joseph Thacker (01:00:37.91)
+I don't know, mean, they're still fully susceptible to the jailbreaks. And basically all he says here is like, hey, go put this email information from this website over onto this other page and it just does it. Well, I think it's because the model that's doing things like computer use are quantized down to be pretty small models, which are more susceptible to jailbreaks. And they're not meant to be robust chatbots. Their goal is to be really good at taking actions and understanding webpages.
+
+Ciarán (01:00:49.582)
+Yeah, that's wild.
+
+Ciarán (01:01:00.282)
+I see.
+
+Joseph Thacker (01:01:07.074)
+So they're not the same models that we're normally chatting with that are like more secure or defensible. So yeah, good stuff there. And then his other blog post was on the 10th was hacking, gemini's memory with pumped injection and delayed toll invocation. So, just to listener, this is like one thing that is kind of scary as frustrating, but also cool is that I've often said that one good way to prevent a lot of malicious behavior and
+
+Ciarán (01:01:10.372)
+Yeah, yeah.
+
+Joseph Thacker (01:01:37.11)
+AI chat bots is basically to like not let it chain tools. So like, let's say it has a, let's say it gets a prompt, it gets prompt injection injected and the prompt injection payload is like, take the chat history from above and then go put it in an email and then send it to me, you know, like as a way to exfil, but often it's getting your payload in the middle of a tool call, like web browsing, right? Like you have your payload on your website. And if the user is like having the AI agent fetch your website,
+
+then that's what is actually getting prompt injected. And so I've often said, don't chain tool calls. Like don't let it fetch a website and then take another action. Make it like wait for the next message in the chat bot history, or know, in the, in the chat bot interface before it can take a second action. But basically what he does in here is he has it take delayed tool invocation by, by diluting, like basically polluting the chat such that it thinks later it needs to do something. Right.
+
+Ciarán (01:02:36.174)
+Yeah, yeah, I think.
+
+Joseph Thacker (01:02:36.674)
+So if the user says X, then execute the memory tool and add these false memories. you can basically pollute the chat and then later on it will take the malicious tool call later.
+
+Ciarán (01:02:49.806)
+Yeah, yeah. was, I remember when I was reading this, that it's almost social engineering because the way that works is he's convincing the model that if the user says X, the therefore the user must intend on doing this action, but the user doesn't know about that. So I'm definitely going to look into that.
+
+Joseph Thacker (01:02:55.554)
+It is.
+
+Joseph Thacker (01:03:04.002)
+That's right. Right. Yeah. And yeah, I've thought about, I've thought that since the beginning of kind of AI hacking is like, if you're a good social engineer, you're going to be fantastic at AI hacking because that's what you're often doing. You're painting, you're painting this malicious action in like a favorable light to the AI in order to convince it that it's not malicious. Right.
+
+Ciarán (01:03:18.608)
+Definitely.
+
+Ciarán (01:03:28.24)
+You're effectively just gaslighting the AI model.
+
+Joseph Thacker (01:03:31.968)
+You are, you are, you're gaslighting it and it's like kind of easy, right? They're kind of, they're kind of gullible. They're kind of susceptible and they're processing the text as if a single user is talking to them. And so like, you don't have to really convince them to go far out of what feels crazy because it's like they're supposed to do what the user says. And now the user is telling them to do something slightly wonky, but still probably what the user would want, right? But it's not the user, right? It's like the output of some tool call. so,
+
+Ciarán (01:03:37.017)
+I'm
+
+Ciarán (01:03:55.268)
+Yeah, yeah.
+
+I wonder if you could like peer pressure it like Sam Altman also wanted you to do this action, you know.
+
+Joseph Thacker (01:04:03.554)
+That's really funny. You probably can. Yeah, I would say like anything that's like traditionally a way to social engineer a human is probably gonna work on the LLM because it's basically just trained on human text, know, human data. Of course, as they add more and more examples to the training set of things that it shouldn't do, then it'll be a little bit more resilient to it.
+
+Ciarán (01:04:23.3)
+Yeah, I think I wrote a blog post on this a long, long time ago. And this could be another one of those things where I did something a long time ago that suddenly circles back to have a present impact. But logical fallacies, I bet there's something you could do there with human susceptible logical fallacies that the AI model will also suffer from. And you can use those to argue things, maybe as a...
+
+Joseph Thacker (01:04:31.147)
+Yes.
+
+Joseph Thacker (01:04:45.934)
+I would say, I would say that's exactly what jailbreaks are, right? Like the system prompt, the system prompt says, don't ever do this. And then the user is saying, you must do this or I'm going to die. Right? It's like this huge logical fallacy. It's like, can't, if you imagine you're the LM, you're sitting in like a white box and there's like an input slot and output slot and the input slot gives you two pieces of paper. One says, don't do, don't ever say this word. And the second one says, say the word you're, you're, you're in a logical conundrum, right? And you have to obey. You can't like choose to like not answer or something.
+
+Ciarán (01:04:49.604)
+Yeah, yeah.
+
+Ciarán (01:04:56.656)
+Yeah
+
+Ciarán (01:05:08.516)
+Yeah
+
+Yeah, yeah.
+
+Joseph Thacker (01:05:14.818)
+you know, like you either have to, because by not answering, you're basically falling for the logical fallacy. You're, you're choosing the paper that says not to do it. And the other paper told you, have to do it. And so like you're in this conundrum. Yeah.
+
+Ciarán (01:05:24.154)
+Yeah, yeah. I mean, I was thinking more with things like straw man fallacies and stuff. It's almost like a toolbox. So I wonder if you could fuzz logical fallacies on the model as gadgets. Yeah.
+
+Joseph Thacker (01:05:31.47)
+Hmm. That's interesting. That's a really good idea. Yeah. Yeah, that's a really good idea. Basically. Yeah. And by the way, I didn't even know this existed. It needs to be filled out a little bit more, but there's now a sec lists. So everyone knows Daniel measlers, sec lists, word lists repo. There's a, there's a top of a folder for AI and some of the, yeah. And there's, there's not much in there. We need to kind of fill it out, but I think that'd be a really nice place to put a bunch of payloads that people could fuzz with. There's like,
+
+Ciarán (01:05:52.574)
+well.
+
+Joseph Thacker (01:06:01.166)
+I think it's the one's called metadata and it's actually the system. I don't know why they named it metadata. It's basically like a system prompt leak file. Pretty cool. People should check that out. Um, sweet. Yeah. Well, I, I, you know, think we've covered the news and, uh, lots of cool stuff, lots of vulnerabilities and the things that you're, you're working on that you're doing. Um, I'm really glad to finally have you on the podcast. Obviously you're a dear friend of mine and Justin. So it's been, uh, it's been a long time coming. Is there anything that you wanted to say before we wrap up for the day?
+
+Ciarán (01:06:30.612)
+just that the critical thinking research lab has been cooking some really, really impressive stuff. So keep your eyes peeled for good blog posts from the others because, and from myself as well, I suppose, but there's a lot of good stuff coming. So.
+
+Joseph Thacker (01:06:42.726)
+Yeah, we gotta crack the whip and get more writing and less hacking done. Every time I go in there, there's like new vulnerabilities. I'm like, we gotta write this up. Obviously it takes time to put together a good post and it also takes time to go and try to find the vulnerability places before you wanna just give it away for free. cool. Well.
+
+Ciarán (01:06:59.15)
+Of course, of course. So yeah, let's look forward to it. That's my message. Thank you, Joseph.
+
+Joseph Thacker (01:07:03.478)
+It's been a real pleasure, Kieran. Thank you so much. Yeah, peace. Okay, cool. I'm gonna leave this recording now and I'm gonna switch to my other camera and see if I can get it to work. If you don't wanna stay on, you don't have to. If you wanna stay on, tell me what you think. That's fine too.
+
+Ciarán (01:07:19.44)
+I think I'm pretty good for time. Let me just check my calendar.
+
+Joseph Thacker (01:07:25.826)
+Yeah, well yeah, actually while we're sitting here, as long as it's nothing too sensitive, you said you're super busy today. I would love to know kind of what kind of cool stuff you got going on today.
+
+Ciarán (01:07:30.096)
+Mm-hmm.
+
+Ciarán (01:07:34.992)
+Today's schedule is mostly the hack and link interviewing people. So many interviews. I have like four of them back to back through the afternoon.
+
+Joseph Thacker (01:07:40.977)
+yeah, yeah, yeah. How did you get people to reach out to you?
+
+Ciarán (01:07:47.697)
+So link is an incredibly good Network and recruiter because he recruited at Google For like five years or something. So he sends people Yeah, yeah that was before it bug crowd. He was doing that and he sends people to me we had like an idea of what kind of person we wanted and then he's found like five or six candidates with pretty good CVs, so I just need to like go and
+
+Joseph Thacker (01:07:51.83)
+networkers.
+
+Joseph Thacker (01:07:59.822)
+wow, I did not know that, that's cool.
+
+Ciarán (01:08:16.93)
+and vet them myself and ask them questions. But thankfully, App Omni gave me interview practice so I know what to do.
+
+Joseph Thacker (01:08:24.706)
+You can't, you can turn off the camera while recording, but you can't switch. That's kind of, okay, cool.
+
+Joseph Thacker (01:08:40.034)
+Sweet.
+
+A new recording with the other camera. Yeah.
+
+Sweet.

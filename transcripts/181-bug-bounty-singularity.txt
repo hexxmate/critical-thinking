@@ -1,0 +1,648 @@
+Episode 181: Bug Bounty Singularity
+Source: https://www.criticalthinkingpodcast.io/bug-bounty-singularity/
+======================================================================
+
+[00:00:00.98] - Jonathan Dunn
+I was looking for it everywhere and I'm like, this is a dead bug. Who runs backend JavaScript? You know, like those kind of things. A lot of the bugs we find are bugs that I like know that they exist, but I thought they were dead.
+
+[00:00:34.10] - Justin Gardner
+if you've been in the bug bounty recon game for any period of time, you know how beautiful it is when some unsuspecting dev or DevOps guy spins up what's clearly supposed to be an internal-facing server and accidentally just gives you the keys to the kingdom, right? It's a big payday. It's an easy win. It's a beautiful thing, right? And unfortunately for us, ThreatLocker also knows about that, and that's why they created their Zero Trust Network Access product. Okay, check this out. This is a product that prevents that unauthorized network access not only at the network level but also at the device level. Okay, so anybody's connecting to those sensitive internal services, you know that they are authorized as that user, but also the device that they're connecting from is validated. So you get complete introspection into who's accessing these sensitive systems. It's a great product. Check it out at ThreatLocker.com. All right, let's go back to the show.
+
+[00:01:24.43] - Joseph Thacker
+Dude, what is up? It has not been that long. When was the episode we did with me and you and Justin?
+
+[00:01:30.39] - Jonathan Dunn
+It wasn't that long ago, but it was the best, so I wanted to come back on.
+
+[00:01:33.87] - Joseph Thacker
+It was awesome.
+
+[00:01:34.40] - Justin Gardner
+Yeah.
+
+[00:01:34.54] - Joseph Thacker
+Have you gotten any feedback from it?
+
+[00:01:36.46] - Jonathan Dunn
+Yeah, I think people liked it. I hope people liked it.
+
+[00:01:40.67] - Joseph Thacker
+Yeah, people said they liked it, but maybe they would just say that to me. Was that when we had Demo pop in too?
+
+[00:01:45.76] - Jonathan Dunn
+Oh yeah, I love the demo we had. We had to— it was like, uh, we rub a lamp, a demo came out and taught us. Exactly.
+
+[00:01:52.90] - Joseph Thacker
+Yeah, I need to ask Justin if he got any feedback on that. That was such a, like, a unique kind of funny and fun episode.
+
+[00:01:59.09] - Jonathan Dunn
+You should, you should definitely do that more, like, like, like rub the demo lamp.
+
+[00:02:03.56] - Joseph Thacker
+Yeah, just call random guests to pop in in the middle of episodes. I don't know if we'll have time for that today, but, uh, yeah, for anybody who doesn't know, uh, obviously I'm Rezo Joseph, and then, uh, the guest quote unquote guest today is Exasys Doctor, also known as JD. But yeah, so obviously you've been on before. It's not been that long, but we will, in the spirit of Justin, to make him happy, jump straight into a bug. And for the topic today, we're going to be talking about kind of what our hackbot has done. And I guess this is a little bit of an accountability to force us to put out the blog post that we've been working on for like a month. This episode should release with our blog post on like what mine and JD's hack HackBot has, has found this year so far. But anyways, yeah, dude, go and jump into one of the bugs that our HackBot found.
+
+[00:02:52.59] - Jonathan Dunn
+So basically we pointed the HackBot at a particular what looked like a GraphQL API, but that what the HackBot found— this was mostly HackBot, this, this bug— the HackBot found that this was actually in the backend using MongoDB., and it, parsed, backend JavaScript. So you could use, the, the where, like the, um, dollar sign where expression, and you could basically run JavaScript and you could like start by just saying like a dollar sign. Uh, so imagine these are, uh, MongoDB works with, um, uh, with JSON. So basically you'd say like where would be the key and then the value would be, let's say 1 equals 1. And then, um, you know, if that said, true, then, then you know that, that this is running backend JavaScript. And so with this, you could do this.constructor.constructor. And then you could basically get to things like return globalThis.process equals process. And you can basically get like the environmental variables. You could get the access token, like, which was one of the— we basically got the environmental variables. So I will say, like, the access token—
+
+[00:04:15.93] - Joseph Thacker
+you've left off the coolest part, though, is that all of this was via, like, basically like a binary search. It didn't just, like, respond with the data.
+
+[00:04:23.54] - Jonathan Dunn
+Yeah.
+
+[00:04:24.12] - Justin Gardner
+Yeah.
+
+[00:04:24.51] - Jonathan Dunn
+So it was blind.
+
+[00:04:26.11] - Justin Gardner
+Yeah.
+
+[00:04:26.50] - Jonathan Dunn
+And the hack bot completely got that. And then we had to reproduce it, obviously. So and then so it was a critical, with a really good critical vulnerability.
+
+[00:04:38.07] - Joseph Thacker
+Yeah, so for any listeners, the way that it worked was basically it looks almost like a, yeah, like a GraphQL query like you were saying, but then nested in the query was some query parameters which were like JSON in nature. Yeah, where the key was basically where, and then the, the, like you said, the value there was this doc constructor, doc constructor open parenthesis, yeah, single quote, return process.env NODE_ENV 0 equals character. And, um, actually let's see if I can show this.
+
+[00:05:12.81] - Jonathan Dunn
+There we go.
+
+[00:05:13.31] - Joseph Thacker
+So basically it looked like this down in the, down in the body, you know, this would be considered like one body and then this would consider one body. And so if this matched, then you could actually, you know, slowly binary search out this. And of course we had Claude, right, or Cloud itself wrote a script to totally extract these variables, but this totally blew my mind and it was really awesome to see our hackbot find something so cool like this.
+
+[00:05:36.25] - Jonathan Dunn
+Yeah, and even in the modern era of long triage, they triaged it in like 10 minutes.
+
+[00:05:42.45] - Joseph Thacker
+That's true. Yeah, which maybe it's because this program doesn't actually get that many, uh, you know, reports, but who knows. I've actually been told by— from a lot of people that the triage time has been better Um, which I don't know if that's because they're rolling out some of those like signal-based, uh, queues where if you're a, you know, more of a seasoned hacker, you get faster triage times, or if the automation's just kicking in.
+
+[00:06:07.88] - Jonathan Dunn
+But the payment times are still very slow.
+
+[00:06:09.98] - Joseph Thacker
+Very slow.
+
+[00:06:11.16] - Jonathan Dunn
+Very—
+
+[00:06:11.33] - Joseph Thacker
+yeah, I was just, I was just talking to, um, a young top hacker, um, Fav, and he was saying that, um, you know, he's had bugs sitting out there for a long time on Microsoft, and I, and I had previously heard that Microsoft's been, you know, paying well, so I love Fab.
+
+[00:06:25.60] - Jonathan Dunn
+That guy's a great hacker.
+
+[00:06:27.82] - Joseph Thacker
+He is.
+
+[00:06:28.81] - Jonathan Dunn
+Okay.
+
+[00:06:29.18] - Justin Gardner
+Yep.
+
+[00:06:29.38] - Joseph Thacker
+So, um, yeah, I can talk about another bug. Um, I may have mentioned this one to Jess on the pod, but I couldn't remember. But there was a Google product, um, it was like one of their, you know, less high severity services, like one of their other services. But, um, it was responding with an, uh OTP like hash, like a bcrypt hash of OTP in the response when you requested an OTP. And, um, it was actually crackable. And you and I reported this, our hackbot found it basically manually. Um, and it, it was like, I don't know if it was like a specific type of bcrypt hash, but anyways, it said it would be crackable in like, you know, 2 hours on rentable, viable hardware. So you could, so you could basically just, you know, reset someone's password and then crack the OTP and then take it over like that. Um, so that was, that was pretty sweet. But all right, we've got a bunch of sections in here, JD. You've, you've like kind of broken this down in a cool, fun way. Um, so this first section is integrating AI and manual hacking workflows.
+
+[00:07:35.41] - Jonathan Dunn
+So yeah, so like, I, I guess, um, I guess what I was getting at there is, you know, when I used to only do manual hacking, um, and, um, And then in the, you know, in the last few, in the last year or so, I'm basically hybrid. Like I do a lot of manual hacking and I do a lot of AI hacking and I usually use AI in basically everything that I do, even manually. And I think that the way that I like to, you know, how I've transitioned to do that is, you know, I, first of all, I don't have much time in life to just hack straight 'cause I have another job. And I have kids. And so like, they're, they're literally a cardiologist with a family and kids. Yeah. And so like, you know, when I, like, when I would used to start manually hacking, there was a lot of friction that I'd have to overcome. And I would often give up on programs because I'm like, I just, I can't, I'm looking at it like Google, like I'm looking at the proto buff. I'm like, I can't, I just don't have the emotional energy to do this right now. Or like, I would look at a, at a program that had a lot of, that looked like the threat model was very auth-related. Like, you know, there were multiple privilege types of users and you can create a million users, like the Archangel types of bugs that are great and pay really well. And like, you know, really are great bugs. And if you want to actually hack on a program, you have to do that. But I couldn't do it. Like, I just, my emotion, like, I'm like, why am I doing this? I should be with my kids right now. Like, why am I making technician and assistant and testing every single endpoint to get both of them? But, you know, AI has really helped me do that, you know, uh, like basically, so the first thing that it helps me do is, is the things that I can't do alone. Uh, and I'll, I'll set it to do that. Now, maybe it doesn't do as good a job as, as Archangel, of course, you know, it's, uh, it's still AI and not, and not a top hacker., but it does a better job than I was doing at those bugs.
+
+[00:09:41.79] - Joseph Thacker
+Mm-hmm.
+
+[00:09:42.10] - Jonathan Dunn
+And then the next thing is that, um, when I first approach a, a target, I get very anxious when you, when I first look at it, like I look at the, I, you know, I, I walk the site, I'm like, wow, there are just so many features here.
+
+[00:09:58.15] - Joseph Thacker
+Mm-hmm.
+
+[00:09:58.60] - Jonathan Dunn
+There are so many, there's so much JavaScript, there's so many chunks to look at and, and that, um, like I don't understand the app. It takes you like days to understand an app or longer sometimes. And, um, so I, I will use AI every time I hack to do like a once over on the app and to do OSINT on the app and then to write me like a book on the app. And I'll like in my off time when I'm not, which I don't have much of, but like, let's say like if I have 30 minutes or whatever, if I'm waiting for something, then I'll start, I'll read their assessment of the app and then I still won't understand it, right? Because it's just me reading a book, but I will understand it much better than, than I would have originally just going into the app.
+
+[00:10:47.52] - Joseph Thacker
+When you do that, I got a question because I feel like I often struggle with how to best consume that sort of stuff. Like, I think everyone listening probably is using AI to do stuff and it'll often, you know, in Cloud Code, like all of the information or in Codex, it's kind of streaming by. And so I know a lot of people obviously use like other harnesses or their, you know, their agents are like writing stuff to disk. Whenever you're saying like write you a book, like do you have it write Markdown and then you just read it in VS Code? Like what, like what are you typically doing?
+
+[00:11:14.72] - Jonathan Dunn
+Yes, that is exactly what I do. I write it, I have it write Markdown. I have honestly, I have AI only. That's how I write, have it write everything in Markdown, in .md files in VS Code. And I read it in VS Code.
+
+[00:11:26.42] - Joseph Thacker
+Do you read it rendered or do you read it unrendered?
+
+[00:11:28.62] - Jonathan Dunn
+I read it unrendered. I should read it rendered. I'm just laziness that I don't like.
+
+[00:11:34.03] - Joseph Thacker
+Anyway, I can never remember the keyboard shortcut. It's like Command Shift P or something.
+
+[00:11:38.05] - Jonathan Dunn
+I didn't even know there was a keyboard shortcut. I I
+
+[00:11:39.44] - Joseph Thacker
+I I didn't even know there is in VS Code. There's a single keyboard shortcut that'll like open up the rendered Markdown.
+
+[00:11:43.91] - Jonathan Dunn
+Oh man, I'm going to do that from now on. That's amazing. So So
+
+[00:11:47.39] - Joseph Thacker
+So So I can never remember.
+
+[00:11:48.08] - Jonathan Dunn
+So I read it and I, even when I'm reading it, I am not, I'm not intaking it as very well. But then I'll go back to it multiple times during the engagement. And then especially it's helpful after I find all the bugs I think I can find. Like I'll like, I'll like find all these bugs. I'll put them in the folder as I'm finding the bugs. I put the reports in a report folder in my like main folder. And then like, there's also a folder called like initial or like recon. I name it random stuff. I should have a better naming system. And then at the end, when I've, when I'm like, I can't find any more bugs, I'm done finding bugs in this app. I'll ask the AI to look at the bugs, redo the book, and then I'll read the book. And at that time, the book means a lot to me. At this time, that time I understand everything about the book and I'm like, wow, like there's, there's, oh wow, I forgot about that, about that API. There's a, there's, you know, oh wow, that, that's important. There's like a, um, uh, a dev endpoint there. I didn't know about that. Or the dev, um, domain. I had no idea there was that. Let's, and then I go back and I always find more bugs after I do that. Yeah.
+
+[00:12:57.11] - Joseph Thacker
+Yeah, it's a good idea. I feel like I just end up with so many of those markdown files all over the place. I feel like I need to come up with a better method for telling the top— kind of telling Codex or Cloud Code, always do it like this.
+
+[00:13:12.66] - Justin Gardner
+Oh, yeah.
+
+[00:13:13.26] - Jonathan Dunn
+My folder's a mess. The folder's a mess.
+
+[00:13:15.22] - Joseph Thacker
+I'm not going to enter that.
+
+[00:13:17.78] - Jonathan Dunn
+And sometimes it won't save the thing in the special folder. It'll be at the base folder. I have a, I have a folder called bugs. I have a, in my, on my desktop. And then like, I have little folders within that, but like, if you look in bugs, there's like random bug reports because, because it saves it in the, in the wrong folder.
+
+[00:13:36.70] - Joseph Thacker
+Even my home directory is just like so messy, which obviously, you know, you can just have AI organize it later, which that's like a little pro tip. If no one's done that, it's really fun to have like Claude Code organize your downloads folder into like, like something that makes sense. Like it's by types and by other stuff.
+
+[00:13:52.35] - Jonathan Dunn
+Although I once had AI give me a message saying, lesson learned, put into my memory, do not rm -rf before reading the folder. I'm like, what did you just do?
+
+[00:14:05.20] - Joseph Thacker
+So what did you do? Yeah.
+
+[00:14:07.19] - Jonathan Dunn
+Not yet.
+
+[00:14:07.98] - Joseph Thacker
+Yeah. So I mean, basically the whole premise of getting you on here and us kind of co-releasing this with the blog post was, and I think this would have been much more groundbreaking if we had posted in April or something. It feels like now literally everyone I know has massive awesome hackbots, was basically just to tell the story of us kind of, you know, getting into building the hackbot that we built and then some like, you know, pros and cons. And, you know, some of this has been discussed on that last episode with me and Brandon and Justin. Did you listen to that one about like the—
+
+[00:14:38.12] - Jonathan Dunn
+Of course I did. I listen to every episode every Thursday. Yeah, yeah, yeah. I know. Like, I'm done.
+
+[00:14:43.28] - Joseph Thacker
+The motivation one, I feel like was pretty interesting.
+
+[00:14:45.36] - Jonathan Dunn
+I have a lot to say about that episode, actually, because I have— there are like— like, I felt a lot of that. A lot of the ennui, you know, as a lot of the, that like not having passion, as much passion for bugs you find with AI, which is true. But like right now I'm doing this thing that is like, I have to do something with hardware for this thing I'm doing. And it's like revitalized my passion for hacking. Like I wake up like excited to hack because it's a new thing. You know, and I'm learning it myself and AI is certainly helping me learn it.
+
+[00:15:22.88] - Joseph Thacker
+Oh yeah, we've got that section up above. Yeah, like just one amazing way to use AI is for just like learning new stuff, right?
+
+[00:15:28.50] - Jonathan Dunn
+Oh my God. I, when I, I have to like with this hardware stuff, like I, I, I literally like, I'm like, I don't know how to do this. I've never done this before. And I'm like, Claude, how do I please like write me a study guide and I'm following it, you know?
+
+[00:15:43.28] - Joseph Thacker
+So yeah, One thing that I get in the weeds with whenever I'm using Cloud Code is like reading all of the things it's doing between its replies. And then even when there is a reply, it feels like the stuff above that's messy. I wonder if I, if I should experiment going back to using like the desktop app for some stuff, like obviously the code section of it. So it still has access to disk and all that stuff. But I wonder if it would just hide that noise that I feel like sometimes makes it feel a little overwhelming to be using, you know.
+
+[00:16:07.05] - Jonathan Dunn
+If I'm not in the terminal on my computer, I am sad.
+
+[00:16:11.64] - Joseph Thacker
+Same. Yeah, that's true in general, but I'm just thinking, like, as I was listening to what you were talking about, like, I was imagining myself, like, asking Claude, like, you know, describe to me this, build me a— build me a, um, uh, what's that called? Build me like a little mini app to, like, teach me how to do something, right? Like some sort of, like, let's say, new front-end vulnerability. Like, teach me about CSPT, right? And I feel like as it's talking to me, I'm, like, imagining myself looking at the terminal and then just try and then also like wanting to understand and like reading all the stuff above that, you know, all the stuff it just built and all the stuff it designed. And I feel like that makes it feel a little bit more intimidating.
+
+[00:16:46.94] - Jonathan Dunn
+Yeah, no, a lot of the time it prints a million things and I can't, and I'm like, oh yeah, I'm not going to, I'm just going to like, all right, do it. Read the last 10 sentences.
+
+[00:16:55.15] - Joseph Thacker
+Yeah, exactly.
+
+[00:16:55.75] - Jonathan Dunn
+Yeah. And sometimes it gets annoyed with me because it knows I didn't read what it said. As I said in the previous sentence.
+
+[00:17:05.28] - Joseph Thacker
+Oh, that's funny.
+
+[00:17:05.92] - Jonathan Dunn
+Yeah.
+
+[00:17:06.04] - Joseph Thacker
+Like when it starts off, I think that's the thing. It's like, as I just told you, you idiot.
+
+[00:17:10.35] - Jonathan Dunn
+But like the truth is like whatever AI does, like if you're good at the thing already, it's gonna do better than it would have if you weren't good at the thing. Like if you like, like, um, and so getting good at things using AI will make your AI be better.
+
+[00:17:29.30] - Justin Gardner
+Yeah.
+
+[00:17:29.47] - Joseph Thacker
+So let's get into like basically the story. I think that that's like, kind of interesting to you. And also you've taken the time to write a huge part of the blog post about how we kind of got into building the hackbot in general. You know, I think that, you know, it can be boiled down to like, actually, did I reach out to you or did you reach out to me?
+
+[00:17:48.28] - Jonathan Dunn
+We were talking a lot.
+
+[00:17:50.39] - Joseph Thacker
+Okay.
+
+[00:17:51.38] - Jonathan Dunn
+We were talking a lot randomly, like, you know, we were hacking, co-hacking on different topics and talking about AI a lot. And then you like came to me and you're like, listen, the hackbot thing is going to happen. Like the hackbot apocalypse is going to happen. Like you and I need to get involved. That's what you said. Basically, you're like, we, you and I need to do it. Like if we don't do it, like everyone's going to have a hackbot and we're not going to have a hackbot and we do a lot of AI together. And so let's do it together. That's how you framed it.
+
+[00:18:20.05] - Justin Gardner
+Yeah.
+
+[00:18:20.09] - Joseph Thacker
+Yeah. I think that's right.
+
+[00:18:20.85] - Jonathan Dunn
+Yeah.
+
+[00:18:20.94] - Joseph Thacker
+We were basically sharing skills already. Like just, you know, improving our skills.
+
+[00:18:25.22] - Jonathan Dunn
+And we were finding the same bugs. When we were hacking together, we were finding the same bugs.
+
+[00:18:28.42] - Joseph Thacker
+Right.
+
+[00:18:28.72] - Justin Gardner
+Right.
+
+[00:18:28.79] - Jonathan Dunn
+Same time. We're like, let's just combine.
+
+[00:18:30.57] - Joseph Thacker
+Uh, yeah, so that was back in like January, like really shortly after Opus came out. Um, and yeah, I mean, obviously I think there are plenty of people who have scaled their hackbots just as well as us or better, but, um, JD and I have found like, what would you say, like 60 to 80 good bugs, like solid bugs, way more than we would have done in the past, you know, separately or even together. And I think we've had just more free time to spend on other things as well. Like, I don't think personally I've put in as many hours as I did last year, which part of that's just I don't think I would have been able to based on like the family demands and trips and interruptions and all the things. But, um, and so that's been awesome. To be honest, I do think that like the benefits of it are also huge. Like, I don't think not only are we making more money and finding more bugs, but I think legitimately we are providing a much better service than I ever did before. Do you feel that way? Like when you do a pen test or when you do a—
+
+[00:19:30.82] - Jonathan Dunn
+Oh yeah. I've started doing some pen tests here and there and I'm like, I find a lot of good stuff. Um, and whereas I don't think I would have found, uh, that good stuff if it wasn't for AI, some amount of AI automation. Um, and then as far as Singularity goes, I would, I wouldn't love like the 60 bugs we found. I probably would have found like 6 of them, right?
+
+[00:19:56.38] - Joseph Thacker
+In the time you put into—
+
+[00:19:58.28] - Jonathan Dunn
+oh yeah, the same thing, maybe less, because especially because a lot of the bugs it finds are not the bugs that I would ever look for. Um, like that, that one that we just spoke about, um, I, I told you I used to look for that because I took the Port Swigger Academy NoSQL, uh, uh, whatever module, and then I was looking for it everywhere and I'm like, this is a dead bug. Who, who runs Who runs backend JavaScript? You know, like, you know, like those kind of things. A lot of the bugs we find are bugs that I like know that they exist, but I thought they were dead.
+
+[00:20:29.30] - Joseph Thacker
+Mm-hmm.
+
+[00:20:30.49] - Jonathan Dunn
+I, I, because I just, I looked for them so often and I never even saw like a hint of them. They weren't even using that technology.
+
+[00:20:35.97] - Joseph Thacker
+They exist on 1 in 10,000 hosts. hosts.
+
+[00:20:37.84] - Jonathan Dunn
+hosts. hosts. Yes.
+
+[00:20:38.23] - Joseph Thacker
+And so it's like, it's not even worth checking for them, but obviously HackBot can check for it everywhere.
+
+[00:20:42.10] - Jonathan Dunn
+Yes. I, and that's like, I think that's such a takeaway from, uh, the HackBot. Like, like, like let, like offload your stress to the HackBot. You know what I mean? That's like the— that's like such a— that's what I try to do. I try to offload my stress to the bot and then I do the things that I enjoy doing.
+
+[00:21:00.38] - Joseph Thacker
+Yeah, this makes me just like think about how the places where we're most useful are the places where the HackBot and like all of these hacking agents struggle. And, you know, you could move it across the line. And then that makes me think like Bringing good— we talk about leads all the time and gadgets all the time, but like if there were some way to build in or figure out how to make these coding agents or hacking agents get a good, um, spidey sense, and not for actually finding the bug, but then when to hand it off to the human, that'd be like really interesting. Like could you imagine if like through the last 6 months not only did it find and report bugs, but if And like, it's always finding like leads and gadgets, but like there's too many to really go through and like vet all of them. But wouldn't it be pretty cool if like over the course of the last 6 months it had delivered like you personally, like 100 like JD-specific leads for things that it like thinks are vulnerable that you could get across the line? We should build that.
+
+[00:21:59.11] - Jonathan Dunn
+Yeah. The only problem is in my— I watch, I watch the thought process constantly. I'm always watching the thought process and it has terrible Spidey sense.
+
+[00:22:09.00] - Joseph Thacker
+I know.
+
+[00:22:09.55] - Jonathan Dunn
+Yeah, it has really bad spidey sense. Like, it, like, it, like, it knows when a bug exists, but it thinks it— it's like, oh, that's dead, that's— that doesn't work. And you're like, no, that was it, that was a— you were rate limited right there, you know? Like, that's not, uh, that's not— yeah. And the stuff like that, or the opposite happens too, where it goes after something that is obviously not vulnerable because it sees some weird header thing that it— that was— that I would have never, you know. But then again, sometimes the weird header thing pays off for it. But I don't think it has a good Spidey sense. But what is good is the gadget finding. And I also think there's like two different like universes of the HackBot, right? There's like the, what we did is we did a wide scope HackBot, you know? And like our wide scope, like we basically pointed it at everything and gave it our, our skills that we honed very well. And, but there's like the, the, the other kind of hack bot, like from the other, a few weeks ago, the Google episode.
+
+[00:23:13.38] - Joseph Thacker
+Yeah.
+
+[00:23:14.32] - Jonathan Dunn
+Which is the deep hack bot, right? Like one target and you know everything about, you already know everything about the target, which seems to even work better because I, you know, he did great on that.
+
+[00:23:23.46] - Justin Gardner
+Yeah.
+
+[00:23:23.61] - Joseph Thacker
+He did awesome.
+
+[00:23:24.18] - Jonathan Dunn
+Great. Yeah. But it's nice because I usually go deep. And not wide. So it's nice having another thing that I have that goes wide.
+
+[00:23:33.07] - Joseph Thacker
+Yeah, that's true. Yeah, it makes me think we should build a hackbot making hackbot. We should build something that builds a whole bunch of the DeepBots and then runs them.
+
+[00:23:42.67] - Jonathan Dunn
+No, we should make a hackbot that makes one of those. We should make a hackbot that makes a hackbot that makes a hackbot.
+
+[00:23:48.75] - Joseph Thacker
+Yeah, sure.
+
+[00:23:50.20] - Jonathan Dunn
+Then, then we'll be even better.
+
+[00:23:52.45] - Joseph Thacker
+There you go. Uh, yeah. So let's talk about these like negatives that you wrote down here.
+
+[00:23:58.94] - Jonathan Dunn
+These, yeah, like it can suck out, it can suck your interest away. Yeah.
+
+[00:24:03.92] - Joseph Thacker
+I honestly think that the ennui that you were talking about, which by the way, if there's any non-native speakers, ennui is a very, actually it's probably like a French word or something.
+
+[00:24:11.38] - Jonathan Dunn
+It is a French, it is a French. It means restlessness resulting from boredom. That is the definition of ennui.
+
+[00:24:16.24] - Joseph Thacker
+Wow. Look at you, Mr. Wikipedia over here. Yeah.
+
+[00:24:19.24] - Jonathan Dunn
+That's what, that's what happens when you're 43 years old. You know, stuff like that.
+
+[00:24:22.93] - Joseph Thacker
+Yeah, I do think that there is something about a fake intelligence, finding bugs that you would struggle to find or that you would never find, that does impact the soul in some way. It does impact the motivation in some way. Obviously, it's cool and it's great if you can get credit for it and make some money off of it, but it definitely, I think, just slowly wears on you. I do think your second point here that we're back to being automators is pretty interesting. Um, actually, did you see Hack Luke posted a blog like an hour ago? Did you see it yet? No. Uh, it's all— it's like exactly this topic that we're discussing. It's really interesting. Basically, it's the whole 'is bug bounty dead again' conversation, but in it, the analogy that he uses is that it's kind of like watchmakers. So originally, when watches were being made, they were like an artisanal craft, and they were like very difficult to make, and it was like only high-skilled people who could do it. And only the best watches actually kept time. So people always wanted the best, highest quality thing. And then there was something that came out that was basically called a quartz watch. And it's like, you know, quartz— I think it's quartz— like keeps time perfectly and it allows you like mass produce really cheap watches. And there were some companies that that killed, but then there were companies that adapted and started making quartz watches and they started thriving. And his whole point in all this and this whole blog post is very long and all written by hand, so you should go read it. But is just that the bug hunters that, you know, pivot into using AI effectively to find deeper, cooler bugs or more bugs at scale are going to thrive and other people won't.
+
+[00:25:56.97] - Jonathan Dunn
+I agree. I think I may agree with that. I don't know, though, but we've done well. We've done better than I thought I could do. Yeah.
+
+[00:26:05.16] - Joseph Thacker
+You know, I think this discussion comes down to do you believe that this state that we're in now will continue? If so, then of course bug bounty is not over and it's going to keep being in this golden era and thriving.
+
+[00:26:15.53] - Jonathan Dunn
+Or it's sort of different. Yeah, sort of a different kind of bug bounty that I don't even know if I want to dip my toe into that.
+
+[00:26:21.39] - Joseph Thacker
+Well, my point is just like, you're right. Like right now it's awesome. And the bifurcation is just, does it get worse as all the bugs are found? Or do we just keep going and there's tons more bugs and we keep finding stuff? Who knows?
+
+[00:26:32.86] - Jonathan Dunn
+I think it's just like anything, it's how you use it. Like, right now I'm doing this engagement and I'm doing a lot of manual hacking and I'm using a lot of AI and it is just going great. And like much better than I would have done with the same skills without the AI for this reason, because, but you have to like understand what it is and you, and I think you have to not stop doing what you do. Like, you know what I mean? Like, you know, you can't be like, okay, I'll just let AI do everything. Like it, and I'm liking that a lot., too. Um, but the, the ennui is real and the, and, um, and like when we found that bug that we talked about at the beginning, that was great. And I know we're going to get paid really well for it, but like finding like a medium by myself even feels better than that bug popping.
+
+[00:27:27.55] - Joseph Thacker
+Yeah. And yeah. Uh, and he does talk about that in the, in the blog post, uh, Hack Luke does just to not to, um, overemphasize that blog post, but he mentions the fact that like a critical like 5 years ago, you would be like really proud of it and it'd be like pretty rare. And now it's like, wow, there's just like so many highs and criticals being found all the time, both by yourself and by our hacking agents. It does feel like less good.
+
+[00:27:54.24] - Jonathan Dunn
+That's true. But on the, on the flip side to that, if you like, sometimes when I find something like that, not that particular one, but it's like some bugs that I really had no idea that this type of bug existed. I'll replicate it, like to learn it.
+
+[00:28:11.57] - Joseph Thacker
+That's true.
+
+[00:28:11.97] - Jonathan Dunn
+And I would have not, and like another thing that's interesting that I've found from the HackBot is like, I spent all of last year learning client-side. Like that's like what I learned. And I always said to people, like, I don't even understand what being good at server-side means. Cause I got like client-side is like kind of a skill that you can learn, you understand the window references and stuff. But like server-side, like what, when people say good at server-side, what does that even mean? But now I'm like seeing all of the bugs that are out there on the internet.
+
+[00:28:41.66] - Joseph Thacker
+Yeah.
+
+[00:28:42.24] - Jonathan Dunn
+Like I, like I, these bugs are coming in and I'm like, oh wow, like that, that exists, uh, here and probably elsewhere.
+
+[00:28:48.97] - Joseph Thacker
+Yeah.
+
+[00:28:49.15] - Jonathan Dunn
+So like I'm, I'm kind of getting better at server-side, watching these bugs come in and reproducing them and understanding them.
+
+[00:28:56.63] - Joseph Thacker
+So that's something I feel like server-side is just all like regular expression bypasses.
+
+[00:29:04.61] - Jonathan Dunn
+No, I think server-side is like knowing what could be a bug on the server side and then looking for it. I don't know. I mean, you know what I mean? And like, I feel like I didn't— like when you do stuff like the training, when you do like bug bounty training and classes and Port Swigger, and then you go back on into the reality and you don't find those, any of those bugs. It's very demoralizing and you're like, oh, like, oh, I just learned all that for nothing. Like what, like what is happening? I'm not finding anything. And then, and that's how I felt at least. And then I sort of got into client side and I started finding stuff and I understood that, but like I still, I like veered away from server side because I'm like, I don't like that stuff doesn't exist. I mean, my head, that's what I'm thinking, right? You know, but now I'm like sort of seeing what actually exists so I can look for it and I'm finding more server-side stuff myself as a result of this.
+
+[00:29:59.65] - Joseph Thacker
+Yeah, in my head, like, I never thought about this. It's almost like if you imagine like a huge X and Y table where there's a whole bunch of cells, like, you know, let's say it's a 10 by 10, there's like 100 cells, like learning hacking techniques both server-side and client-side, is like you're kind of like filling in all those cells. Like, those are like the things that you're like learning. And then like, let's say that you have like full coverage. Let's say you know all the bugs, and so they're all green. Then like when you come to a new target, you have to like check for all those bugs across all the scope. And then the— and like, so you can imagine it was like another, you know, 10 by 10 grid. And then if you think about like the bugs actually exist, it's like a third 10 by 10 grid that's like all green, but there's like a few red dots. There's like a few red cells and those are the actual bugs. And you basically have to kind of like check every box to overlay it to really figure out where the bugs are.
+
+[00:30:52.41] - Jonathan Dunn
+And you have to understand like what kind of bugs would exist on a particular type of target. And that's what you look for. Like, I guess that's what being good at server-side is anyway. This is really deviating, but that's it. I've thought about this a lot because I want to be good at everything. I want to be a good all-around hacker.
+
+[00:31:08.29] - Joseph Thacker
+Well, dude, I think that the push into hardware stuff is really cool and really high value, and I think it'll pay evidence long term.
+
+[00:31:15.42] - Jonathan Dunn
+I love learning a new skill. Like when I was learning JavaScript, that was like the best. Like I, I like love that. So I was just walking around in a good mood all the time. And I'm, and I'm kind of like that right now when I'm like about to learn something new. Yeah. And I couldn't have done it without, I couldn't be, I haven't done it. I couldn't be doing it without AI and we'll see how it works out.
+
+[00:31:35.39] - Joseph Thacker
+Yeah. All right, dude. Let's hit up these last couple sections, which is how we did it.
+
+[00:31:40.25] - Jonathan Dunn
+You want to talk? Yeah, you want to talk about the thing? Let's, let's talk about how we like the thing.
+
+[00:31:44.36] - Joseph Thacker
+Sure, I don't care. Yeah. So, and also you mentioned Singularity earlier and we never really defined it. Our hackbot is called Singularity and that's after the idea that I had one day there would be like a—
+
+[00:31:54.00] - Jonathan Dunn
+huh? You did that. You named it that. That was a good name.
+
+[00:31:57.04] - Joseph Thacker
+I appreciate that. Yeah. I just thought that, you know, when I mentioned this in my TEDx talk that I did like 2 and a half years ago or whatever, that there would be a point that's almost like the Singularity, but it would be called, you know, the bug bounty Singularity where there would be a point at which token cost was cheaper than the output of the, of the findings that it would come up with. And then at that point, everyone would just scale up. And I think everyone is kind of doing that. I think what prevents people from just spinning up 100 Claude Code instances is that, like, you still have to do manual validation on a lot of them. And so you do end up at a scale where, like, you literally can't, um, and you have to, like, keep off a lot. We'll talk about this in a minute, but you have to, like, you have to keep the servers alive and you have to keep the auth alive and you have to like keep improving your system. And so all those things have like a manual labor tax.
+
+[00:32:42.29] - Jonathan Dunn
+So there's like multiple parts, right? So there's like the, the actual thing hacking the, the, the, the program. There is the thing which tells the AI to hack the program and which program to hack and how it hacks. And then there's us interacting with it somehow. Right? Like, that's how we have to think. That's how we thought about it, right? Like, in the beginning, we're like, how do we do it? Like, we have to enter, we have to, this thing has to hack, we have to somehow make that thing hack. And then we have to somehow interact with both the output of the thing and hopefully even into the thing.
+
+[00:33:18.49] - Joseph Thacker
+Mm-hmm. Yeah.
+
+[00:33:19.19] - Justin Gardner
+Right.
+
+[00:33:19.36] - Jonathan Dunn
+And then you came up with the idea of a Discord, of Discord for the inter— for both.
+
+[00:33:24.41] - Joseph Thacker
+Yeah. I mean, people were actually, I think this is before, OpenClaw. But, you know, I, I just wanted to be able to control it from like the stuff I was doing. So before we even had the hackbot, I was like interacting with my, um, Claude Code instances for just like development purposes and hacking purposes via Discord. And so yeah, we set it up as like a custom Discord for the two of us, and it was Justin originally, but Justin really never had time to hop in.
+
+[00:33:46.70] - Jonathan Dunn
+But Justin's like, yeah, I'm not doing that.
+
+[00:33:50.33] - Joseph Thacker
+Um, but, uh, yeah, so that's how we interacted with it. And like you said, you know, We— that second mode, obviously there's the hacker, but then there's all— which some people call workers or whatever, but then there's also like the boss, which is like in charge of like kicking those off, delegating things, telling it to go back and hack harder. Um, and you know, you can like include or exclude different types of things, like does your boss also choose scope or does that come automatically? Does your— does your boss also figure out auth? Does it also take notes? You know, like, or does your— does your worker take notes, or do you have an overseer that then takes notes? You know, and then there's like a lot of different systems for how you're going log all of the output? And how do you pick back up from a strand if you really need to or want to?
+
+[00:34:34.94] - Jonathan Dunn
+I think like each of these three parts caused trouble for us at a lot of points in the last— how long have we been doing this now?
+
+[00:34:42.51] - Joseph Thacker
+6 months. Yeah.
+
+[00:34:43.84] - Jonathan Dunn
+Yeah. 6 months. Um, and like, like for example, like the, the, um, the, uh, let's say, uh, the first step is getting the thing to hack the target. Like, like, there are multiple ways we could do that, right? We could do that on computers, we could do that in the cloud, we could do it one at a time, we could do it 10 at a time. And when do you run out of tokens? Is it, you know, like, how many do you spin up to run out of tokens? When do you scale up the operation? These are all like, like hard questions that we had to answer. I guess this episode is for people who want to do this. Like, so like all of, like, all of these are very hard questions. And it's all trial and error. Yeah. And then as far as the interacting with it, like it sending information back to us, we went through multiple iterations of that. We went through a dashboard phase. We went through the Discord bot, which we're still on. We thought about, we thought, I don't know, we thought about a million things like how to interact with our phone, how to get our computer center.
+
+[00:35:46.53] - Joseph Thacker
+I think findings still outputs as like PDF in the findings channel, but then we have like markdown in the reports channel.
+
+[00:35:51.84] - Jonathan Dunn
+Yeah. And we do. And we have more, you know, it's kind of, we have a lot of ways to interact with it. But like thinking about it, these things are going to pull back to us like multiple true and false positives all the time. Like there's like every day, how many, how many alerts do we get from it?
+
+[00:36:06.34] - Joseph Thacker
+Yeah. Too many.
+
+[00:36:07.63] - Jonathan Dunn
+50 alerts. Right. And like, I look through them a lot, you know, constantly. And so do you. And we try to find the ones that I get like a little @XSSDoctor exclamation point if they're good too.
+
+[00:36:18.38] - Joseph Thacker
+For me.
+
+[00:36:19.28] - Jonathan Dunn
+Right. Yep. And then, but like sometimes there's stuff that is like kind of lost in that mix that may be a good gadget for another day. And we have to kind of, and we've gone through iterations of that too. Like of how to parse that. And then there's the, how do we interact with it? Part of the story, which, um, like at first we couldn't interact with it. And then we made little logs that we could click on and type, uh, to it to inject into the bot. Um, which I think was a very good idea also of yours.
+
+[00:36:59.88] - Joseph Thacker
+We don't really use it anymore, but yeah, I use it.
+
+[00:37:02.53] - Jonathan Dunn
+I use it like crazy. Yeah, of course. I use it like crazy. Yeah. And I, and I, I changed stuff based on it. That was our big, that was like a big changed when we were getting all this crazy. So, so at one point we were getting not that many findings, but the tokens were being used up constantly, like, like within 2 days. And so Rezo's like, dude, you got, we got it. We got to see what's happening. Like, what is happening? And he like ran all these metrics. It turns out like 80% of the time it was using 80% of tokens on auth, not authorization. So it was trying to log in over and over to the application. Multiple ways for 80% of its tokens, and then it was only hacking for 20% of its tokens.
+
+[00:37:42.69] - Joseph Thacker
+That's right.
+
+[00:37:44.05] - Jonathan Dunn
+And we found that out looking at that. And then we would look at the log output and it'd be like, let's try to solve this CAPTCHA 100 million times.
+
+[00:37:52.65] - Joseph Thacker
+Right.
+
+[00:37:54.32] - Jonathan Dunn
+And so we had to— that's something you had to kind of deal with here.
+
+[00:37:58.51] - Joseph Thacker
+Yeah. I'm surprised that you still go in and inject into the live running log sometimes.
+
+[00:38:03.96] - Jonathan Dunn
+Uh, that's what I do.
+
+[00:38:06.19] - Joseph Thacker
+That's awesome. Yeah, when we abstracted it out, basically we used to have like a thread per— like a thread per every instance of every worker. Yeah, but now it's like the boss, and so you don't actually see like the actual— it's like a good— the good thing we could actually change back, try to add back.
+
+[00:38:24.61] - Jonathan Dunn
+Talk about that then. That's something else we did that was interesting.
+
+[00:38:27.98] - Joseph Thacker
+Yeah, I mean, just in general, um We used to have like these hard-coded phases where it would go from like, you know, recon to then hacking to then like looking everything over and trying to chain together bugs. Um, but you know, I feel like you get a lot higher accuracy, a lot better output if, um, the like hacker worker, the hunter worker is told like, oh no, you missed stuff, go back and work harder, or go back. And some people, I think, I think, uh, Justin and maybe J— or, and, um and Douglas DJ both, um, have, have that hardcoded where it just says like, you're doing great, keep going, or no, no, try harder. Um, yeah, whereas we, we have an actual like kind of like boss, you know, or overseer that's— no, it's like, oh no, you missed this and this and go back and do that. And, um, it's hard to know if that's increased accuracy. Like, I feel like our bug throughput has definitely increased accuracy.
+
+[00:39:19.38] - Jonathan Dunn
+Oh, definitely increased accuracy. Yeah, dude, that when like that idea that again you came up with. Every time, every time. Yeah, I'm— you're the big— you're the idea guy. I'll tell you that. All these ideas, yours. You're like, let's, let's put an LLM in between us and the worker.
+
+[00:39:34.15] - Joseph Thacker
+Yeah.
+
+[00:39:34.30] - Jonathan Dunn
+Of some sort. And that— our findings like tripled after that.
+
+[00:39:38.82] - Joseph Thacker
+Really? I feel like they've mostly stayed constant, but I, but I do think they were like kind of like, uh, what's it called? Like they were like stalling out on us and then we did that. They were stalling out.
+
+[00:39:46.86] - Jonathan Dunn
+That's what it was. Yeah, yeah, they were slowing up, but that like LLM in the middle was, it was such a good idea.
+
+[00:39:51.88] - Joseph Thacker
+I appreciate that. Yeah, we gotta— all of this is like, I feel like I've been a little bit more of like a Debbie Downer headspace after coming back from the most recent vacation, and I don't know why. So anyways, but I feel like it's affecting my view on that. But yeah, so obviously we just like everyone, we have a lot of false positives. I actually think that, you know, that's something that has been discussed a lot on the pod over the last 6 months, but it's still something that is a huge factor at play for why this hasn't scaled even bigger, because obviously people have to like vet their own false positives. And you can kind of bake it in a little bit. Um, like you can, you know, of course bake in like, you know, ignore CORS issues, or most of the time CORS issues aren't this, or whatever. Um, but I do think that like, uh, there can't be like full takeoff on everyone just running a million hackbots and just auto-submitting things. And I think there are probably very few people who are like scripting the submission of bugs. One, because it's nice to read the report, but two, because there are still going to be like some false positives in nearly any system.
+
+[00:40:57.98] - Jonathan Dunn
+100%. I now— I mean, I had some— I had— I had some— I, I, in the beginning of this, I like trusted it too much and I had some bad situations. But that— that now what I do is, first of all, I always now personally like make the thing to run the POC. I have it right. Every time I get something, I have it make me a POC and I make the POC proxy through Kaido. I like every single time and then I'll run the POC, I'll look at each request in Kaido and then I'll very clearly look at the scope because it loves to go out of scope. Yeah, not necessarily out of scope, but not in scope, you know, like they're like it won't, it won't particularly go to out of scope if, if you, if it's put it out of scope, but it does not care so much about that in scope. Part.
+
+[00:41:46.34] - Joseph Thacker
+So, um, and so especially if it's referenced from in-scope, which, you know, as bug hunters we often report those too. But if it's like a reference or an API call from an in-scope asset, it'll like happily go there. Yeah.
+
+[00:41:57.17] - Jonathan Dunn
+But like a lot of the time with the reason why the bug exists is because it's in one of these programs that they only care about the in-scope scope and it's not in the in-scope scope. And, and then that's why it exists because no, you know, yeah, no one's looking at it. Yeah. Yes, that's, that's a, and I don't really care about false positives so much anymore. I care about at least if they're, because false positives tell you something, some, a lot of the time, like, you know, if you look closely, but I, as long as there's like at least 20% true positives, I'm fine with that. So I can look through some false positive reports.
+
+[00:42:35.28] - Joseph Thacker
+Yeah, of course. I mean, honestly, it is like one of those things where it's like, uh, running it is just like also fun because like we're like eat and breathe bugs. It's just like fun to see like potential bugs. Like I, like, I just like looking through the output, you know what I mean?
+
+[00:42:49.00] - Jonathan Dunn
+Yeah, I love looking through the output. Um, but yeah, but like other, like we've got, we've had a lot of, there have been a lot of, uh, I think the hardest part for us was auth and it's still the hardest part. Yeah. Um, I Um, I
+
+[00:43:02.51] - Joseph Thacker
+Um, I Um, I don't think we need everyone because anytime we say auth, I also have this like moment of like, wait, there are like kind of two forms of auth. Like one is your agent auth, like how are you, how are you authenticating to Claude or Codex, right? And we've talked about that a long time ago. But, and then there's also like auth to the programs. And the second one is really, you know, still the holy grail. And when you can solve that really well, you can find way more bugs.
+
+[00:43:29.30] - Jonathan Dunn
+It's the hardest part is that, um, like if we think this is a terminal application. And if we, if you use headless terminals, that limits you in terms of the way that interacts with websites. Like a lot of the big websites use like CAPTCHA, obviously, and it's very hard to beat a CAPTCHA in Playwright, no matter what. And there's like people who sell you things that say it can do it. But like, if you think about it, like look at a program like Amazon, like Amazon, they're not making that CAPTCHA to prevent hackers from getting in. They're making the CAPTCHA to prevent people from, from scraping the site and stealing Amazon. And like they have an entire like building. I don't know if they do, but they have like a lot of people in Amazon whose, whose purpose it is to prevent you from scraping that website. And if you want to get an AI to log into Amazon, and do anything, it's extremely difficult headless. So you have to do it with headed, which is possible, but then you need an actual computer with a screen, which is fine, but that gets expensive. And like, you're just going to have a computer sitting there. That also has problems. We had that too, but then it kept restarting. It kept updating. Stuff like that would happen. And then we still haven't solved a lot of this, guys.
+
+[00:44:59.71] - Joseph Thacker
+Like we're not some like super experts who have solved all this.
+
+[00:45:03.75] - Jonathan Dunn
+And then you have other programs that like AuthReset, like it refreshes the auth token every 15 minutes. And if you log in anywhere else, it, you know, that refresh invalidates the refresh on the thing. And then sometimes you'll have solved it. And then like 3 days later, Cause if you're continually refreshing the token every like 10 minutes, but then something changes on the server side or something happens and you lose auth and you look back at this thing that you made to keep auth and you're just like, oh, it hasn't worked in like 3 weeks. Like no wonder we haven't found a bug on this program in 3 weeks. Uh, so it's very, that's a very hard, um, that's, we, that's, I, that's, that's why he did so well. Um, BruteCat did so well. That's not why, but he did so well for a lot of reasons. That's one of the reasons it seemed like he did so well on Google because he took that out of the equation.
+
+[00:46:00.69] - Joseph Thacker
+He did. He said he just like solved AuthRay was always there, which is genius. Yeah.
+
+[00:46:05.73] - Justin Gardner
+Yeah.
+
+[00:46:05.92] - Jonathan Dunn
+Because the whole world is, is looking for unauthenticated, like, like there are people that are automators who like are even better without AI than we are with AI at finding unauthenticated bugs, but like that authenticated realm, is where the bugs live.
+
+[00:46:22.80] - Joseph Thacker
+Yep. All right. We've got just like a couple of minutes left here. I love that you have the successes section. I feel like it's honestly where so much value lives for listeners. And so we'll kind of run through this, even though this is a little bit of the secret sauce. One is the validator. And actually, I'll go ahead and mention also the escalation agent.
+
+[00:46:43.32] - Jonathan Dunn
+So also both your ideas. I'm just going to— I'm just popping that in there in case someone— in case someone thought it was my idea.
+
+[00:46:50.07] - Joseph Thacker
+Yeah, so, uh, we implemented an escalation agent that, like, when a finding comes in, before it goes to the validator, uh, which validates the bug and writes the report, it attempts to escalate it. And so we actually have seen a lot of success out of that. It's really cool. We have these, like, escalation logs, and it'll be like, oh, I escalated this low to medium, or this medium to a high, or this medium to a critical. Um, and, uh, then the validate— the validator, um, is kind of similar to that in the sense that it's looking at a finding. Sometimes it's already been escalated and then it's basically told, hey, you need to replicate this in like a kind of skeptical way as if you were a triager for the program. And, you know, if it, if it totally checks out and validates, then you have to write the report and then it gets all of the report writing skill and all of that. And so I think that those two have been absolutely huge and I think everyone kind of needs those in their hackbot. Did you want to say anything about those before I went down the list?
+
+[00:47:45.88] - Jonathan Dunn
+No, I want to say, again, it's another way, surprisingly to me, adding more LLMs into the chain is better. For some reason, it ends up being better than when you think it would be fewer LLMs and more people. But I think if you add more LLMs, they don't filter out. They hone. The thing. The validator, it's very, I look at the unvalidated bugs, by the way. I look at them and it's very rare that they're wrong, that it's wrong. It's just like, and I think the idea is like, it gets excited. It wants to find us a bug and then it's like, I found a bug. And then validator, it wants to not, it wants to invalidate.
+
+[00:48:35.23] - Joseph Thacker
+You know what I mean?
+
+[00:48:35.55] - Justin Gardner
+Right.
+
+[00:48:35.71] - Joseph Thacker
+Exactly.
+
+[00:48:36.28] - Jonathan Dunn
+Yeah.
+
+[00:48:36.76] - Justin Gardner
+Yeah.
+
+[00:48:38.19] - Jonathan Dunn
+Anyway, that's—
+
+[00:48:40.03] - Joseph Thacker
+yeah, you're fine. I don't want to keep you too long because I know we're kind of at time here. Um, one of the other cool successes is Hail Mary mode, um, which is basically where we just throw everything at the wall and say, hey, this— I don't care if you can't find a bug in this, then you need to find it in the libraries and the dependencies. And if you can't find a bug in that, then I want you to find it in the protocol itself. It's just like you basically just tell it to go balls to the wall until it finds something. And that's found a couple of things. It hasn't been the best. I still think there's a lot of—
+
+[00:49:10.28] - Jonathan Dunn
+we haven't been running it that much.
+
+[00:49:11.78] - Joseph Thacker
+Yeah, yeah.
+
+[00:49:12.19] - Jonathan Dunn
+There's a lot of unknown. Every time we run it, it finds something. Every time we run it, it finds something. And we've submitted those things. I just don't run it enough. Yeah, we need to run it more. And the best part of it is that the worker guys tell the orchestrator, the Hail Mary orchestrator, like the orchestrator is like, hey, go out and fuzz this this thing, you know, and like find everything you can and think about the fuzzing and do weird mutations on the fuzzing. And we have a whole agent who does that and then gives back the fuzzing list. And then the guy, he thinks about the fuzzing list, my orchestrator friend. And then he's like, oh, we need someone to go after this endpoint. And he makes the whole work. I love that guy. Yeah. Me and Hail Mary mode are like best friends.
+
+[00:49:57.21] - Joseph Thacker
+That's so funny. I feel like I haven't read enough of the chain of thought of the Hail Mary mode.
+
+[00:50:01.78] - Jonathan Dunn
+I'm like all about reading chain of thought. I, that's, that's what I type. I love reading chain of thought.
+
+[00:50:07.63] - Joseph Thacker
+Cool, dude. All right, well, uh, since we're a few minutes over, I will go ahead and call it here. Um, I do want to, uh, either on the podcast or, um, at least in the Critical Thinkers chat, kind of debate this whole discussion around hackbots and like the models being blocked off. Like, you know, we lost access to Fable, which it was while I was on vacation, so I didn't get a chance to use it. I feel like I like had to improve some skills and that was it. And I really want to use it, uh, to improve our whole system.
+
+[00:50:33.82] - Jonathan Dunn
+But I'm, I'm gonna tell you something, I have one little say on that, is that I, I can be completely off on this matter, but I think that is, there is going to become a point where it is a better hacker than I am, um, at everything, you know. That's, and, and I'm dreading that point because then that means that there's no purpose for me anymore. So like, I like when, when Mythos and Fable like weren't allowed. Um, I don't know.
+
+[00:50:59.15] - Joseph Thacker
+Heck yes.
+
+[00:51:00.57] - Jonathan Dunn
+I wasn't like, heck yes, because I do also want to play with it. I also am somebody who likes to play with it. But like, maybe the, the— as I like hacking a lot, I don't want it. It's right. I don't want it to attack. Anyway, that was my little— I wasn't, I wasn't upset. I wasn't that upset about it.
+
+[00:51:15.96] - Justin Gardner
+I—
+
+[00:51:16.05] - Jonathan Dunn
+because, uh, because, um, Opus— me and Opus are still better at a lot of things together than Opus is alone. And maybe that won't happen later. And that— and then I'll be sad.
+
+[00:51:30.88] - Joseph Thacker
+Yeah. No, I think that'll last a long time though. At the very least, people to orchestrate stuff, to build hackbots, stuff like this. And, you know, you've already got your— you've already built up 6 months of that skill set, which is pretty cool.
+
+[00:51:41.55] - Jonathan Dunn
+Yeah.
+
+[00:51:42.63] - Joseph Thacker
+All right, dude. Thanks for hopping on here. Have a good day.
+
+[00:51:46.07] - Jonathan Dunn
+Anytime.
+
+[00:51:47.57] - Joseph Thacker
+Peace, dude.
+
+[00:51:47.98] - Jonathan Dunn
+You know I love it.
+
+[00:51:50.07] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more Critical Thinking content, uh, or if you want to support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild if you're a full-time hunter. It's a great time, trust me. All right, I'll see you there.

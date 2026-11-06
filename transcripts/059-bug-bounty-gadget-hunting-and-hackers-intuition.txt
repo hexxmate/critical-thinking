@@ -1,0 +1,1637 @@
+Episode 59: Bug Bounty Gadget Hunting & Hacker's Intuition
+Source: https://www.criticalthinkingpodcast.io/episode-59-bug-bounty-gadget-hunting-hackers-intuition/
+======================================================================
+
+Justin Gardner (@rhynorater) (00:01.279)
+Dude, oh my gosh, this is clutch. Bagel is, Bagel, Joel's cat is literally hugging the mic right now. Oh my gosh. What a sweet little cat. Dude, all right, well you flexed on me with the cat. Now I'm gonna flex on you with this beautiful Kaido sweater I'm wearing right now. You see this? So actually, this one's yours, actually.
+
+teknogeek (00:08.018)
+so cute hi baby little cat
+
+teknogeek (00:20.406)
+Dude, I'm so jealous. Where did you get that?
+
+teknogeek (00:26.547)
+Oh.
+
+Justin Gardner (@rhynorater) (00:28.515)
+So the Kaido team was like, hey, we'll send you some sweaters. And I'm like, hell yeah, send them both to me. And I already spilled coffee on mine. So I'm wearing yours today for this lovely podcast recording. So shout out to the Kaido team. Thanks for that awesome, awesome gift. I will wear it with pride often. And I will never give Jules back to him.
+
+teknogeek (00:33.646)
+Oh wow.
+
+teknogeek (00:40.418)
+Damn.
+
+teknogeek (00:53.119)
+I'm moving to the East Coast soon so you're gonna have to give it to me.
+
+Justin Gardner (@rhynorater) (00:55.647)
+That's true, you're gonna come and get it. All right, man, let's hit the news real quick and then we'll get into today's topic, which is gadgets that you need to be on the lookout for when you're doing some web pen testing. And we have, let's see, 17, it looks like, gadgets that kind of get the gears turning a little bit, which is awesome. And I'm really excited for this episode because I think there's a lot to be gained from this. And even just from me,
+
+sitting down and formulating this topic and this content, I've kind of benefited from it because I think a lot of my hunting is just intuition-based and I can't really explain why I know what I know about hacking. It's just a part of my development, a part of who I am, a part of spending a bunch of time and understanding what stuff is weird and what stuff is not weird. But then, and so when somebody tries to explain it to you or ask them to explain it,
+
+someone asks you to explain it to them, it gets a little bit tricky because it's like, how do I put this into words? Well, this is how you put it into words. So hopefully I'll do justice to that later today and that should be a pretty good piece of content for this episode. All right, so first, since we already talked about Kaido, let's just go ahead and mention Kaido again. Have you noticed that Kaido is like blowing up recently?
+
+teknogeek (02:11.618)
+Yeah, for sure.
+
+teknogeek (02:22.166)
+Yeah, and they're putting out really good features. Literally just yesterday, they came out with a couple new features, things that I'd been asking about as well. So one specific thing is they made HTTPQL, which is their query language they call it basically. But it's basically kind of like Wireshark-esque way to query and search through requests. Well, by default, it was only in that search tab or the logging tab or whatever it's called. And I had to be complained that
+
+Justin Gardner (@rhynorater) (02:29.84)
+Mm.
+
+Justin Gardner (@rhynorater) (02:35.432)
+Mm.
+
+teknogeek (02:50.878)
+you know, essentially that made it very difficult with HTTP, the HTTP history tab where you have to switch context between the search tab and your history tab and you don't have the same kind of filtering and all that kind of stuff. And finding requests is very difficult. And so finally they made it. So HTTP QL, one supports RegEx, huge, but two is enabled in the HTTP history tab. So, um, that was one of the really big features that I was super psyched about. Um, it's made sort of the flow a lot easier.
+
+Justin Gardner (@rhynorater) (02:55.644)
+Mm.
+
+Exactly. Yeah.
+
+Justin Gardner (@rhynorater) (03:12.745)
+Heck yeah.
+
+teknogeek (03:20.094)
+The other big thing that came out recently, and I don't know if we talked about this, but they just, while we were in Miami actually, they released a customization feature. So you can now load custom CSS and JavaScript into your Kaido instance to customize it, to change themes, to add tabs, to do all sorts of things. Basically anything you can do in the UI through JavaScript and CSS, you can do it through these custom files that you can load.
+
+Justin Gardner (@rhynorater) (03:27.208)
+Hmm.
+
+Justin Gardner (@rhynorater) (03:36.395)
+Dude, it's clutch. It's super clutch.
+
+teknogeek (03:48.79)
+I didn't know about this until yesterday, but I was chatting with the Kaido team and I was like, hey, you know, is there any possibility for such and such feature? They were like, no, not yet, but there is a thing in even better, which does this. And I was like, what is that? And sure enough, Bebix, Bebixor, Bebixior, yeah, Bebix, he wrote this open source, you know, essentially CSS and JavaScript that you put in your Kaido called even better.
+
+Justin Gardner (@rhynorater) (03:51.819)
+Mm.
+
+Justin Gardner (@rhynorater) (04:03.919)
+Yeah. Our boy, Bevix.
+
+teknogeek (04:18.47)
+that are designed to increase some of the functionality and features within Kaido, taking advantage of that JavaScript and CSS. And it's really awesome. It adds a bunch of cool features, like being able to export scope and import scope and change theme and a couple other things. So it adds SRF support through WebEx SRF tool, which is very similar to Burp Collaborator. So there's a lot of really cool stuff in there. We'll put a link down in the description.
+
+Justin Gardner (@rhynorater) (04:31.534)
+Ugh, I love it.
+
+Justin Gardner (@rhynorater) (04:42.09)
+Mm-hmm.
+
+teknogeek (04:46.99)
+who even better, but make sure, if you haven't hopped on the Kaido train yet, it's leaving the station. So yeah, it's time to get on.
+
+Justin Gardner (@rhynorater) (04:53.287)
+It's leaving the station, man. No, it absolutely is. And I have heard, I will say, I have heard rumors of the price change that may occur within the next X amount of time. So, you know, if you haven't bought your year subscription now, go ahead and do that. And don't forget to use the CTPB Podcast discount code to get an extra 10% off before they raise the price. So maybe I shouldn't have said that for the Kaido team, but you know, whatever.
+
+teknogeek (05:16.426)
+Yeah, for sure. Well, I mean, what I'll say is from, I don't know when or how it's going to change, but I will say from the user perspective, they sent out a survey asking everybody who uses Kaido, what do you think of the pricing? What would you pay for this? Blah, blah. So they're definitely considering whether or not their pricing is in line with what people are thinking and what they're thinking in terms of a profit model. So it's always better to buy in early, right?
+
+Justin Gardner (@rhynorater) (05:24.476)
+Mm.
+
+Mm.
+
+Justin Gardner (@rhynorater) (05:30.367)
+Right.
+
+Justin Gardner (@rhynorater) (05:40.137)
+Yeah.
+
+Justin Gardner (@rhynorater) (05:43.719)
+Mm, absolutely. And it was nice that...
+
+It was, it was nice that they, they had, you know, the, the pro tier being a little bit cheaper during this period of development and growth, but now they're really, especially with the ability to, um, add JS and CSS, and then also the ability shortly to have a passive workflow checks and that sort of thing where we're actually starting to be able to build out our own automation inside of Kaido that's when it's really going to be like, okay, this is 100%, you know,
+
+product and I think that's you know, probably weeks.
+
+to one or two months away. So we're really getting close to that point at this point. And I'm really excited as well to see what's going to happen as soon as people start, oh my phone's going off, as soon as people start developing plugins for this thing, because I imagine it's going to blow up. And we need to transfer some plugins over from Burp 100%. But as soon as we can do that, I think it's really going to bring it to the next level. Mm.
+
+teknogeek (06:48.03)
+Yeah, so a couple of things on that I will say. So one, I totally agree. I think now is a great time to get on. Probably for the last, whatever, how long I've been using Kaido, it has been a little bit of sort of a, I'm paying for it mostly out of support, but it's not quite in a fully usable, ready to hack on state. It was pretty good, especially in the last couple months.
+
+Justin Gardner (@rhynorater) (06:57.647)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (07:11.273)
+Mm-hmm.
+
+teknogeek (07:14.162)
+But early on it was not quite there in terms of comparing to burp. This last lifehacking event I used Kaido exclusively, and a bunch of other hackers did.
+
+Justin Gardner (@rhynorater) (07:20.871)
+Mm-hmm.
+
+teknogeek (07:22.982)
+and I know that they pass along their feedback over to the Kaido team, and that stuff has been actioned on very quickly, myself included. Like I was taking notes during the whole lifestyle life hack event using Kaido as my main proxy. I took, you know, hey, this thing works in burp, this thing doesn't work in Kaido, can we work on fixing that? Hey, this is a real pain point that I'm used to in burp, but it's very difficult to do this or impossible to do this in Kaido, can we work on fixing that? And they were very, very quick about, you know, yep, we'll work on this, we'll work on this, blah, and it's very apparent.
+
+Justin Gardner (@rhynorater) (07:25.959)
+Yeah.
+
+Justin Gardner (@rhynorater) (07:29.75)
+Mm. Yeah.
+
+Justin Gardner (@rhynorater) (07:38.715)
+Hmm.
+
+Justin Gardner (@rhynorater) (07:42.247)
+Hmm.
+
+Mm.
+
+teknogeek (07:53.258)
+that they're now at a point where it's essentially one-to-one comparable with burp, especially with even better, right? Like one of the big things was lack of collab. Well, now there's a startup sheriff type support with Bevix tool, so that's huge. Or you can use interact SH from Project Discovery and you can spin up your own interaction server and just do it that way if you want. So there's definitely a lot of possibilities now, which is really, really awesome to see.
+
+Justin Gardner (@rhynorater) (07:55.933)
+Mm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (08:01.815)
+Mm.
+
+Mm.
+
+Justin Gardner (@rhynorater) (08:11.73)
+Mm.
+
+Justin Gardner (@rhynorater) (08:16.456)
+Yeah.
+
+teknogeek (08:21.91)
+it's only gonna go up.
+
+Justin Gardner (@rhynorater) (08:23.308)
+One thing that I noticed that they did in this last version was they said changes to the free users and then they limited the number of projects that they're allowed to have and the number of workflows that they're allowed to have, which I thought was kind of interesting. But then they also enabled the JavaScript shell convert nodes for...
+
+free users, which I thought was a really interesting choice because they're moving their model a little bit away from this free tier and trying to be like, hey guys, could you actually support the project because we need to get some support running for this. It needs to be sustainable for them. These guys are doing it full time and they've been working on it for a while now. But I also thought it was a nice little bone that they threw to the free users to actually give them access to the JavaScript
+
+teknogeek (08:43.489)
+Yeah.
+
+teknogeek (09:01.079)
+Yeah.
+
+Justin Gardner (@rhynorater) (09:12.033)
+let them implement their own sort of convert workflows if they want to, which I think is, I think that's a kind move.
+
+teknogeek (09:20.278)
+Yeah, and I love those specific nodes. I was messing with them yesterday because they did some changes to the workflow stuff. And one of the tools and plugins that I've been using a lot recently is the Google Protobuf Extensibility Extension that was created by Sam Erb and a couple other people over at Google. And basically what it does is it just funnels raw protobuf data into this tool called Protoscope that will decompile it into the field IDs.
+
+Justin Gardner (@rhynorater) (09:24.327)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (09:34.816)
+Ah, yeah. Yeah.
+
+teknogeek (09:49.214)
+and whatnot, and I made a basically a little convert workflow that calls that for me from Kaido. So instead, I was able to do it from burp natively with tabs and stuff. It's not quite as clean yet, because there's no plugin tabs and stuff like that. It's not really built in, but I can highlight the data, right click, convert, select my workflow, and it just will either decode it or encode it. And it's really nice. It lets me work with protobufs easier in Kaido. That's, again, one of those things that
+
+Justin Gardner (@rhynorater) (09:49.505)
+Mm.
+
+Justin Gardner (@rhynorater) (09:55.879)
+Ayy.
+
+Justin Gardner (@rhynorater) (09:59.082)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (10:10.687)
+That's really helpful.
+
+teknogeek (10:18.426)
+is a tricky thing coming from burp where there's an extension that just kind of natively, you know, goes in and makes it nice. And trying to find a way to do that in Kaido is still a little tricky. But the one thing I will say, another recent update was that they fixed upstream proxies. So I find myself using both Kaido and burp at the same time now lately, just for some of those edge cases as I'm in that transition, where I'll send stuff to burp and then have, or sorry.
+
+Justin Gardner (@rhynorater) (10:21.756)
+Mm.
+
+Justin Gardner (@rhynorater) (10:28.296)
+Mm. Yeah.
+
+Justin Gardner (@rhynorater) (10:34.765)
+Ah, that's nice, yeah.
+
+Justin Gardner (@rhynorater) (10:40.104)
+Mm.
+
+teknogeek (10:46.57)
+Send stuff to Kaido, have Kaido send it to Burp. If I can't do something in Kaido, I go to Burp and I mess with the request there. And then eventually I will hopefully phase Burp out.
+
+Justin Gardner (@rhynorater) (10:55.163)
+Yeah, especially when we've got these, you know, monster machines that are used to having to run burp at like scale, you know, and then we just, you know, have Kaido sort of in the front now. And, and so I think I have a laptop now that I just used to run Kaido normally, you know, it can't really run burp because it's not as chunky, but it's light and it's, you know, 14, 14 inch screen and stuff like that. So that's great. But yeah, in the, in the transition period,
+
+teknogeek (11:00.598)
+It's
+
+teknogeek (11:06.591)
+Yeah.
+
+teknogeek (11:15.838)
+Yeah.
+
+Justin Gardner (@rhynorater) (11:25.117)
+desktop, throwing Kaido in front of it is really not going to do anything for it. So, you know, it's definitely a good way to transition. I also saw in one of these little chats we're in, Sam Herb said, the second they have a plugin support, I'm going to write this protobuf tool into Kaido, which is super awesome to see. I love people, you know, saying that they're going to be ready to tackle that whenever it comes out.
+
+teknogeek (11:39.956)
+Yep.
+
+teknogeek (11:47.446)
+Yeah. So, so, um, I don't know if we can say this, but I'm going to say it. Um, Rezo asked the team, Hey, any updates on like plugins, languages, that kind of stuff? Sounds like plugins are going to be mostly JavaScript, just like the, just like the nodes. Um, so if you're a plugin developer or you're really passionate about a certain plugin and it's not written in JavaScript, I don't think any of the burp plugins are unfortunately, they're either going to be Java or Python
+
+Justin Gardner (@rhynorater) (11:56.056)
+Mm.
+
+Yeah, yeah.
+
+Justin Gardner (@rhynorater) (12:03.035)
+Ooh, interesting. Hmm.
+
+Justin Gardner (@rhynorater) (12:14.316)
+Mm, yeah.
+
+Mm.
+
+teknogeek (12:17.634)
+Um, now is probably a good time to start considering, you know, maybe writing it into node, um, or JavaScript to some extent, or make it callable from JavaScript somehow. Even if it's like a wrapper around like calling Python underneath the hood, you could probably do a hacky like that. But you know, something to consider if you want to be one of those plugin devs that's right on the front, um, of the kind of sort of plugin chain. Um, maybe, maybe get ahead of that a little bit.
+
+Justin Gardner (@rhynorater) (12:24.906)
+Mm-mm.
+
+Justin Gardner (@rhynorater) (12:37.312)
+Mm.
+
+Justin Gardner (@rhynorater) (12:41.639)
+Yeah, that's a great point. I think Bevix has already done a great job of that. But anytime there's an emerging technology like this that a lot of the top players in the industry are saying, hey, this is gonna be the thing, there's a big opportunity for anyone who wants to make a name for themselves in the dev arena to jump on that and be an early adopter and get your plugins to the forefront of that sort of scope. So definitely a lot of cool opportunities there. The JavaScript choice, I think,
+
+I think JavaScript is one of the most versatile languages and I've actually been kinda talking to friends about like, hey, what kind of language should I learn if I wanna learn scripting stuff right now? You know, just to be able to write exploits and stuff like that. And I was, you know, of course my go-to was like, oh, you should learn Python. Python's the shit. Like, I love Python. But after, you know, putting a little bit more careful consideration into it, if you're really trying to just perform well in the hacking arena, JavaScript's the way to go because you need to know JavaScript inside, outside,
+
+hacking, and so you're going to have to learn it already. And then so you might as well just kind of take that extra little bit to learn the node piece and be able to write it on the server side and be familiar with the syntax and that sort of thing. So yeah, I like that decision by the team to use JavaScript. I think that'll be a good long-term choice.
+
+teknogeek (14:01.878)
+Yeah, for sure. Cool, you want to talk about NahamSec and NahamCon and all that kind of fun stuff? We got some exciting news.
+
+Justin Gardner (@rhynorater) (14:05.347)
+Yes, dude, yeah, so couple NahomCon things or NahomSec related, a couple Nahom things. We have a really cool tweet that went out by Ben yesterday, and it was essentially saying.
+
+teknogeek (14:14.434)
+Hehehe
+
+Justin Gardner (@rhynorater) (14:23.151)
+Hey, I'm introducing a five week program, a program designed to help you find your first vulnerability. At the end of the five weeks, I will bring someone onto my team to work directly with me on a pen test. So essentially what he's offering here is like a bootcamp of sorts is what it looks like, run in his Discord. And...
+
+after those five weeks, you know, the bell of the ball or whatever will be selected and that they'll get the chance to work with Nahumsek on a on a pen test, which is super awesome. And I think is a great opportunity for anyone who's trying to really like...
+
+Turbo power their entry into the industry, you know being able to say hey, I went through this boot camp and I You know went in and worked with Naham sec on a pen test. That's an awesome resume So definitely check that out if any of you guys are interested in that It's a little bit more beginners oriented. So I imagine most of our audience would not be super interested in this but For the any of any of you crazy beginners out there that still try to you know Wade through the weeds of this podcast then this could be something interesting for you
+
+teknogeek (15:10.923)
+Yeah, for sure.
+
+teknogeek (15:27.67)
+Yeah, for sure. I think it's a great opportunity to sort of build some really, really awesome connections within the industry and within the bookbinding scene and, you know, make a name for yourself. Like if, if you feel like you're someone who has the skills and has the abilities, like go for it. Absolutely. There's nothing stopping you. What's that? What's that quote? You miss a hundred percent of the shots you don't take. So, you know, go take the shot and, you know, show, show everybody what you got.
+
+Justin Gardner (@rhynorater) (15:32.882)
+Mm.
+
+Mm.
+
+Yeah.
+
+Justin Gardner (@rhynorater) (15:47.931)
+Exactly. So shoot your shots.
+
+Justin Gardner (@rhynorater) (15:53.731)
+That's my shooting the shot noise. Do you like that? Yeah, thanks. Like a little spitball. Dude, you know what's really, this is totally not related to hacking, but you know what's really interesting in languages is the...
+
+teknogeek (15:55.31)
+He's a little pea shooter.
+
+Justin Gardner (@rhynorater) (16:11.335)
+the sounds that you make for things that you like, you know, rain or something like that, pitter-patter, pitter-patter. In Japanese it's za, za. Yeah, and like, and they all change, you know, across different languages that I imagine, you know, like every, you know, language has a sort of a similar language, but.
+
+teknogeek (16:21.413)
+Oh, interesting.
+
+teknogeek (16:26.411)
+Interesting.
+
+I wonder if it has to do with like the building materials that each sort of society was using as like language is being developed, you know, like 10 rooves versus like a straw or, you know, like that kind of stuff.
+
+Justin Gardner (@rhynorater) (16:37.519)
+Oh yeah. Huh. I never thought about that. I'm sure there's so many variables that go into that. But anyway, I'm sorry, bringing it back to the, bringing it back to the hacking stuff. Last announcement. You boys are hosting the Hong Kong this year. That's right. Rhino Raider, Techno Geek.
+
+teknogeek (16:53.383)
+Dude.
+
+Justin Gardner (@rhynorater) (16:56.211)
+We're going to be hosting that shit, so it's going to be awesome. It's going to be... Dude, that's going to be a long day, man. It's going to be a long day of really awesome technical content being on display at NahumCon. I'm super looking forward to it.
+
+teknogeek (17:10.798)
+Absolutely and those dates I think are I want to say May 20 something 23rd 24th 23rd 25th. Let me just pull it up really quick
+
+Justin Gardner (@rhynorater) (17:17.559)
+That's a good question. I'm not actually sure if that's released yet, so we may need to bleep that, but did he? Okay, that's good. Well, whatever it is, we'll put it in the description and you guys can check it out. I think, yeah, May 24th and 25th, he did tweet it out. So we're good to keep it. May 24th, May 25th, we're gonna be hosting it. It's gonna be awesome. So definitely put that on your calendars and keep an eye on Ben's tweets to get more details on that.
+
+teknogeek (17:23.03)
+it was treated out i think you're in
+
+teknogeek (17:29.794)
+Okay.
+
+teknogeek (17:34.859)
+Okay, good.
+
+teknogeek (17:46.539)
+Yeah, absolutely.
+
+Justin Gardner (@rhynorater) (17:47.731)
+Alright man, the time has come for gadgets. And before... Exactly.
+
+teknogeek (17:50.39)
+Gadgets. Go go gadget bug bunny. Did that fly over your head? Have you did you know what inspector gadgets?
+
+Justin Gardner (@rhynorater) (17:57.967)
+No, no, I know what it did. I know what inspect you're asking me whether I know what inspector gadget is of course I know what inspector gadget is Did little it did do Doodle it inspect your gadget doodle it do yeah So yeah, we are about to become inspector gadget for bug bounty right now. We're gonna talk about all these awesome gadgets
+
+teknogeek (18:04.926)
+Listen, I grew up watching like I love Lucy and stuff. So I don't know. I don't know what people know.
+
+Justin Gardner (@rhynorater) (18:22.699)
+I don't know, Joel, take a look at some of these and we can, we don't even have to do this in order. That's how crazy we are right now. What do you, do you see anyone in particular that you like that we should start off with or should we just start from the top?
+
+teknogeek (18:29.505)
+Yeah.
+
+teknogeek (18:36.95)
+Let's see, let's start out with a surprising one here actually. HTML injection. Okay. Now HTML injection gets like a lot of hate, right? And I think like the theme of this whole episode is really like, you know, it's about gadgets, but what does that mean? Right? Like gadgets, I think what we're referring to here is like things that as a hacker, you notice like little tidbits and parts of the application and behaviors that you can
+
+Justin Gardner (@rhynorater) (18:41.231)
+Okay. Ooh. It does.
+
+teknogeek (19:06.01)
+often chained together or turn into something more impactful. So for HTML injection, what can you do with that? Well, DOM clobbering is a great place to start. I think depending a lot on the attack scenario, there's a lot of really interesting
+
+Justin Gardner (@rhynorater) (19:13.083)
+Yeah.
+
+teknogeek (19:22.998)
+Um, things that you can put together with like Dom clobbering or, um, some sort of like page rewrite or, or on hover and all sorts of, you know, click jacking even like depending, you know, I don't know. A lot of programs will say click Jack is out of scope. I've seen plenty of inti, uh, in TP OCs. They were, yeah. Yeah.
+
+Justin Gardner (@rhynorater) (19:31.534)
+Mm, mm.
+
+Justin Gardner (@rhynorater) (19:35.083)
+Hmm. Dude, it can be really impactful sometimes, especially in the scenario that I think of, is when you have a...
+
+Justin Gardner (@rhynorater) (19:46.431)
+provider that allows you to register your own OAuth resource or whatever, and then they don't have XFrame or CSP on the actual page where you approve an OAuth transaction or whatever. And so then you can click jack that page with one click, you have account takeover. It's pretty freaking impactful.
+
+teknogeek (20:03.466)
+Right. Yeah, yeah, absolutely. So there's a lot of really interesting things you can do with that. I think, you know, try to really think outside with each with each of these. Right. The goal is to sort of think outside the box and really change your perspective on how this attack would work in a standard scenario and try to apply it very specifically to this scenario. You're you're attacking on like, how can I use this within the context of this company and the flows of their workflow in their application to get the highest impact here? Right. If it's like
+
+Justin Gardner (@rhynorater) (20:13.49)
+Mm. Yeah.
+
+Justin Gardner (@rhynorater) (20:19.901)
+Mm.
+
+Justin Gardner (@rhynorater) (20:28.36)
+Mm.
+
+teknogeek (20:33.386)
+OAuth, for example, like what you said, like if you can add an OAuth app and there's no X-Frame options and protective headers on that specific approval page, well, can you create an OAuth app that can do full access to the account and leverage that to get a full account takeover? Because that's a really creative way of using that application to your advantage.
+
+Justin Gardner (@rhynorater) (20:47.943)
+Hmm.
+
+Justin Gardner (@rhynorater) (20:51.534)
+Hmm.
+
+Yeah, I also kind of think that, you know, we kind of mentioned this in the context of HTML injection, but click checking is kind of its own, like, little gadget here. So I'm going to actually add that to its own one here, because, you know, really, those missing frame headers give you a lot of...
+
+flexibility when it comes to getting a window reference. So you can use that to exploit post-message attacks. You can use that for some cross-site leaks. You can do a bunch of stuff with that. And of course, the whole iframing thing got a little bit tricky when same-site default came into place, because it's like, okay, well, unless the cookies are set to same-site none, there's actually not gonna be cookies sent to that iframe when you do it. But in some scenarios, people are still setting cookies to same-site none, so it's definitely something to keep an eye on.
+
+teknogeek (21:22.423)
+Yeah.
+
+Justin Gardner (@rhynorater) (21:42.765)
+The thing that I wanted to mention with the HTML injection piece was this long screenshot that I put in the doc, Joel, about...
+
+about DOM clobbering and how deep you can go with DOM clobbering. Because like a while back, I did a, I did a tweet about like, Hey, you know, we've got this scenario. How do we, how do we get this attribute to be, you know, X dot Y or whatever. Right. And, and essentially I was looking into that and I was like, Oh, okay. There's some cool stuff you can do with HTML injection and that sort of thing. But man, you can go deep on this thing. So like you can control attributes down until it seems like one, two, three,
+
+teknogeek (21:56.043)
+Yeah.
+
+Justin Gardner (@rhynorater) (22:21.581)
+least the fifth layer and maybe indefinitely, using nested iframes in the source doc attribute. If you do iframe name equals a, and then the source doc for that is another iframe, and the source doc for that is another iframe, and the source doc for that is another iframe with the name all the way down the line and then eventually using either a form with an input or an a tag, then you can actually...
+
+teknogeek (22:24.843)
+Yeah.
+
+teknogeek (22:38.078)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (22:48.999)
+like access, you can dom clobber an attribute, you know, a.b.c.d.e, which is like way stronger than I thought it was. And I've seen it recently, also, Exploited, somebody showed me an exploit where they were able to dom clobber some script that was essentially preventing them from getting XSS on a specific target, and I was like, wow, this is a masterpiece.
+
+teknogeek (22:58.858)
+Yeah, absolutely.
+
+teknogeek (23:14.814)
+Well, and so it's like one of those things that's like, you know, this is a perfect example of a gadget, right? Where this type of behavior, this like A.B.C. whatever, combined with like an HTML injection, right? You see an HTML injection, your first thought is probably like, okay, I can't really do anything with that, move on. But if that's in the back of your head and you're looking through your app and you notice this weird thing in the JS that's like referencing something from the body in this format, well, now this is a gadget, right?
+
+Justin Gardner (@rhynorater) (23:24.616)
+Mm.
+
+Justin Gardner (@rhynorater) (23:27.763)
+Mm.
+
+Justin Gardner (@rhynorater) (23:33.268)
+Mm-hmm.
+
+teknogeek (23:44.478)
+You can combine these two things together. You can elevate your impact. You can possibly get excess. You can probably get a host of different things, depending on how it's being used. And so just having that in your mind and understanding how it can be used in different ways is so, so powerful. The other thing I wanted to mention. No, go ahead. Well.
+
+Justin Gardner (@rhynorater) (23:47.071)
+Hmm.
+
+Justin Gardner (@rhynorater) (23:53.109)
+Mm.
+
+Justin Gardner (@rhynorater) (23:57.931)
+Yeah, that's, oh, go ahead, go ahead. What I was gonna say is, there we go. What I, exactly, just go in the same direction. Yeah, what I was gonna say with this as well is that we should, I should have said this before we got in, but the term gadget is really important in this industry, I think, and these are, essentially the point of this is that you should be taking note of all these things. And whenever you see something sketchy like this,
+
+teknogeek (24:04.591)
+It's like when you're walking towards somebody and you both go left and right.
+
+Justin Gardner (@rhynorater) (24:27.395)
+this is something that should make you sort of feel like you're making progress on hacking an application even though you don't have an actionable vulnerability. And I think not only is this really important from a technical perspective, being able to chain all of these together to achieve an actual impact in the application. But it's also important from a motivation perspective to feel like, hey, you know, maybe if I'm not finding something, you know, and I'm feeling starting to feel really bad, but instead, you know, I can identify these gadgets along the way and that can help me make me feel
+
+like I'm making progress hacking this application even if I'm not getting an actionable vulnerability. So the goal of these, one, help you maintain motivation. Two, make sure your spidey's fences are triggering and you're thinking through all the possibilities of utilizing these. And then three, they should be something that you take notes for and that you might be able to come back to later and utilize in a different chain as you discover additional functionality. So that was what I was gonna say. I don't know, after that long rant, do you remember what you were gonna say? Okay, good, good.
+
+teknogeek (25:21.31)
+Yeah. I do. I do. I do. So what I was going to say is the other aspect to HTML injection, especially more recently, is there is the CSS injection aspect and CSS exfiltration. There was a bunch of new research that came out recently from Portswigger security. And I think you could do all of that with HTML injection, right?
+
+Justin Gardner (@rhynorater) (25:39.849)
+Mmm. Yeah.
+
+Justin Gardner (@rhynorater) (25:44.123)
+Yeah, so yes, I would actually consider CSS injection a escalation of HTML injection. Normally, I...
+
+teknogeek (25:51.124)
+Right, right.
+
+Justin Gardner (@rhynorater) (25:54.087)
+you know, would I put it in the same category? I mean, technically XSS is, you know, HTML injection in most scenarios. But yeah, I would actually kind of put it in a different category, and I don't even know if we've got a gadget. Man, we're just coming. Joel, man, I need to, we are coming up with, do you really? Oh my gosh, CSS injection. Yes, so that, oh yeah, at this point, yeah. Yeah, CSS injection is getting added to the list as well. Lots of great stuff you can do with that. I consider that to be an escalation
+
+teknogeek (26:10.094)
+We're coming up with gadgets. I got two more here. Well, now, well, yeah.
+
+Justin Gardner (@rhynorater) (26:24.001)
+HTML injection. And the context in which I think about HTML injection mostly is like a scenario that you have a, like...
+
+teknogeek (26:24.48)
+Yep, same.
+
+Justin Gardner (@rhynorater) (26:37.231)
+a sanitizer or something that you just can't get around, like Angular's, you know, HTML sanitizer or whatever. And you can only get some attributes in, but you can get in, you know, an A tag or something like that would allow you to do DOM clobbering, or you could do, you know, an image tag or something which we'll talk about a little bit later because there's some specific stuff you can do with image tag. But yeah, CSS injection as well, a lot of flexibility, especially with the new framework released by Port Sager research team.
+
+teknogeek (26:59.18)
+Yeah.
+
+teknogeek (27:06.366)
+Yeah. Well, I do kind of love that perspective as well, right? Like when we were talking with Ben, he was like, oh yeah, when I'm testing for XSS and stuff, like I'm always just putting like, you tag, H1 tag, some text. And it's basically exactly what you said, right? XSS is just an escalation of HTML injection. And it really depends on context, depends on the, you know, whether or not there's cores, whether or not you have CSP, like all sorts of different thing aspects that are related to that web page. But it starts as an HTML injection.
+
+Justin Gardner (@rhynorater) (27:23.924)
+Mm.
+
+Justin Gardner (@rhynorater) (27:30.986)
+Mm.
+
+Justin Gardner (@rhynorater) (27:36.209)
+Mm.
+
+teknogeek (27:36.25)
+And that's how a lot of people like Ben and myself, test for XSS is just start with HTML injection. Can I get an HTML tag in here? Then can I escalate that to CSS injection? Can I escalate that to an XSS? Can I escalate that to DOM clobbering? What can I escalate that to? But it all starts sort of from that one root point.
+
+Justin Gardner (@rhynorater) (27:42.186)
+Mm.
+
+Justin Gardner (@rhynorater) (27:48.883)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (27:54.843)
+Yeah, absolutely. And just taking a step back, excuse me, taking a step back for a second to HTML injection from our two tangents we did to click jacking and to CSS injection, another way to exploit this is dangling markup attacks. And these are pretty rare to be able to see it that, you know.
+
+see it have actual impact, but the Dingley markup attack is essentially you leave your tag open and or you leave your attribute open and essentially you're able to include some sensitive piece of information or break the syntax on some important piece of the client side code that allows you to further exploit something.
+
+teknogeek (28:40.298)
+Yeah, great example of this. Great example of this is like state, um, page state. So a lot of times pages will have a big JSON blob in a script tag at the, at the head of the page that has like your whole page state or whatever for these, you know, these single page applications a lot of times. And if you can inject into that JSON object and cause it to close the script tag, it will leak the rest of that state object into the HTML body, which you can then
+
+Justin Gardner (@rhynorater) (28:54.76)
+Mmm. Sure.
+
+teknogeek (29:06.978)
+you know, query and basically, you know, it's like a cookie leak in some cases. It has a lot of different impacts depending on what it is.
+
+Justin Gardner (@rhynorater) (29:11.387)
+Interesting Huh that that's pretty cool piece of that. I hadn't I hadn't thought about that one quite as much Yeah, the traditional scenario. I kind of think of is if you're able to like Actually do this in like an email or something like that and you can leak the value or maybe leak a CSERF token or something Like that both of those both of those would be pretty cool in that scenario
+
+teknogeek (29:34.602)
+Yeah. Speaking of email actually, because that's also HTML injection. Um, what do you, do you have any email escalations? And because this is one that I hit pretty frequently and every time I see it, I'm like, that's, that's neat, but I have nothing like I, you know, what am I going to, you know, maybe I can fish them or something, but.
+
+Justin Gardner (@rhynorater) (29:48.707)
+Yeah, so the only scenario that I really report HTML injection in email is if you can literally overwrite the whole email. And the subject is like something very, you know.
+
+teknogeek (30:04.714)
+Yeah, basically arbitrary email sending. Yeah.
+
+Justin Gardner (@rhynorater) (30:05.467)
+Flexible, generic, yeah. It's too, I know it's earlier for you, it's early for me, man, and my brain isn't quite kicking into full gear yet. But yeah, if you can overwrite literally the whole email and the subject line is like, important information, yeah, or something like that, then it's like, okay, well, this is actually pretty impactful. And so, yeah, that's one scenario that I do report it. The other thing that comes to mind
+
+teknogeek (30:22.728)
+Yeah.
+
+Justin Gardner (@rhynorater) (30:35.561)
+is sort of like a stored HTML injection on a victim. So let's say for example, you're able to like send a notification to a victim's account that gets displayed on their homepage, right? And then you can do some sort of dangling markup attack that doses the whole page, you know, that just breaks the whole flow of the page and makes it impossible for them to use the application. The impact there is a lot stronger than most anything else you could do from an HTML injection perspective
+
+of the availability on the application for the victim. So that's another cool way you can exploit HTML injection, I think.
+
+teknogeek (31:12.862)
+Yeah, that's one of those good sort of DOS use cases that is actually like pretty solid, especially where it's like zero interaction. Um, you know, DOS can be very hit or miss, but I feel like zero interaction on another user is one of the, the nice sort of cases that you can, yeah, you can make a really good case and say, okay, I can pick any user and they load the page up and it doesn't work for them ever again as a non-technical user.
+
+Justin Gardner (@rhynorater) (31:18.723)
+Mm-hmm. Yeah.
+
+Mm.
+
+Justin Gardner (@rhynorater) (31:26.847)
+targeted. Yeah.
+
+Justin Gardner (@rhynorater) (31:34.374)
+Mm.
+
+teknogeek (31:35.678)
+most people would get stuck there. A lot of people don't clear cookies and whatever is causing the issue. I mean, and if it's an excess or HTML thing, current cookies can do nothing. So, it really depends on the site and how it works, but you can get a lot of impact out of DOS if you do it right.
+
+Justin Gardner (@rhynorater) (31:41.619)
+Yeah.
+
+Justin Gardner (@rhynorater) (31:46.341)
+Yeah, exactly.
+
+Justin Gardner (@rhynorater) (31:52.251)
+Yeah, 100%. So we've covered click jacking, CSS injection, HTML injection. And
+
+Excuse me, as we mentioned along the way, all of these require an extra piece, right? In the email, you've gotta be able to do the whole email and the subject line has to be something, in dob clobbering, you've gotta have a crazy JS scenario. In the dangling markup, you've gotta be able to leak some sensitive information. And in the dangling markup to DOS, you've gotta be able to inject it, actually, into the victims. It's gotta be stored, targeted, dangling markup injection, essentially.
+
+about that attack scenario, I think about one of my favorite ones, and I think I've talked about this on the pod before, but I'll mention it again. And this was an image injection, okay? And this is not even like, I wasn't breaking out of any context, and we'll kind of talk about context breaks a little bit later as a gadget in and of themselves, but if you're able to inject into the source attribute of an image, there's some weird stuff you can do. And especially if you can do it in a targeted way. For example, there was a scenario, much like the dingling markup example,
+
+teknogeek (32:51.63)
+Okay.
+
+Justin Gardner (@rhynorater) (32:58.101)
+gave just a second ago where I was able to do a stored image injection on somebody essentially in an application. And I could force the browser to load up a specific image. And then what I did is I forced them to hit the logout endpoint with the image tag. Yeah, yeah. So essentially I would send them a message and then that message would get pushed to their dashboard or whatever. And that dashboard would have an image. And then as soon as they log into their dashboard, it would load that image and log them out. And then as soon as they tried to do anything on the application, it would get
+
+teknogeek (33:11.878)
+Mmm. Through the image tag? Yeah.
+
+Justin Gardner (@rhynorater) (33:28.821)
+they'd get logged out and they'd be forced to re-auth and then when they re-auth they would go back to the dashboard page. And so there's a couple ways that you can exploit this. I actually exploited it again recently in a scenario where there wasn't a logout CSURF, but there was a log in CSURF. So you could essentially repeatedly log them into a different account and then they could never get access to their own account.
+
+teknogeek (33:32.782)
+Wow.
+
+teknogeek (33:54.15)
+Wow, okay.
+
+Justin Gardner (@rhynorater) (33:55.151)
+So it's sort of a tricky exploit for sure, but image injection, and then I know there used to be like 401 injection or something like that. I don't know if that works in any browsers. We've kind of, we keep on talking about that and then we still don't know. But I know at one point people were using 401 injection on an image source.
+
+teknogeek (34:07.578)
+You're really taking me back.
+
+Justin Gardner (@rhynorater) (34:19.003)
+and that would pop up an auth box that would allow you to exfiltrate auth under a different site's domain.
+
+teknogeek (34:25.462)
+Yeah. In fact, our friend, Mr. Sam Curry has a disclosed report on Twitter from 2017. Marked as a low, marked as a low that is exactly this. HTTP 4.1 response injection.
+
+Justin Gardner (@rhynorater) (34:35.262)
+Sam, what have you done?
+
+teknogeek (34:46.122)
+Yeah, sure enough. It basically forces you with a pop-up. Here, I'll send it to you.
+
+Justin Gardner (@rhynorater) (34:48.163)
+Let me see. Link it? I can't find it really quick.
+
+Justin Gardner (@rhynorater) (34:56.127)
+Thanks. X, formerly Twitter. Love that. Very cool. Yeah, through image source parameter.
+
+teknogeek (35:03.376)
+I wonder if they had to kick somebody off to get hacker1.com.
+
+Justin Gardner (@rhynorater) (35:07.167)
+Oh, I wonder. That's an interesting point. I don't know. I feel like you shouldn't be able to do one letter handles anyway. I don't know. That's kind of odd.
+
+teknogeek (35:14.473)
+Yeah.
+
+Justin Gardner (@rhynorater) (35:15.679)
+But yeah, look at this. Yeah, but this was from 2017. So I don't know. There are some edge cases in which this might work in mobile browsers or in Firefox or something like that. So if you're really, really grasping for straws in a live hacking event and you're like, I gotta find something here, then it might be worth a report. It might land you low, but definitely the stuff with the targeted image injection. I mean, to be honest, that can get you into a high.
+
+teknogeek (35:43.287)
+Yeah.
+
+Justin Gardner (@rhynorater) (35:43.491)
+Because if you can literally just DOS the whole app for a targeted user, that's availability high
+
+teknogeek (35:49.682)
+Yeah, I mean, I feel like that's impact right there. If you can figure out some way to demonstrate that, then there you go. Right. So speaking of desperate desperateness and, you know, if you're really desperate, report this open redirects. Let's talk about open redirects because from the programs that I see this a lot actually, where people report open redirects with no impact and man, I, I could not recommend.
+
+Justin Gardner (@rhynorater) (35:56.892)
+Mm.
+
+Justin Gardner (@rhynorater) (36:01.343)
+Hehehehe
+
+Justin Gardner (@rhynorater) (36:07.199)
+Okay.
+
+Justin Gardner (@rhynorater) (36:13.648)
+Mm. What do you think about that?
+
+teknogeek (36:18.75)
+against it any stronger. Like, don't do that. Like I really, I think Open Redirects are like one of the lamest bug classes by itself. And like, there really is like no impact in today's day and age, right? Like, like just by itself, like I can send you to a link, you go to another link, at best phishing. Like, it's, it's a very, very hard use case.
+
+Justin Gardner (@rhynorater) (36:21.987)
+Okay, wow, that's a strong position.
+
+Justin Gardner (@rhynorater) (36:44.42)
+Nah.
+
+teknogeek (36:48.098)
+an exploitation case, I find. But what you can do with that, there are a ton of things, right? Couple of great examples, SRFs. A lot of times there'll be either a filter on the URL that you're being sent to or that's being requested to that needs to be within a certain host name or within a certain IP range. You can use that as a redirect to go to, you know, AWS metadata or something.
+
+Justin Gardner (@rhynorater) (36:54.556)
+Mm.
+
+Mm.
+
+Justin Gardner (@rhynorater) (37:05.353)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (37:11.451)
+Yeah, we've seen that, you know, that technique has been around forever and stuff like that. So that's definitely a tried and true use case for OpenRedirect. The ones that I'm more interested in nowadays are the OAuth path traversals. Essentially, you being able to leak an OAuth token via OpenRedirect.
+
+And the ones that I think are actually more interesting are client-side path traversals and or iframe injections, essentially. Iframe source injections. So if you can provide a place where you're supposed to be able to embed any page on a specific website in an application, then you can use an open redirect in that environment to get your own page embedded in there.
+
+Justin Gardner (@rhynorater) (38:00.833)
+is a gadget that can expose a lot of helpful things, like post-message listeners. In mobile's case, sometimes you can use it for JavaScript, what are they called, JavaScript bridges or something like that, Joel? Yeah, so in a web view. Yeah, so just accessing specific functions or...
+
+teknogeek (38:18.134)
+Yep, yep, JavaScript interfaces.
+
+Justin Gardner (@rhynorater) (38:25.703)
+parameters on the window object to interact with the actual application. Really cool purposes there. And dude, this is the one that just like lately has been just so, so cool to see work. We talk about client-side path traversals all the time, and client-side path traversals are kind of a gadget of themselves. But this is a great example where you can put two gadgets together to make a vault. So let's say you've got a client-side path traversal.
+
+Justin Gardner (@rhynorater) (38:55.737)
+to control either the place to which a fetch request is sent or maybe even an iframe that's embedded dynamically using JavaScript or something like that.
+
+But normally the fetch scenario is where it's at. And you're able to inject into that URL scheme and traverse and then hit an open redirect. So I saw somebody at the live hacking event do this. And yeah, and I also, my mentee sitting right there at that desk behind me found one the other day and fully exploited it. And I was just like, dude, this bug is like so clutch.
+
+teknogeek (39:20.654)
+I was gonna say.
+
+teknogeek (39:35.051)
+Yeah.
+
+Justin Gardner (@rhynorater) (39:36.211)
+And so I really love to see it used with the client-side path traversal where you traverse, hit the open redirect, fetch automatically follows redirects, which.
+
+I don't know, I won't go down the path of whining about that bug that I found recently where I couldn't actually exploit it because fetch auto follows redirects and you can't even read the redirect location ever. But seeing that actually work out in a client-side patch reversal environment is amazing and it so often works out to be XSS, even in heavily sanitized environments because they're not expecting malicious input to come back from a fetch request.
+
+that they sent to their own API, right? So there's pretty much no way to properly anticipate that. So that's a really cool use case for an OpenRedirect.
+
+teknogeek (40:27.362)
+Yeah, I mean, there's so much protection and advice on the server side with SRF, right? Where it's like, okay, never take a user control parameter and make a request to it and all this stuff. But then like so much of that falls to the wayside on the client side because it's just not the same thought process and there's so much different development around like, you know, it seems very harmless, right? You're like, oh, I'm just getting a query parameter or something and, but that's all it takes, you know? That's just putting it in a fetch request and because of
+
+Justin Gardner (@rhynorater) (40:49.236)
+Hmm.
+
+Justin Gardner (@rhynorater) (40:53.194)
+Mm.
+
+teknogeek (40:56.778)
+that behavior and the ubiquity of, you know, open redirects and all that kind of stuff. It just makes it such a larger problem. And with all these single page applications nowadays, it's, you know, even more so, right? So, yeah, really, really interesting stuff there.
+
+Justin Gardner (@rhynorater) (41:11.751)
+Mm.
+
+Yeah, so I don't know about what you said about the OpenRedirect. I think OpenRedirect is right on the line of like, if a company is really taking security seriously, they wanna clean that up because it can be used in so many scenarios, right? Oh yeah, no, it's never more than a low.
+
+teknogeek (41:28.05)
+Yeah. But don't be surprised if it's a low, you know, you know, like by face value, you know what I mean? Like if you report it, like they're just going to be like, okay, I guess we'll fix this but like do something with it. Yeah.
+
+Justin Gardner (@rhynorater) (41:38.511)
+Minimum bounty, for sure, yeah. And that scenario, really rarely you report that, because it's much more high value to be able to use it in a chain, even if it's not present, rather than, excuse me, man, water this morning, rather than chaining it into something that's much higher value down the line. So.
+
+teknogeek (42:01.63)
+Yeah. And I will say, I think at probably every single live hacking event, at least once I see in the collab channel, somebody go, Hey, does anybody have an open redirect on XYZ? And you're like, ah, okay. Yeah. This is still a thing. This is still kicking. So, um, definitely check that out.
+
+Justin Gardner (@rhynorater) (42:09.135)
+I need an open reader act. Yeah, 100%.
+
+Yeah. And you know what's interesting about that too, is for all the people there that don't need an open redirect, but might have an open redirect, like that should be inspiration for you, right? Because somebody needs an open redirect, which means that the open redirect that you have, somewhere there is a use case for that.
+
+teknogeek (42:26.902)
+Somebody needs one.
+
+Justin Gardner (@rhynorater) (42:31.739)
+You know, and you just gotta go find it. And the fact that happens every single live hacking event really sort of lends itself to the scenario of like, oh, I have an open redirect, but I can't really find anything to do with it. Well, that's definitely out there. You know, somebody's, there's definitely some place that open redirect, exactly, exactly. So that should be inspiration for any of you that either need an open redirect or don't need an open redirect and should need an open redirect.
+
+teknogeek (42:44.562)
+Yeah. There's some use cases. Yeah.
+
+teknogeek (42:57.643)
+Yeah, absolutely.
+
+Justin Gardner (@rhynorater) (42:59.451)
+So sort of tangential gadget to that is the client-side open redirect. And this one I actually think is garbage. And I actually was... There's a pretty serious differentiation between client-side redirect, open redirect, and server-side open redirect, right?
+
+teknogeek (43:05.902)
+Yeah
+
+Justin Gardner (@rhynorater) (43:17.527)
+depending on the scenario, you still may be able to use it. Pretty much the only use I could come up with is iframe source injection, essentially. There's pretty much nothing else you can really do with it. If you're doing a window location.htrf and you cannot do the JavaScript scheme, then you're pretty much screwed. It doesn't leak the hash.
+
+It doesn't link any of the query parameters. It just goes to the location that you define with the input that you inputted. And so, I don't know, maybe I'm missing something there and I'd be interested if anyone in the community can point me in the direction of something that I might be able to do with this besides injecting into an iframe, but that's pretty much the only thing I could come up with.
+
+teknogeek (44:02.482)
+Yeah, I'm trying to think if there's anything creative. Probably the best scenario I can come up with is like, maybe on mobile, depending on the permissions within a web view, you could redirect to a file or something like that. And then, you know, pivot from there, depending on, but that's gonna be very situation specific. So yeah, I mean, it's one of those things that, again, as a gadget, like it potentially has use cases, but they're very, very narrow, especially
+
+Justin Gardner (@rhynorater) (44:08.628)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (44:17.914)
+Mm.
+
+Justin Gardner (@rhynorater) (44:21.727)
+Yeah.
+
+teknogeek (44:30.238)
+Even for the ones that we've been talking about, like client-side open redirect is really like, you know, one in a hundred type barely ever use, but it's there and having it in the back.
+
+Justin Gardner (@rhynorater) (44:41.851)
+You know what is not a vulnerability, but, and is not really even a gadget, but kind of feels like one, is postMessage open redirect. And I've kind of run into this scenario a lot where it's like, okay, I'm really close to XSS because if I could just send this postMessage to redirect the page to a JavaScript URI, then I'd have XSS, but you can't use the JavaScript URI because of some very tough to bypass annotation or something, but you can redirect the URL to an arbitrary host.
+
+teknogeek (44:46.307)
+Hehehe
+
+teknogeek (44:52.108)
+Yeah.
+
+Justin Gardner (@rhynorater) (45:11.379)
+But it's useless because essentially, unless it's in an iframe, I guess is the only scenario that would actually be useful. And then you could say like, window.open, x is the new window, right? And then.frames one and then send the post message to that or whatever and have it redirect inside the trusted page. Then it's a little bit useful. But you can always just redirect the other tab that you've opened up anyway with window.open. So you just do x equals window.open and then x.location equals xyz.
+
+teknogeek (45:23.974)
+Right.
+
+Justin Gardner (@rhynorater) (45:41.373)
+you've redirected the page to that location.
+
+teknogeek (45:41.578)
+Yeah. Or even with name the windows, yeah.
+
+Justin Gardner (@rhynorater) (45:44.827)
+Yeah, exactly. And so that didn't make the list this time around on the gadget side, but is an honorable mention. And also something that I would kind of be interested to see if anyone like knows any way that could be helpful. Maybe the only thing that I could think of is like, ah, it could maybe be helpful in like a same site strict scenario, right? Where like you can't even do top level navigations to send the cookies. You've got to actually come from a specific origin.
+
+teknogeek (46:01.247)
+Yeah.
+
+Justin Gardner (@rhynorater) (46:15.141)
+And if you could trigger the redirect from the origin, then you could trigger get based C surf on a same site strict scenario. Grassman at straws.
+
+teknogeek (46:15.435)
+Yup.
+
+teknogeek (46:27.218)
+Yeah, I mean, and again, right? It's like one of those really like stretch scenarios that's gonna be super, super specific to, you know, yeah, I don't know. I'm trying to think if there's anything and I keep falling back to like these more like native scenarios where like an Electron app or like something that has more schemes or like stuff that, you know, stuff other than JavaScript and other than HTML, or sorry, HTTP or HTTPS that maybe you could, you could exploit in some creative way, but.
+
+Justin Gardner (@rhynorater) (46:43.395)
+Uh...
+
+Mm.
+
+Justin Gardner (@rhynorater) (46:50.398)
+Yeah.
+
+teknogeek (46:55.626)
+Yeah, I don't know. It's very, very tricky.
+
+Justin Gardner (@rhynorater) (46:58.411)
+It is it is yeah, I don't know man. We'll see we'll see if anybody in the community comes up with something I've got like ten of them in my and you know actually Interesting interesting point I didn't even put it on this list because I haven't figured out a way to use it ever But I do have it in my notes. You know like it is something that I keep in my notes So maybe it's worth writing down. You know just in case just to
+
+teknogeek (47:05.57)
+Hehehehe
+
+teknogeek (47:15.042)
+Yeah.
+
+teknogeek (47:20.266)
+Yeah, like you never know. There definitely could be some browser feature in the future that makes it really like a better exploitation scenario. I think that happens in both directions, where there's new features or like old features that get sort of sunset and new features that get rolled in that change how existing functionality within HTML and JavaScript and all that kind of stuff works. And so potentially, maybe who knows with the.
+
+Justin Gardner (@rhynorater) (47:27.998)
+Yeah.
+
+Justin Gardner (@rhynorater) (47:34.079)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (47:44.048)
+Mm. Now we're really grasping.
+
+teknogeek (47:46.298)
+Yeah, within five years, I'm writing this in my report. In the next five years, Google could implement a new vulnerability that allows me to exploit this critical.
+
+Justin Gardner (@rhynorater) (47:56.233)
+I know that Gareth Hayes sort of monitors the intent to ship stuff for CSS because that's his thing. It would be interesting to have a feed of information about...
+
+teknogeek (48:01.687)
+Yeah.
+
+Justin Gardner (@rhynorater) (48:10.483)
+things that Google Chrome or Chromium intends to ship that could have security impact, just to kind of be keeping your eye out for the ways that could be exploited in the near future when they actually do ship that. That's an interesting, somebody make a Twitter bot for that please. That'd be really cool to follow. All right, next one on the list is leaking window location.href. And this can be done.
+
+teknogeek (48:29.226)
+Yeah, for sure.
+
+Justin Gardner (@rhynorater) (48:35.623)
+multiple ways. The most common one that we saw, and we know from the Franz Rosen dirty dancing write up, is via post message, essentially. If there's a scenario where you send a message to the client and it sends back the URL that the current page is on, this is a very helpful gadget for leaking IDs,
+
+Justin Gardner (@rhynorater) (49:06.238)
+that ends up in the URL, the hash, that sort of thing. Lots of cool applications there if you can combine it with another gadget of sorts.
+
+teknogeek (49:18.122)
+Yeah, yeah, absolutely. I mean, there's so many various ways to escalate post-message bugs. And it's just one of those things that if you're not looking for post-message as a whole, install Franz's Chrome post-message extension and just take a look at all the communications that are going between iframes and window frames and all that kind of stuff, because there is so much behind the scenes stuff that's going on in every single website.
+
+Justin Gardner (@rhynorater) (49:25.992)
+Yeah.
+
+Justin Gardner (@rhynorater) (49:30.676)
+Hmm
+
+Justin Gardner (@rhynorater) (49:34.737)
+Hmm
+
+teknogeek (49:47.318)
+that is really, really interesting. And it's definitely worth taking a look at because a lot of that behavior is not gated properly. And it's doing all sorts of really funky things, including leaking window.location.href and way worse. I mean, I think we've both seen some really insane scenarios of just sending local storage back or all sorts of crazy things. Yeah.
+
+Justin Gardner (@rhynorater) (49:49.143)
+Mm.
+
+Justin Gardner (@rhynorater) (50:09.411)
+Oh yeah, yeah. PostMessage stuff is super interesting. And actually, I'm kinda, I was trying to think about what other ways that there could be to leak the window location.href. And I'm wondering, you know, there could be some weird scenario where like you could provide a host and then it would redirect to that host with the current path or something like that. And then you could leak the path.
+
+which is the path in the hash and the query parameters, which is the more sensitive part, not the actual domain. And I'm actually also looking right now, I actually have not done a lot of stuff with window.name, and I'm a little bit fuzzy on how it works still. So I'm wondering if it would be possible for us to go ahead and do a window.name, like open a new tab, have that tab set window.name, right? And then...
+
+redirect that tab away using the same thing we talked about earlier, how you can just do, x equals window.open, x.location, and then can I check j.name here? Yeah, I can. So if they update window.name with anything, then you can then re-transfer the domain, the origin, the current location.htrf, back to a domain that you control, and then you can read window.name.
+
+which may have some sensitive information in it. So that's an interesting vector as well to leak some information cross-origin.
+
+teknogeek (51:39.326)
+Yeah, absolutely. And, you know, as we talked about, you can, there's a lot of like cross, it, as long as you're behaving within like same origin and whatever, like headers and stuff are being set. Um, you know, you can reference windows by the same name without like changing them, um, and even within that window, like within, if you open a tab or a window with a name,
+
+Justin Gardner (@rhynorater) (51:49.362)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (51:55.203)
+Mm-hmm. Yeah.
+
+teknogeek (52:01.114)
+that window has its own name reference that it can call back to. So there's definitely some really weird stuff. We were talking about this in the episode that will come out before this one with Yusuf Samuda, about a lot of the intricacies of window.open and window.opener and parent and all these sort of weird...
+
+Justin Gardner (@rhynorater) (52:12.988)
+Yeah.
+
+Justin Gardner (@rhynorater) (52:23.763)
+Super fascinating.
+
+teknogeek (52:24.962)
+Yeah, it's very, there's so many facets. And I'm still super curious about how this stuff is working behind the scenes, like how the browser is determining that kind of stuff. Like when it opens it and when it tracks it and when it understands like user interaction to certain things, like a user has to click something to pop an XSS. Like how does it, like how is it, how's the browser tracking that state? So there's, I think a lot of really interesting research that could be done there, but I won't get too in the weeds on that.
+
+Justin Gardner (@rhynorater) (52:31.004)
+Mm.
+
+Justin Gardner (@rhynorater) (52:44.955)
+Right, it requires user interaction, yeah.
+
+Justin Gardner (@rhynorater) (52:53.639)
+So I was, as we do, I was looking at the browser object or the window object that gets returned from a window.open thing the other day. And there's frames, there's location, opener, parent, postMessage, top, all of these things that we are kind of familiar with. And then there's a couple that I wasn't really expecting to find here, which is focus and blur.
+
+And those are functions that you can call on the window. And focus will allow you to focus that specific tab. I'm not sure what blur does. I didn't suss that one. Close, obviously, will close that tab. But I do wonder if there's anything that you can trigger on like via cross origin via calling that focus function.
+
+teknogeek (53:22.449)
+Oh.
+
+Justin Gardner (@rhynorater) (53:42.155)
+And whether you can do sort of like a pop under of sorts with that, it's kind of a little bit tricky. But it seems like you can force essentially the user to focus on that other frame from the other side, from the opener frame, even if they've clicked back to the opener frame, which is a little bit tricky, because I feel like that's something that should be a user land decision, you know?
+
+teknogeek (53:42.53)
+Yeah.
+
+teknogeek (54:08.53)
+Yes, indeed. And you're correct that like, basically, if you have like, another window that's been opened and you have reference to it and you have that window like elsewhere on your monitors or like, you know, you're clicked into a different window and you do wind up focus, it will focus your uh, context basically over to that, that other window. It'll, it'll change your window like that you're actively on over to the target one.
+
+Justin Gardner (@rhynorater) (54:19.005)
+Yeah.
+
+Justin Gardner (@rhynorater) (54:30.779)
+Interesting. I wonder... Yeah.
+
+teknogeek (54:32.822)
+And I assume blur does the same. It's really hard to test it because, yeah, you'd have to do like a timeout or something. Set timeout.
+
+Justin Gardner (@rhynorater) (54:36.251)
+you can't really be on the same tab.
+
+Justin Gardner (@rhynorater) (54:43.903)
+Huh, well I'm sorry, I just nerd sniped us in the middle of an episode. Interesting stuff there, I wonder if anybody in the community is aware of any attack vectors that sort of originate from window.focus or window.blur, and if there might be any way for us to trigger on event handlers or something like that in the other window.
+
+teknogeek (54:44.758)
+getting distracted here. Yeah.
+
+Justin Gardner (@rhynorater) (55:05.011)
+via those functions in a cross origin scenario. So definitely, definitely really cool stuff there. I was trying to like essentially go through that whole object to see if there's anything, you know, different in self or top or window or anything like that I hadn't seen before. But besides those two blur and focus, I think it's been all pretty, pretty well documented.
+
+teknogeek (55:29.33)
+Yeah, I think I'll have to read into what the actual docs are doing. Cause I did do like, while you nerds know me here, I did a little test here where I basically, I focused it and then I did like a two second timeout and then I blurred the same window and nothing like it focused it when I did focus. But then when I did blur, nothing happened from that same window. So
+
+Justin Gardner (@rhynorater) (55:36.022)
+It's
+
+Justin Gardner (@rhynorater) (55:39.367)
+Yeah.
+
+Justin Gardner (@rhynorater) (55:46.243)
+Same thing happened here. I wonder what the actual use case of those are. It's kind of interesting. Yeah. Okay, so actually I got another one. This one's a really interesting one and I wanna say thanks to Matamber for actually pointing this one out because I tweeted out that I was prepping this episode and he's like, hey.
+
+teknogeek (55:49.914)
+Yeah, I'm sure it's in the doc somewhere, but yeah, cool.
+
+Justin Gardner (@rhynorater) (56:03.975)
+I got some gadgets that you probably didn't think of. And I was like, oh really? Oh really? Come at me, bro. And he's like, okay. And so he sent me one and lo and behold, I forgot one that he had. I had all the other ones, he sent me five. And one of them I sort of had, so I'll give him a half point for that. So still pretty impressive. The guy's 16 years old and is stumping me on a regular basis when it comes to client side stuff.
+
+teknogeek (56:05.923)
+Mmm, nice.
+
+Yeah
+
+teknogeek (56:23.183)
+Three and a half out of five.
+
+teknogeek (56:28.066)
+I know, it's so crazy.
+
+Justin Gardner (@rhynorater) (56:30.035)
+pretty crazy dude, but the one that he came up with that I kinda forgot about was one that I've talked about on the podcast many, many times, which is a cookie refresh gadget. And essentially the scenario where this is useful is when you're trying to exploit top level, let me see if I can get all of the adjectives of this scenario, same site lacks default, top level posts based C-surfs. If you, when you're trying to, same site lacks default.
+
+teknogeek (56:55.562)
+Same site lacks default.
+
+Justin Gardner (@rhynorater) (57:00.211)
+top level navigation, post-based CSURFS. Got it. I kind of rattled it off there. The reason why this is interesting, of course, is because of the two-minute lax, same-site lax default
+
+teknogeek (57:00.874)
+Yeah.
+
+teknogeek (57:06.398)
+Got it. Okay. Pretty narrow. Okay.
+
+teknogeek (57:24.75)
+It's disappearing, right?
+
+Justin Gardner (@rhynorater) (57:25.807)
+Yes, be... I don't know, they keep on saying it's disappearing, but I haven't seen it anytime. But...
+
+When it disappears, it's going to be a sad day, because that's going to be the nail in the coffin for CSURF, man. But essentially, this is a two-minute period after a cookie is set that it will actually send that cookie in cross-origin, top-level post-message, or not post-message, excuse me, post-HTTP requests. Those are very confusing between those two, even though they're not similar at all. And that can result in CSURF.
+
+teknogeek (57:37.751)
+Yeah.
+
+Justin Gardner (@rhynorater) (58:02.925)
+And that will allow you to reset that timer and increase the efficacy and consistency of your CSURF exploit and essentially make it a better report. So that is another thing to keep in your pocket. And it's unlikely something that the companies will fix as well. So if you find it, you kind of got it in your pocket for any post-base CSURFs that will happen in the future for that company.
+
+teknogeek (58:27.338)
+Yeah, super interesting. And you got me on a rabbit hole again, where I was looking for this too big in the, in the Google Chromium release notes about, uh, the same site updates, the same site and, uh, and this update back in 2019 with the lax plus posts stuff. Um, you know, giving basically the two minute window that we're talking about, but I am not seeing anything that's really.
+
+Justin Gardner (@rhynorater) (58:34.916)
+Oh geez.
+
+Justin Gardner (@rhynorater) (58:51.083)
+where they're going to phase it out. Yes.
+
+teknogeek (58:52.71)
+Yeah, I mean, there have been updates, you know, in 2021, this is still, I guess, three years old now, but there's been nothing really new there that I can see about sort of the time limit on that being changed. So maybe we were still in luck. I there's tweets, you know, that are three plus years old, but, you know, going back to when this first came out that are like CSRF is 120 seconds. So there's a there's a lot of, you know, clearly this has been a thing for a while.
+
+Justin Gardner (@rhynorater) (59:04.98)
+Hmm.
+
+Justin Gardner (@rhynorater) (59:16.451)
+Yeah, I think this is also something that programs don't really understand fully at this point, because I haven't ever had anyone give me kickback.
+
+on like, hey, well, this only works for the first 120 seconds of the session being live. So I wonder whether there's been a little bit of a scenario of hackers pulling a fast one on programs and submitting an exploit that only works for 120 seconds and them just not knowing any better. Because when you reproduce a vulnerability, you log into your account right before you start the reproducing of it. And so you're within that two minute
+
+teknogeek (59:54.711)
+Yeah.
+
+Justin Gardner (@rhynorater) (59:57.377)
+frame and then you've got to, and if it doesn't work, what do you do? You log out, you log back in and you try it again. And so it's a little bit something that the program side should be aware of because I think it actually does affect whether or not this exploit is actually going to affect users at the end of the day.
+
+teknogeek (01:00:02.49)
+Hehe hehehe
+
+teknogeek (01:00:17.362)
+Yeah, for sure, for sure. Cool. Let's talk about StoredXSS. Let's go back to basics. StoredXSS, one really common pitfall I see with this is self-stored XSS. And self-stored XSS is not necessarily immediately just non-issue. I think there are still a lot of interesting scenarios. But the key is exploitation.
+
+Justin Gardner (@rhynorater) (01:00:27.121)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:00:33.087)
+Mm.
+
+Justin Gardner (@rhynorater) (01:00:39.816)
+Yeah.
+
+teknogeek (01:00:46.086)
+So is there a CSRF that you can do to update your profile to create that self stored XSS, which you can then pop somewhere else? I think that there are stored XSS is not necessarily always as clean cut and straightforward as it seems, but it is a great way to force user interaction basically, where either through CSRF or clicking a button or HTML injection or.
+
+Justin Gardner (@rhynorater) (01:00:54.879)
+Hmm.
+
+Justin Gardner (@rhynorater) (01:01:06.183)
+Mm.
+
+Justin Gardner (@rhynorater) (01:01:13.372)
+Yeah.
+
+teknogeek (01:01:13.514)
+You know, there's sort of a lot of different aspects to this that you can take advantage of.
+
+Justin Gardner (@rhynorater) (01:01:17.595)
+The force user interaction piece is interesting because it's like, okay.
+
+I don't know, in my brain, there's three levels of user interaction. There is no user interaction. Think of this here like, you know, I just do something evil to my account. Then there's partial user interaction, which is like, okay, there's user interaction, but we're not really coming to the attacker's website, and we're doing stuff that we normally do anyway. Right?
+
+teknogeek (01:01:42.518)
+Yeah, like clicking a link and it pops in XSS.
+
+Justin Gardner (@rhynorater) (01:01:45.683)
+Yeah, in an application that you trust and use on a regular basis. And then I think that is very, very close to no user interaction required. I would say that is 90% the way to no user interaction required. And then obviously there's user interaction required. So if you have a stored XSS, I think it's helpful to think about it as a gadget in some scenarios because you may be able to use this. And then the other scenario that I was kind of thinking about this is like, okay, you've got the stored XSS.
+
+teknogeek (01:01:55.788)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:02:12.199)
+can you use an IDOR to worm that sort XSS everywhere and then turn that IDOR into a ATO and then essentially an arbitrary account takeover on every single target. And I think that's a pretty impactful scenario and one of the easiest ways to get arbitrary account takeover because arbitrary account takeover is a tricky bug and this is one of the ways that I think it actually counts as arbitrary account takeover.
+
+teknogeek (01:02:38.027)
+Yeah.
+
+teknogeek (01:02:42.374)
+Yeah, and especially if you have those, the right gadgets in place, like if you have a CSRF and a stored XSS, that warmable capability is really like, depending on what you're CSRFing. So say you have a CSRF to update profile and a stored XSS, well, huge warmable potential, because you know, your worm can pop a CSRF that updates your, somebody else's profile to create the worm that right, and so it just keeps going.
+
+Justin Gardner (@rhynorater) (01:02:46.047)
+Mm.
+
+Justin Gardner (@rhynorater) (01:02:53.297)
+What do you mean a C-Surf?
+
+Justin Gardner (@rhynorater) (01:03:09.632)
+Ah, I see.
+
+teknogeek (01:03:10.794)
+And so, you know, depending on the right gadgets again, right, depending on what you have, you can really. Yeah. Plus the stored access stored self-excess. I mean, yeah, sure. However you want to. Yeah.
+
+Justin Gardner (@rhynorater) (01:03:14.227)
+A CSURF plus a stored self. Yeah, yeah. Yeah, I mean, that's pretty much how you, yeah. Okay, I see what you're saying. I see what you're saying. Yeah, that is an interesting combination there because you can then force it to store it on their own, you know, profile or whatever. Okay, yeah. I would almost consider that.
+
+teknogeek (01:03:32.17)
+Right. Yeah.
+
+Justin Gardner (@rhynorater) (01:03:36.219)
+Yeah, I'd almost consider that just a stored XSS, because well, no, because then stored XSS can also originate from others. Yeah, that is sort of an edge case scenario that I hadn't really thought about very much, is like, okay.
+
+teknogeek (01:03:45.118)
+Yeah. Where do you draw the line on like, Wormable? Like, what makes it Wormable for you?
+
+Justin Gardner (@rhynorater) (01:03:49.531)
+Yeah, I guess Wormable for me is kind of like, okay, it's almost going back to that same thing that I was saying before with no user interaction or minimal user interaction required where you're just going about the application yourself, something pops and then now you're the one spreading the payload, right? So I could definitely see that in that scenario and by nature of stored XSS or XSSes in general, there's a decent amount of
+
+teknogeek (01:04:09.207)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (01:04:18.599)
+warm ability because of how much control you have over the user session. And so that, you know, I wonder how many XSS scenarios I haven't really fleshed out from a threat modeling perspective.
+
+because I wasn't firmly portraying the risk that comes along with warmability in some of these. Because if you can then force the victim to host their, you know, send that access to all of their friends or whatever, or all of their connections in whatever application, then I think there's a lot of, there's a lot of impact there. That's, yeah, warmability is a big one.
+
+teknogeek (01:04:51.742)
+Yeah. I think a lot of times XSS sort of gets, gets automatically turned into like ATO or like trying to get ATO or something like that. Um, but it doesn't necessarily have to be that to get impact. Like if you can't find a good way to do an attack, an account takeover, well, maybe you can still have a CSRF that lets you worm the XSS. And that's still plenty of impact. I'd say, um, you know, at least.
+
+Justin Gardner (@rhynorater) (01:04:58.055)
+Yeah. Mm.
+
+Justin Gardner (@rhynorater) (01:05:05.717)
+Mm.
+
+Justin Gardner (@rhynorater) (01:05:12.999)
+Mm.
+
+teknogeek (01:05:16.574)
+maybe from like a DOS perspective or who knows, like, you know, there's a lot of different angles you can take. Even just the worming itself might be enough.
+
+Justin Gardner (@rhynorater) (01:05:23.403)
+So, the CSRF, so I think I understand what you're saying from CSRF, but it strikes me a little bit wrong because it's not cross-site anymore if you've triggered a stored XSS, right? What you're talking about is writing an exploit with the CSRF. Yeah, it's like, it's XSS exploitation, you know, where it's like you use your JavaScript context and the ability to control the user's session in that user's browser to trigger
+
+teknogeek (01:05:38.762)
+Same site, request for a drink.
+
+Justin Gardner (@rhynorater) (01:05:52.075)
+XSS in other scenarios. I mean it's already yeah exactly it used that position to force XSS on other Trigger different actions on the site or force XSS on other users, right? Yeah
+
+teknogeek (01:06:04.65)
+Like I think like in a perfect scenario, like you find an XSS and there's no, you know, other way to worm this or you can't really do anything. The next success, the next success, and that's going to lower the impact a lot. But if you know, you're going through sort of your different exploitation scenarios and you can find some way to propagate that XSS onto other people. Then, you know, through, you know, I, I'll agree. Like it's not really cross site, but like kind of same site, like request forgery, like cross page, request forgery, whatever, however you want to. But, uh,
+
+Justin Gardner (@rhynorater) (01:06:26.376)
+Mm. Yeah.
+
+Justin Gardner (@rhynorater) (01:06:31.463)
+Mm.
+
+teknogeek (01:06:32.79)
+at its core, being able to call other endpoints and stuff from that XSS, potentially that's a really good exploitation scenario you can approach.
+
+Justin Gardner (@rhynorater) (01:06:38.983)
+Impactful for sure Yeah, 100% I definitely see that and I also think the XSS is just kind of underrated as a Vulnerability type Whereas ATO is kind of glorified because it's like okay now I can exfiltrate the session and now I can log into the victims account on my computer
+
+teknogeek (01:06:54.623)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:06:59.443)
+great. I could just do, I also could just write a script to do whatever I wanted to do in that victim's browser and then just be done. And actually it's more likely that I'll do that because if I'm mass exploiting this, I'm not going to get, okay, Joel's session just popped in, let's just log in and see what he has or whatever. It's going to be like no, I'm going to write a script to transfer all your money to me. And then from your...
+
+teknogeek (01:07:08.438)
+Yeah.
+
+teknogeek (01:07:15.354)
+hahahaha
+
+teknogeek (01:07:19.271)
+Exactly.
+
+teknogeek (01:07:25.222)
+Yeah, from your side. So it looks legit. Yeah.
+
+Justin Gardner (@rhynorater) (01:07:27.167)
+from your browser, you know, and so there's no trace. And so, yeah, I think ATO is a little over glorified in those scenarios, but I also understand the impact of like, yeah, well, now I have persistent access to the victim session.
+
+teknogeek (01:07:41.132)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:07:41.691)
+All right, so the other one, another one that I have on the list here, which is a, which is a vuln in and of itself. So is stored XSS. Um, and so some of the other things we've mentioned is CRLF injection and who CRLF injection is powerful man, because you can really do a lot of stuff with controlling, uh, like response headers and cookies and all sorts of stuff like that. I, you know, a CRLF injection, I think a lot of people don't think about this.
+
+Justin Gardner (@rhynorater) (01:08:11.585)
+scenarios where you can trigger the reflected XSS from the CRLF injection. The only scenario where that isn't the case normally is on a 302 redirect or like a 300 status code redirect. But normally, if you've got a solid, clean CRLF injection, you have a lot of capabilities there. Yeah, yeah. And that is very powerful. So definitely something.
+
+teknogeek (01:08:31.658)
+Yeah, I mean, it's basically full response control.
+
+Justin Gardner (@rhynorater) (01:08:39.219)
+whether or not this one gets put on the list or not, because it is its own vulnerability was kind of iffy, but there's definitely some capabilities of things you can do with setting cookies, HTTP only cookies, or headers controlling the aspect of the header, for example, one of the reasons, the reason I'm a little bit salty about this right now, is the other day I was like, ah, I really need this.
+
+teknogeek (01:08:43.842)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:09:05.819)
+I really need a way to leak the redirect. I said I wasn't gonna talk about it. I'm gonna talk about it. It's annoying, man. It really is. So there's a scenario where I needed to, I had an excess and I needed to leak the response of a fetch request to an arbitrary location, or to a location, and that location would have a token in the response, but it was a 302. And it would then instantly consume the token on the next page. And all of the access control headers were there.
+
+teknogeek (01:09:12.054)
+Go off, go off.
+
+Justin Gardner (@rhynorater) (01:09:36.231)
+You know, all of that shit was there. And I, like, but I still couldn't read it because the browser automatically follows the redirect at like the browser level. It doesn't do it at like the fetch level. And there is some stuff in fetch where you can say like, hey, don't automatically follow the redirect. And it's like, okay. But then it gives you an opaque redirect response where you can't read the response even if the access control headers.
+
+Justin Gardner (@rhynorater) (01:10:04.015)
+Joel's cat is right in front of his mic. Oh my gosh dude, lovely. Anyway, I was like, okay, I was talking to some people and some people were like, hey, why don't you, since you've got Nexus S, why don't you write a CSP that blocks the redirect, because it was on a different origin when it goes to consume the token. And I was like, ah, that's a great idea. But then it triggers a 400 error and you can't read the response. So I was like, shit, how do I leak that? And I was thinking, okay, well maybe I can use CSP reporting.
+
+teknogeek (01:10:05.998)
+about to fart in my face, yeah.
+
+Justin Gardner (@rhynorater) (01:10:33.779)
+to send myself a report of that token and leak the token. And unfortunately, you can't because you're not allowed to actually do this on the client side. You can't set a report URI for a CSP on the client side. But if I had a CRLF injection and that was the origin of my XSS, then I could have set the CSP in the header and set the report URI.
+
+and then triggered this whole thing and then leaked the token to my server via the CSP violation report, which would have been an absolute monster of a vulnerability. That would have just been crazy. But anyway, that's why I'm a little bit like, oh, you know, CRLF.
+
+teknogeek (01:11:16.117)
+Yeah.
+
+teknogeek (01:11:22.23)
+such a creative attack scenario. I've always wondered about that, like CSP reporting URL thing and like what, I don't even know what data gets sent over there, but it's always seems, Oh my God, Zoro's sitting on my delete key and he's just deleting everything from the talk. He just started deleting line by line.
+
+Justin Gardner (@rhynorater) (01:11:25.512)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:11:34.879)
+That's hilarious, dude. Oh, he just deleted our whole dock, dude. What the heck? All right, well, that's the end of this episode. No. Thank goodness for Control Z. All right, dude, we've still got.
+
+We've got like at least six left and we're, you've got a hard stop win.
+
+teknogeek (01:11:50.27)
+A handful, yeah. And we're about an hour, Lin.
+
+teknogeek (01:11:56.983)
+Uh, 30 minutes.
+
+Justin Gardner (@rhynorater) (01:11:58.619)
+Okay, all right, now we're good, we're good. All right, let's keep plugging away. Okay, so this is, I don't know whether we want to consider this a gadget or not, but it's, I'm calling this a place to stand, okay? And I can kind of consider this a gadget, especially in, so there's two ways that this can be interpreted. One is like a window reference in the client side scenario. That's not what I'm talking about.
+
+I'm talking about a place to stand being a reference to a certain object, particularly in a GraphQL scenario. So like, essentially, when you're attacking GraphQL APIs, you need, sometimes you need a way to reference an object from a specific context. And I think having thought through a plausible scenario in the application's threat model
+
+attack or either in an unauthenticated context or a lower privilege context can access a certain piece of information or a certain object in a GraphQL sort of scheme is a very important gadget because you can use that place to stand, that reference to pull out various fields, excuse me, fields about that object. And I think that...
+
+is really important and something that is worth taking note of. It's like, okay, I go through this object, this object, this object, this object, this object, and then I can get access to the user object or whatever, right? And I think a lot of times that is a useful piece to keep on considering as you're building out your GraphQL schema on a target that doesn't have introspection enabled.
+
+teknogeek (01:13:35.629)
+Yeah.
+
+teknogeek (01:13:46.206)
+Yeah, and so, you know, on that topic, we've talked about this a couple times, I think, but a couple tools that are really useful, clairvoyance is a big one, especially for non schema, and graph QL, what's it called? Explorer playground? Voyager, that's what it is, yeah. So Voyager gives you a graph, right? Is that the one we're talking? Yeah, Voyager gives you basically a visual graph view of each
+
+Justin Gardner (@rhynorater) (01:14:01.841)
+Voyager or something like that?
+
+Justin Gardner (@rhynorater) (01:14:07.695)
+Mm-hmm. Yeah, that's the one. Yep.
+
+Love that tool.
+
+teknogeek (01:14:14.106)
+object type, you know, within the GraphQL schema and how different queries and mutations, what objects they read and how they connect to each other. And just like what you're talking about, like I think that was a perfect way to sort of illustrate how Voyager and that attack scenario, especially within GraphQL can play together where you have one object that references another object, that queries another object, and somewhere down the line there's an access control that's missing where it's...
+
+Justin Gardner (@rhynorater) (01:14:39.157)
+Mm.
+
+teknogeek (01:14:39.746)
+you know, calling the same query or it's accessing an object that, you know, normally you wouldn't have direct access to, but you can get access to it another way. And that is super, super useful to understand sort of those relationships within the GraphQL schema in order to find those things.
+
+Justin Gardner (@rhynorater) (01:14:45.288)
+Mm. Yeah.
+
+Justin Gardner (@rhynorater) (01:14:54.119)
+Yeah, and in some scenarios, there are GraphQL setups where it's like you will, they'll have like essentially a clone of an object where it's like, it's not the user, it's like the external user or something like that. And it like represents the same database table or row clearly.
+
+teknogeek (01:15:06.34)
+Yeah, yeah, yeah.
+
+Justin Gardner (@rhynorater) (01:15:11.155)
+but the fields are less accessible. So if you can figure out a way to not access external user but access user, then you're really in good shape. And you'd be able to leak a lot of information. So that sort of thing is really interesting and something I'd like to see a little bit more development around in the community. Yeah. Mm.
+
+teknogeek (01:15:11.202)
+Yeah.
+
+teknogeek (01:15:28.49)
+Yeah, the other thing on that, on the ID oracle side is, you know, UUIDs. This is a really big place where this comes in as well. A lot of companies use UUIDs as a prediction mechanism against IDORs. And they'll say, oh, we're using UUIDs. So you can't predict, you know, it's not, you can't enumerate on ID. So if you have an IDOR, you have to have some way to leak it. Otherwise the impact is significantly mitigated. Fair. But ID oracle is perfect for that. So.
+
+Justin Gardner (@rhynorater) (01:15:41.236)
+Mm.
+
+Justin Gardner (@rhynorater) (01:15:47.057)
+Mm.
+
+Justin Gardner (@rhynorater) (01:15:52.404)
+Mmm, yeah.
+
+Hmm.
+
+teknogeek (01:15:56.938)
+as a gadget, right, if you find some way to get from one piece of significantly easier guessable information, email, phone number, user ID, anything like that, to a UUID, oh man, gold mine, right? Like hold onto that, that's a really big one. That's a huge gadget. If you find something like that, keep that in your notes because later down the line, you're going to find some endpoint that's relying on that behavior, that UUID behavior implicitly as a security mechanism.
+
+Justin Gardner (@rhynorater) (01:16:06.708)
+Mm.
+
+Justin Gardner (@rhynorater) (01:16:10.707)
+That is big. Yeah.
+
+Justin Gardner (@rhynorater) (01:16:23.95)
+Mm-hmm.
+
+teknogeek (01:16:24.726)
+that's where you're going to be able to really take advantage of it. And you can probably reference it in a bunch of other reports too. So maybe find some other iDorrs too and, uh, and, and go, go ham, you know.
+
+Justin Gardner (@rhynorater) (01:16:30.559)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:16:33.843)
+Yeah, ID Oracle is a really big thing, whether you're in a graphical environment or not. And they're particularly, they're easier to find, I think, in a graphical environment because of the implicit relationships between various objects and stuff like that. So definitely ID Oracle's another top tier gadget if you can get your hands on it. Oh, actually, see, look at that.
+
+teknogeek (01:16:52.502)
+Yeah, absolutely.
+
+Justin Gardner (@rhynorater) (01:16:56.847)
+I did have a click checking reference in here. So we can skip this one, so that's great. Then one of the other ones that I kinda wanted to mention was an auth gadget, okay? And this one's kind of interesting. I've sort of alluded to this on the podcast before, but I haven't really given a name to it or anything. But essentially what this is, is a way for you to move PR to N in scenarios where you're normally dealing with PRL. And some programs will set self-registered accounts to PRL. That's just how it is.
+
+teknogeek (01:16:59.743)
+Ah, perfect.
+
+teknogeek (01:17:26.558)
+On HackerOne, they're not supposed to, by the way. The published program guidelines say that if self-signup is enabled, it should be privilege required.
+
+Justin Gardner (@rhynorater) (01:17:26.623)
+But, they're not supposed to.
+
+Justin Gardner (@rhynorater) (01:17:34.319)
+Exactly and but some programs will be like hey, you know, we've got to go You've got to like provide a credit card validation or something like that and it's PRL or like you got to validate your email So it's PRL Yeah
+
+teknogeek (01:17:43.018)
+Yeah, which I can understand, right? Like, especially for stuff like that, it's like, okay, it is there. It's not just like random Joshmo on authorized attacker is, you know, able to exploit this.
+
+Justin Gardner (@rhynorater) (01:17:49.108)
+Mm-hmm.
+
+Exactly. Right, and so definitely in those scenarios, looking for an auth gadget is a really good way to increase the impact of your reports because essentially what these auth gadgets do are they allow you to act as an authenticated user for a specific set of operations or maybe you're like a guest in a checkout flow. One of the scenarios that I've seen this before is normally they try to force you to sign up for an account when you...
+
+are trying to check out, but in this scenario, you can, there's like a little button down at the corner, you can say like, check out as a guest or whatever, and then it gives you a auth token that's like guest 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 or whatever.
+
+And then you can use that auth token to query things that aren't necessarily related to checkout or anything like that. And that would allow you to move some of your vulnerabilities from PRL. Let's say you've got an IDOR in the authenticated scope. Move that from PRL to PRN and that is going to give your vuln a massive boost. So keep an eye out for these things as well. Have definitely landed me a couple thousand dollars in escalations.
+
+teknogeek (01:19:03.07)
+Yeah, yeah. And this is kind of related to that. Um, but I would love to see more research on like those auto login behaviors that I see where like either it's like an email gets sent to your, or a link gets sent to your email and you just click it and you're auto logged in or, you know, stuff like that, where that is also kind of like a, like a zero to a hundred type of auth where you're going from like nothing to like full account login with basically no verification other than like I have this email, um, and
+
+Justin Gardner (@rhynorater) (01:19:16.035)
+Mmm.
+
+Justin Gardner (@rhynorater) (01:19:26.331)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (01:19:30.088)
+Yeah.
+
+teknogeek (01:19:31.034)
+And I think there's some really interesting research that could happen around that. Um, especially like an off gadget perspective where it's like, you know, uh, moving, moving into sort of an authenticated state without like logging in, so to speak. Um, and maybe there's some, some interesting stuff that you could do there.
+
+Justin Gardner (@rhynorater) (01:19:47.027)
+Because there's so much information in this industry, I'll restate this point because I think a lot of people have heard of it, but you know, it may not be in the forefront of your mind. This can also be a really helpful thing, the thing you mentioned, Joel, logging in with a link or whatever. It can be a really helpful thing for bypassing your account getting banned, which happens a lot in our environment, right? It's like, okay, you try to log in, it's like, hey, your account's banned. And then you're like, okay, well, I can't really do any testing.
+
+do a password reset on that shit and try to reset your password and oftentimes they'll just dump you right into the account. So I had that scenario the other day where I was locked out of account, everyone was also experiencing this issue, and then you do a password reset and now you're in the app. And it's a pain in the ass because every single time you've got to go to your email and you've got to answer whatever questions and paste in the thing and reset your password, how many extra characters do I have at the end of my password, who knows? But...
+
+teknogeek (01:20:39.229)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:20:41.459)
+That is another way to get access to accounts that you may have been locked out of. Yeah, so I guess, let's see, how many? One, two, three, okay, let's do, this is an interesting one. Once again, I gotta shout out my boy, MatamBear, the guy rocks, and he is amazing, and showed me an awesome bug at this last live hacking event that utilized web cache deception, which is so cool, and.
+
+teknogeek (01:20:50.19)
+Three left?
+
+teknogeek (01:21:09.223)
+super cool.
+
+Justin Gardner (@rhynorater) (01:21:11.163)
+it was the ability for you to leak information, the path, particularly the query parameters, via web cache deception, where it was caching a 302 response, and that 302 response had the, you could force somebody to go to this URL and it would cache their query parameters at that URL. So then you could visit that same URL without the query parameters, and it would 302 you,
+
+to a certain URL with the query parameters. So you could use that to leak all sorts of stuff. And I was like, wow, that's lit. And I...
+
+teknogeek (01:21:41.186)
+to their query parameters.
+
+teknogeek (01:21:46.766)
+It's such an interesting...
+
+teknogeek (01:21:51.254)
+Webcast deception is one of those things that I have like not put almost any research or time into like because it's such a complicated thing and it feels like to me one of those things that like you really have to have a solid understanding and the right tools and stuff and like know how to attack and what to look for and I am not, I don't have those things yet but like it's a really cool bug.
+
+Justin Gardner (@rhynorater) (01:22:09.515)
+Dude, I don't know, man. I would encourage you to just spend an hour on it because it's not actually that.
+
+teknogeek (01:22:16.416)
+I'd love to, yeah.
+
+Justin Gardner (@rhynorater) (01:22:19.155)
+that crazy to do. And you've got access to all those reports by Andre that I've seen in the past, where he like blew shit up with web cache deception. So go read through those. It's not a very intimidating vulnerability type. And there's a lot of weird web edge cases like this one that you'll see where it's like, it's leaking some additional piece of information or you have to do some weird encoding to get it to work. But if you can, then it's a big dub and almost always results in a high
+
+teknogeek (01:22:28.319)
+Ha!
+
+Justin Gardner (@rhynorater) (01:22:49.069)
+vulnerability. So that, shout out to Montembeer there, that one was super duper cool. Another one that I just kind of came up with recently, Joel, that I hadn't really thought about was this whole concept of local storage poisoning. Okay? And this is what I mean by that. Let's say you've got a gadget that takes in your input from maybe like query parameter hash
+
+stores it in a local storage cell, and then does something else with it, right? Because you control that whole thing, you can do a window.open to that page, pull these in that local storage cache, and maybe you have to get some fine...
+
+fine tuning for when this race condition might work, if it does something later with it that's bad. But then you can sort of race condition and close that tab or redirect that tab away. And that value that you have in the local storage cell will remain there. And I think that's really cool. And you can use that to poison essentially, a lot of times they'll be like, get local storage, whatever, or the two bars, do XYZ.
+
+Then it will use your cache value for another thing and then you might be able to insert yourself into a flow somewhere in there. And yeah.
+
+teknogeek (01:24:15.146)
+Yeah, that's super creative. I love that approach. I mean, there's so many things nowadays, especially with single page apps, that local storage and session storage are being used for. I mean, I think the biggest example for me is like, auth tokens being stored in session storage and local storage is like, really insecure. Like it's really insecure. Like there's no implicit security mechanisms there that stop anybody from reading it. Like you have an XSS, ATO, done. Like, it's crazy.
+
+Justin Gardner (@rhynorater) (01:24:22.085)
+Mm-mm.
+
+Justin Gardner (@rhynorater) (01:24:30.428)
+Mm.
+
+Justin Gardner (@rhynorater) (01:24:36.324)
+mmm yeah
+
+Justin Gardner (@rhynorater) (01:24:43.292)
+Yeah. The interesting thing you mentioned, session storage, I did run into this scenario as well the other day. So session storage is limited to a specific tab, but it doesn't prevent us from doing these sort of attacks because what you can do is you can window.open,
+
+Poison the session storage and then window, you know that so like x equals window that I open x dot location equals Whatever to redirect it to a different page and that's the same tab So the session storage is going to be the same and you can still
+
+teknogeek (01:25:07.679)
+Yeah.
+
+teknogeek (01:25:13.406)
+Yeah, so session storage is cross origin, cross everything just within the same tab and local storage is within.
+
+Justin Gardner (@rhynorater) (01:25:17.579)
+No, no, no. It's local.
+
+All of these are segmented by origin, but essentially you have a gadget, a window that opens some page on their website where they put something, they take your input, they put it into session storage or whatever, and then you redirect to a different page on that same website, same tab, same origin, so the session storage is going to be the same, and then it loads that from session storage and does something with it. You know, I've...
+
+teknogeek (01:25:31.935)
+Oh, right, okay, yes.
+
+teknogeek (01:25:36.286)
+Right. Stays in the same session. Yeah.
+
+Justin Gardner (@rhynorater) (01:25:48.783)
+Once again, I said I've only recently found it, which means I haven't really been looking for it for a long time, so I'm not really sure what other, you know, how common this is. But I've seen it at least once in my career now. So that's like a one in, you know, 3,000 applications hit rate. So it exists. Let's just say that.
+
+teknogeek (01:26:02.422)
+Hehehehehe
+
+teknogeek (01:26:06.5)
+Hahaha
+
+It exists and it'll be used and I like that scenario you mentioned where it's like reading by default from session storage and then defaulting to some other value. I see that a lot for sure. I can think of multiple instances of that behavior. So that's something to keep an eye out for sure.
+
+Justin Gardner (@rhynorater) (01:26:18.323)
+Hmm. Oh yeah.
+
+Justin Gardner (@rhynorater) (01:26:25.239)
+Mmm. Next one, so we've got two more, cookie injection and then context breaks, which is a bigger one. So let's cover cookie injection real quick. Pretty simple, pretty straightforward. Can happen on the server side with like a CRLF sort of thing. I saw someone above the other day where you just inject a semicolon into the value that's being set, and then somehow some weird server was like pushing it to the next set cookie. So like, you know, it'd be like some set value equals something that you can control, right? And it...
+
+teknogeek (01:26:47.798)
+Hmm.
+
+teknogeek (01:26:53.166)
+and then you terminate it midway and then create a new one.
+
+Justin Gardner (@rhynorater) (01:26:55.459)
+normally you just put a semicolon and then normally that would allow you to specify like the domain and the path for the thing which is cool but not really helpful and then but this one if you did a semicolon it would just bump you down into another set cookie header
+
+teknogeek (01:27:09.262)
+Hmm.
+
+Justin Gardner (@rhynorater) (01:27:09.331)
+which is super weird, and then you could set your own cookie there. So very cool thing there on the server side, but we often see this as a sync of sorts on the client side as well, where your user input is getting put into a document.cookie equals, and then you can sort of poison a cookie value from that scenario. And there are scenarios where cookies are being sort of echoed into the response body, and this can result in XSS. Hmm.
+
+teknogeek (01:27:33.418)
+Yeah, I was going to say like, you know, client side path traversal excess. There's a lot of different, you know, as a gadget, there's a lot of different pivot points from there as well. Um, you know, especially with this one and the last one that we just talked about, like session storage, local storage, cookies, these are core, core primitives of web development and they're used in a ton of places for a ton of different things, right? When a developer has to store something, um, cross session, cross load, uh, cross page, there are only so many mechanisms they can use for that.
+
+Justin Gardner (@rhynorater) (01:27:40.871)
+Mm.
+
+Justin Gardner (@rhynorater) (01:27:46.797)
+Hmm.
+
+Justin Gardner (@rhynorater) (01:27:50.376)
+Yeah.
+
+teknogeek (01:28:01.674)
+And so they're going to end up using, you know, one of these handful of mechanisms. And a lot of times that's going to lead to other behaviors that you can exploit somewhere else within the page, because they just have to use it. Like there's only so many mechanisms they can use.
+
+Justin Gardner (@rhynorater) (01:28:14.419)
+Absolutely, yeah, I think keeping an eye on these is really good. Okay, last one, and this is sort of a catch-all, and I also want to talk about some sort of conceptual stuff here. So this is a gadget that I've named context breaks. And this is sort of a catch-all category that includes some of the stuff that we mentioned before, but also just kind of makes it a higher level principle. And the concept here is like, when can you break out of
+
+the scenario that you're supposed to be in. And I think identifying these requires you to understand what contexts exist in the browser, which means you need to be very familiar with browser, you know, internals and such. But an example of this, the most benign example of this is the one we talked about right before this, which is cookie injection, right?
+
+the scenario where you are able to set a value for a cookie, right, and then you're able to set, take a semicolon and break out of that value set and now set an attribute of the cookie, right, the path or the domain that follows the cookie, your context is changed, right, you've gone from a cookie value context to a cookie attribute setting context. And I, yeah.
+
+teknogeek (01:29:21.185)
+Yeah.
+
+teknogeek (01:29:31.562)
+Yeah, do you know off the top of your head, if in that context, for example, what if I set like,
+
+teknogeek (01:29:39.97)
+Same site, none or same site, strict or what? Like what can, if there's multiple same sites, like say the server is already setting same site and there's multiple set, does it ignore them? Does it like, okay.
+
+Justin Gardner (@rhynorater) (01:29:43.91)
+Mm-hmm.
+
+Justin Gardner (@rhynorater) (01:29:49.567)
+I believe the first one is the one. So I think we should be able to override it. That's a good question. We should check that. Actually, I'll leave that as a exercise for the listeners and please drop the results into the Discord if you get a chance. But that is a really interesting question. I'm not quite sure, but I think that's pretty much the most benign example of it that I can think of is like.
+
+teknogeek (01:29:59.982)
+exercise for the listener.
+
+teknogeek (01:30:06.295)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:30:16.595)
+that but even that should trigger something in your brain right oh context breaking
+
+teknogeek (01:30:22.53)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:30:23.855)
+I love context breaking. And a couple of the other examples I came up with this is like a CSS context. A lot of times this is not going to be very impactful. But we talked about image injection and stuff like that with background URL. You could do that with CSS as well. But being able to, you know, semi-colon break out of a CSS attribute that's being defined or...
+
+sort of curly bracket, break out of like a CSS block, those are also changing contexts, right? You're switching from a CSS attribute to a CSS attribute key.
+
+to, I'm sorry, CSS attribute value to a CSS attribute key, or then, if you're able to use the curly bracket and break out of that, now you're in a CSS sort of global context where you can define rules for all sorts of various tags and IDs and that sort of thing. Another one that I came up with, this is another very benign example. I've seen it result in XSS before, but I was explaining to my mentee why this is important the other day. It's the third or fourth bullet down there, Joel,
+
+X breaking out of double quote context in JS. So let's say you got a variable X equals double quote your input double quote. And the double quote is escaped. And the script tag is escaped, right? Not much you can do. Is the backslash escaped? Because if you can do a backslash at the end of that string, essentially what you've done is you've un-terminated that string. And now that string is gonna continue until it sees another double quote.
+
+And if you have another input right after that, you know, where y equals double quote, your input double quote, then you can then terminate that, you know, exactly. Now the double quote, now at the start of the value where you're injecting into y, you're able to do like plus and then alert one and then comment out the rest of the string and then your golden, you've got JS execution. And so anytime where you can affect
+
+teknogeek (01:32:12.851)
+start of why.
+
+Justin Gardner (@rhynorater) (01:32:28.755)
+the flow of the context that they've defined in the application, that is freaking gold.
+
+teknogeek (01:32:34.402)
+Yeah, and I love that perspective of sort of like where you're breaking context. It's like, you know, where is this data intended to be? Right? Is it, it's intended to be in a cookie value. It's not intended to be in the rest of the cookie or it's intended to be within a CSS rule or within a script tag or within a variable attribute. But if you have some way to break that context to, um, you know, modify the, the context where that data is being inserted or where it's being evaluated from.
+
+Justin Gardner (@rhynorater) (01:32:50.603)
+Mm.
+
+teknogeek (01:33:02.838)
+those are really key areas to focus your testing because those are where you're gonna pop your bugs. That's where stuff's going wrong. And so I think that really is a great way to sort of sum it up and highlight, look for context breaks, look for areas where your data is going beyond the original intended context and being used in some other way or being interpreted in some other way and find a way to exploit that with other oracles, other gadgets, other various
+
+Justin Gardner (@rhynorater) (01:33:09.128)
+Mm.
+
+Justin Gardner (@rhynorater) (01:33:18.452)
+Hmm.
+
+teknogeek (01:33:32.303)
+you know, exploitation techniques, stuff that we've talked about today, stuff that we've talked about on previous episodes.
+
+Justin Gardner (@rhynorater) (01:33:36.199)
+Yeah, yeah, 100%. And Joel, I think I did a pretty decent job here of coming up with common context breaks, but a couple other ones that I kind of wanted to throw in this list here was, if you're able to inject, this is sort of a client-side path traversal sort of scenario, if you're able to inject into a different part of the URL than you were intended to, so for example, if you're able to do...
+
+essentially parameter injection on a backend request. Let's say they dynamically do a fetch request and one of your values is being provided as a query parameter in that request. If you're able to inject the ampersand character and now specify another query parameter, or maybe even you're able to specify the hashtag parameter and that cuts off all the other parameters that are on the right of that, then you're breaking out of your normal context. You go from a query parameter
+
+parameter key context to a query parameter, to a hash context, to all sorts of these different levels. And so that's another really impactful spot. And the last one that I had here was like, and of course you can do the same thing with the path if you have access to the slash or backslash character. And then the other one that I had here is sort of if you're able to inject into context that is being JSON.parsed.
+
+teknogeek (01:34:37.439)
+Yeah.
+
+Justin Gardner (@rhynorater) (01:34:59.375)
+you may be able to do some sort of type confusion there, where you're supposed to be in a string context, but you're in an array context or in an object context, and that can have unintended application in the application. Unintended application in the application. Unattended effect on the application. I don't know, any other ones come to mind there, Joel, that I might have missed, besides the traditional access and stuff like that?
+
+teknogeek (01:35:14.222)
+application in the application.
+
+teknogeek (01:35:24.818)
+Um, I'm trying to think, but I feel like that was most of it, you know? Yeah. I mean, there's like a million different, and, you know, I think I'll defer to, you know, the whole like broader concept, which is like looking for context breaks. Like you said, like identify those spots where data is moving outside of its intended location and being either used or interpreted or inserted or whatever in a different place.
+
+Justin Gardner (@rhynorater) (01:35:27.327)
+HTML attribute context. I mean, but that's once again XSS.
+
+Justin Gardner (@rhynorater) (01:35:39.036)
+Yeah.
+
+teknogeek (01:35:52.286)
+either unintended or intended and find a way to leverage that to your advantage, either with gadgets or some other type of vulnerability or chaining it together.
+
+Justin Gardner (@rhynorater) (01:35:53.942)
+Mm.
+
+Justin Gardner (@rhynorater) (01:36:01.563)
+Yeah, I'll add one more. Let me see if I can find it that I just thought of to this. Is the meta tag in, let's say for example, this is a long shot, but this is another example of sort of nested context. This could be really interesting. In a meta tag, if your input ends up in a content security policy meta tag.
+
+The content attribute of that tag is the content security policy for that page. So now you're in not only an HTML context, not only an HTML attribute context, but inside of that you're in a CSP definition context. So there's three layers of syntax there. And every time that syntax compounds, the complexity increases for them to be able to keep it secure.
+
+So being able to use a semicolon and define a different part of the content security policy, being able to use a single quote inside of a double quote HTML attribute context in this scenario on those content security policy definition will allow you to define various attributes.
+
+So all of these, especially paying close attention, close, close attention to nested attributes, just like the cookie, right? The semicolon there is nested inside the HTML, or the HTTP header attribute inside of the set cookie attribute, and then now we're getting into cookie metadata attributes. Nested context, extremely dangerous. All right, man, I know you gotta bounce. All right, let's cut it here, yeah?
+
+teknogeek (01:37:27.383)
+Yeah, absolutely.
+
+teknogeek (01:37:32.51)
+Yeah, sounds good. That was really good. And yeah, absolutely. Alright, catch you later. Peace.
+
+Justin Gardner (@rhynorater) (01:37:34.655)
+Fun pod, dude, fun pod. All right, peace.

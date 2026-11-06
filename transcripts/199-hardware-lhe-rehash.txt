@@ -1,0 +1,795 @@
+Episode 199: Hardware LHE Rehash
+Source: https://www.criticalthinkingpodcast.io/hardware-lhe-rehash/
+======================================================================
+
+[00:00:01.57] - Jonathan Dunn
+It looks like, it looks like JSON. And in the JSON, there is one key called location.
+
+[00:00:07.92] - Justin Gardner
+Are you pronouncing it Jason? Like Jason Haddix? Jason.
+
+[00:00:12.00] - Jonathan Dunn
+Like Jason Haddix, yeah. Jason. I call it Jason. Whatever. Jason Haddix.
+
+[00:00:39.11] - Justin Gardner
+Okay guys, I don't have to tell you that NahamCon is a staple of the bug bounty community, right? I've hosted it in the past. The talks every year are fire. And this year we've gotten NahamCon plus the Prompt2Pwn live hacking event in person, Oakland, California, November 20th through 21st. I am so hyped, you guys. And I don't even travel that much anymore, guys, but I am getting my butt on a plane and getting over to Oakland for this, uh, for this event. So I would love for you guys to join us. Keep an eye on it. There's also going to be a stream, um, if you can't make it out to watch NahamCon. As always, very exciting. I'll see you guys there. Sup hackers, I did a thing. I created a really awesome challenge with a combination of a bunch of different vulns that I've, I've I've found in the past on dojo-yeswehack.com. We're gonna link it in the description. Check out the challenge. The first couple of you who solve it will get a 1-month Critical Thinkers tier sub on Discord. Um, yeah, I would say it's a fabtabulous, uh, challenge. In fact, that's a regular expression, right? People say that. Yeah. All right, let's go back to the show. All right guys, I'm not gonna lie, I'm a little sick right now, but I didn't wanna miss this episode, uh, because This was a crazy live hacking event. And you guys kicked ass. So congrats. And I kind of want to just debrief how much like passion all of us felt for hacking during this, this, this live hacking event, right? During this hardware-oriented live hacking event as web-oriented hackers in general. How are you feeling, guys? How are you feeling about it?
+
+[00:02:18.61] - Jonathan Dunn
+I don't think I felt— yeah, I think I felt the most passion I've ever felt about hacking during this event.
+
+[00:02:24.24] - Justin Gardner
+Which is crazy for you, JD, not gonna lie.
+
+[00:02:27.21] - Jonathan Dunn
+Yeah, I, I really loved it.
+
+[00:02:29.46] - Brandyn Murtagh
+I think initially I was apprehensive of like the new target when you're like, oh no, like Justin, you know, when you first moved to Google and you were like, oh no, I had that, I had that a little bit. Um, but I did collab with Matt, um, which was fun, and he's obviously the— he is the hardware guy.
+
+[00:02:50.88] - Justin Gardner
+Yeah.
+
+[00:02:51.28] - Brandyn Murtagh
+So that helped with that massively, and his whole game plan was like, look, dude, I'm just gonna get you the firmware, and then you do your thing. And he got me the firmware, and I done my thing, and it worked out quite nicely. So the collab definitely did help. I wasn't as brave as both of you, I would say, so credit where credit's due.
+
+[00:03:09.41] - Justin Gardner
+So if I understand, you know, so it doesn't sound like you did a lot of the hardware hacking aspect, like actually, like, tearing apart a device or anything like that, right?
+
+[00:03:19.16] - Brandyn Murtagh
+Yeah, exactly. I think if I had any more hardware in this room, I think my girlfriend would break up with me. I was like, there's no way I can do any of that.
+
+[00:03:28.87] - Justin Gardner
+Okay. So you were focusing more on, now we've got the firmware, I need to reverse it, find some bugs, maybe device-to-cloud interactions, yeah?
+
+[00:03:41.34] - Brandyn Murtagh
+Funny you say that because that was one of my goals, yeah. It was very much abstract it to a abstract it to something that I'm comfortable with and something I can comprehend and break it down and go chunk by chunk and work through.
+
+[00:03:55.37] - Justin Gardner
+Nice, dude. Nice. And Doc, you, you went full send, you know, into the hardware hacking realm. How was that?
+
+[00:04:03.15] - Jonathan Dunn
+Well, like, basically, like, I get the live hacking event email and it was— I'd never gotten invited to a live hacking event before. I've gotten plus one, which I couldn't go to before, but I've never gotten like a direct invite from someone. And I emailed, like, or I texted you. I texted everybody that I knew, like, hey, thanks for getting me into this thing. And they were like, no, I didn't get you in. So I was like, wow, I got in on my own, you know, which was always kind of how I wanted to do it. And I was really excited until I get the next email that it was a hardware event, which I had never, like, glanced at. I'm a client-side hacker. And And so like, I, I figured I had to go, you know, balls to the wall there. And, and, uh, you know, I was very nervous when it started and I, I, I listened to the Matt Brown episode and I went, watched all the videos and I, I went nuts. I think I got in because of a fluke. I think I got in because I submitted 5 software bugs to this hardware program last year.
+
+[00:05:07.68] - Justin Gardner
+Yeah.
+
+[00:05:07.83] - Jonathan Dunn
+And I, I think that may be how I got in.
+
+[00:05:09.93] - Justin Gardner
+Well, dude, I think, I think you're, you're the awareness of XSS Doctor as an entity is also growing in the community, you know? And I think, I think your, your presence is becoming, becoming pronounced. So.
+
+[00:05:22.85] - Jonathan Dunn
+But I submitted like 35 bugs to their software program this year.
+
+[00:05:27.16] - Justin Gardner
+Right.
+
+[00:05:27.48] - Jonathan Dunn
+I didn't get invited to that LAG. Why did I get—
+
+[00:05:29.79] - Justin Gardner
+You know, that is, that is a little bit of a hack though, for anybody listening, like, I definitely have had similar experiences where if you submit anything to a hardware program, they're like, dude, we got a hardware guy. Let's bring him on. Let's go. And one of my buddies, he submitted like soft, like, what am I trying to say here? He like didn't even use a proxy, didn't do anything, just found a way to bypass something on, right? And they're like, he's a hardware hacking god. And I'm like, God, dude, this guy doesn't even know how to use a proxy, you know? Um,
+
+[00:06:06.10] - Jonathan Dunn
+I love that stuff.
+
+[00:06:07.14] - Justin Gardner
+Yeah, dude. But you can, I mean, if you, if you understand the threat model and you can bypass it, it's good. So if that, that is a, uh, you know, a hack, like a lot of people ask the, uh, you know, in the Discord all the time, like, how do I get invited to a live hacking event? Niching the heck down. Right. And saying like, okay, hardware is a very niche thing. And if you can show any sort of prowess, in hardware hacking, you know, there's a decent chance you'll land at an LHE.
+
+[00:06:31.06] - Jonathan Dunn
+Yeah, but I wanted to do well on my first one. I like, it's my only, you know what I mean? Like I wanted to go to the next to get invited to another one. So I'm like, I'm just going to go crazy. I'm just going to go nuts.
+
+[00:06:40.05] - Justin Gardner
+And you did. That show and tell was one of the craziest things I've ever seen at a live hacking event. So, um, are we, so what's, so Doc, you, you kind of put together the doc for this. What's the vision here? Do we want to jump right in and talk about problems?
+
+[00:06:56.60] - Jonathan Dunn
+Let's talk about a bug first. Let's each talk about a bug.
+
+[00:06:58.95] - Justin Gardner
+All right, let's do it. Who's up first?
+
+[00:07:02.10] - Jonathan Dunn
+I can go. You got it?
+
+[00:07:04.12] - Justin Gardner
+All right, hit us,
+
+[00:07:04.80] - Jonathan Dunn
+Doc. I'm like very proud. This is not my show and tell bug. This is another bug, which I'm actually kind of more proud of than the show and tell bug. So this is an IoT device that I can't say what it is, obviously. I'm not even gonna say what type of device it is, but this device is in the house, a small device. And I, you know, I took it apart. The reason I looked at this one first is because I realized the only— it was the only— when you're getting the firmware off the chip, you have to find the— obviously you have to find the chip.
+
+[00:07:35.81] - Justin Gardner
+Mm-hmm.
+
+[00:07:35.99] - Jonathan Dunn
+And there's different kinds of chips, and one's called an eMMC, and that's a little bit harder to get off and read because the metal parts are on the bottom. As opposed to on this, I'm just saying for the listeners, as opposed to like on the sides. So when you're blowing on the device, it's kind of easier to get this type of chip off. So I knew that from my recon. So this was the first device I went after. And so I got the chip off after 3 failed, 3 failed—
+
+[00:08:04.79] - Justin Gardner
+3 failed devices?
+
+[00:08:05.88] - Jonathan Dunn
+No, 2 failed devices. This is my third one.
+
+[00:08:08.06] - Justin Gardner
+Oh my gosh, dude.
+
+[00:08:09.04] - Jonathan Dunn
+But it was also the cheapest device. Oh, no, the second cheapest. It was not that expensive.
+
+[00:08:13.44] - Justin Gardner
+Okay.
+
+[00:08:14.19] - Jonathan Dunn
+And so I got the chip off, I got the firmware, and I have a picture. Maybe I'll send a picture. I have a picture of the moment I got the—
+
+[00:08:20.67] - Justin Gardner
+You should put it in the doc, dude.
+
+[00:08:22.02] - Jonathan Dunn
+Yeah, I'm gonna put it in the doc.
+
+[00:08:23.35] - Justin Gardner
+Legendary hacker moments. I want that document.
+
+[00:08:25.61] - Jonathan Dunn
+I look so happy. Yeah, I look very happy during that moment. And so I look at it and I look through everything and I realize that every 8 hours, This thing sent a message to this network, around the network, looking for something. I don't— I'm looking for, um, I'm not looking for another device. And the other device sends a message back to this device saying, with a header that's a location header. That's right. So basically you're sending a, um, it looks like, it looks like, um, JSON. And in the JSON, there is one key called location.
+
+[00:09:06.20] - Justin Gardner
+Are you pronouncing it Jason? Like Jason Haddix?
+
+[00:09:10.12] - Jonathan Dunn
+Jason Haddix? Yeah. Jason. I call it Jason. I, whatever. Jason.
+
+[00:09:13.74] - Justin Gardner
+Jason. Some freaking Miami bullshit going on.
+
+[00:09:16.40] - Jonathan Dunn
+Go ahead. I'm from New York. Anyway, so, um, and the location, it's supposed to be the location of the device, of, of this device, and it has to be a specific IP address. local IP address. Okay. And then this device will send another message requesting XML page from this IP address. Okay. And then parse it. And so, but there was a check on that, that it had to be, that IP address had to be in the location header, but it could, but I put it in the query parameter. So now I have a blind SSRF.
+
+[00:09:49.85] - Justin Gardner
+Nice.
+
+[00:09:50.27] - Jonathan Dunn
+Fine. That's fine. So then I looked through, I have AI, I do AI stuff. stuff, and I realized that there is a bug in the XML parser. So it starts out by requesting XML page, and then it reads the XML byte by byte, and each byte it puts it into a buffer, and the buffer is 1. Okay. But the buffer is The buffer is n. Okay. This is kind of hard to say. The buffer is n, but they say if n is greater than 1, it won't parse it. Okay. It has to be less than 1. So instead of XML, I gave it chunked response. And so I made the chunk size -1. So when it was checking that, it used the unsigned integer. So it became an integer overflow. So instead of the buffer being
+
+[00:10:49.82] - Justin Gardner
+1,
+
+[00:10:50.15] - Jonathan Dunn
+Wow. It was infinity, you know, it was 0xFFFFFFF.
+
+[00:10:54.15] - Justin Gardner
+Right, right, right.
+
+[00:10:55.03] - Jonathan Dunn
+And so now I had a buffer overflow, which, because the buffer size was 1 and there was a stack canary, the stack canary, I couldn't beat the stack canary, but thankfully the stack canary was fixed. They didn't change it. It was dead beef. The stack canary was dead beef. So I had the stack canary and then a ROP chain to get Um, to get, um, RCE, but then RCE didn't mean anything in this device because there was no shell. But what I did is I got, um,
+
+[00:11:29.17] - Justin Gardner
+there's
+
+[00:11:29.44] - Jonathan Dunn
+no shell. I used the shell.
+
+[00:11:31.69] - Justin Gardner
+Is this still like a Unix-based thing or is it something else?
+
+[00:11:34.32] - Jonathan Dunn
+No, it wasn't. It was just, it was just, uh, it was a little, little tiny mini little device that didn't, yeah, it didn't. Um, and so
+
+[00:11:41.70] - Justin Gardner
+instead of that, what it did have is like a microcomputer. Yeah. Okay.
+
+[00:11:46.26] - Jonathan Dunn
+And so, but what it had is it had the bearer token to the service that it was running on. So I got, I got, I was able to get RCE to read this and exfiltrate the bearer token.
+
+[00:12:04.61] - Justin Gardner
+Wow.
+
+[00:12:05.57] - Jonathan Dunn
+And so I got, and I got, so I got ATO to the big—
+
+[00:12:08.97] - Justin Gardner
+That's sick. So how did you notice that this was happening every 8 hours? Was that something you did via static analysis or was it live? AI, AI found it.
+
+[00:12:16.40] - Jonathan Dunn
+figured that out. What are you talking about? Oh, but the way I did the RC, it turns out that not only every 8 hours, but only when you also, when you restarted the device, it also did it. So that's how I, that's how I made my POC because I'm not going to like wait 8 hours, but the attacker would, the attacker would like put something on the network.
+
+[00:12:33.49] - Justin Gardner
+Yeah. That transitions nicely into my bug, JD, where I was not so lucky as to be able to just fricking restart the device. Uh, and I actually did have to wait 8 hours. Oh my God. Uh, so Check this out, guys. There was a router that I was hacking on. And on the WAN port side, there was, I guess I'll try to keep it a little bit more vague since it's probably not super difficult to figure out what I'm talking about here. But there is a protocol that gets negotiated over the WAN port. And from an unauthenticated perspective. And there was, as you way past auth, way past like a couple other protocol negotiation steps, there was just a pretty simple, you know, buffer overflow that would happen there. And what was really cool about it was Um, it would, it would overwrite a pointer to a function that would immediately get called after that. So it was like a function, I should be more clear. It was a function pointer overwrite, really. It wasn't that crazy of an overflow. It was like 6, you know, 6 bytes or something. But the way that that worked was it perfectly overrode this function pointer that gets called right after, right? Um, and not only does it get called right after, but it passes the raw packet. in as the first parameter as a, as a byte, you know, as a byte array. And so I'm like, wow, this is like, this is the perfect bug. You know, like what a beautiful thing. Um, and, but man, ASLR just fricked me up, dude. And, you know, for having such a beautifully clean primitive, this was such a brutal bug to, to get bypass of ASLR on because there's just no other primitive.
+
+[00:14:37.48] - Jonathan Dunn
+This was stack overflow. This wasn't heap overflow.
+
+[00:14:40.12] - Justin Gardner
+Um, this was a stack, yes. Um, yeah. And so it, it would, you know, get that function pointer and then call the function associated with it and pass in the packet that, that we, um, that we had. Um, so from there, from there, what, what was happening, and all of this is, I'm going to be clear with you guys, all of this was like human, let me say human-assisted hacking. This is not even AI-assisted hacking.
+
+[00:15:09.20] - Jonathan Dunn
+All our boys.
+
+[00:15:10.32] - Justin Gardner
+Like, I'm like sort of guiding the AI. I'm like, you can do it, dude. You know, like, like, but I mean, this is, this is, you know, vastly out of my depth. Um, even though it was a pretty simple primitive, which is cool. But you know what, what this thing put together to bypass this ASLR is it read, you know, everything that was in this potential address space. that I could write into, you know, the function pointer for. And, and said, okay, what address can we put in there that is most likely to hit a function that will do something that we can detect, uh, you know, in the response or crash it, right? Yeah, after. And so, it created like this chain of like 36 different addresses at this A3, you know, whatever offset. And, you know, if it, for example, you know, one of them, maybe it hits a function that, you know, writes a couple bytes out, back out, right? And then it returns. So it doesn't crash, right? And then you could observe that response from the actual, you know, going back across the wire. And then you would know, okay, I hit that function and then I can calculate from what address I put in.
+
+[00:16:31.84] - Jonathan Dunn
+Yeah.
+
+[00:16:32.17] - Justin Gardner
+The base. And then I can find from that base where system was, right? And it's like, holy crap. So anyway, after churning, churning, churning, churning, it identified like that this specific address, the anchor address was that it chose was like the optimal, you know, address for this. It produced like 36 or 37 different paths where it could detect You know, based off of the response, based off the crash time, you know, something like that, what was happening. And then it just said, all right, let's just churn it, bro. Let's churn it, right? And so at the end of the day, it was like a 1 in 40,000 chance that it would hit one of these, you know, paths and determine the base and then be able to find system and then call that with another packet. Um, so I, I run it. I've got like, I've got like 48 hours left in the event or something like that. Right. So I run it, I wait 8 hours, you know, it gets a hit. I hacked up my receiver. You know, there's like a shell, shell escaping problem or something like that. I'm like, shit. Classic. And then I, I, I, I get AI to fix it. I'm like, are you sure that you fixed it? It's like, yes, I'm sure. I run it again. 30 minutes later, I get another hit. Miracle. Miracle, right? Something else is wrong. The IP address is not bound. Like, because it's not— there's no— like, it's in the WAN port, right? So it's like, this is pre-DHCP stuff. Like, and it's like, it's, you know, it's not like statically grabbing an IP from the ISP or anything like that. It's just— it makes more sense if you know the protocol that I'm talking about. But Um, so it, you know, it doesn't even have an IP. So I'm like, how do I get this out? Can— so what I'm going to do is what I decide is I'm going to have it send an ARP out.
+
+[00:18:26.59] - Jonathan Dunn
+So you decided this?
+
+[00:18:27.81] - Justin Gardner
+Yes. You decided me. This was me.
+
+[00:18:28.84] - Jonathan Dunn
+This was you.
+
+[00:18:29.73] - Justin Gardner
+I'm going to have it send an ARP out over this because you can send ARP raw, you know, and, uh, for a specific address that's going to show that the command ran. You know, cause there's not even like IPs associated with these interfaces yet. Um, so anyway, 3 or 4 more times I like got a hit and it triggered something, something was wrong and I didn't get a hit. And then finally, dude, I come back downstairs after sleeping and I see the callback, callback, callback, callback. And it like concatenated this string, you know, and like put it, put it out in the encoded ARP. And I was like, that's, it's impossible for that to be a coincidence. Like that is the callback. RCE is proven.
+
+[00:19:12.52] - Jonathan Dunn
+Is this adjacent? Is this network adjacent, or is it—
+
+[00:19:15.81] - Justin Gardner
+This is WAN port. So if you were at the ISP level, you could use this to compromise the router in somebody's home.
+
+[00:19:24.05] - Jonathan Dunn
+Ah.
+
+[00:19:24.94] - Brandyn Murtagh
+Can you send an ARP over a WAN port?
+
+[00:19:27.82] - Justin Gardner
+You can.
+
+[00:19:28.63] - Brandyn Murtagh
+You can? That feels like it should— that doesn't feel intuitive, but that's nice, man.
+
+[00:19:33.69] - Justin Gardner
+It was, you know, man, I wish I could— That— I like your question. And it was, it was an interesting, um, I, I wish I could elaborate more on that. Like, because there's, there's a quirk of this device that makes that question really— we'll cover it off air. But I think there's more bugs there because of the answer to that question. So.
+
+[00:19:59.90] - Brandyn Murtagh
+Yeah. Because I was going to say like that. would have my alarm bells going if I saw that was possible, because that could potentially be a Trojan horse for a few other quirky things that aren't meant to go WAN. And if that can go WAN, it would suggest other things can go WAN as
+
+[00:20:18.32] - Justin Gardner
+well. Yeah. So anyway, it was an interesting one.
+
+[00:20:23.04] - Jonathan Dunn
+I have a question, Justin. Did you, like, even at this point when you were exploiting this bug, To what extent did you understand the binary exploitation portion?
+
+[00:20:32.93] - Justin Gardner
+Dude, I still don't super understand it, to be perfectly honest with you. So like, I can give you like a high level, you know, a high level. I mean, I can tell you that there's a problem, right? Yeah. And I can tell you where that problem is, but I still don't fully understand exactly how all of this worked, you know?
+
+[00:20:50.75] - Jonathan Dunn
+So like, I found the same thing when I was doing my bug. I had a high level understanding, but, but like when it started finding the the problems when there were problems with the, with the implementation, I would be like, fix the problem. And it'd be like, like for like 4 days, you know, like, what are you doing this? But like, I bet if we had a better understanding of the binary exploitation part of it, we could, it would be faster and better.
+
+[00:21:15.76] - Justin Gardner
+Um,
+
+[00:21:16.47] - Jonathan Dunn
+anyway, so I started to learn more about binary exploitation.
+
+[00:21:19.59] - Justin Gardner
+Yeah, dude, I, I, I, I need to, I need to. And I think now is the time where I can do it better. than ever because I can actually get live experience and have, it's like having an expert, you know, walk you through stuff. Yeah.
+
+[00:21:33.16] - Jonathan Dunn
+Um, all right. I
+
+[00:21:33.98] - Justin Gardner
+also, I did have one more, one more other bug that I wanted to just very quickly explain, 'cause I know that, that one took forever, but once again, config file injection, man, is still, is still alive and well. And this, this bug that I found has, um, I'm not gonna say exactly where it is. But it was a host APD config file injection. And what it would allow you to do is set a metadata piece for ANQP, which is a protocol that I had never heard of. But apparently you can associate metadata elements with a, a host, you know, with, with a specific SSID. And one of the metadata elements that you could define by using the config file injection would allow you to specify an arbitrary path that would be included in the response when you ask about the metadata for this specific SSID.
+
+[00:22:36.67] - Jonathan Dunn
+Oh.
+
+[00:22:37.02] - Justin Gardner
+So then you could do arbitrary file read with it. Um, and it was just like, oh my gosh, this is such a crazy thing. Uh, 'cause I, I've talked about on the, uh, on the pod before with these IoT devices, you know, so much of this is duct taped together with, you know, core technologies that you have to use pretty much if you're gonna run a router or any sort of IoT device like that. Um, they have to inject into these config files and they often don't think about all the grammar rules that come apart, come along with that.
+
+[00:23:09.19] - Brandyn Murtagh
+Wow.
+
+[00:23:09.43] - Jonathan Dunn
+Didn't you do an episode once about config file injection with, uh, With, um, didn't you do an episode about that? Didn't you?
+
+[00:23:18.07] - Justin Gardner
+Yeah. Yeah, we did. We covered it. Yeah. Yeah. I think config file injection is like, yeah, I mean, it's not as prevalent in typical web, you know, cause you can just do whatever, but in IoT devices, for example, when you're spinning up like a, you know, um, an SSID or something like that, when you're like interfacing with wireless, um, wireless interfaces and wireless devices, a lot of times that has to be done via specific config files and specific binaries. So yeah, it is very prevalent, I would say, and one of the main ways that I've gotten RCE in the past.
+
+[00:23:59.72] - Brandyn Murtagh
+Yeah, I want to say, was it J-Rock that done a blog post on the config file injection on a cloud provider? Was that the episode? But he did do some research on it, but— Yeah, it might have been.
+
+[00:24:12.49] - Justin Gardner
+I'm, I'm not 100% sure right now. I, I'm still, like I said in the beginning of the episode, guys, I still kind of feel like crap. So,
+
+[00:24:18.91] - Brandyn Murtagh
+yeah. Um, but that's fun.
+
+[00:24:20.90] - Justin Gardner
+Yeah. Exacerbated by the fact that this event was such a whirlwind because of the use of AI. You know, it's like, hmm, what a, what a crazy thing, uh, that is to have, like you were talking about, JD, be in these events, have the ability to kind of see like Okay, yeah, this is a vuln, but I don't have a deep enough understanding of it to talk about it like it's my baby, like I used to before. And then plus the insane throughput that we have and the insane output, right? It's like, okay.
+
+[00:24:52.99] - Jonathan Dunn
+I actually found one client-side, like one of my bugs in the event, and I was pretty proud of it. So I'll be talking about it.
+
+[00:25:01.25] - Brandyn Murtagh
+Nice. I mean, so I collabed with Matt, and as I said earlier on, one of my focuses was device-to-cloud pivots. partly because I wanted to see how these devices implement and how they actually do that exchange and how they talk. The first problem was that we didn't actually have a shell on the device that I wanted to look at initially. So luckily, Matt had a super nice lead for an initial bug that— how do I say— without disclosing specifics, he could essentially emulate an on-device service that made him appear as a signed and genuine on-device service and extract from the credential store all of the session material and whatever for all of the services on the device. So we had that for a couple of days, and I was not getting far with my device-to-cloud pivots because we didn't have a shell. And then it occurred to me, actually, if I just reverse some of these binaries on the device and have a look at some of the credentials we've got as well, probably put 2 and 2 together. So going down a massive rabbit hole, start reversing some of these binaries, and it turns out one of these services that was in use for when the device initially comes online, it exchanges some certificate information to go, hey, I'm this device, I need a certificate for these services, and this is how I cryptographically sign all of my session data from now on. I'm going to use this. So I was looking at some of these things, and I thought, okay, that's quite interesting. I wonder how it separates between devices. And this just reminded me. So I have experience hacking this target, right? So I thought I knew all of the hosts that would be in use. I have a predefined set of rules. I have my greps. I have everything good to go. I thought I was okay. However, the one reason why this one didn't show up when I was looking for these things initially is because the domain is completely whack for the service that it uses. It isn't the standard naming convention. It's just like they just freestyled it. I don't know who registered it. I don't know why they'd done it. They just freestyled it. And I was like, ah, like, okay, maybe I shouldn't make assumptions before and use my device-specific, my target-specific context. But anyway, looking at these services, I could figure out that it was a completely rogue domain, and I wasn't even sure if it was valid at first. Understanding how these services can exchange material as well, I was able to do a— I spoke about in the last episode— some form of a device shuffle where I have a token over here, I have a token over here, maybe I can exchange somewhere and relay a token as well. And that basically gave me temporary credentials for the service that was issuing certificates for the devices.
+
+[00:28:11.64] - Justin Gardner
+Wow.
+
+[00:28:12.50] - Brandyn Murtagh
+Yeah. So I was looking at this thing, I was like, what is this weird code name it's using? I don't understand. And then I saw part of the role name is like CA role, and I was like, certificate authority role. I was like, surely, surely. And I spoke to one of the team, and I was like, just, you don't have to give me tons of information, but am I barking up the right tree here? Have I got the right lead? And they were like, yeah, it looks good. So I'd done some more mapping with this AWS role, and I disclosed a load of secrets from Secret Manager and proved, like, hey, mine and Matt's device, the initial role that it uses is the same, we can do this. And yeah, it turned from a— Wow. single, what I thought was a certificate issuing role, to like a whole cloud takeover.
+
+[00:29:02.49] - Justin Gardner
+Dang, dude. Wow. Yeah.
+
+[00:29:05.25] - Jonathan Dunn
+Is that the one from the bar?
+
+[00:29:07.86] - Brandyn Murtagh
+That is the one from the bar.
+
+[00:29:10.25] - Jonathan Dunn
+I'll take half your bounty, okay? Pass it on over, okay?
+
+[00:29:14.02] - Brandyn Murtagh
+Context for the listeners here, me and JD were sat at a bar in the hotel. I was a bit fried from the jet lag, and we were just talking about bugs. The pint comes over, the juices are flowing, we're talking about the bugs, and I explained this bug, and he's like, dude, why aren't you pursuing that? Like, you should go and report that as is. I was like, what do you mean? He was like, that really does have, like, if you poke it a bit more, that's quite substantial. I was like, yeah, you know what, it actually is quite—
+
+[00:29:44.26] - Justin Gardner
+As a matter of fact, yes.
+
+[00:29:46.06] - Brandyn Murtagh
+You're quite—
+
+[00:29:46.92] - Jonathan Dunn
+He didn't finish the beer. Cheers, dude.
+
+[00:29:50.06] - Brandyn Murtagh
+I literally put the drink down and went, I'm really sorry, I need to run to the room. I went upstairs, escalated it, and got it in. So thank you, JD. I appreciate that.
+
+[00:29:58.01] - Jonathan Dunn
+I finished mine. That's okay.
+
+[00:30:00.76] - Justin Gardner
+JD's like, I'll take that. Yeah, that's my part of the bounty. Um, no, that's great, guys. Man, yeah, it is a lot of fun doing, doing this hardware hacking stuff. Um, Yeah, I don't know. I did, I did feel a little bit sad from my perspective here because like I only had a couple days to work on this event and this was like a super long event, right, JD? Which added a little bit of difficulty to prepping, right?
+
+[00:30:28.75] - Jonathan Dunn
+Yeah, they, they, well, they gave us the, I don't know, they gave us the, the, the scope like a month before the event started because you're supposed to like take apart the devices and like understand them, but they're like, you can't hack. I don't know what that means, but they said you can't hack, but you can look at the devices. And so
+
+[00:30:48.57] - Brandyn Murtagh
+I think it was, it was slightly more nuanced when they were like, you can't hack, but if you manage to find any criticals, we do want to know about them.
+
+[00:30:57.16] - Justin Gardner
+If you accidentally find a critical.
+
+[00:30:59.18] - Jonathan Dunn
+Yeah. And, uh, yeah, but like, when I got that, like, that scope and I didn't understand anything about hardware, like, I like immediately like started— I like lived in that Brown video Like, I didn't do anything other than Matt Brown videos. I was like watching them. I have a Tesla which drives for me. So I was like, I had it up on my little thing and I'm watching them every second of the day. Like before I go to bed, I'm watching them. I'm buying the devices. I'm buying all this crap. I bought like $1,000 worth of material.
+
+[00:31:28.30] - Justin Gardner
+Yeah, that's like a crazy thing, bro. Yeah.
+
+[00:31:31.34] - Jonathan Dunn
+Yeah, it's very expensive, this stuff. And then another $1,000 on the devices, which they pay back. But The very, uh, very, very expensive. Anyway, so then, and my wife is like, what is happening to the office? You know? Um, and, uh, and, and then I took—
+
+[00:31:45.59] - Justin Gardner
+And your mother-in-law's in there like tearing apart devices with you, right?
+
+[00:31:48.55] - Jonathan Dunn
+Oh yeah. The, one of the devices I couldn't open, like I physically couldn't open the device. And, um, and it took me like a whole day. Like, well, I'm like, look, watching the AI think, you know, that's what I do. I watch the AI think and I'm like trying to open the device with the AI thinking. And my hands are all cut up. I cut up, cut up my hands. My mother-in-law comes over. She's like, are you an idiot? I'm like, yes, I am an idiot.
+
+[00:32:10.81] - Justin Gardner
+I am.
+
+[00:32:11.64] - Jonathan Dunn
+Can you please help me? And she opened it in like 4 seconds.
+
+[00:32:14.09] - Justin Gardner
+Oh my gosh, dude. Dang. I feel like sometimes you just got to— I don't know. It's funny because your mother-in-law did it, but I feel like you just got to manhandle these things sometimes. Like, I always want to be so gentle with them, you know? But like that same device that you had trouble getting into, I mean, you told me it was going to be rough, so I—
+
+[00:32:31.26] - Jonathan Dunn
+Opened it in like an hour. You text me back in like an hour.
+
+[00:32:33.64] - Justin Gardner
+Very quickly because I was like, you know what? I can tell, I know that this is the way that it comes undone because I've seen teardowns of it, you know? So I'm just like, I know that I just have to yoink this thing, you know?
+
+[00:32:44.49] - Jonathan Dunn
+The trick, the trick was you do the metal, like the flat metal thing first, and then you have the 2 blue like guitar pick things and you have to put one guitar pick in and then you metal side and then you put it—
+
+[00:32:56.33] - Justin Gardner
+I did it with a flathead, bro.
+
+[00:32:58.51] - Jonathan Dunn
+Well, whatever. But I'm saying that's what the point of the guitar picks are, is to put it in and then you put the second one in and you take the metal and then you go to the next and you take the first guitar pick out and you put it Justin went
+
+[00:33:08.11] - Brandyn Murtagh
+full caveman on this. I can imagine him with a club. He did it with his teeth.
+
+[00:33:12.53] - Justin Gardner
+This guy right here, man.
+
+[00:33:15.44] - Brandyn Murtagh
+Yeah,
+
+[00:33:15.46] - Justin Gardner
+I mean, they're not going back together, right? You know, you know it's not going back together. You know, as soon as you get that motherboard out, you're gonna yoink a chip and it's gonna be bricked, you know?
+
+[00:33:23.98] - Jonathan Dunn
+Matt Brown has this, like, at the end of his videos, he's like putting the chip back on the device. I'm like, oh no, I'm never putting this chip back on the device.
+
+[00:33:32.00] - Brandyn Murtagh
+Yeah, skip that part.
+
+[00:33:33.55] - Jonathan Dunn
+Yeah.
+
+[00:33:34.00] - Brandyn Murtagh
+So that does lead into the next part. The event started early, and every time that happens— I think that's the second time it's happened— I'm just like, why would you do this for my mental health and mental well-being? Like, why? So how did, uh, how did you guys deal with that this time around? Because obviously it can change your entire trajectory, really, if you have that run-up time.
+
+[00:33:56.97] - Justin Gardner
+I, I would say, like, definitely for the people that are on the circuit, like, that hecks you. You know, because you kind of need some downtime before you go to the next one. Um, I think I can't pretend this time that it would have been much different for me because life stuff was gonna prevent me from hacking on it anyway. Um, but man, I got some hard dupes, like multiple 5-figure dupes this event because I wasn't—
+
+[00:34:21.26] - Jonathan Dunn
+I also got dupes. I also— I got hard dupes and I was hacking in the beginning.
+
+[00:34:26.86] - Brandyn Murtagh
+Um, yeah, I was quite fortunate in the sense that I think me and Matt maybe had 2, but they weren't any of the heavy hitters. But unfortunately, I also didn't do any of the pre-hacking because I had a lot of time— sorry, the opposite, I didn't have a lot of time to do so. So the event started, I think maybe like 3 days before, I started getting stuck in. But luckily, I did have agents, my research agents, go and say, hey, Oh, this is one thing I did do actually on the run-up for it. I have specialists like research agents which will go and find me all the developer docs, all the developer portals, any sort of like forums that exist for any of these ecosystems and just collate that for me. So that's literally all I'd done. Similar boat to you, Justin. I just, I just didn't have the time.
+
+[00:35:18.50] - Justin Gardner
+Yeah. On the other hand, Doc, did you have the time?
+
+[00:35:22.90] - Jonathan Dunn
+I did. Well, so I had the time, but on the other hand, like the prep time was meant for me, right? Because like I actually needed the prep. to like learn how to hardware hack a little bit.
+
+[00:35:31.88] - Justin Gardner
+Doc is like, okay, I've got, you know, 30 days to learn how to hardware hack.
+
+[00:35:35.48] - Jonathan Dunn
+Yeah, like from the beginning. So, um, so like one thing that was very helpful to me was it took me like 2 weeks to even like get like get my bearings. But during that time, one of the devices like I took, I guess I'm mentioning Matt Brown. I bought Matt Brown's like introductory introduction to hardware hacking course. And in the course, he has an OSINT section. And in the OSINT section, he mentions some ways to like look for leaked firmware. And one of the devices had— someone had recently leaked the firmware. And so I, while I was learning how to take the devices apart, I was looking at that previously leaked firmware and I spent that 2 weeks getting my bearings. I found a way to get root on the device via that leaked firmware in the middle of the learning. So that device was now done and that was a bug. First of all, that was, that was the show and tell bug.
+
+[00:36:34.76] - Justin Gardner
+That's nice.
+
+[00:36:35.23] - Jonathan Dunn
+And then separately, I can then use the root shell to find other bugs.
+
+[00:36:40.40] - Justin Gardner
+Absolutely.
+
+[00:36:41.61] - Jonathan Dunn
+But I made it—
+
+[00:36:42.05] - Justin Gardner
+That's so valuable, dude.
+
+[00:36:43.26] - Jonathan Dunn
+It was everything. But like, that's a big takeaway I would take anyone listening is like, If you can, the first, if the first thing you do is getting, is try to get a shell. If you, if there's no UART, there was no UART on, there was no easy UART on any of these devices this time. Yeah. I don't, I actually didn't talk to anyone who got UART on. There was one device that UART was like part of them, like there was like a known dev shell too, but like everything else, like there was no UART. But if you could figure out how to get the firmware, get the, get a shell somehow, and then escalate that. But I made a big mistake. Oh, sorry, what were you going to say, Ryan?
+
+[00:37:19.11] - Brandyn Murtagh
+No, you just reminded me, Doc, when, uh, so Justin, you weren't on site, but we get on site and the team are like, hey, here are these wires to get immediate UART access to these devices.
+
+[00:37:30.23] - Jonathan Dunn
+I
+
+[00:37:30.34] - Justin Gardner
+was like, are you joking?
+
+[00:37:32.55] - Jonathan Dunn
+Yeah, to one of the devices.
+
+[00:37:33.84] - Justin Gardner
+You're kidding me.
+
+[00:37:34.67] - Brandyn Murtagh
+Why didn't you send these out? Yeah, I was like, you would have saved so many hours. Just send these out when the when the event starts. Why give them to people?
+
+[00:37:43.15] - Justin Gardner
+Well, you didn't need like a special— oh my gosh.
+
+[00:37:46.84] - Jonathan Dunn
+I have it. We brought it. We brought it home. We all brought the wire home.
+
+[00:37:50.53] - Justin Gardner
+Oh my gosh.
+
+[00:37:52.15] - Jonathan Dunn
+Yeah.
+
+[00:37:52.48] - Brandyn Murtagh
+Sorry.
+
+[00:37:52.80] - Jonathan Dunn
+And that device, it took me weeks. Like, I— so I made a big mistake, is that device was my second target because I got the firmware off of it and I had, uh, and there was no way to get UART on it. It was very, very, very, very hard. And so I, but I had a, I had an inroad to get RCE. And I spent about a week and a half trying to get RCE. I had LFI on the device from already, like within 2 days. And I was trying to escalate to RCE so that I could do the same thing so that I could then start finding bugs there. During that week and a half, I should have not been doing that. I should have been, I should have been doing the low-hanging fruit. After I gave up on the RCE because I couldn't get a shell, I found like 3 other, 2 other bugs that were both dupes out of the dupe window.
+
+[00:38:42.03] - Justin Gardner
+Ah,
+
+[00:38:42.30] - Jonathan Dunn
+so yeah,
+
+[00:38:43.15] - Justin Gardner
+that sucks, man. Yeah. You know, especially in an AI world, man, hacking within the dupe window is like an absolute must because, you know, people are just able to go so much deeper than they used to go. Like even, even as, even in web stuff, right? Like I, I feel like I used to specialize myself in going very deep, understanding, you know, very well, getting super intimate with the app. Right. And I feel like AI can do it nowadays, man. So at least alert you to the fact that there's something sketchy here, you know, and then people find the same bug.
+
+[00:39:18.25] - Jonathan Dunn
+I found a client-side bug just 2 days ago. Sorry to— that was probably at the upper limit of my client-side skills. skills, like, which is my best skill. And it was extremely complicated and multifaceted and deep, and it was a dupe from a month ago.
+
+[00:39:35.65] - Justin Gardner
+No way.
+
+[00:39:36.57] - Jonathan Dunn
+I have to show you the bug. You're gonna be blown away by this bug.
+
+[00:39:40.19] - Justin Gardner
+That's crazy to me.
+
+[00:39:41.57] - Jonathan Dunn
+I showed it to Demo. He was like, I can't believe that was a dupe.
+
+[00:39:45.26] - Justin Gardner
+Are you sure it was a dupe though?
+
+[00:39:47.69] - Jonathan Dunn
+The, the title of the dupe was— it was— yes, I'm sure it was.
+
+[00:39:50.94] - Justin Gardner
+No way.
+
+[00:39:51.67] - Jonathan Dunn
+Yeah. Yeah, it was crazy.
+
+[00:39:52.73] - Justin Gardner
+I'm writing that down. I want to see it afterwards.
+
+[00:39:54.65] - Jonathan Dunn
+I'm going to show it to you.
+
+[00:39:56.32] - Justin Gardner
+Um, yeah.
+
+[00:39:58.50] - Brandyn Murtagh
+I would say that it definitely does change the dynamic now for events and just, uh, obviously the scene in general. That initial time for any, uh, dupe splits, you really have to try and put as many hours in as possible to reduce your risk there. Because like, I don't know, I'm just imagining some guy rocking up with like 30 clawed subs and then like specialist harness and then just obliterating source code review. and then you're having to try and catch up with that. So yeah, I think that's a good takeaway. I think it was more so evident in this event because it's the first hardware one for me where I saw people really show up with AI, and I was like, okay, damn, like, this is, this, like, this is a thing now. Um,
+
+[00:40:42.92] - Justin Gardner
+it's so much better. Trying, trying to tear apart this firmware, dude. Like, I mean, that, yeah, at this point A lot of the hacking of the, of the, you know, devices itself has gotta just be pulling the chip off and getting firmware, you know? 'Cause as soon as you get firmware, even if it's like not a reversible, you know, it's not like Java or something like that where you can reverse it back from a JAR. Um, you know, just throw the AI at it and it's like, oh sure, I'll reverse engineer that for you. Like, you know? And I'm like, holy crap, dude. Like, yeah. Yeah.
+
+[00:41:17.69] - Jonathan Dunn
+But like, I don't know, like there's more. I like, I think there's still ways to go deep. Like, like look what you just did, Brandon. Like, like that, like, like no one else found that bug, I think, unless you got like, you know what I mean? Like, like that bug is, and that's because you understood the target, you understood the threat model you had, like you understood that, that, I don't know, it sounded like you went very, very deep there and, and got a better bug than everybody else as a result.
+
+[00:41:40.32] - Brandyn Murtagh
+Well, yeah, we'll see. We'll see. I did actually find 2 classes of that same thing from different services on the device. Because like for me, I had agents running in the background and I might as well cover it now. I had a lot of agents running in the background. Okay, reverse engineer ZCompile. Here's a Ghidra MCP if you need to do your thing. But all that stuff, automated hacking, obviously we've covered extensively. I'm not going to beat a dead horse. The real dopamine comes from the hands-on stuff. And I was chasing the real non-cheap, not the McDonald's dopamine. I wanted that that stake, that high-class dopamine. Yeah. So, for me, it was a lot of, instead of asking, okay, find all vulns, please, make no mistakes, it was, for this specific service that we're interacting with, walk through and map each part of the authentication flow, find me every single file that it touches, identify if there's any input validation on any user control parts, and map out for me in write files so we can come back to it. And just asking a lot of, okay, this is how I think it works, can you confirm if that is the case or not? With the target-specific knowledge, help me craft these more elaborate chains of, okay, pivot here, little pivot here, and trying that.
+
+[00:42:59.32] - Justin Gardner
+Architectural understanding is massive, I think, in this, right? Like, getting, you know, Getting this agent to be like, okay, what are all the services running? What are all their components? You know, identifying for yourself, okay, where are the auth junctures, right? Where, where, where, where is there complexity being added in? And then pointing the agent specifically at that component, right? Not go find vulns in general. Say something like, okay, is effed here. Like, go find something on that, right? And then it's able to go a lot deeper and find a lot more bugs, I think. So it still does require that knowledge architecturally of what's going on. But it helps
+
+[00:43:46.23] - Brandyn Murtagh
+you— sorry, go on, Doug.
+
+[00:43:47.84] - Jonathan Dunn
+No, no, no, it's after you.
+
+[00:43:49.76] - Brandyn Murtagh
+I think it just helps you gain that threat model faster. For me, it was asking a lot of questions around, okay, this is how I think this service would work. And just piecing it together to not get direct answers, but use it more as a sparring partner to get those higher-impact bugs. For me, it seems to work. It's worked every event so far.
+
+[00:44:11.11] - Jonathan Dunn
+And hacking is hacking. If you understand hacking, it's no different with AI. In that 2 weeks, I was trying to get the root shell. It told me maybe every hour it was impossible. Like, it was like the AI kept coming back to me and be like, no, it is over. Like, you cannot do this. And I'm like, but if I was doing this without AI and I got to this point of the bug, I would never give up. Like, there's no chance. Like, if I had, like, you know, like, I don't know, I can't think of a client-side equivalent, but if I was like this far, if I had this good of a primitive, like, I would not stop. And it's the same thing.
+
+[00:44:53.13] - Brandyn Murtagh
+Tell you what, if you— if you— I think it's been mentioned before. I don't know what it does. I don't know what it unlocks. But if you say to GPT, hey, Claude thinks that this isn't possible, man, you unlock like— it's like, okay, wow, okay, you're really gonna prove me wrong here.
+
+[00:45:13.71] - Jonathan Dunn
+That is so good. That is so good.
+
+[00:45:17.01] - Justin Gardner
+That's funny. Your rival says this is impossible. What do you think?
+
+[00:45:20.96] - Jonathan Dunn
+He says you can't do this. It can do it, but you can't do it.
+
+[00:45:25.55] - Justin Gardner
+Claude found a way to do it. Why can't you find a way to do it?
+
+[00:45:28.11] - Brandyn Murtagh
+No, seriously, that works. It really does work. It unlocks something in these models, like a deep— I don't know, but it's effective.
+
+[00:45:36.05] - Justin Gardner
+So funny, dude.
+
+[00:45:37.15] - Jonathan Dunn
+I would do not that, but I would do like, we get to the point where it said it was impossible, and then I would start another fresh. I would tell it to write an empty file of why it thinks that and the summary, and then I open another agent, uh, a fresh agent, uh, that would read that. I'd be like, do you agree with this? And it was like, no, it missed these 7 things. And I'd be like, yes,
+
+[00:46:01.05] - Justin Gardner
+yes, go after those 7 things.
+
+[00:46:03.07] - Jonathan Dunn
+Yeah.
+
+[00:46:03.42] - Justin Gardner
+Oh my gosh.
+
+[00:46:04.03] - Jonathan Dunn
+Because it gets, it gets laser vision when it's working for a long time. It gets laser vision.
+
+[00:46:09.32] - Justin Gardner
+Yeah. I think another component, sorry, before we move on, um, Brandon, uh, is this piece of like, you know, you said before, hacking is hacking. And I agree with that mostly. And I like, one of the things that I've found that really AI helps with at a different level than HTTP hacking is like, there's so many protocols when you're doing IoT hacking, right? There's like, you know, in our world, you know, in web, it's like, okay, you understand, you know, REST APIs, you understand GraphQL, You know, sometimes you have to deal with a WebSocket, you know, and it's like, okay, well, it's still JSON, you know. If you're really crazy, if you're— you got to deal with ProtoJSON.
+
+[00:46:52.03] - Jonathan Dunn
+It's JSON.
+
+[00:46:55.40] - Justin Gardner
+Um, you know, but in, in, in the IoT world, there's just like infinite protocols, right? And they're, you know, a lot of them are binary based, and it's like, okay, how do I understand this at a deep enough level? And so just having AI look at the implementation and explain to you, like, how does this implementation align with the spec? How does it malalign with the spec? You know, um, how is, you know, is this being, are there any holes in the implementation here? Right. Um, because it has such a more vast knowledge of what those protocols are supposed to look like and can get you more familiar with them quickly. Very valuable.
+
+[00:47:36.09] - Brandyn Murtagh
+Yeah, 100%. I would say, so you guys got the trip off and I was in a collab, so it was different for me. What was your game plan after that point? Did you have an approach? What— how did you approach these devices? Because I abstracted it to something that I was comfortable with. Uh, how did you guys approach it?
+
+[00:47:58.26] - Jonathan Dunn
+He's caught— uh, they— I started with the stuff I knew how to do. I started with like finding the API, finding how the auth worked, finding the API. So like on that, on that first device that I got the chip off, I really, I wanted to do what you did. That was like my thought. My first thought was, how is the device speaking to the cloud? And how can, and then how can I get it? So I got all those API, I actually found, found that way and then was able to mimic the device just like you did, but it didn't get me anything anywhere. And then I found every API call Um, from the, just the way I would do in the JavaScript. And then I tried to mimic them and see if there was any bug there, because I thought that that was fresh scope, but I didn't. And then I went deeper and deeper, and then I would be like, is, you know, binary stuff.
+
+[00:48:48.40] - Justin Gardner
+My, my approach, um, was I have experience with this device, so I knew where the, where the bugs had been in the past. And I went to go see how they fixed it, you know? Um, and I knew how their communication was done with the cloud. And, um, to be honest, I just kind of let that be for, for, for the time being. Um, especially because for this specific device, you needed a, uh, a root shell to, to get the encryption material you needed, you know, to, to interact with that at all. So I let that be for the time being and focused on some of the areas where I had found wallets before, some of the areas that gave the most impact, right? Which is why I went for the WAN angle. And then a specific protocol that I just have a, I don't know, I, you know, I was like, screw this protocol, man. Like, I like— Protobuff.
+
+[00:49:46.42] - Jonathan Dunn
+I know you're talking about Protobuff right now.
+
+[00:49:49.13] - Justin Gardner
+And I'm like, you know, tell you what, we're going to go hack up this protocol is what we're going to do. And so I spent a lot of time focusing on that, but it was tricky with one device, you know, because that device was getting clogged up by that ASLR oracle that I was mentioning before. And you can't have it like hooked up by the WAN or anything. So it can't be connected to the cloud. And it's like, okay, well, what else am I going to do right now while This thing is just brute forcing. So I can prove that this is RCE. Um, so I did a lot of, a lot of code review of a different protocol.
+
+[00:50:21.19] - Jonathan Dunn
+It's true. The root shell is like orders of magnitude more beneficial than the source code.
+
+[00:50:26.78] - Justin Gardner
+Yeah.
+
+[00:50:27.05] - Jonathan Dunn
+Like the source code is beneficial, but the root shell is like a different, like you can't, there's so much you can't do with just the source code.
+
+[00:50:33.21] - Justin Gardner
+Yeah.
+
+[00:50:33.63] - Jonathan Dunn
+It's not like the key is in there. It's not like the bearer token is in there. Like it's in the memory that you can't get it anyway.
+
+[00:50:39.48] - Justin Gardner
+Yeah. There was such a clean root shell. Um, in this product that I was looking at too, that, that I found like maybe 12 hours before the end of the event and it was a dupe. And I was like, frick me, man. Like, even if I had just had this, like I could have just not brute forced this whole time to get the other RCE, right? It's like, oh my gosh.
+
+[00:51:01.53] - Brandyn Murtagh
+Yeah. I would say when I asked you what you're going after, Justin, and you're like, I'm going after this, I was like, He's going for the dragon. Yeah,
+
+[00:51:09.80] - Justin Gardner
+dude, it's the dragon, bro. It is the dragon. And it's fun, man. It's fun.
+
+[00:51:13.57] - Jonathan Dunn
+You slayed it. You slayed that dragon.
+
+[00:51:15.42] - Justin Gardner
+Took him down for the— I think this is my third, maybe my third in a row where I've, I've picked an impact that I wanted to get on these devices and then I got it, you know, at the, at the hardware hacking events. And I'm like, feels freaking good, dude. Feels Amazing. And each time I'm like, well, that's definitely not going to happen this time. And then it does, which is crazy.
+
+[00:51:38.69] - Jonathan Dunn
+For that device that you got that on, I had, I got the firmware off every other device other than that one. I actually, that was the most expensive device. I bought 3 of them, but you got 2, you got 2 for free. So I had to buy one for myself because I was so obsessed with it. I got the chip off. It was like beautiful. It was a non-standard size, okay? So like you couldn't— it was very, very, very, very hard to— like the readers don't have the plastic thing that fits over it. I must have closed and opened that thing 2,000 times, like some unbelievable amount. I was spending like whole afternoons doing this, like moving a little bit. I brought it to the event Because I was— I'm like, Matt Brown's going to be there. I brought my reader to the event. It turns out that there were 2 types of these devices, and all 3 of the ones that I had had the smaller chip. But there was another type that had a slightly bigger eMMC chip that was easier to read. Nobody at the event could get the firmware off of my chip.
+
+[00:52:48.25] - Justin Gardner
+Dude, that's great. What, what, what reader were you using?
+
+[00:52:51.59] - Jonathan Dunn
+Yeah, the— I, and I, I bought 2 of them. I bought the 48. I'm like, maybe I need the 76, and I bought the 76 just for this thing, and I couldn't do it. I have 2. I have an extra if you want.
+
+[00:53:03.11] - Justin Gardner
+Oh man, guys, I, I hate to say it, but my, my voice is like completely crapping out now. Um,
+
+[00:53:09.69] - Jonathan Dunn
+it's
+
+[00:53:09.71] - Justin Gardner
+not.
+
+[00:53:10.26] - Jonathan Dunn
+So it sounds great, man.
+
+[00:53:11.59] - Justin Gardner
+Do you guys? Thanks. Thank you.
+
+[00:53:13.78] - Jonathan Dunn
+Appreciate that, man.
+
+[00:53:15.86] - Justin Gardner
+Uh, hopefully, hopefully Richard can do something with your audio because I can't say the same for you.
+
+[00:53:20.80] - Jonathan Dunn
+Me? I know. You know what it was? My problem is I had, I had a little heater going on here because it's really cold.
+
+[00:53:26.34] - Brandyn Murtagh
+Dude.
+
+[00:53:26.38] - Justin Gardner
+And you know what it is?
+
+[00:53:27.34] - Jonathan Dunn
+You didn't say anything to me for so long. I thought it was fine.
+
+[00:53:29.63] - Justin Gardner
+I'm sorry, listeners as well. I'm looking at this now. He's recording off of his MacBook Air camera, not his AirPods.
+
+[00:53:38.57] - Jonathan Dunn
+Oh, am I?
+
+[00:53:39.53] - Justin Gardner
+No. Yeah. Get outta here.
+
+[00:53:42.34] - Jonathan Dunn
+Everything's fine. Everything's, everything's fine. Don't worry about it.
+
+[00:53:45.21] - Justin Gardner
+Oh my God.
+
+[00:53:45.63] - Jonathan Dunn
+Everything went well.
+
+[00:53:46.71] - Justin Gardner
+Well, Richard, good luck on this episode, man.
+
+[00:53:48.88] - Jonathan Dunn
+Richard, you're fine. I don't know why it won't even let me do it.
+
+[00:53:53.71] - Brandyn Murtagh
+Yeah, it's too late now, mate. Don't worry about it.
+
+[00:53:55.88] - Jonathan Dunn
+Maybe I should switch now just for— just for fun.
+
+[00:53:59.26] - Justin Gardner
+Switch so we can hear what, what it could have been.
+
+[00:54:02.46] - Jonathan Dunn
+It— I don't even—
+
+[00:54:04.59] - Justin Gardner
+Yeah, then he just mutes himself. Okay, great. All right, well, well, now with that— okay, okay.
+
+[00:54:10.59] - Jonathan Dunn
+But do you— do I sound crazy to you guys?
+
+[00:54:13.63] - Justin Gardner
+You have not sounded excellent. In the past.
+
+[00:54:15.98] - Jonathan Dunn
+Okay.
+
+[00:54:16.30] - Justin Gardner
+But I think, I think, uh, I think Richard's gonna do his magic, man. I
+
+[00:54:19.28] - Jonathan Dunn
+think Richard's gonna do such a good job. Richard's gonna do a great job.
+
+[00:54:22.55] - Justin Gardner
+Um, did you guys have anything else you wanted to mention here before we call it? That was such a fun event, man. And JD, I have to say, your passion that is just like exuding from you from this event has got me really hyped to hack again in a time where AI is stealing a lot of the joy, though we're still getting great results. AI is stealing a lot of the joy. So, but thank you for that, man.
+
+[00:54:41.69] - Jonathan Dunn
+the chaining in this situation is really fun. I want to do that. I want to chain like, like this more, like that bug you talked about.
+
+[00:54:49.65] - Justin Gardner
+Yeah,
+
+[00:54:50.13] - Brandyn Murtagh
+yeah, yeah. Dude, you should have seen him before we go. You should have seen him at DEF CON. They had like a UART village or something and he was like sprinting to this thing so he could lock in and do 6 or 7 pure hours of IoT. I was like, wow, JD,
+
+[00:55:05.88] - Jonathan Dunn
+dude. I was like trying to take this thing apart. And like this guy sits next to me and he is like, oh, I'm— I do like security at like Medtronic, you know, like he's like doing pacemakers. He like helped and he like sat next to me and we like had so much fun together.
+
+[00:55:20.26] - Justin Gardner
+Dude, that's great. That's great for you, man. It was— I know, medical device hacking, you know.
+
+[00:55:26.42] - Jonathan Dunn
+I know.
+
+[00:55:27.15] - Brandyn Murtagh
+I know. That's
+
+[00:55:28.84] - Justin Gardner
+sick, man. All right, gents. GG. Thanks for— thanks for the energy and the takeaways. It was definitely a fun one.
+
+[00:55:36.88] - Jonathan Dunn
+Yeah. Fun stuff.
+
+[00:55:37.80] - Brandyn Murtagh
+Thanks, gents. Peace, gents. Peace.
+
+[00:55:40.09] - Justin Gardner
+And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'all. If you want more Critical Thinking
+
+[00:55:45.25] - Jonathan Dunn
+content, uh, or if you wanna support the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild. If you're, uh, a full-time hunter, it's a great time. Trust me. All right. I'll see you there.

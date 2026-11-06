@@ -1,0 +1,455 @@
+Episode 131: Christmas in July HACKING STYLE -SL Cyber Writeups, Bug Bounty Metastrategy, and Orphaned Github Commits
+Source: https://www.criticalthinkingpodcast.io/episode-131-christmas-in-july-hacking-style-sl-cyber-writeups-bug-bounty-metastrategy-and-orphan/
+======================================================================
+
+Title: Transcript - Thu, 17 Jul 2025 12:05:28 GMT
+Date: Thu, 17 Jul 2025 12:05:28 GMT, Duration: [00:50:37.98]
+[00:00:00.88] - Joseph Thacker
+So if you have custom word lists that you manage, go take these right now and add them to your custom word list because they're known good files that have leaked passwords in the past. Best part of hacking when you can just, you know, critical things, right?
+
+[00:00:34.11] - Justin Gardner
+One of the cool things about going to these live hacking events is the ability to look at what you found and what other people have found and understand where the holes are in your methodology, right? By comparing notes. And thanks to Adobe sponsoring this episode today, we have an opportunity very similar to that for you guys. Okay, so here's how this is going to work. Adobe has agreed to give you guys a 10% one time bonus on your first valid report to any of the following products. Listen closely. Adobe Behance, Adobe Portfolio, Adobe Fonts, Acrobat Web, okay, those four. And to get that, you have to use the code CTBP0907. Okay? The, the description will have that information. Also, this is valid through September 7, right? So keep that in mind. Then what we're going to do on top of that is we're going to do a hack along in the CTPB discord for everybody, okay? And we're going to start looking at these targets. And so what'll happen then is you guys will take a look at it, you'll see what you can find, then we'll do the hack along and everybody will be hacking on them, finding vulnerabilities, I'll be hacking on them, finding vulnerabilities, and then we can compare notes and see where we missed the sketchy pieces of information or the leads or the vulnerabilities themselves. Okay? So really good opportunity. This is the kind of stuff that we have at live hacking events and Adobe is bringing this to you guys. So definitely check out those targets. They're in the description along with the code. Also, the Adobe team wants me to let you know that they're going to be at Bsides Las Vegas sponsoring August 4th to August 5th. Come check it out, go to their booth, have a chat with them. They'll also be at defcon in the Buggani Village. So if you see anybody with like Adobe Swag or whatever, don't hesitate to come up and say hi. All right, that's it. Thank you, Adobe. Back to the show.
+
+[00:02:14.13] - Joseph Thacker
+Yo, what's up, dude?
+
+[00:02:15.65] - Justin Gardner
+I got you, man.
+
+[00:02:16.86] - Joseph Thacker
+I got to tune in on your hack along this morning and it seemed like it was going pretty well. And then you told me right after I hopped you all found a bunch of bugs. So if people are not in critical thinking doing hack alongs, they should hop in there, dude.
+
+[00:02:28.96] - Justin Gardner
+It was a lot of fun. And every, every time we do those things, it's not me fighting the bug typically, it's the people in the, in the chat. Like I'm over just kind of like, you know, screwing around with something and typically like I'll find a bug or I'll find, you know, at least some good guys or some fun functionality. But almost every single time we, we, we do the hack along, somebody finds a buck. Portable buck. Um, but yeah, this time I did find some, some cool stuff. And Bev shout out to bevx found a couple xss and so, you know, we have some results from this one.
+
+[00:03:00.62] - Joseph Thacker
+Yeah, that's amazing. I, I thought that that was interesting the way that you like went down that initial rabbit hole on that random domain. So.
+
+[00:03:08.87] - Justin Gardner
+Yeah, yeah, it's, it's, it's fun, dude. It's fun. I mean, like, I wish I could say it perfectly represents hacking because it doesn't. You know, when, when you're trying to do a stream and you're trying to, you know, talk. Yeah, exactly. You're trying to manage chat, you're trying to, you know, like for me it's very hard to hack and talk at the same time. I'm getting better at it. You've definitely gotten better at it since we started critical thinking, but it's very hard and I definitely feel my processing power go down.
+
+[00:03:38.87] - Joseph Thacker
+Yeah. But let me, let me ask you an interesting question. Let's say that you said, hey, we're gonna take those same people and let them all hack for an hour. You plus them, do you think you would find more bugs doing the hack along collectively or would the you plus those people all hacking for an hour and a half, find more bugs independently? I have a very strong opinion here. I have a very strong opinion.
+
+[00:04:00.93] - Justin Gardner
+Yeah, I don't know man. You know how I do, I do prefer, I do love the power of just focus and sitting down and like locking in and, and stuff like that. But definitely, you know, when with the collective brain of everybody, you know, everybody's going to see something a little bit different and somebody's going to have that eye to pull out, you know, a crazy, crazy endpoint or quirk or API key or something like that.
+
+[00:04:25.72] - Joseph Thacker
+So I think that you, I think that collectively there's way more bugs found during hackalong, even with the level of talent that was there. And I think that it's because there's like this shared perception sense where like you're handing off gadgets to people who are the best at those gadgets, naturally. Because like when someone's paying attention to the stream and they see something that they're like kind of a pseudo expert at, they're going to like key in on that. And then when people find things that you're particularly good at, they surface it to you and then you go look at it. So anyways, I think it's really cool. I think more people should do more hackalongs.
+
+[00:04:57.23] - Justin Gardner
+Well, I was going to say, you know, I'll give a shout out to Demo and. And you mean Turbo. Yeah, Turbo. Exactly. Demo, Turbo. My boy needs to get his aliases in place, but Demo is there for every hack along and, and he, he always finds some crazy stuff, you know, that I, that I missed. And. Yeah, and he's going to be doing a talk at Buggani Village under the alias Turbo with seven for the team.
+
+[00:05:23.06] - Joseph Thacker
+On Saturday at noon.
+
+[00:05:24.47] - Justin Gardner
+Yeah, on Saturday at noon. So definitely check that out. It's going to be awesome. He is very high skill hacker. But yeah, man, I've always, I've always been impressed by the hack alongs. It's fun time. But we have a ton of content to get to today, so let's jump into that. Let's do it.
+
+[00:05:41.68] - Joseph Thacker
+Since we've got a lot of guest episodes, this one's going to be more of like a news catch up episode. Yeah, because we had the Valentino episode. We've got Gerardo coming soon, we've got some others coming up.
+
+[00:05:51.93] - Justin Gardner
+Are you just leaking our whole calendar right now?
+
+[00:05:54.08] - Joseph Thacker
+Dude, Valentino came out today. I leaked one person and you already mentioned that last time.
+
+[00:05:58.29] - Justin Gardner
+I didn't mention it last time. Did I mention it last time?
+
+[00:06:00.49] - Joseph Thacker
+I don't know but I tell people, I told personal people that I thought it was coming out this week and I was wrong. So hopefully it comes out next week.
+
+[00:06:06.64] - Justin Gardner
+Yeah, well, I'm going to shuffle them around a little bit. So anyway. All right, fine. We do have an expo related episode in the queue. It is already recorded. It is going to come out eventually, but we're, we're working on some of the details so. All right, let's, let's get to some of the content here. There was a write up that surfaced not too long ago that was back from 2019 and I want to say it was Victor, I forget the last name but that tweeted about it and kind of brought it up from the dead and I just wanted to highlight it on the pod because I really like this type of vulnerability. This is a instance metadata service protection bypass in Google Cloud. For any of you guys that know about metadata URLs. This is a huge part of SSRF exploitation in a cloud environment where you often will hit these metadata URLs and get back instance metadata about the given instance you're on in a cloud environment. And there have been some protections that have been put in place by Google and by AWS now to prevent us from hitting those metadata URLs as easily. And this vulnerability from 2019 was when those protections first came out, the metadata flavor header being required, which you often can't specify in an SSRF environment. And it was three bypasses to that behavior. The first one was simply by adding an extra slash to the URL under compute metadata. So compute metadata v1 instance name, which is just so dumb.
+
+[00:07:44.67] - Joseph Thacker
+Insane insane.
+
+[00:07:46.87] - Justin Gardner
+Unbelievably dumb.
+
+[00:07:50.23] - Joseph Thacker
+How does that affect whether it's checking for the header or not? That doesn't make any sense.
+
+[00:07:53.95] - Justin Gardner
+Like some sort of reverse proxy middleware. It must be, you know, which is very telling about the implementation of this at GCP. Then he does it again with HP1, then he does it again with just a random semicolon in the URL. And so each of those were accepted by. By. By Google VRP and paid a bounty. And I just wanted to highlight them because, you know, you definitely want to spend time fuzzing these things in all sorts of ways. Adding slashes, adding semicolons, trying HTTP 0. Especially when it's high impact pieces of architecture like the metadata URL. These are the things we must know about. And if this person had kept this in their pocket for a long time. So many vulnerabilities.
+
+[00:08:39.37] - Joseph Thacker
+Yeah, that's what I was thinking. This feels almost like a bad move, you know, like.
+
+[00:08:44.01] - Justin Gardner
+Like I totally get reporting it and I wouldn't tell them to do anything but report it. But like if a malicious actor got a hold of this, that would be a very different story. Yeah, farmable bug. Yeah, very exploitable. So definitely high impact stuff found here. And I think that sort of attack scope is really interesting for cloud environments.
+
+[00:09:02.10] - Joseph Thacker
+Yeah, it makes me wonder how many things like this are out there. Sure, there are plenty.
+
+[00:09:05.70] - Justin Gardner
+Absolutely sweet.
+
+[00:09:07.05] - Joseph Thacker
+We can jump to one of my smaller ones. Our friend Ian Carroll and Sam Curry released a blog post like yesterday or the day before across a few different social media platforms. I'll share my screen as I click through this real quick. It's called would you like an eye door with that? Makes me think of the song do you know that? Do you know the old McDonald's song? The rap?
+
+[00:09:26.25] - Justin Gardner
+The what?
+
+[00:09:27.04] - Joseph Thacker
+The wrap. The McDonald's wrap. Like a double cheeseburger and hold the lettuce. Don't be front and son no sees on the bumblebee. Makes me think of that.
+
+[00:09:34.33] - Justin Gardner
+Dude, I haven't heard that in forever. That's such a throwback.
+
+[00:09:37.45] - Joseph Thacker
+Wow. All right, here we go. It's probably kind of wide, smaller. Yeah. So they titled their blog post, would you like an eye door with that? Leaking 64 million McDonald's job applications. Yeah. So basically the prospective employees who want to, like, get hired by McDonald's can chat with this chatbot called Olivia, and it's made by this company called Paradox AI. So that's actually probably where the vulnerability really was. But essentially it's like not that interesting of a bug. It's just an eye door. But their process of finding it was interesting. And it involved having default credentials of 1 to 6 as both the username and the password. But yeah, so like they got in from the admin side and then they also applied for it from the user side. And then eventually from the user side they saw this put request that involved a lead ID, and their lead ID was 64 million. So they just, they decremented it and found other users actual, like phone numbers and actual, like the conversations with the AI agent. So I have a theory here. I wonder if this is not just McHire's. I think it's like the entire Paradox AI database, because 64 million is a lot even for McDonald's. Like, how many employees do McDonald's even.
+
+[00:10:52.00] - Justin Gardner
+Have the U.S. like, like, apply a job at McDonald's? I don't think that's right.
+
+[00:10:56.90] - Joseph Thacker
+Right. Like they have 2 million people worldwide. And so, I mean, I guess they could have some turnover and it could add up that amount. I mean, there's. Even if it is the third party, McDonald's is probably their biggest vendor or whatever that, like their biggest customer. But anyways, I thought that was really interesting. And if you think about it, I was like, man, this is an AI system that has had 64 million unique users or 64 million, you know, cases or whatever outside of the major providers and maybe like cursor and stuff. I wonder if this is like one of the most used AI apps. They said they tried prompt injection and it was like really, really railroaded. Like, it didn't. It couldn't do anything interesting. So it might not even be like an LLM backed app. It could just be, you know, those old agent Systems that like AWS and GCP and everything had even before LLMs where it was like a support, you know, a railroaded support system. But.
+
+[00:11:42.07] - Justin Gardner
+Right.
+
+[00:11:42.62] - Joseph Thacker
+Anyways, that was interesting.
+
+[00:11:44.38] - Justin Gardner
+Yeah, that is definitely an interesting one. I hate to see the default credentials of 1, 2, 3, 4, 5, 6.
+
+[00:11:51.73] - Joseph Thacker
+For a system that sensitive. I mean, come on.
+
+[00:11:55.00] - Justin Gardner
+Yeah, that's pretty egregious, not gonna lie, but very cool nonetheless. I love the little stunt hacks that Sam and Ian do for fun that they just pwn some company completely. And sometimes it's as simple as like, you know, an eye door here or sometimes it's like all the crazy stuff they throw together.
+
+[00:12:13.88] - Joseph Thacker
+Yeah, like all the car hacks, I mean, that stuff is really, really valuable. Like this one I think is more for fun. But when you think about the stuff they've done, they've done for the air and the car industry, I think it makes like a really material difference to like all of our lives when they're responsibly disclosing that stuff.
+
+[00:12:28.30] - Justin Gardner
+So 100%, man. Definitely, definitely securing stuff up a lot. Okay, so next on the list is Christmas in July with Searchlight Cyber. The Searchlight Cyber team is releasing a bunch of research in July, which is super cool. Yeah, they're two in. So we'll cover those now as we're recording, and then hopefully we'll cover the other ones before DEF con. But this first one was how we got precision XSS on every AAM cloud site. Thrice. Thrice. Which is lit. And there are a couple things I wanted to highlight from this one. The first one is that I think that this is a really cool technique that they're using here that we've kind of discussed a bit in the research lab for critical thinking. And we call these cross customer vulnerabilities where. Where you're able to host something. In this specific scenario, they're referencing an NPM package and they're loading JS from it. But you're able to host something on a different service and then the thing you're attacking has a reverse proxy to that service for the purpose of grabbing data related to the user itself. But actually you can reference, you know, some other user of that service and pull down some data. So what's happening here is they have this path on a cloud that's supposed to serve JS files from the jscdn.
+
+[00:13:54.92] - Joseph Thacker
+Yep.
+
+[00:13:55.40] - Justin Gardner
+And they found that you're able to upload HTML files to the CDN and then reference those HTML files underneath the path of every single AEM cloud. Site and I'll just read this little, this little snippet here to make sure I'm extra clear about it. While doing bug bounty on a site running AEM, we noticed that the site was loading some JavaScript from the route. Rumi, helix, rum distrumstandalone js. Further digging indicated that the RUM path was handled by Adobe's cloud specific CDN configuration and appeared to be proxying directly to the NPM package host. Our interest was piqued. As NPM packages can contain HTML files, they may allow for an xss. And I just think that is such a beautiful example of very ingenuitive attack vector ideation.
+
+[00:14:42.75] - Joseph Thacker
+Yeah, in fact, I think like the frame here that everyone should be taking away from this is like if you have Some sort of SaaS like that allows you to, you know, spin up your own tenant or your own host. So there's a million of those, right, like Workday, ServiceNow, Salesforce, but then the list is like near infinite, there are thousands. And then if they in any point are using stuff hosted on like a third party or domain or a CDN domain and not only your subdomain. So you can literally go hunt for this by just looking for apps that have a lot of functionality where you can upload things or modify a lot of content and then just see if they get hosted on a shared domain that the other customers use as well. Now all of a sudden you have like a really strong gadget that would end up doing something like this.
+
+[00:15:25.28] - Justin Gardner
+Absolutely, yeah. And so I think just from the start, you know, the kind of vulnerabilities that the, you know, Searchlight Cyber team here looking for, just very good. And this is how you do, you know, really impactful security research here. And then they take that and, you know, they validate their assumption. They were able to pop the XSS on unpackage that was happily serving text HTML content type. And then they go and look at the logic of how exactly this route is being essentially remapped to the cdn. And as they're going through here, they find three different bypasses. One is a missing slash at the end of a path that uses path startswith pretty classic vulnerability. But the other ones are a lot more interesting. I thought after it was patched they actually ended up using a technique that I think is really widely applicable, which is the fact that fetch will take any new line or tab character that's in a URL and just remove it. So if you do tab, that will become a path traversal. So let's say there's some logic that's checking for. Before it passes to fetch, you can pass in actual tab character and then it will pass the regex, but then when it gets to fetch, the. The tab will be deleted and it will do the normalization.
+
+[00:17:02.13] - Joseph Thacker
+That feels like a relatively big deal.
+
+[00:17:03.74] - Justin Gardner
+Yeah.
+
+[00:17:04.38] - Joseph Thacker
+Have you ever used that before?
+
+[00:17:06.29] - Justin Gardner
+I think I have used it without realizing what was happening, which is kind of funny.
+
+[00:17:10.61] - Joseph Thacker
+I found organically, just by fuzzing, looking for characters. What works, what doesn't.
+
+[00:17:13.90] - Justin Gardner
+Yeah, yeah. And they traced it all the way down to, let's see this, add a URL parser library and then mentioned that fetch was utilizing this. So with that they were able to bypass again. And then they were also able to utilize some normalization gadgets within that reverse proxy environment where you'll hit a specific path that 302s and when at 302s, it actually normalizes part of your URL encoded content. So really, really cool stuff that they're doing there. And I think a lot of those techniques are really applicable to other sort of exploitation scenarios.
+
+[00:17:55.70] - Joseph Thacker
+Yeah, you've been all about this. I feel like on the hack along today, you were also talking a lot about this. When it comes to string parsing, all the different unique characters you can fuzz for or test for or break out of. I feel like that's almost like the core part of hacking that you kind of think about these days.
+
+[00:18:11.29] - Justin Gardner
+Yeah, I think about it a lot. It's very interesting. And I did have one more thing I wanted to mention on this before we move to the next one, see if I can find it right here. I gotta search for it, but the way that they got this to work was super awesome. Oh, here it is right here. So there were two CDNs, JavaScript CDNs that were serving these JS files.
+
+[00:18:30.95] - Joseph Thacker
+Yeah.
+
+[00:18:32.43] - Justin Gardner
+But only one of them work. Only unpackage served to the HTML content type JS deliver did not. And so they found that it was actually caching the response, but they didn't want the incorrect response, you know, response to get cached.
+
+[00:18:46.09] - Joseph Thacker
+Yeah.
+
+[00:18:46.46] - Justin Gardner
+And so they went to the, like, they kept researching until they found a way, a difference between JS deliver and unpackage that would force it to.
+
+[00:18:56.38] - Joseph Thacker
+Oh my goodness. Like a cache difference between the two servers.
+
+[00:18:59.25] - Justin Gardner
+Yes. On JS Deliver, if you put all caps in the name, it's case sensitive, so it would 404. But on unpackage it's not case sensitive.
+
+[00:19:08.29] - Joseph Thacker
+So you have caps.
+
+[00:19:09.95] - Justin Gardner
+Yeah. And it would get the response. So that's awesome. It Was freaking beautiful, man. Bravo to the Searchlight Cyber team again.
+
+[00:19:16.99] - Joseph Thacker
+Who is doing the majority of the hacking there? Obviously Shubs does, but who else do you know?
+
+[00:19:20.91] - Justin Gardner
+Yeah, geez. I mean this, the guy that wrote this one is Adam Kuz. So I'm not sure, I'm not sure who exactly is doing that. I know Shubs does have his hands on all of this and I imagine since the beginning of this was from Bug Bounty, then it was probably related to that.
+
+[00:19:39.80] - Joseph Thacker
+Yeah, I heard Shebs mention Adam a lot, so I'm sure he's one of the main guys. Sweet one. This little really small thing here was just a tweet from James Cuddle and he was talking about how Google Docs support exporting as Markdown. They've had paste as Markdown for a while, but now that you can, you can export as Markdown, you can use like really nice like auto formatters that will just change like Markdown to HTML or whatever. So yeah, really nice. I personally really love Markdown. I love just plain text files. So if you, you know, that's a common thing that a lot of bug bunny hunters are using for their notes or whatever.
+
+[00:20:16.14] - Justin Gardner
+Oh dude, I'm. I'm glad you mentioned that because that's like kind of like a tool, right? Not as much as like a hacking technique. And I actually had something that I wanted to bring up.
+
+[00:20:23.74] - Joseph Thacker
+Sure.
+
+[00:20:24.05] - Justin Gardner
+Related to that. I use that feature all the time. By the way, the copy is marked down. Like they didn't. I didn't even see like a changelog or anything. I just right clicked one day and I was like, no way. Copy is marked down. So that's awesome. But the one that I was going to tell you about was Raycast for Windows, man. Raycast came out on Windows. Yes, it came out on Windows.
+
+[00:20:45.27] - Joseph Thacker
+Are you using it?
+
+[00:20:45.79] - Justin Gardner
+I've got it already. I've got it. Yeah. And guess what?
+
+[00:20:48.48] - Joseph Thacker
+Did you convert like your whole stack to it yet or what?
+
+[00:20:50.64] - Justin Gardner
+I did, I converted my stack to it. I've got all of my like URL encoding stuff, all of my like quick clipboard operation. How long did it into Raycast with AI? Not very long, a couple hours. But it's pretty great. There definitely are going to be some improvements that are needed, but the Raycast team is moving pretty fast and they gave me 15 Windows invites to give out.
+
+[00:21:14.90] - Joseph Thacker
+Oh, that's awesome.
+
+[00:21:15.85] - Justin Gardner
+To the beta.
+
+[00:21:16.61] - Joseph Thacker
+Nice.
+
+[00:21:17.05] - Justin Gardner
+So I don't know how should we do this? Should we say like, maybe I'll put out a tweet on or. No, no, no. I'll put it in the discord. I'll put something in the discord. It says, hey, you know, respond to this message and we'll get you, you know, one of the Windows invites if you. So, Richard, remind me to do that. I don't want to write it down right now, but we'll definitely put that out there if you guys want access to Raycast for Windows. Perfect.
+
+[00:21:42.61] - Joseph Thacker
+I had one more kind of small toolsy thing before we go to another. Rolling. Basically, I saw someone tweet that, you know, it's better prompting etiquette to say like, name of assistant does X instead of, you know, you do X because, you know, model providers like Claude do this. Like they, they in their instructions, they like, Claude does this, Claude does that, Claude does this. And I thought that was really interesting. Wow, sorry, I'm gonna phone call. It's really loud in my ears. And so someone else was like, oh, that's so obvious. And so then that person had like a big following. So then they quote, tweeted, like, with like a survey that was like, do you, in your prompt injection or gel breaks, whatever, or just in your system prompts put like, you know, the app name does X or you do X And like, it was 95% that, like, you do. And I noticed in my. And I use, I noticed in my prompting, I always do that. Like, you should respond this way. You should do that. And the fact that Anthropic, who has done like, you know, probably more studies on this than anyone, is using it the other way, I think it's actually great to do it the other way. And so anyways, as you're hacking, as you're using prompt injection payloads, as you're using jailbreaks, whatever, if you know the system, which you often do, like, let's say you're hacking on Google, you would say Gemini does this, or Gemini responds this way or what have you. Or at the very least just try both. Because if in their system prompt it's like all, you know, first person Claude does this, then you switch it to second person and say you do this, it's going to be very obvious to the model to know that's not. Huh?
+
+[00:23:11.08] - Justin Gardner
+Yeah. Second person's you.
+
+[00:23:13.97] - Joseph Thacker
+Right?
+
+[00:23:14.60] - Justin Gardner
+Second person's you. Third person is Claude. Right?
+
+[00:23:17.46] - Joseph Thacker
+Right. Yeah. So it'd be third person. Yeah. So if the system prompt is in third person and then you switch to second, it's going to probably be jarring to the model and it'll be, it'll know. Whereas if you try third person Then all of a sudden, yeah, actually I wonder if any of them do use first person. Like if they say something like, I really like to respond with all caps and I really know a lot about this. And it's like internal system prompt kind of makes sense though, if you think about how it's processing at inference because that's how our thoughts are sometimes. Huh. Anyways, random little prompting technique there.
+
+[00:23:45.88] - Justin Gardner
+That is nice. I like that. Yeah, it makes sense that you should match what the system prompt is, especially if you want to blend in with the system prompter.
+
+[00:23:52.83] - Joseph Thacker
+Yeah. And if you don't know, just try both.
+
+[00:23:54.40] - Justin Gardner
+Yeah, yeah, yeah. Good shit. All right, next up, back to Searchlight Cyber Christmas in July. Their write up was entitled Abusing windows.net quirks and Unicode normalization to exploit dotnet nuke. Essentially the concept here is they've been kind of exploiting some vulnerabilities lately, it seems with file exists which will make. Which when you can provide an absolute path to it will connect to a Windows share and leak the Intel M hash. Right. Classic technique. They're doing a little research on how exactly all that works. They found an unauthenticated endpoint on. Net nuke that will handle a file upload. And there's a bunch of restrictions in place on this. It takes any special character and it removes it with a regex and puts it as an underscore. It cleans up the file name, it validates the characters. Excuse me. But then right here at the very end, after all of that sanitization, it does utility convert Unicode characters and then passes in the file name, which is just lovely. And essentially what's happening here is after all of the sanitization, they do Unicode normalization, which can allow you to just take Unicode characters like.
+
+[00:25:15.47] - Joseph Thacker
+Oh, rip. It should have been at the beginning, right? Oh, man.
+
+[00:25:19.15] - Justin Gardner
+Exactly. It take full with dot and convert it into a dot. Do whatever. Right. So the team was able to utilize this to exploit and get an NTLM authentic hash leak, which. Which I thought was pretty awesome. So always want to shout that out. Order of sanitization is really important. And as I was sort of reading the code for this, I'll put it up on the screen here. You can see that the convert Unicode characters function here does a bunch of regular expression to convert Unicode characters. And then right here it just sort of does a general conversion. But one of the things that was really interesting to me was this piece down here at the end which replaces question marks with string. Empty tabs with string, empty slash R with string Empty N as string empty. Anytime I see something getting moved to getting replaced to string empty, I think, oh, I need to be using that as a way to bypass stuff. For example, like what we talked about earlier with tab dot. Right.
+
+[00:26:27.54] - Joseph Thacker
+That's exactly where my mind went. It's like, oh, that's like very similar code to that thing we were just talking about.
+
+[00:26:32.10] - Justin Gardner
+Exactly, exactly. And if you look earlier up, they cover this because you can only have one.in this whole string anyway. So it's covered in this scenario. But I wanted to shout it out again. Is that in these replacement scenarios where taking some sensitive or malicious string potentially and replacing it with empty, you definitely have to be able to utilize that as an attacker sometimes to get path traversal or sneak in some character sequences that have meaning to the application. Yep.
+
+[00:27:02.07] - Joseph Thacker
+Yeah, makes sense.
+
+[00:27:03.44] - Justin Gardner
+Yeah, really good article. Let me see if I had anything else on all of that. Yeah, I mean it was, it was a pretty clean one. I mean the, the NTLM hash leak strategy, you know, if you're not familiar with that, you must know what that does. So definitely research that. If you're not order of operations in sanitization and then look for replaces to empty strings that you can use to sneak in malicious character sequences.
+
+[00:27:28.13] - Joseph Thacker
+All right, I really need to look for more Unicode normalization stuff. It's always like it feels like one of the purest forms of hacking. Like it just feels so cool and you're always talking about it and so I just need to find.
+
+[00:27:40.46] - Justin Gardner
+It's really fun.
+
+[00:27:42.05] - Joseph Thacker
+Okay, so let's do. I'll do my big, I'll do my bigger one. Since we're early in the episode. This is like really high quality content for everybody. So let me share my screen for the viewers. Oh, by the way, I saw you mentioning earlier on the hack along the like top podcast thing for Spotify. I didn't even know that we were on Spotify. I just always use YouTube or for my podcast listening I use Overcast or Apple podcasts. So. So kind of interesting. We have a lot of reviews on there. We have like 405 reviews or something. So.
+
+[00:28:13.76] - Justin Gardner
+Yeah, dude, I think last time I checked I think we're around like the 200 or something like that. 200 largest, 200th largest tech podcast. Technology podcast.
+
+[00:28:27.89] - Joseph Thacker
+That's awesome. And I'm sure it's.
+
+[00:28:28.97] - Justin Gardner
+I want to get up there.
+
+[00:28:29.89] - Joseph Thacker
+Yeah, like I saw like Lex Friedman there. It's like it's kind of a technology podcast but that's more like of a catch all. So there's probably, you know, a good number in there that are more catch alls that just happen to cover tech. So it's pretty.
+
+[00:28:39.44] - Justin Gardner
+Yeah, there's some, there's some ones up there though, like hacked and stuff like that that are relating to hacking. And Darknet diaries of course, that are hacking related. But we are so niche in the bug bounty world and we do really, you know, push into that niche pretty hard. We don't really stray from that niche very much. So I think.
+
+[00:28:56.48] - Joseph Thacker
+Yeah, which I think that's perfect. Like if we went way more vague, it'd be so much less actionable for our listeners. So we'll keep it that way. Yeah. So the TLDR on this is literally at the. And so I'm just going to read it for the audio listeners. But this is a post. Yeah, this is a post by Sharon Brisdonoff called titled How I scanned all of GitHub's oops commits for Leak Secrets. And the TLDR here will summarize it and then I'll hit a few high points. Basically GitHub Archive is a website which logs every public commit, even the ones that developers try to leak. And so that is a result of what is called push events. You can just query and I'll do that later, maybe even on screen for the viewers. All GitHub events just like, they're just like streaming out of GitHub all the time. And a guy made a thing called the GitHub archive like 11 years ago and it's, it's archived every single, every single event. And so even if you force delete a specific commit, if it was on a public repo, it's in there forever, basically. So it's kind of scary. But anyways, he scanned all of those. They're called zero commits, force push events since 2020 and uncovered secrets worth 25,000 in bug bounty. Honestly, there's probably way more in there. He's still going through them, but together with Truffle Security they're actually open sourcing a tool so that you can scan your own GitHub.org for those. Sweet. Yeah, pretty sweet. So that's the tldr. The main points that I wanted to hit was this quote here where it says he's the one who did the last one where it was called like how I made 64,000 from deleted files. And if anyone doesn't know this, Sharon was on the podcast. So just Google Shar on.
+
+[00:30:38.05] - Justin Gardner
+Brisov and.
+
+[00:30:39.53] - Joseph Thacker
+You can find his episode. But in his previous one, how I made 64k from deleted files. He talked about orphaned blobs. But in this case there are also a thing called orphaned commits. And so basically whenever you change the head. So this is kind of a git nerd thing. In git, whenever you switch the head to the previous commit and then force push that, it basically deletes the pointer to the previous commit that you did. So that you can't find it in git log, you can't find it in your git commit history, you can't find it in git tree, there's like no way to find it, but that doesn't mean it doesn't still exist. And it is like a long uuid. So it's an unguessable eye door, which you know, I'm kind of famous for. I've got the blog post on why I think unguessable eye doors are still eye doors. And so it's kind of like that, but it's actually totally guessable and indexed forever because of this thing called GitHub Archive.
+
+[00:31:31.98] - Justin Gardner
+This is such freaking good research, man. This is classic Sharon. This is great.
+
+[00:31:37.00] - Joseph Thacker
+Yeah, so let me go down here because the GitHub archive bit is really interesting right here. So eventually I came up with a simple idea. I will use the GitHub Event API alongside the GitHub Archive project to scan all zero commit push events, aka deleted commits for secrets. And so there is a proper way to leave this just as like a really random tidbit. Don't move your head and then do a get force push. You have to use what's called like git filter or something like that. I don't know if they even cover it in here, but if you ask top AI models today, they'll tell you because I was like, oh man, how common is this for it to recommend? So yeah, here's what he says a lot of people would do to blow away commits. They would do git reset hard head minus one and then force push that to the origin. But this is the wrong way to do it and the better way is called git filter or something. So anyways, this GitHub archive is really neat, so I'm going to switch to that. So the GitHub archive is, you know, a project to record all the public GitHub timeline, archive it and make it easily accessible. So first of all, extremely cool project. And the fact that this has been running since 2011 is amazing and probably like an incredible way to do security research if people ever want to do this. This may have even been the way that some People or that like remember whenever Shubs's team made those word lists he may have used this. I'm not sure, I don't remember. But anyways, so let me actually show you the way that you can pull current events from.
+
+[00:33:08.58] - Justin Gardner
+Is this like the stream of events?
+
+[00:33:10.67] - Joseph Thacker
+Yes. So right now, Justin, in your terminal, go curl HTTPs, colon slash, slash.
+
+[00:33:18.19] - Justin Gardner
+What? APIs without any.
+
+[00:33:21.40] - Joseph Thacker
+No auth API.GitHub.com events dude, what the heck?
+
+[00:33:25.48] - Justin Gardner
+It's just scrolling.
+
+[00:33:27.40] - Joseph Thacker
+Yeah.
+
+[00:33:28.35] - Justin Gardner
+So cool.
+
+[00:33:29.79] - Joseph Thacker
+Super interesting. Super cool. Yeah, I don't know what all you can do with this, but anyways, we've been talking about this too long so I'll speed run this. Basically they did this for all repos over across the last 14 years and found Buku's of secrets and then it was like well how are we going to actually filter through these? So they built automation that would automate automatically hunt for more impactful secrets and then they manually tested them like the ones that are like important. You know, they use things like secret ninja and other stuff. But then what I thought was really cool, they didn't release this. But they are, they vibe coded up their own little like secret triage thing that would then validate some of these. Because obviously the majority of these can be validated in an automated fashion. And they haven't released that or shared more about it yet, but they said that they would. I'm pretty positive in here. But anyways, let me show you these. So these are secrets over time so they trend upwards. Makes sense as more people commit and then also as these old ones kind of get dropped off or rotated or whatever. But the vast majority of secrets were MongoDB. But I mean even these small percentages are so many that it's still a lot. So like the. There was 130 AWS keys.
+
+[00:34:37.98] - Justin Gardner
+Oh my God.
+
+[00:34:39.23] - Joseph Thacker
+Yeah, they. So it said, they said the MongoDB is probably just like students leaking non interesting side projects. So that's not that big of a deal. But they. But the GitHub PAT tokens and the AWS credentials were like obviously extremely beneficial and generated the highest bounties. There was one more thing. Okay, yeah, my favorite thing about this entire post because you know I love fuzzing is they leak or they list the most leaky file names. It's a list of like 30 file names here. I immediately added these to all of my word list and I was missing like over half of them. So if you have custom word list that you manage, go take these right now and add them to your Custom word list because they're known good files that have leaked passwords in the past.
+
+[00:35:22.55] - Justin Gardner
+Dude, what the heck? Why is just the path unknown in there? That is not even one I would check. That's crazy. Wow, dude.
+
+[00:35:33.07] - Joseph Thacker
+Yeah, I mean, they have readme in here, so be careful if you don't want noisy. If you pick readme, it's going to find a bunch of stuff. But. But if you're doing any kind of secret scanning or secret testing, like, it makes sense, right? People would just throw their keys and read me or throw. In their example, they accidentally cop and paste in a full curl command that has like the. The credential or the header or whatever. You know what I mean? Like, people are constantly copy and pasting a ton of stuff into their readme and their projects.
+
+[00:35:55.05] - Justin Gardner
+Yeah, absolutely. Yeah. I love this, man. And I hope you know, with how. With how thorough Charon and the Troublesec team is with these sort of things. I'm sure they did this well. But I also, you know, I hope that they're looking at, you know, binary format stuff too, and. And looking for more than just just these specific secrets, because I know that one of the biggest bounties I've ever seen came from a leak like this. And it was a auth certificate that was found in like this freaking pyc file or something like that, you know, in a more binary format.
+
+[00:36:32.42] - Joseph Thacker
+Yeah. There's no way I would publish this without giving myself, like months to go through it. So honestly, there's probably a lot of data and a lot of interesting things that could be found there. Like, even if you're just a person who knows about a secret format that's not in Truffle hog. Right? Like, go look right now, because you can probably go find, you know, exactly that.
+
+[00:36:50.55] - Justin Gardner
+Yeah, absolutely, man. Good stuff by Sharon, as always in the trouble. SEC team. All right, next up was this one. This is by Zero, who we've been talking about a lot on the podcast. Just constantly cranking out good articles for us to discuss. This one is a little bit more of a meta article, though. It's entitled Bug Bounty Feedback Strategy and Alchemy. And there's a couple points that I had throughout this one, but I always enjoy reading, excuse me, Bug Bounty sort of meta articles because it talks about the way people think about the industry from a higher perspective and can kind of elevate your thinking quite a bit. But, you know, one of the first things, and I know you know this as well, we've kind of talked about this many times. One of the things he, he shouts out on here is this line, however. Who you are, what degrees you hold, who you know and where you live, doesn't matter. In bug bounty, no interviews, no schedules, no race to meet arbitrary standards. There are rules, rewards, a defined scope and a game. You discover a vulnerability within the rules, you earn a reward. No ceiling, no safety net. Only skill rains. And I, and I was just like, dude, goosebumps, man. Like, how lucky are we to have this skill, this thing that we love, right? This, this hobby, and then be able to implement it in a way where we don't have to do sales, we don't have to do clients.
+
+[00:38:11.28] - Joseph Thacker
+There's infinite demand for critical vulnerabilities, right? Infinite demand. No sales, no meetings. You can just sit down and find bugs and that's it. From anywhere counting. You don't need any overhead. It's like you need a laptop or a phone.
+
+[00:38:25.36] - Justin Gardner
+Freaking unbelievable. It is absolutely unbelievable. So I'm just so blessed to be in this industry and I'm so excited. And a lot of people ask me, you know, hey, what salary would you need to pull you away from bug bounty hunting? And sure, maybe there's a number, you know, a couple million or something like that, but where I would just work for a year and then just be.
+
+[00:38:44.48] - Joseph Thacker
+Done and go back to bug bounty, Is that what you're saying?
+
+[00:38:46.55] - Justin Gardner
+And go back to bug bounty, right? You know, like, but the thing is, you know, this is what I want to be doing. This is exactly what I want to be doing.
+
+[00:38:53.82] - Joseph Thacker
+I've been thinking a lot about that actually, as like a really random aside on, on the meta topic. Cause it's this. And then you can still mention the other things from this blog post. I feel like I had some discontentment through the month of May and early June. Just feeling like I was like leaving something on the table for some random reason. And like, I don't know, I think that honestly might have been just bad headspace. But like every, the thing that, the grounding thing that brought me back to, it's like, what would I do? Like if I just had way more money? It's like, oh, I would just do bug bounty hunting and like do critical thinking so I can hang out with Justin. It's like, so why am I trying to like, you know, maybe there's probably some other path to more money. But guess what? I'm not willing to take those trade offs because I'm already at the end, right? I don't need to get these other means to an end because I'M at the end.
+
+[00:39:34.17] - Justin Gardner
+And so, yeah, and we've got the time and the flexibility that we need. Right. I know that that's big for both of us getting time to, you know, to spend with the kids, to be able to help with stuff and be able to do the research we love. So freaking love it, man.
+
+[00:39:47.61] - Joseph Thacker
+Me too.
+
+[00:39:49.21] - Justin Gardner
+Further along and. Well, actually, before we go into that, I think, just on that note, I think it's very important for full time bug bounty hunters to relish the beauty of bug bounty and the flexibility that it affords you. So I've had a slow couple of months since we won in Tokyo. Right. And I love it. I loved it, you know, and this is one of the first times where I loved it, you know, where. Because I guess over. Over the, the time that I've been a full time bug bounty hunter, you know, I've always struggled a little bit with, like, I should be taking the down periods I'm not having, getting revenue, I'm not working, I'm not generating money. But dude, you know what? Screw it, man. This is exactly the time that I want to be not working. You know, where I want to be spending time with my kids over the summer or, you know, working on house projects or whatever I'm doing. Those are the things that I want to prioritize. And like you said, the money is there, the money will come. It's all good.
+
+[00:40:40.17] - Joseph Thacker
+Yeah. I had to remind myself like, that this is the reason why you have Runway and this is like what you expected going into this. Like, you knew there were going to be highs and lows. And so the fact that you have to, you know, touch a tiny bit of your Runway is not like some massive loss. It's like, oh, that's why I have it.
+
+[00:40:55.48] - Justin Gardner
+Yeah, exactly. Exactly, man. Yeah. So anyway, going back, we took a tangent, but going back to zeros right up here. I always love seeing these characterizations of the hackers in the community. Right. And he says there are lots of different styles of hacking that can be successful. He lists the main app guy, the recon guy, the master automator, the low hanging fruit eater, the architect, the zero day researcher, the niche specialist, the opportunist, and the AI bot, which I thought was great. And looking at each one of these, I think he lists more categories than most people do.
+
+[00:41:33.94] - Joseph Thacker
+And it's almost like personality tests. Like, you could keep slicing it up. Different people have different perspectives, but it's still always kind of interesting and fun. That's how I view it. It's like yeah, some people fall in multiple categories, some people have all the skills, some people are not going to fit these categories. But I always like reading them anyways and I think that they're really fun to think about.
+
+[00:41:51.86] - Justin Gardner
+Yeah, I'm trying to find, I can't find that write up by Kodingo, but Kodingo also does a good article on the Bug Crowd blog, sort of talking about the, the recon guy, the main app guy or whatever. I really did like Zero's representation of it though, because he says specifically that he recommends the niche specialist. And this is what he, he, he says specializes in one type or family of vulnerabilities and masters it better than, you know, X percent of the hunters finds what others miss, rises above the competition. Its relevance depends on a choice of specialization, which I'll come back to a little bit later. If the choices are good, it can obviously make money frequently. This is what I've recommended in the past and yeah, I think that's great, you know, going. I mean obviously this person is a specialist in cash poisoning related vulnerabilities, so he's definitely got some bias there, you know. But I think the niche specialist is always a really good way to go if you want to start making money in bug bounty.
+
+[00:42:45.11] - Joseph Thacker
+Well, I think there's a couple of reasons why too. Like one is the fact that you do have to, it's a skill game, right? Like we just talked about that you have to beat out other people. And so there's a couple ways that you can beat them out, right? Like if you wanted to be a recon guy or you want to be a low hanging fruit, you got to be faster and you got to stay on top of other people, right? Whereas if you just have, if you're just the most skilled in a specific thing, not only can you find those by yourself, but people will drive deals to you, right? It's the same reason why people go to Chapman for headless chrome bugs, right? There's enough of you front end guys where it's kind of dispersed, but in general you all get a lot of people reaching out with front end phones, right? I think that it really helped me especially earlier this year as people came to me whenever they were dealing with like AI voice. And so I think that having a specialty doesn't exclude you from like spraying that specialty. Like let's say you're a big XSS guy and you find XSS on like a third party library or in like a specific thing. Now you can spray it and you can still be a recon person with your nice specialty and you can grab low hanging fruit with your niche specialty. I think the niche specialist is like defensible against AI and also useful because it drives deals your way in the form of networking and collaborations. But then also, even if you didn't have those, you could just go find that bug other places and it's going to exist there because you're better at finding it than other people. So it's at a higher skill level. So it's kind of withheld from the crowd just for you.
+
+[00:44:07.30] - Justin Gardner
+Absolutely. Man, I love what you said, but you lost me when you slapped your mic.
+
+[00:44:13.69] - Joseph Thacker
+I did. Listen, I've been trying not to touch it. I've been muting it when I need to touch it. I was told I touched it too much in the past.
+
+[00:44:18.98] - Justin Gardner
+Dude, I also touched my mic a lot, so. Hey guys, I'm sorry, like, like Richard, we're so sorry listeners. We're so sorry. Like, like we're, we're hackers, we're not podcasters. So Richard does our, does it the best he can with our like crap audio we give him.
+
+[00:44:33.80] - Joseph Thacker
+Where's our needle?
+
+[00:44:35.09] - Justin Gardner
+Yelling Exactly. Dude, I. Dude, my needle broke. My needle broke. I can't squeeze it anymore. So sad. Anyway, let's bring it back around. Last little quote I wanted to read from this article was this one. This one's a little bit longer, but, but hang in there. Okay? So it says, money has been discussed a lot here. Nothing unusual from the perspective of a full time independent bug bounty hunter, but it's time to aim higher, to seek to move things forward in your field and do your part. I find it fascinating that much of the technology we use today is a result of a vast stack of universal knowledge built on over centuries by countless contributors. Narrowing it down. You've probably reached this level thanks to numerous research papers, courses, videos shared for free by people around the world. Aren't you in some way indebted to that stack? Now it's your turn to contribute with research papers, novel findings, presentations, useful tools, and simply some good advice. If it worked for you, it might work for others too. I thought that. Dude, I thought. I was moved, man. I was moved a little bit in the heart, you know, like we all are standing on the shoulders of giants in this industry and it has made me really happy especially to see some of the guys in the critical thinking community like Demo Turbo, right, You know, doing these talks at, at defcon or you know, there's lots of people contributing back and it's really.
+
+[00:45:54.48] - Joseph Thacker
+Let me have my hot take then. So I definitely agree. I think that the cybersecurity industry is extremely unique relative to other industries. Like I actually think that, I actually think that it is more different and unique in this way than any other industry. Like I don't think there's any other industry where people give back as much as they do. Every time I, every time I meet a security guy, a security person who like goes to conferences all the time, security conferences and like does talks and stuff, I'm always like kind of shocked and I'm almost off put by the fact they do that for free. Like the vast majority of speakers at conferences are going to these random conferences and so many of them are in little small towns and they're on the side track and they're presenting to 10 people who are never going to use their research and they still like love to do it and they love to go and they put in hours into these like presentations and sometimes they get on YouTube and they do well or whatever. Like they go into the video archives and sometimes people do find them and use them. But I 1 think that's extremely impressive and really cool. I also think it creates a culture of not wanting to pay for information. And so I'm not like a course maker, right? I've done one 200 course which was like very bleeding edge like information on like the zero to hero of agent hacking. But like outside of that I've done no courses. And there are people who do like really good courses and really good training. And also like I think that there are a lot of speakers that are good enough and I think are worthy of being paid to go places that like can't get paid to do it because like the security industry is like so sharing. So I don't know, I don't know if there's like a big fix for that and I don't even know if it's a real complaint because I do think that is incredible in a lot of ways. But I also think that it does create an industry that is like really reticent to pay for products and reticent to pay for. Because they're so pro open source also and so reticent to pay for information.
+
+[00:47:41.01] - Justin Gardner
+That is, that is a, an interesting take on that. You know, I think yeah it would, it does affect, you know, the ability to get paid for some of these things.
+
+[00:47:51.25] - Joseph Thacker
+But anyways, I mean we also give a ton of free information away every week here on Critical thinking. So. And I, and I love doing it and it's a, it's a privilege. It is. That's right.
+
+[00:47:59.17] - Justin Gardner
+Lots of fun, man. Um, that's all I had on my list. Do you have anything else you wanted to throw on here at the end of the podcast?
+
+[00:48:05.32] - Joseph Thacker
+Yeah, I'll just throw in something really quick because I think it's so cool and incredible. Speaking of free information, actually. Wow. I did not mean. I did not intend this segue, guys, but Google released. Let me make sure I pop down my messages before I share my screen. I always accidentally share my Twitter message. They have to edit it out. So basically, Google released their entire playbook and project, the entire paper and all of the open source code for their prompt injection protection that they actually use across their products. I'm sure it's not 100%, you know, of what they're using, but it is massively underrated. Only 40 stars here with only six forks. It was released three weeks ago and it is like their paper defeating prompt injection by design, which, you know, we've encountered a lot in our hacking. How, how good they are at defending prompt injection relative to other, other companies and other organizations. And it's by using a thing called camel, which stands for something. I don't even know what it stands for, but, but anyways, they released this repo that shows how to use it and all that. And when they released this, I was, like, kind of blown away that they had released it because this feels like the bleeding edge, like the, you know, frontline. Best research for prompt injection protection at scale. And so if you're a company out there or even if you're a hacker, I think diving into this would be a really worthwhile endeavor ever.
+
+[00:49:31.59] - Justin Gardner
+Yeah, totally, man. This, I'm very surprised they put this out.
+
+[00:49:34.80] - Joseph Thacker
+Yeah, me too.
+
+[00:49:35.44] - Justin Gardner
+That's, that's really cool. Definitely something. I feel like Ronnie has already, like, consumed, you know. Yeah. After struggling with that for so long at the, at the event.
+
+[00:49:46.48] - Joseph Thacker
+Yeah.
+
+[00:49:47.03] - Justin Gardner
+So very fun. All right, man, that's a wrap on this one. Cool stuff. I, I, I enjoyed today's episode. I was, I was not gonna lie. I was a little tight. Anytime we record an episode after I do the hack along, you know, and I had a little join this morning. I, you know, my social energy is low and I'm, like, trying to turtle up a little bit, but this is a good one.
+
+[00:50:07.07] - Joseph Thacker
+Yeah, you did well. Thanks, man. Thanks, guys. Peace.
+
+[00:50:09.75] - Justin Gardner
+Peace. And that's a wrap on this episode of Critical Thinking. Thanks so much for watching to the end, y'.
+
+[00:50:15.19] - Joseph Thacker
+All.
+
+[00:50:15.46] - Justin Gardner
+If you want more critical thinking content or if you want to support the show. Head over to CTBB Show Discord. You can hop in the community. There's lots of great high level hacking discussion happening there. On top of the master classes, hack alongs, exclusive content and a full time Hunters guild. If you're a full time hunter. It's a great time. Trust me. All right, I'll see you there.
