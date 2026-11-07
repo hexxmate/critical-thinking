@@ -31,20 +31,30 @@ its limitations.
 
 - **Official transcripts** (166) include timestamps and speaker labels and are the highest-quality
   source.
-- **YouTube transcripts** (27) are auto-generated captions. They can contain misheard names,
-  missing punctuation, and no speaker labels. Verify before quoting.
 - **Episodes 1–6** have no transcript anywhere public. Their show notes are still reflected in the
   link archive.
 - **Links** reflect the show notes at extraction time. Expect link rot.
 - **Transcript headers** are added by this archive: episode number, title, and source URL. The body
   is the original transcript.
 
+## Amendment — YouTube-caption transcripts removed (2026-11-07)
+
+The archive originally also included 27 auto-generated YouTube caption transcripts (episodes
+7–19, 25, 27, 29, 42, 52, 84, 86, 87, 89, 99, 100, 105, 113, 115) as a fallback for episodes with
+no official site transcript. They were removed ahead of the idea-extraction phase (see
+[`ROADMAP.md`](ROADMAP.md) Phase 1): no punctuation, no speaker labels, and occasional
+mis-hearings made them too low-confidence to feed a structured extraction pipeline reliably, and
+re-adding them later is cheap (they're just a re-fetch from YouTube) if a future pass wants them
+back at an explicit lower-confidence tier. Their show-note links remain in
+[`../links/`](../links/); they are now treated the same as episodes 1–6 — catalogued but with no
+local transcript.
+
 ## Reproducibility
 
 The archive can be rebuilt from the public sources above. If you change the extraction logic,
 document the change in a pull request and re-run the validation checks:
 
-- 193 transcript files, numbered `NNN-title.txt`.
+- 166 transcript files, numbered `NNN-title.txt` (27 YouTube-caption-only files removed 2026-11-07).
 - No file shorter than 5,000 characters.
 - One URL per line in `links/`, no duplicates.
 - `transcripts/_manifest.tsv` matches the files on disk.

@@ -1,13 +1,13 @@
 # Critical Thinking — Bug Bounty Podcast Archive
 
 ![Episodes](https://img.shields.io/badge/episodes-199-0A66C2)
-![Transcripts](https://img.shields.io/badge/transcripts-193-2EA043)
+![Transcripts](https://img.shields.io/badge/transcripts-166-2EA043)
 ![Links](https://img.shields.io/badge/links-1%2C255-EA1D11)
 ![License](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey)
 
 An open research archive of the **Critical Thinking - Bug Bounty Podcast**: full transcripts,
-every link mentioned in the show notes, and a structured foundation for turning 199 episodes of
-offensive-security knowledge into something agents and humans can actually use.
+every link mentioned in the show notes, and a structured foundation for turning offensive-security
+knowledge from 166 transcribed episodes into something agents and humans can actually use.
 
 The long-term goal is to convert this material into **agent-ready knowledge**: episode summaries,
 technique and tool indexes, and a backlog of ideas for skills, automations, and agent
@@ -44,15 +44,19 @@ long-form audio. Here it is:
 | Asset | Count | Location |
 |---|---:|---|
 | Episodes covered | 199 | — |
-| Transcripts | 193 | [`transcripts/`](transcripts/) |
+| Transcripts | 166 | [`transcripts/`](transcripts/) |
 | — Official site transcripts | 166 | `transcripts/` |
-| — YouTube caption transcripts | 27 | `transcripts/` |
 | Extracted links | 1,255 | [`links/`](links/) |
-| Episode index | 193 | [`docs/EPISODE-INDEX.md`](docs/EPISODE-INDEX.md) |
+| Episode index | 166 | [`docs/EPISODE-INDEX.md`](docs/EPISODE-INDEX.md) |
 | Structured notes | coming soon | [`notes/`](notes/) |
 
 Episodes **1–6** have no published transcript on the podcast website and were never uploaded to
 the show's YouTube channel. Their show-note links are still included in the link archive.
+
+Episodes **7–19, 25, 27, 29, 42, 52, 84, 86, 87, 89, 99, 100, 105, 113, 115** (27 episodes) only ever
+had auto-generated YouTube captions, no official transcript. They were removed from the archive on
+2026-11-07 — too low-confidence (no punctuation, no speaker labels, occasional mis-hearings) for
+structured idea extraction. Their show-note links are still included in the link archive.
 
 ---
 
@@ -64,7 +68,7 @@ the show's YouTube channel. Their show-note links are still included in the link
 ├── CONTRIBUTING.md
 ├── NOTICE.md
 ├── LICENSE
-├── transcripts/              # 193 transcript files + manifest
+├── transcripts/              # 166 transcript files + manifest
 │   ├── README.md
 │   ├── _manifest.tsv
 │   └── NNN-title.txt

@@ -23,6 +23,7 @@ topic indexes, and a curated backlog of skills, tools, and automations.
 
 - [x] Enumerate all 199 episodes.
 - [x] Download and normalize 193 available transcripts (166 official, 27 YouTube captions).
+- [x] Remove the 27 YouTube-caption transcripts 2026-11-07 (too low-confidence for extraction); 166 official transcripts remain.
 - [x] Extract 1,255 links from all episode show notes, categorized.
 - [x] Build episode index and manifest.
 - [x] Publish the repository with documentation and contribution guidelines.

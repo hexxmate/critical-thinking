@@ -1,42 +1,31 @@
 # Episode Index
 
-All 193 available transcripts, grouped by episode range. File names follow the pattern `NNN-title.txt` and live in [`transcripts/`](../transcripts/).
+All 166 available transcripts, grouped by episode range. File names follow the pattern `NNN-title.txt` and live in [`transcripts/`](../transcripts/).
 
 > Episodes **1–6** are not included: the podcast has never published transcripts for them on the website, and they were not uploaded to the YouTube channel. Their show-note links are still represented in [`links/`](../links/).
+>
+> Episodes **7–19, 25, 27, 29, 42, 52, 84, 86, 87, 89, 99, 100, 105, 113, 115** (27 episodes) had only
+> auto-generated YouTube captions, no official transcript. These were removed from the archive on
+> 2026-11-07 as too low-confidence for structured idea extraction. Their show-note links are still
+> represented in [`links/`](../links/).
 
 
 ## Episodes 001–025
 
 | # | Episode | Source | Transcript |
 |---:|---|---|---|
-| 007 | PortSwigger Top 10, TruffleSecurity Drama, and More! | YouTube captions | [`txt`](../transcripts/007-portswigger-top-10-trufflesecurity-drama-and-more.txt) |
-| 008 | PostMessage Bugs, CSS Injection, and Bug Drops | YouTube captions | [`txt`](../transcripts/008-postmessage-bugs-css-injection-and-bug-drops.txt) |
-| 009 | Headless Browser SSRF & RebindMultiA Tool Release + Web3 Bug | YouTube captions | [`txt`](../transcripts/009-headless-browser-ssrf-and-rebindmultia-tool-release-web3-bug.txt) |
-| 010 | The Life of a Full-Time Bug Bounty Hunter + BB News + Reports from Mentees | YouTube captions | [`txt`](../transcripts/010-the-life-of-a-full-time-bug-bounty-hunter-bb-news-reports-from-mentees.txt) |
-| 011 | CV$$, Web Cache Deception, and SSTI | YouTube captions | [`txt`](../transcripts/011-cv-web-cache-deception-and-ssti.txt) |
-| 012 | JHaddix on Hacker->Hacker CISO, OG Hacking Techniques, and Crazy Reports | YouTube captions | [`txt`](../transcripts/012-jhaddix-on-hacker-hacker-ciso-og-hacking-techniques-and-crazy-reports.txt) |
-| 013 | How to Find a Good BBP + Acropalypse + ZDI | YouTube captions | [`txt`](../transcripts/013-how-to-find-a-good-bbp-acropalypse-zdi.txt) |
-| 014 | Mobile Hacking Dynamic Analysis w/ Frida + Random Hacker Stuff | YouTube captions | [`txt`](../transcripts/014-mobile-hacking-dynamic-analysis-w-frida-random-hacker-stuff.txt) |
-| 015 | The Israeli Million-Dollar Hacker | YouTube captions | [`txt`](../transcripts/015-the-israeli-million-dollar-hacker.txt) |
-| 016 | The Hacker's Toolkit | YouTube captions | [`txt`](../transcripts/016-the-hackers-toolkit.txt) |
-| 017 | LA Live Chat with Five Legendary Hackers | YouTube captions | [`txt`](../transcripts/017-la-live-chat-with-five-legendary-hackers.txt) |
-| 018 | Audit Code, Earn Bounties | YouTube captions | [`txt`](../transcripts/018-audit-code-earn-bounties.txt) |
-| 019 | Audit Code, Earn Bounties (Part 2) + Zip-Snip, Sitecore, and more! | YouTube captions | [`txt`](../transcripts/019-audit-code-earn-bounties-part-2-zip-snip-sitecore-and-more.txt) |
 | 020 | Hacker Brain Hacks - Overcoming Bug Bounty's Mental Tolls | Official | [`txt`](../transcripts/020-hacker-brain-hacks-overcoming-bug-bountys-mental-tolls.txt) |
 | 021 | Chill Chat with Legendary DoD Hacker Corben Leo | Official | [`txt`](../transcripts/021-chill-chat-with-legendary-dod-hacker-corben-leo.txt) |
 | 022 | Chipping Away at Hardware Hacking | Official | [`txt`](../transcripts/022-chipping-away-at-hardware-hacking.txt) |
 | 023 | Hacker Loadouts | Official | [`txt`](../transcripts/023-hacker-loadouts.txt) |
 | 024 | AI + Hacking with Daniel Miessler and Rez0 | Official | [`txt`](../transcripts/024-ai-hacking-with-daniel-miessler-and-rez0.txt) |
-| 025 | 2xMVH & Multi-million dollar hacker Inhibitor181 | YouTube captions | [`txt`](../transcripts/025-2xmvh-and-multi-million-dollar-hacker-inhibitor181.txt) |
 
 ## Episodes 026–050
 
 | # | Episode | Source | Transcript |
 |---:|---|---|---|
 | 026 | Client-side Quirks & Browser Hacks | Official | [`txt`](../transcripts/026-client-side-quirks-and-browser-hacks.txt) |
-| 027 | Top 7 Esoteric Web Vulnerabilities | YouTube captions | [`txt`](../transcripts/027-top-7-esoteric-web-vulnerabilities.txt) |
 | 028 | Surfin' with CSRFs | Official | [`txt`](../transcripts/028-surfin-with-csrfs.txt) |
-| 029 | Live Episode with Sean Yeoh - Assetnote Engineer | YouTube captions | [`txt`](../transcripts/029-live-episode-with-sean-yeoh-assetnote-engineer.txt) |
 | 030 | Recon Legend Shubs - From Burgers to Bounties | Official | [`txt`](../transcripts/030-recon-legend-shubs-from-burgers-to-bounties.txt) |
 | 031 | Alex Chapman - The Man of Many Crits | Official | [`txt`](../transcripts/031-alex-chapman-the-man-of-many-crits.txt) |
 | 032 | The Great Write-up Low-down | Official | [`txt`](../transcripts/032-the-great-write-up-low-down.txt) |
@@ -49,7 +38,6 @@ All 193 available transcripts, grouped by episode range. File names follow the p
 | 039 | The Art of Architectures | Official | [`txt`](../transcripts/039-the-art-of-architectures.txt) |
 | 040 | Bug Bounty Mentoring | Official | [`txt`](../transcripts/040-bug-bounty-mentoring.txt) |
 | 041 | Mini Masterclass: Attack Vector Ideation | Official | [`txt`](../transcripts/041-mini-masterclass-attack-vector-ideation.txt) |
-| 042 | Renniepak Interview & Intigriti LHE Recap | YouTube captions | [`txt`](../transcripts/042-renniepak-interview-and-intigriti-lhe-recap.txt) |
 | 043 | Caido - The Up-And-Coming HTTP Proxy | Official | [`txt`](../transcripts/043-caido-the-up-and-coming-http-proxy.txt) |
 | 044 | URL Parsing & Auth Bypass Magic | Official | [`txt`](../transcripts/044-url-parsing-and-auth-bypass-magic.txt) |
 | 045 | The OG Bug Bounty King - Frans Rosen | Official | [`txt`](../transcripts/045-the-og-bug-bounty-king-frans-rosen.txt) |
@@ -64,7 +52,6 @@ All 193 available transcripts, grouped by episode range. File names follow the p
 | # | Episode | Source | Transcript |
 |---:|---|---|---|
 | 051 | Hacker Stats 2023 & 2024 Goals | Official | [`txt`](../transcripts/051-hacker-stats-2023-and-2024-goals.txt) |
-| 052 | Best Technical Content from Year 1 of CTBB Podcast | YouTube captions | [`txt`](../transcripts/052-best-technical-content-from-year-1-of-ctbb-podcast.txt) |
 | 053 | 500k/yr as Full-Time Bug Hunter & Content Creator - Nahamsec | Official | [`txt`](../transcripts/053-500k-yr-as-full-time-bug-hunter-and-content-creator-nahamsec.txt) |
 | 054 | White Box Formulas - Vulnerable Coding Patterns | Official | [`txt`](../transcripts/054-white-box-formulas-vulnerable-coding-patterns.txt) |
 | 055 | Popping WordPress Plugins - Methodology Braindump | Official | [`txt`](../transcripts/055-popping-wordpress-plugins-methodology-braindump.txt) |
@@ -101,12 +88,8 @@ All 193 available transcripts, grouped by episode range. File names follow the p
 | 081 | Crushing Client-Side on Any Scope with MatanBer | Official | [`txt`](../transcripts/081-crushing-client-side-on-any-scope-with-matanber.txt) |
 | 082 | Part-Time Bug Bounty | Official | [`txt`](../transcripts/082-part-time-bug-bounty.txt) |
 | 083 | Brainstorming Proxy Plugins | Official | [`txt`](../transcripts/083-brainstorming-proxy-plugins.txt) |
-| 084 | 0xLupin & Takeaways from Google's Las Vegas BugSwat | YouTube captions | [`txt`](../transcripts/084-0xlupin-and-takeaways-from-googles-las-vegas-bugswat.txt) |
 | 085 | Practical Applications of DEFCON 32 Web Research | Official | [`txt`](../transcripts/085-practical-applications-of-defcon-32-web-research.txt) |
-| 086 | The X-Correlation between Frans & RCE - Research Drop | YouTube captions | [`txt`](../transcripts/086-the-x-correlation-between-frans-and-rce-research-drop.txt) |
-| 087 | 'Hacker Wife' Mariah Garder on Bug Bounty mentality and relationships | YouTube captions | [`txt`](../transcripts/087-hacker-wife-mariah-garder-on-bug-bounty-mentality-and-relationships.txt) |
 | 088 | News, Tools, and Writeups | Official | [`txt`](../transcripts/088-news-tools-and-writeups.txt) |
-| 089 | The Untapped Bug Bounty Landscape of IoT w/ Matt Brown | YouTube captions | [`txt`](../transcripts/089-the-untapped-bug-bounty-landscape-of-iot-w-matt-brown.txt) |
 | 090 | 5k Clickjacking, Encryption Oracles, and Cursor for PoCs | Official | [`txt`](../transcripts/090-5k-clickjacking-encryption-oracles-and-cursor-for-pocs.txt) |
 | 091 | Zero to LHE in 9 Months (feat gr3pme) | Official | [`txt`](../transcripts/091-zero-to-lhe-in-9-months-feat-gr3pme.txt) |
 | 092 | SAML XPath Confusion, Chinese DNS Poisoning, and AI Powered 403 Bypasser | Official | [`txt`](../transcripts/092-saml-xpath-confusion-chinese-dns-poisoning-and-ai-powered-403-bypasser.txt) |
@@ -116,8 +99,6 @@ All 193 available transcripts, grouped by episode range. File names follow the p
 | 096 | Cookies & Caching with MatanBer | Official | [`txt`](../transcripts/096-cookies-and-caching-with-matanber.txt) |
 | 097 | Bcrypt Hash Input Truncation & Mobile Device Threat Modeling | Official | [`txt`](../transcripts/097-bcrypt-hash-input-truncation-and-mobile-device-threat-modeling.txt) |
 | 098 | Team 82 Sharon Brizinov - The Live Hacking Polymath | Official | [`txt`](../transcripts/098-team-82-sharon-brizinov-the-live-hacking-polymath.txt) |
-| 099 | Back to the Basics - Web Fundamental to 100k a Year in Bug Bounty | YouTube captions | [`txt`](../transcripts/099-back-to-the-basics-web-fundamental-to-100k-a-year-in-bug-bounty.txt) |
-| 100 | 8 Fav Bugs of 2024, Farewell Joel, Hello Shift - Cursor of Hacking | YouTube captions | [`txt`](../transcripts/100-8-fav-bugs-of-2024-farewell-joel-hello-shift-cursor-of-hacking.txt) |
 
 ## Episodes 101–125
 
@@ -127,7 +108,6 @@ All 193 available transcripts, grouped by episode range. File names follow the p
 | 102 | Building Web Hacking Micro Agents with Jason Haddix | Official | [`txt`](../transcripts/102-building-web-hacking-micro-agents-with-jason-haddix.txt) |
 | 103 | Getting ANSI about Unicode Normalization | Official | [`txt`](../transcripts/103-getting-ansi-about-unicode-normalization.txt) |
 | 104 | 2024 Hacker Stats & 2025 Goals | Official | [`txt`](../transcripts/104-2024-hacker-stats-and-2025-goals.txt) |
-| 105 | Best Critical Thinking Moments from 2024 | YouTube captions | [`txt`](../transcripts/105-best-critical-thinking-moments-from-2024.txt) |
 | 106 | Announcing our new cohost... | Official | [`txt`](../transcripts/106-announcing-our-new-cohost.txt) |
 | 107 | Bypassing Cross-Origin Browser Headers | Official | [`txt`](../transcripts/107-bypassing-cross-origin-browser-headers.txt) |
 | 108 | How to Hack Salesforce, ServiceNow, and Other SaaS Products With Aaron Costello | Official | [`txt`](../transcripts/108-how-to-hack-salesforce-servicenow-and-other-saas-products-with-aaron-costello.txt) |
@@ -135,9 +115,7 @@ All 193 available transcripts, grouped by episode range. File names follow the p
 | 110 | Oauth Gadget Correlation and Common Attacks | Official | [`txt`](../transcripts/110-oauth-gadget-correlation-and-common-attacks.txt) |
 | 111 | How to Bypass DOMPurify in Bug Bounty with Kevin Mizu | Official | [`txt`](../transcripts/111-how-to-bypass-dompurify-in-bug-bounty-with-kevin-mizu.txt) |
 | 112 | Interview with Ciaran Cotter, Critical Lab Researcher, h1 Irish ambassador | Official | [`txt`](../transcripts/112-interview-with-ciaran-cotter-critical-lab-researcher-h1-irish-ambassador.txt) |
-| 113 | Best Technical Takeaways from Portswigger Top 10 2024 | YouTube captions | [`txt`](../transcripts/113-best-technical-takeaways-from-portswigger-top-10-2024.txt) |
 | 114 | Single Page Application Hacking Playbook | Official | [`txt`](../transcripts/114-single-page-application-hacking-playbook.txt) |
-| 115 | Mentee to Career Hacker - Mokusou (So Sakaguchi) | YouTube captions | [`txt`](../transcripts/115-mentee-to-career-hacker-mokusou-so-sakaguchi.txt) |
 | 116 | Auth Bypasses and Google VRP Writeups | Official | [`txt`](../transcripts/116-auth-bypasses-and-google-vrp-writeups.txt) |
 | 117 | Hacking AI Series: Vulnus ex Machina - Part 1 | Official | [`txt`](../transcripts/117-hacking-ai-series-vulnus-ex-machina-part-1.txt) |
 | 118 | Hacking Happy Hour: 0days on Tap and SQLi Shots | Official | [`txt`](../transcripts/118-hacking-happy-hour-0days-on-tap-and-sqli-shots.txt) |
